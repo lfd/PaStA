@@ -1,0 +1,16 @@
+18c18
+< diff -urpNa -X dontdiff linux-3.0.1-rt9/include/linux/sched.h linux-3.0.1-rt9.patched//include/linux/sched.h
+---
+> diff -urpNa -X dontdiff linux-3.0.1-rt9/include/linux/sched.h linux-3.0.1-rt9.patched/include/linux/sched.h
+20c20
+< +++ linux-3.0.1-rt9.patched//include/linux/sched.h	2011-08-12 14:32:18.000000000 -0700
+---
+> +++ linux-3.0.1-rt9.patched/include/linux/sched.h	2011-08-12 14:32:18.000000000 -0700
+31c31
+< diff -urpNa -X dontdiff linux-3.0.1-rt9/kernel/rcutree_plugin.h linux-3.0.1-rt9.patched//kernel/rcutree_plugin.h
+---
+> diff -urpNa -X dontdiff linux-3.0.1-rt9/kernel/rcutree_plugin.h linux-3.0.1-rt9.patched/kernel/rcutree_plugin.h
+33c33
+< +++ linux-3.0.1-rt9.patched//kernel/rcutree_plugin.h	2011-08-12 14:33:21.000000000 -0700
+---
+> +++ linux-3.0.1-rt9.patched/kernel/rcutree_plugin.h	2011-08-12 14:33:21.000000000 -0700
