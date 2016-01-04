@@ -77,7 +77,7 @@ function require {
   then
     die "error calling require()"
   else
-    hash $1 > /dev/null 2>&1 || die "Please install $1"
+    hash $1 &> /dev/null || die "Please install $1"
   fi
 }
 
@@ -210,6 +210,7 @@ then
   #for version in $(find $PATCHDIR -maxdepth 1 -mindepth 1 -type d)
   for version in *
   do
+    echo $version
     stacks=$(find $FTPDST/$version -name "*.tar")
     for i in $stacks
     do
@@ -225,13 +226,13 @@ then
          [[ ${rtversion} =~ 3\.2\.43\-rt63\-feat[12] ]] ||
          [[ ${rtversion} =~ 3\.4\.41\-rt55\-feat[123] ]]
       then
-        echo "skipping version ${baseversion} <- ${rtversion}"
+        echo "--- skipping version ${baseversion} <- ${rtversion} ---"
         continue
       fi
 
       echo "unpacking $rtversion"
       dstfolder=$PATCHDIR/$version/$rtversion
-      mkdir $dstfolder
+      mkdir $dstfolder &> /dev/null
       if [ $? = 0 ] ; then
         tar -xf $i -C $dstfolder || die "tar failed"
         mv $dstfolder/patches/* $dstfolder || die "mv failed"
@@ -261,7 +262,7 @@ then
           fi
         done
       else
-        echo "Already existing, i'll just skip this one..."
+        echo "  -> already existing, i'll just skip this one..."
       fi
     done
   done
@@ -312,7 +313,7 @@ then
 	# Apply quilt patch stack
 
     # Try to run quiltimport
-	git quiltimport --patches ${dir} --author 'Unknown Author <unknown@author.com>' 2>&1 > /dev/null
+	git quiltimport --patches ${dir} --author 'Unknown Author <unknown@author.com>' &> /dev/null
 
 	if [ $? -eq 0 ]; then
 	  echo "${baseversion} <- ${rtversion}" >> ../quiltimport-success
@@ -328,14 +329,14 @@ then
       export QUILT_PATCHES=${dir}
 	  echo "manually applying Patch stack ${rtversion} on ${baseversion}"
       # for dry run
-      quilt push -a 2>&1 > /dev/null || die "quilt push failed for ${rtversion}"
+      quilt push -a &> /dev/null || die "quilt push failed for ${rtversion}"
 	  #while quilt next
 	  #do
       #  quilt push
       #done
 	  unset QUILT_PATCHES
-	  git add -A 2>&1 > /dev/null || die "git add failed"
-	  git commit -a -s -m "Yeah, Patches Applied." 2>&1 > /dev/null || die "git commit failed"
+	  git add -A &> /dev/null || die "git add failed"
+	  git commit -a -s -m "Yeah, Patches Applied." &> /dev/null || die "git commit failed"
 
 	  # delete quilt stack
 	  rm -rf .pc
