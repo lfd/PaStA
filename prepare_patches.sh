@@ -87,6 +87,8 @@ function show_help {
   echo "    -c : Clone or pull Linux stable Kernel $STABLE_GIT"
   echo "    -u : Unpack patches and prepare quilt stacks"
   echo "    -b : Apply all quilt patches"
+  echo ""
+  echo "First run -d, then -c, then -u, then -b or combine them"
   exit 0
 }
 
