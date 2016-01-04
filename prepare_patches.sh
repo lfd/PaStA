@@ -178,20 +178,22 @@ then
   rm -rf ${KERNELDST} || die "git cleanup failed"
   if [ -d "${KERNELDST}-mirror/.git" ]
   then
-	cd ${KERNELDST}-mirror
-	git pull || die "git pull failed"
-	cd ..
+    echo "mirror repo already existing, pulling..."
+    cd ${KERNELDST}-mirror
+    git pull || die "git pull failed"
+    cd ..
   else
+    echo "mirror repo not existing, cloning..."
     git clone ${STABLE_GIT} ${KERNELDST}-mirror || die "git clone failed"
   fi
 
   rm -rf ${KERNELDST} || die "error removing kernel workdir"
   echo "copying kernel to working directory..."
   cp -a ${KERNELDST}-mirror ${KERNELDST}
-  echo "git up to date"
+  echo "linux-stable git up to date"
 fi
 
-if [  "$UNPACK_PATCHES" = true ]
+if [ "$UNPACK_PATCHES" = true ]
 then
   echo "Unpacking quilt patchstacks"
 
