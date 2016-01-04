@@ -56,6 +56,8 @@ CLONE_STABLE_KERNEL=false
 UNPACK_PATCHES=false
 BRANCH_AND_PATCH=false
 
+HELP=true
+
 LOCATION="ftp://ftp.kernel.org/pub/linux/kernel/projects/rt/"
 STABLE_GIT="git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git"
 BRANCH=false
@@ -64,6 +66,64 @@ BASEDIR=$PWD
 FTPDST=$BASEDIR/rt-ftp
 KERNELDST=$BASEDIR/linux
 PATCHDIR=$BASEDIR/quilt-stacks
+
+function die {
+  echo "$@" 1>&2;
+  exit -1;
+}
+
+function require {
+  if [ -z $1 ]
+  then
+    die "error calling require()"
+  else
+    hash $1 > /dev/null 2>&1 || die "Please install $1"
+  fi
+}
+
+function show_help {
+  echo "$0: [-d] [-c] [-u] [-b]"
+  echo "    -d : Create or update mirror of $LOCATION"
+  echo "    -c : Clone or pull Linux stable Kernel $STABLE_GIT"
+  echo "    -u : Unpack patches and prepare quilt stacks"
+  echo "    -b : Apply all quilt patches"
+  exit 0
+}
+
+####### SCRIPT START #######
+
+# Required for downloading the Patches. Allows parallel downloads
+require lftp
+require git
+require rsync
+require quilt
+
+while getopts "h?dcub" opt; do
+  case "$opt" in
+    h|\?)
+      ;;
+
+   d) DOWNLOAD=true
+      HELP=false
+      ;;
+
+   c) CLONE_STABLE_KERNEL=true
+      HELP=false
+      ;;
+
+   u) UNPACK_PATCHES=true
+      HELP=false
+      ;;
+
+   b) BRANCH_AND_PATCH=true
+      HELP=false
+      ;;
+  esac
+done
+
+if [[ "$HELP" = true ]] ; then
+  show_help
+fi
 
 # Define list of versions where to strip the mismatched content-type headers
 declare -a ContentTypeMismatch=(
@@ -92,30 +152,6 @@ declare -a ContentTypeMismatch=(
 2.6.23-rt2
 2.6.23-rt3
 )
-
-function die {
-  echo "$@" 1>&2;
-  exit -1;
-}
-
-function require {
-  if [ -z $1 ]
-  then
-    echo "error calling require()";
-	exit -1
-  else
-    hash $1 > /dev/null 2>&1 || {
-      echo "Please install $1"
-    	exit -1
-    }
-  fi
-}
-
-# Required for downloading the Patches. Allows parallel downloads
-require lftp
-require git
-require rsync
-require quilt
 
 if [ "$DOWNLOAD" = true ]
 then
