@@ -157,20 +157,20 @@ if [ "$DOWNLOAD" = true ]
 then
   mkdir -p $FTPDST-mirror || die "mkdir failed. check permissions"
 
-  echo "syncing rt patch mirror"
+  echo "syncing rt patch mirror..."
   lftp -e "mirror --continue --scan-all-first --depth-first --only-missing --parallel=10 --verbose ${LOCATION} ${FTPDST}-mirror ; exit" || die "downloading patches failed"
 
   rm -rf ${FTPDST} || die "rm ${FTPDST} failed"
   mkdir -p ${FTPDST} || die "mkdir failed. check permissions"
 
-  echo "copying to local workdir"
+  echo "copying to local workdir..."
   rsync -r --include '*/' --include '*.xz' --exclude '*' ${FTPDST}-mirror/ ${FTPDST}/
 
   echo "unpacking patches..."
   # unpack everything else
-  find $FTPDST -type f -name "*.xz" -exec xz -d -f {} \;
+  find $FTPDST -type f -name "*.xz" -print0 | xargs -n1 -P8 -0 xz -d -f
 
-  echo "patches up to date"
+  echo "patch mirror up to date"
 fi
 
 if [ "$CLONE_STABLE_KERNEL" = true ]
