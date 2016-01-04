@@ -210,63 +210,60 @@ then
   #for version in $(find $PATCHDIR -maxdepth 1 -mindepth 1 -type d)
   for version in *
   do
-    #echo $version
-	stacks=$(find $FTPDST/$version -name "*.tar")
-	for i in $stacks
-	do
-	  patchname=$(basename $i)
-	  rtversion=$(echo $patchname | sed -e 's/^patch\(\|es\)-//' | sed -e 's/\(-broken-out\|\)\.tar$//')
-	  baseversion=$(sed -e 's/-rt[0-9]\+\(\|-feat[0-9]\+\)$//' <<< $rtversion)
+    stacks=$(find $FTPDST/$version -name "*.tar")
+    for i in $stacks
+    do
+      patchname=$(basename $i)
+      rtversion=$(echo $patchname | sed -e 's/^patch\(\|es\)-//' | sed -e 's/\(-broken-out\|\)\.tar$//')
+      baseversion=$(sed -e 's/-rt[0-9]\+\(\|-feat[0-9]\+\)$//' <<< $rtversion)
 
-	  # Skip certain patches (as mentioned above)
-	  # Additionally, skip all 3.x.y.z 'extended' versions (Where to get their sources??)
-	  if [[ ${baseversion} =~ ^3\.[0-9]+\.[0-9]+\.[0-9]+$ ]] ||
-		 [[ ${rtversion} = "3.0.14-rt31" ]] ||
-		 [[ ${rtversion} =~ 3\.2\-rc1\-52e4c2a05\-rt[12]  ]] ||
-		 [[ ${rtversion} =~ 3\.2\.43\-rt63\-feat[12] ]] ||
-		 [[ ${rtversion} =~ 3\.4\.41\-rt55\-feat[123] ]]
-	  then
-	    echo "skipping version ${baseversion} <- ${rtversion}"
-	    continue
-	  fi
-	  #####
+      # Skip certain patches (as mentioned above)
+      # Additionally, skip all 3.x.y.z 'extended' versions (Where to get their sources??)
+      if [[ ${baseversion} =~ ^3\.[0-9]+\.[0-9]+\.[0-9]+$ ]] ||
+         [[ ${rtversion} = "3.0.14-rt31" ]] ||
+         [[ ${rtversion} =~ 3\.2\-rc1\-52e4c2a05\-rt[12]  ]] ||
+         [[ ${rtversion} =~ 3\.2\.43\-rt63\-feat[12] ]] ||
+         [[ ${rtversion} =~ 3\.4\.41\-rt55\-feat[123] ]]
+      then
+        echo "skipping version ${baseversion} <- ${rtversion}"
+        continue
+      fi
 
-	  echo "unpacking $rtversion"
-	  dstfolder=$PATCHDIR/$version/$rtversion
-	  mkdir $dstfolder
-	  if [ $? = 0 ] ; then
-	    tar -xf $i -C $dstfolder || die "tar failed"
-		mv $dstfolder/patches/* $dstfolder || die "mv failed"
-		rm -rf $dstfolder/patches
+      echo "unpacking $rtversion"
+      dstfolder=$PATCHDIR/$version/$rtversion
+      mkdir $dstfolder
+      if [ $? = 0 ] ; then
+        tar -xf $i -C $dstfolder || die "tar failed"
+        mv $dstfolder/patches/* $dstfolder || die "mv failed"
+        rm -rf $dstfolder/patches
 
-	    # Manually patch origin.patch.bz2 of versions 2.6.29-rc8-rt[12]
-	    if [[ ${rtversion} =~ ^2\.6\.29\-rc8\-rt[12]$ ]]; then
-		  echo "Manually fixing ${rtversion}"
-		  rm ${dstfolder}/origin.patch.bz2
+        # Manually patch origin.patch.bz2 of versions 2.6.29-rc8-rt[12]
+        if [[ ${rtversion} =~ ^2\.6\.29\-rc8\-rt[12]$ ]]; then
+          echo "  -> Manually fixing ${rtversion}"
+          rm ${dstfolder}/origin.patch.bz2
           bzcat ${BASEDIR}/fixes/${baseversion}-rt-origin.patch.bz2 > ${dstfolder}/origin.patch
-		  patch ${dstfolder}/series ${BASEDIR}/fixes/2.6.29-rc8-rt-series-fix.patch
-	    fi
+          patch ${dstfolder}/series ${BASEDIR}/fixes/2.6.29-rc8-rt-series-fix.patch
+        fi
 
         # Manually Fix 3.0.1-rt9,10 as they have // in their diffs which confuses quiltimport
-	    if [[ ${rtversion} =~ ^3\.0\.1\-rt(10|11)$ ]]; then
-		  echo "Manually fixing ${rtversion}"
-		  patch ${dstfolder}/_paul_e__mckenney_-eliminate_-_rcu_boosted.patch \
-		    ${BASEDIR}/fixes/3.0.1-rt-_paul_e__mckenney_-eliminate_-_rcu_boosted.patch
-		fi
+        if [[ ${rtversion} =~ ^3\.0\.1\-rt(10|11)$ ]]; then
+          echo "  -> Manually fixing ${rtversion}"
+          patch ${dstfolder}/_paul_e__mckenney_-eliminate_-_rcu_boosted.patch \
+                ${BASEDIR}/fixes/3.0.1-rt-_paul_e__mckenney_-eliminate_-_rcu_boosted.patch
+        fi
 
         # Check if we have to strip the content-type: mail stuff
-	    for item in "${ContentTypeMismatch[@]}"; do
+        for item in "${ContentTypeMismatch[@]}"; do
           if [ $item = $rtversion ]; then
-		    echo "stripping content-type line..."
-			find ${dstfolder} -type f -exec sed -i.old \{\} -e '/^Content-Type: multipart\/signed/d' \;\
-			                          -exec rm \{\}.old \;
-		  fi
-	    done
-
+            echo "  -> stripping errorneous content-type line..."
+            find ${dstfolder} -type f -exec sed -i.old \{\} -e '/^Content-Type: multipart\/signed/d' \;\
+                 -exec rm \{\}.old \;
+          fi
+        done
       else
-	    echo "Already existing, i'll just skip this one..."
-	  fi
-	done
+        echo "Already existing, i'll just skip this one..."
+      fi
+    done
   done
   echo "quilt stacks sucessfully unpacked"
 fi
