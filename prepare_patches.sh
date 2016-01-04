@@ -272,8 +272,8 @@ if [ "$BRANCH_AND_PATCH" = true ]
 then
   cd linux
   
-  git reset --hard || die "git reset failed"
-  git clean -d -f -x || die "git clean failed"
+  git reset --hard &> /dev/null || die "git reset failed"
+  git clean -d -f -x &> /dev/null || die "git clean failed"
 
   for series in $(find $PATCHDIR -type f -name "series" | sort -V)
   do
@@ -288,7 +288,8 @@ then
     fi
 
     # Checkout analysis branch based on mainline version
-    git checkout -b analysis-${rtversion} v${baseversion} || die "checkout of version $baseversion failed"
+    echo "Working on $rtversion..."
+    git checkout -b analysis-${rtversion} v${baseversion} &> /dev/null || die "checkout of version $baseversion failed" &> /dev/null
 
     # Apply quilt patch stack
 
