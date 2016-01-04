@@ -210,7 +210,6 @@ then
   #for version in $(find $PATCHDIR -maxdepth 1 -mindepth 1 -type d)
   for version in *
   do
-    echo $version
     stacks=$(find $FTPDST/$version -name "*.tar")
     for i in $stacks
     do
@@ -269,8 +268,6 @@ then
   echo "quilt stacks sucessfully unpacked"
 fi
 
-
-skip=0
 if [ "$BRANCH_AND_PATCH" = true ]
 then
   cd linux
@@ -280,67 +277,45 @@ then
 
   for series in $(find $PATCHDIR -type f -name "series" | sort -V)
   do
-	dir=$(dirname ${series})
-	rtversion=${dir##*/}
-	baseversion=$(sed -e 's/-rt[0-9]\+\(\|-feat[0-9]\+\)$//' <<< $rtversion)
+    dir=$(dirname ${series})
+    rtversion=${dir##*/}
+    baseversion=$(sed -e 's/-rt[0-9]\+\(\|-feat[0-9]\+\)$//' <<< $rtversion)
 
     # special treatment for 3.12.0 and 3.14-0
-	# ... There's absolutely no version nomenclature consistency in PreemptRT...
-    if [ "$baseversion" = "3.12.0" ] || [ "$baseversion" = "3.14.0" ]
-	then
-	  baseversion=$(sed -e 's/\.0$//' <<< $baseversion)
-	fi
-
-	#echo "${baseversion} <- ${rtversion}"
-
-	#if [[ $baseversion =~ ^2\..*  ]]; then
-	#  echo "skipping $rtversion"
-	#  continue
-	#fi
-	if [ "$skip" = 1 ]; then
-	  if [ "$rtversion" = "3.0-rc7-rt0" ]; then
-	    skip=0
-		echo "hooking in at $rtversion"
-	  else
-	    echo "skipping $rtversion"
-	    continue
-      fi
-	fi
+    # ... There's absolutely no version nomenclature consistency in PreemptRT...
+    if [ "$baseversion" = "3.12.0" ] || [ "$baseversion" = "3.14.0" ]; then
+        baseversion=$(sed -e 's/\.0$//' <<< $baseversion)
+    fi
 
     # Checkout analysis branch based on mainline version
-	git checkout -b analysis-${rtversion} v${baseversion} || die "checkout of version $baseversion failed"
+    git checkout -b analysis-${rtversion} v${baseversion} || die "checkout of version $baseversion failed"
 
-	# Apply quilt patch stack
+    # Apply quilt patch stack
 
     # Try to run quiltimport
-	git quiltimport --patches ${dir} --author 'Unknown Author <unknown@author.com>' &> /dev/null
+    git quiltimport --patches ${dir} --author 'Unknown Author <unknown@author.com>' &> /dev/null
 
-	if [ $? -eq 0 ]; then
-	  echo "${baseversion} <- ${rtversion}" >> ../quiltimport-success
-	else
-	  echo "${baseversion} <- ${rtversion}" >> ../quiltimport-fail
-	  # Undo all changes already made by quiltimport
-	  git reset --hard
-	  git clean -d -f -x
-	  git rebase --abort
-	  git reset --hard v${baseversion}
-	  
-	  # Manually apply all patches using quilt
+    if [ $? -eq 0 ]; then
+      echo "${baseversion} <- ${rtversion}" >> ../quiltimport-success
+    else
+      # THIS CASE IS ONLY FOR DEBUGGING. IN REAL LIFE EVERYTHING SHOULD SUCCEED!
+      echo "${baseversion} <- ${rtversion}" >> ../quiltimport-fail
+      # Undo all changes already made by quiltimport
+      git reset --hard
+      git clean -d -f -x
+      git rebase --abort
+      git reset --hard v${baseversion}
+      
+      # Manually apply all patches using quilt
       export QUILT_PATCHES=${dir}
-	  echo "manually applying Patch stack ${rtversion} on ${baseversion}"
-      # for dry run
+      echo "manually applying Patch stack ${rtversion} on ${baseversion}"
       quilt push -a &> /dev/null || die "quilt push failed for ${rtversion}"
-	  #while quilt next
-	  #do
-      #  quilt push
-      #done
-	  unset QUILT_PATCHES
-	  git add -A &> /dev/null || die "git add failed"
-	  git commit -a -s -m "Yeah, Patches Applied." &> /dev/null || die "git commit failed"
-
-	  # delete quilt stack
-	  rm -rf .pc
-	fi
+      unset QUILT_PATCHES
+      git add -A &> /dev/null || die "git add failed"
+      git commit -a -s -m "Yeah, Patches Applied." &> /dev/null || die "git commit failed"
+      # delete quilt stack
+      rm -rf .pc
+    fi
   done
   cd ..
 fi
