@@ -15,12 +15,12 @@
 #    
 #
 # Bemerkungen:
-# zu 4.2: git quiltimport ist nur partiell moeglich, da viele Patche sehr kaputt
+# zu 4.2: git quiltimport ist nur partiell moeglich, da viele Patches sehr kaputt
 #         sind. Bei PreemptRT war es frueher gaengig, bei Patches keinen Autor
 #         anzugeben. Wir verwenden dann einen "unknown" Platzhalter Autor.
 #         Strategie:
 #          1. Versuche, ob quiltimport erfolgreich ist
-#          2. Wenn nicht, applye manuell
+#          2. Wenn nicht, applye manuell (Notloesung die im Idealfall nicht vorkommt)
 #         
 #         Viele Patches kommen ohne Autor, Subject, Datum, ... Es wird dann 
 #         beim Committen folgende Strategie verwendet:
