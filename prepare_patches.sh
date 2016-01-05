@@ -60,7 +60,6 @@ HELP=true
 
 LOCATION="ftp://ftp.kernel.org/pub/linux/kernel/projects/rt/"
 STABLE_GIT="git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git"
-BRANCH=false
 
 BASEDIR=$PWD
 FTPDST=$BASEDIR/rt-ftp
