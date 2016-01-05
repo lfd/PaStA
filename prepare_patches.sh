@@ -51,34 +51,14 @@
 # Corrupted nonrecoverable versions:
 # - 3.0.14-rt31 (Hunk failed, non recoverable, we have to skip this patch)
 
+source common.sh
+
 DOWNLOAD=false
 CLONE_STABLE_KERNEL=false
 UNPACK_PATCHES=false
 BRANCH_AND_PATCH=false
 
 HELP=true
-
-LOCATION="ftp://ftp.kernel.org/pub/linux/kernel/projects/rt/"
-STABLE_GIT="git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git"
-
-BASEDIR=$PWD
-FTPDST=$BASEDIR/rt-ftp
-KERNELDST=$BASEDIR/linux
-PATCHDIR=$BASEDIR/quilt-stacks
-
-function die {
-  echo "$@" 1>&2;
-  exit -1;
-}
-
-function require {
-  if [ -z $1 ]
-  then
-    die "error calling require()"
-  else
-    hash $1 &> /dev/null || die "Please install $1"
-  fi
-}
 
 function show_help {
   echo "$0: [-d] [-c] [-u] [-b]"
