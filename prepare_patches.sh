@@ -139,7 +139,8 @@ then
   mkdir -p $FTPDST-mirror || die "mkdir failed. check permissions"
 
   echo "syncing rt patch mirror..."
-  lftp -e "mirror --continue --scan-all-first --depth-first --only-missing --parallel=10 --verbose ${LOCATION} ${FTPDST}-mirror ; exit" || die "downloading patches failed"
+  lftp -e "mirror --continue --depth-first --only-missing --parallel=10 --verbose ${LOCATION} ${FTPDST}-mirror ; exit"  || \
+    die "downloading patches failed"
 
   rm -rf ${FTPDST} || die "rm ${FTPDST} failed"
   mkdir -p ${FTPDST} || die "mkdir failed. check permissions"
@@ -220,23 +221,27 @@ then
         if [[ ${rtversion} =~ ^2\.6\.29\-rc8\-rt[12]$ ]]; then
           echo "  -> Manually fixing ${rtversion}"
           rm ${dstfolder}/origin.patch.bz2
-          bzcat ${BASEDIR}/fixes/${baseversion}-rt-origin.patch.bz2 > ${dstfolder}/origin.patch
-          patch ${dstfolder}/series ${BASEDIR}/fixes/2.6.29-rc8-rt-series-fix.patch
+          bzcat ${BASEDIR}/fixes/${baseversion}-rt-origin.patch.bz2 > ${dstfolder}/origin.patch || \
+		    die "    -> unpacking patch failed"
+          patch ${dstfolder}/series ${BASEDIR}/fixes/2.6.29-rc8-rt-series-fix.patch || \
+		    die "    -> patching failed"
         fi
 
         # Manually Fix 3.0.1-rt9,10 as they have // in their diffs which confuses quiltimport
         if [[ ${rtversion} =~ ^3\.0\.1\-rt(10|11)$ ]]; then
           echo "  -> Manually fixing ${rtversion}"
           patch ${dstfolder}/_paul_e__mckenney_-eliminate_-_rcu_boosted.patch \
-                ${BASEDIR}/fixes/3.0.1-rt-_paul_e__mckenney_-eliminate_-_rcu_boosted.patch
+                ${BASEDIR}/fixes/3.0.1-rt-_paul_e__mckenney_-eliminate_-_rcu_boosted.patch || \
+				  die "    -> patching failed"
         fi
 
         # Check if we have to strip the content-type: mail stuff
         for item in "${ContentTypeMismatch[@]}"; do
           if [ $item = $rtversion ]; then
             echo "  -> stripping errorneous content-type line..."
-            find ${dstfolder} -type f -exec sed -i.old \{\} -e '/^Content-Type: multipart\/signed/d' \;\
-                 -exec rm \{\}.old \;
+            find ${dstfolder} -type f -exec \
+		      sed -i.old \{\} -e '/^Content-Type: multipart\/signed/d' \;\
+                  -exec rm \{\}.old \;
           fi
         done
       else
@@ -268,12 +273,15 @@ then
 
     # Checkout analysis branch based on mainline version
     echo "Working on $rtversion..."
-    git checkout -b analysis-${rtversion} v${baseversion} &> /dev/null || die "checkout of version $baseversion failed" &> /dev/null
+    git checkout -b analysis-${rtversion} v${baseversion} &> /dev/null || \
+	  die "checkout of version $baseversion failed"
 
     # Apply quilt patch stack
 
     # Try to run quiltimport
-    git quiltimport --patches ${dir} --author 'Unknown Author <unknown@author.com>' &> /dev/null
+    git quiltimport --patches ${dir} \
+	                --author 'Unknown Author <unknown@author.com>' \
+	  &> /dev/null
 
     if [ $? -eq 0 ]; then
       echo "${baseversion} <- ${rtversion}" >> ../quiltimport-success
