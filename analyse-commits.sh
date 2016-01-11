@@ -35,7 +35,7 @@ done
 noc="number_of_commits"
 cat > $noc <<EOL
 # Absolute number of commits of the RT Patch
-# Increasing number     Version String    Number of commits
+# Increasing number    Number of commits    Version String
 EOL
 
 cd ..
