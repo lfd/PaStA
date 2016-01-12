@@ -4,9 +4,10 @@ source common.sh
 
 require git
 require realpath
+require gnuplot
 
-#rm -rf subjects
-#mkdir subjects
+rm -rf subjects
+mkdir subjects
 SUBJECTS=$(realpath subjects)
 cd $KERNELDST
 
@@ -14,8 +15,6 @@ branches=$(git branch --list | cut -b 3- | grep analysis | sort -V)
 
 for i in $branches
 do
-
-continue
   rtversion=$(echo $i | sed 's/analysis\-\(.*\)/\1/')
   baseversion=$(echo $rtversion | sed 's/\(.*\)\-rt.*/\1/')
   
