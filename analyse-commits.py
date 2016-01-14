@@ -22,6 +22,9 @@ class KernelVersion:
 
     and is able to compare versions of the class
     """
+
+    versionDelimiter = re.compile('\.|\-')
+
     def __init__(self, versionString):
         self.versionString = versionString
         self.version = []
@@ -29,7 +32,7 @@ class KernelVersion:
         self.extra = ''
 
         # Split array into version numbers, RC and Extraversion
-        parts = re.compile('\.|\-').split(versionString)
+        parts = self.versionDelimiter.split(versionString)
 
         # Get versions
         cntr = 0
@@ -40,7 +43,7 @@ class KernelVersion:
             else:
                 break
 
-        # Remove leading '.0's'
+        # Remove trailing '.0's'
         while (self.version[-1] == 0):
             self.version.pop()
 
@@ -76,6 +79,9 @@ class KernelVersion:
         left = self.version[0:num]
         right = other.version[0:num]
 
+        # Fillup trailing zeros up to num. This is necessary, as we want to be able to compare versions like
+        #   3.12.0     , 3
+        #   3.12.0.0.1 , 3
         while (len(left) != num ):
             left.append(0)
 
@@ -153,8 +159,9 @@ def analyseNumCommits(patchStackList):
     f.write('# no    baseVersion     patchVersion     numCommits\n')
     curVersion = KernelVersion('0.1')
     xtics = []
-    no = 1
-    for i in patchStackList:
+
+    for (no,i) in enumerate(patchStackList):
+        no += 1
 
         if i.kernelVersion.baseVersionEquals(KernelVersion('2.6'), 2):
             numMajor = 3
@@ -169,7 +176,7 @@ def analyseNumCommits(patchStackList):
                 + ' "' + i.baseVersion + '" '
                 + '"' + i.patchVersion + '" '
                 + str(i.numCommits()) + '\n')
-        no += 1
+
     f.close()
 
     location = gnuplot_prefix + plot_num_commits
@@ -201,7 +208,7 @@ patchStackList = []
 
 for head in repo.heads:
     # Skip if branch name does not start with analysis-
-    if (head.name.startswith(branch_prefix) == False):
+    if (not head.name.startswith(branch_prefix)):
         continue
 
     # get rtversion and baseversion
