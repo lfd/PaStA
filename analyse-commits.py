@@ -5,13 +5,14 @@ from git import Repo
 import re
 from subprocess import call
 
-branch_prefix = 'analysis-'
-base_prefix = 'v'
-repo_location = './linux/'
+BRANCH_PREFIX = 'analysis-'
+BASE_PREFIX = 'v'
+REPO_LOCATION = './linux/'
 
-gnuplot_prefix = './plots/'
-data_num_commits = 'num_commits.dat'
-plot_num_commits = 'num_commits.gnuplot'
+GNUPLOT_PREFIX = './plots/'
+DATA_NUM_COMMITS = 'num_commits.dat'
+PLOT_NUM_COMMITS = 'num_commits.gnuplot'
+
 
 class KernelVersion:
     """ Kernel Version
@@ -25,55 +26,51 @@ class KernelVersion:
 
     versionDelimiter = re.compile('\.|\-')
 
-    def __init__(self, versionString):
-        self.versionString = versionString
+    def __init__(self, version_string):
+        self.versionString = version_string
         self.version = []
         self.rc = ''
         self.extra = ''
 
         # Split array into version numbers, RC and Extraversion
-        parts = self.versionDelimiter.split(versionString)
+        parts = self.versionDelimiter.split(version_string)
 
         # Get versions
-        cntr = 0
-        for i in parts: # get version numbers
-            if i.isdigit():
-                self.version.append(int(i))
-                cntr += 1
+        while len(parts):
+            if parts[0].isdigit():
+                self.version.append(parts.pop(0))
             else:
                 break
 
         # Remove trailing '.0's'
-        while (self.version[-1] == 0):
+        while self.version[-1] == 0:
             self.version.pop()
 
         # Get optional RC version
-        if (cntr != len(parts) and re.compile('^rc[0-9]+$').match(parts[cntr])):
-            self.rc = parts[cntr]
-            cntr += 1
+        if len(parts) and re.compile('^rc[0-9]+$').match(parts[0]):
+            self.rc = parts.pop(0)
 
         # Get optional Extraversion
-        if (cntr != len(parts)):
-            self.extra = parts[cntr]
-            cntr += 1
+        if len(parts):
+            self.extra = parts.pop(0)
 
         # This should be the end now
-        if (cntr != len(parts)):
-            raise Exception('Unable to parse version string: ' + versionString)
+        if len(parts):
+            raise Exception('Unable to parse version string: ' + version_string)
 
-    def baseString(self):
+    def base_string(self):
         """ Returns the shortest possible version string of the base version (3.12.0-rc4-rt5 -> 3.12) """
         return ".".join(map(str, self.version))
 
-    def baseVersionEquals(self, other, num):
+    def base_version_equals(self, other, num):
         """
         :param other: Other KernelVersion to compare against
         :param num: Number of subversions to be equal
         :return: True or false
 
         Examples:
-        KernelVersion('3.12.0-rc4-rt5').baseVersionEquals(KernelVersion('3.12'), 3) would be true (as 3.12 is the same as 3.12.0)
-        KernelVersion('3.12.0-rc4-rt5').baseVersionEquals(KernelVersion('3.12.1'), 3) would be false
+        KernelVersion('3.12.0-rc4-rt5').baseVersionEquals(KernelVersion('3.12'), 3) = true ( 3.12 is the same as 3.12.0)
+        KernelVersion('3.12.0-rc4-rt5').baseVersionEquals(KernelVersion('3.12.1'), 3) = false
         """
 
         left = self.version[0:num]
@@ -82,10 +79,10 @@ class KernelVersion:
         # Fillup trailing zeros up to num. This is necessary, as we want to be able to compare versions like
         #   3.12.0     , 3
         #   3.12.0.0.1 , 3
-        while (len(left) != num ):
+        while len(left) != num:
             left.append(0)
 
-        while (len(right) != num ):
+        while len(right) != num:
             right.append(0)
 
         return left == right
@@ -95,91 +92,100 @@ class KernelVersion:
         :param other: KernelVersion to compare against
         :return: Returns True, if the left hand version is an older version
         """
-        l = LooseVersion(self.baseString())
-        r = LooseVersion(other.baseString())
+        l = LooseVersion(self.base_string())
+        r = LooseVersion(other.base_string())
 
-        if (l < r):
+        if l < r:
             return True
-        elif (l > r):
+        elif l > r:
             return False
 
         # Version numbers equal so far. Check RC String
         # A version without a RC-String is the newer one
-        if (not self.rc and not not other.rc):
+        if not self.rc and not not other.rc:
             return False
-        elif (not other.rc and not not self.rc):
+        elif not other.rc and not not self.rc:
             return True
         # both have 'some' version. Compare it.
-        if (self.rc < other.rc):
+        if self.rc < other.rc:
             return True
-        elif (other.rc < self.rc):
+        elif other.rc < self.rc:
             return False
 
         # We do have the same RC Version. Now check the extraversion
         # The one having an extraversion is considered to be the newer one
-        if (not self.extra and not not other.extra):
+        if not self.extra and not not other.extra:
             return True
-        elif (not other.extra and not not self.extra):
+        elif not other.extra and not not self.extra:
             return False
 
         # both have 'some' extraversion. Compare it.
         return self.extra < other.extra
 
+    def __str__(self):
+        """
+        :return: Minimum possible version string
+        """
+        retval = self.base_string()
+        if len(self.rc):
+            retval += '-' + self.rc
 
+        if len(self.extra):
+            retval += '-' + self.extra
+
+        return retval
 
 
 class PatchStack:
-    def __init__(self, repo, baseVersion, baseTag, patchVersion, branchName):
-        self.baseVersion = baseVersion
-        self.baseTag = baseTag
-        self.patchVersion = patchVersion
-        self.branchName = branchName
-        self.kernelVersion = KernelVersion(patchVersion)
+    def __init__(self, repo, base_version, base_tag, patch_version, branch_name):
+        self.base_version = base_version
+        self.base_tag = base_tag
+        self.patch_version = patch_version
+        self.branch_name = branch_name
+        self.kernel_version = KernelVersion(patch_version)
 
         # get number of commits between baseversion and rtversion
-        c = repo.git.log('--pretty=format:%s', baseTag + '...' + branchName)
+        c = repo.git.log('--pretty=format:%s', base_tag + '...' + branch_name)
         self.commitlog = c.split('\n')
 
     def __lt__(self, other):
-        return self.kernelVersion < other.kernelVersion
+        return self.kernel_version < other.kernel_version
 
-    def numCommits(self):
+    def num_commits(self):
         return len(self.commitlog)
 
     def __repr__(self):
-        return self.patchversion + ' (' + str(self.numCommits()) + ')'
+        return self.patch_version + ' (' + str(self.num_commits()) + ')'
 
 
-
-
-def analyseNumCommits(patchStackList):
+def analyse_num_commits(patch_stack_list):
 
     # Create data file
-    f = open(gnuplot_prefix + data_num_commits, 'w')
+    f = open(GNUPLOT_PREFIX + DATA_NUM_COMMITS, 'w')
     f.write('# no    baseVersion     patchVersion     numCommits\n')
-    curVersion = KernelVersion('0.1')
+    cur_version = KernelVersion('0.1')
     xtics = []
 
-    for (no,i) in enumerate(patchStackList):
+    for (no, i) in enumerate(patch_stack_list):
         no += 1
 
-        if i.kernelVersion.baseVersionEquals(KernelVersion('2.6'), 2):
-            numMajor = 3
+        if i.kernel_version.base_version_equals(KernelVersion('2.6'), 2):
+            num_major = 3
         else:
-            numMajor = 2
+            num_major = 2
 
-        if not i.kernelVersion.baseVersionEquals(curVersion, numMajor):
-            xtics.append( (i.patchVersion, no) )
-            curVersion = i.kernelVersion
+        if not i.kernel_version.base_version_equals(cur_version, num_major):
+            xtics.append((i.patch_version, no))
+            cur_version = i.kernel_version
 
-        f.write(str(no)
-                + ' "' + i.baseVersion + '" '
-                + '"' + i.patchVersion + '" '
-                + str(i.numCommits()) + '\n')
+        f.write(str(no) +
+                ' "' + i.base_version + '" ' +
+                '"' + i.patch_version + '" ' +
+                str(i.num_commits()) + '\n')
 
     f.close()
 
-    location = gnuplot_prefix + plot_num_commits
+    location = GNUPLOT_PREFIX + PLOT_NUM_COMMITS
     f = open(location, 'w')
     f.write("set title 'PreemptRT: Number of commits'\n"
             "#set terminal postscript eps enhanced color font 'Helvetica,10'\n"
@@ -195,43 +201,44 @@ def analyseNumCommits(patchStackList):
             ")\n")
 
     # final plot call
-    f.write("plot \"" + gnuplot_prefix + data_num_commits + "\" u 1:4 w points notitle\n")
-    f.write("pause -1 'foo'\n")
+    f.write("plot \"" + GNUPLOT_PREFIX + DATA_NUM_COMMITS + "\" u 1:4 w points notitle\n")
+    f.write("pause -1 'press key to exit'\n")
     f.close()
 
     # Call gnuplot
     call(["gnuplot", location])
 
-## Main ##
-repo = Repo(repo_location)
-patchStackList = []
+# Main
+repo = Repo(REPO_LOCATION)
+patch_stack_list = []
 
 for head in repo.heads:
     # Skip if branch name does not start with analysis-
-    if (not head.name.startswith(branch_prefix)):
+    if not head.name.startswith(BRANCH_PREFIX):
         continue
 
     # get rtversion and baseversion
-    branchName = head.name
-    patchVersion = re.compile(branch_prefix + '(.*)').search(branchName).group(1)
-    baseVersion = re.compile('(.*)-rt[0-9]*').search(patchVersion).group(1)
+    branch_name = head.name
+    patch_version = re.compile(BRANCH_PREFIX + '(.*)').search(branch_name).group(1)
+    base_version = re.compile('(.*)-rt[0-9]*').search(patch_version).group(1)
 
     # special treatments...
-    if (baseVersion == '3.12.0'):
-        baseVersion = '3.12'
-    if (baseVersion == '3.14.0'):
-        baseVersion = '3.14'
+    if base_version == '3.12.0':
+        base_version = '3.12'
+    if base_version == '3.14.0':
+        base_version = '3.14'
 
     # set base Tag
-    baseTag = base_prefix + baseVersion
+    base_tag = BASE_PREFIX + base_version
 
     # be a bit verbose
-    print('Working on ' + patchVersion + ' <- ' + baseVersion)
+    print('Working on ' + patch_version + ' <- ' + base_version)
 
-    p = PatchStack(repo, baseVersion, baseTag, patchVersion, branchName)
-    patchStackList.append(p)
+    p = PatchStack(repo, base_version, base_tag, patch_version, branch_name)
+    patch_stack_list.append(p)
 
 # Sort the stack by patchversion
-patchStackList.sort()
+patch_stack_list.sort()
 
-analyseNumCommits(patchStackList)
+# Run analyse_num_commits on the patchstack
+analyse_num_commits(patch_stack_list)
