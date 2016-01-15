@@ -58,9 +58,12 @@ class KernelVersion:
         if len(parts):
             raise Exception('Unable to parse version string: ' + version_string)
 
-    def base_string(self):
+    def base_string(self, num = -1):
         """ Returns the shortest possible version string of the base version (3.12.0-rc4-rt5 -> 3.12) """
-        return ".".join(map(str, self.version))
+        if num == -1:
+            return ".".join(map(str, self.version))
+        else:
+            return ".".join(map(str, self.version[0:num]))
 
     def base_version_equals(self, other, num):
         """
@@ -181,7 +184,8 @@ def analyse_num_commits(patch_stack_list):
         f.write(str(no) +
                 ' "' + i.base_version + '" ' +
                 '"' + i.patch_version + '" ' +
-                str(i.num_commits()) + '\n')
+                str(i.num_commits()) + ' ' +
+                '"' + i.kernel_version.base_string(2) + '"' + '\n')
 
     f.close()
 
