@@ -7,6 +7,7 @@ BASEDIR=$PWD
 FTPDST=$BASEDIR/rt-ftp
 KERNELDST=$BASEDIR/linux
 PATCHDIR=$BASEDIR/quilt-stacks
+TIMESTAMPS=$BASEDIR/resources/timestamps-byPatchModified
 
 function die {
   echo "$@" 1>&2;

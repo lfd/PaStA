@@ -64,7 +64,7 @@ function show_help {
   echo "$0: [-d] [-c] [-u] [-b]"
   echo "    -d : Create or update mirror of $LOCATION"
   echo "    -c : Clone or pull Linux stable Kernel $STABLE_GIT"
-  echo "    -u : Unpack patches and prepare quilt stacks"
+  echo "    -u : Unpack patches and prepare quilt stacks, create file containing timestamps of the rt-patch"
   echo "    -b : Apply all quilt patches"
   echo ""
   echo "First run -d, then -c, then -u, then -b or combine them"
@@ -181,6 +181,7 @@ then
 
   # cleanup
   rm -rf $PATCHDIR || die "rm failed"
+  rm -rf $TIMESTAMPS || die "rm failed"
 
   mkdir $PATCHDIR || die "mkdir failed"
   cd $PATCHDIR
@@ -217,6 +218,11 @@ then
         mv $dstfolder/patches/* $dstfolder || die "mv failed"
         rm -rf $dstfolder/patches
 
+        # Get timestamp of the rtversion
+        ls -t ${dstfolder}/* | head -n 1 | \
+		  xargs -I Z -n 1 stat Z --format="%Y" | \
+		  xargs -I Z date --date="@Z" +"${rtversion} \"%F\"" >> $TIMESTAMPS.tmp
+
         # Manually patch origin.patch.bz2 of versions 2.6.29-rc8-rt[12]
         if [[ ${rtversion} =~ ^2\.6\.29\-rc8\-rt[12]$ ]]; then
           echo "  -> Manually fixing ${rtversion}"
@@ -249,6 +255,10 @@ then
       fi
     done
   done
+
+  sort -V ${TIMESTAMPS}.tmp > ${TIMESTAMPS}
+  rm ${TIMESTAMPS}.tmp
+
   echo "quilt stacks sucessfully unpacked"
 fi
 
