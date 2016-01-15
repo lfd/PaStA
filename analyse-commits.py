@@ -161,6 +161,15 @@ class PatchStack:
         return self.patch_version + ' (' + str(self.num_commits()) + ')'
 
 
+def get_date_of_commit(repo, commit):
+    """
+
+    :param repo: Git Repository
+    :param commit: Commit Tag (e.g. v4.3 or SHA hash)
+    :return: Author Date in format "YYYY-MM-DD"
+    """
+    return repo.git.log('--pretty=format:%ad', '--date=short', '-1', commit)
+
 def analyse_num_commits(patch_stack_list):
 
     # Create data file
