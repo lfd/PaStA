@@ -165,7 +165,7 @@ def analyse_num_commits(patch_stack_list):
 
     # Create data file
     f = open(GNUPLOT_PREFIX + DATA_NUM_COMMITS, 'w')
-    f.write('# no    baseVersion     patchVersion     numCommits\n')
+    f.write('# no  basbaseVersion    baseVersion     patchVersion     numCommits  \n')
     cur_version = KernelVersion('0.1')
     xtics = []
 
@@ -182,10 +182,10 @@ def analyse_num_commits(patch_stack_list):
             cur_version = i.kernel_version
 
         f.write(str(no) +
-                ' "' + i.base_version + '" ' +
+                ' "' + i.kernel_version.base_string(2) + '" ' +
+                '"' + i.base_version + '" ' +
                 '"' + i.patch_version + '" ' +
-                str(i.num_commits()) + ' ' +
-                '"' + i.kernel_version.base_string(2) + '"' + '\n')
+                str(i.num_commits()) + '\n')
 
     f.close()
 
@@ -205,7 +205,7 @@ def analyse_num_commits(patch_stack_list):
             ")\n")
 
     # final plot call
-    f.write("plot \"" + GNUPLOT_PREFIX + DATA_NUM_COMMITS + "\" u 1:4 w points notitle\n")
+    f.write("plot \"" + GNUPLOT_PREFIX + DATA_NUM_COMMITS + "\" u 1:5 w points notitle\n")
     f.write("pause -1 'press key to exit'\n")
     f.close()
 
