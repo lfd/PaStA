@@ -12,6 +12,7 @@ REPO_LOCATION = './linux/'
 GNUPLOT_PREFIX = './plots/'
 DATA_NUM_COMMITS = 'num_commits.dat'
 PLOT_NUM_COMMITS = 'num_commits.gnuplot'
+RT_VERSION_DICT = 'resources/releaseDateList.dat'
 
 
 class KernelVersion:
@@ -139,16 +140,22 @@ class KernelVersion:
         return retval
 
 
+class VersionPoint:
+    def __init__(self, commit, version, release_date):
+        self.commit = commit
+        self.version = version
+        self.release_date = release_date
+
+
 class PatchStack:
-    def __init__(self, repo, base_version, base_tag, patch_version, branch_name):
-        self.base_version = base_version
-        self.base_tag = base_tag
-        self.patch_version = patch_version
+    def __init__(self, repo, branch_name, base, patch):
         self.branch_name = branch_name
-        self.kernel_version = KernelVersion(patch_version)
+        self.base = base
+        self.patch = patch
+        self.kernel_version = KernelVersion(patch.version)
 
         # get number of commits between baseversion and rtversion
-        c = repo.git.log('--pretty=format:%s', base_tag + '...' + branch_name)
+        c = repo.git.log('--pretty=format:%s', base.commit + '...' + patch.commit)
         self.commitlog = c.split('\n')
 
     def __lt__(self, other):
@@ -158,23 +165,32 @@ class PatchStack:
         return len(self.commitlog)
 
     def __repr__(self):
-        return self.patch_version + ' (' + str(self.num_commits()) + ')'
+        return self.patch.version + ' (' + str(self.num_commits()) + ')'
+
+
+def file2dict(filename):
+    d = {}
+    with open(filename) as f:
+        for line in f:
+            (key, val) = line.split()
+            d[key] = val
+    return d
 
 
 def get_date_of_commit(repo, commit):
     """
-
     :param repo: Git Repository
     :param commit: Commit Tag (e.g. v4.3 or SHA hash)
     :return: Author Date in format "YYYY-MM-DD"
     """
     return repo.git.log('--pretty=format:%ad', '--date=short', '-1', commit)
 
+
 def analyse_num_commits(patch_stack_list):
 
     # Create data file
     f = open(GNUPLOT_PREFIX + DATA_NUM_COMMITS, 'w')
-    f.write('# no  basbaseVersion    baseVersion     patchVersion     numCommits  \n')
+    f.write('# no\t basbaseVersion\t baseVersion\t baseReleaseDate\t patchVersion\t patchReleaseDate\t numCommits\n')
     cur_version = KernelVersion('0.1')
     xtics = []
 
@@ -187,13 +203,15 @@ def analyse_num_commits(patch_stack_list):
             num_major = 2
 
         if not i.kernel_version.base_version_equals(cur_version, num_major):
-            xtics.append((i.patch_version, no))
+            xtics.append((i.patch.version, no))
             cur_version = i.kernel_version
 
         f.write(str(no) +
                 ' "' + i.kernel_version.base_string(2) + '" ' +
-                '"' + i.base_version + '" ' +
-                '"' + i.patch_version + '" ' +
+                '"' + i.base.version + '" ' +
+                '"' + i.base.release_date + '" ' +
+                '"' + i.patch.version + '" ' +
+                '"' + i.patch.release_date + '" ' +
                 str(i.num_commits()) + '\n')
 
     f.close()
@@ -214,7 +232,7 @@ def analyse_num_commits(patch_stack_list):
             ")\n")
 
     # final plot call
-    f.write("plot \"" + GNUPLOT_PREFIX + DATA_NUM_COMMITS + "\" u 1:5 w points notitle\n")
+    f.write("plot \"" + GNUPLOT_PREFIX + DATA_NUM_COMMITS + "\" u 1:7 w points notitle\n")
     f.write("pause -1 'press key to exit'\n")
     f.close()
 
@@ -224,6 +242,7 @@ def analyse_num_commits(patch_stack_list):
 # Main
 repo = Repo(REPO_LOCATION)
 patch_stack_list = []
+rt_version_dict = file2dict(RT_VERSION_DICT)
 
 for head in repo.heads:
     # Skip if branch name does not start with analysis-
@@ -247,7 +266,9 @@ for head in repo.heads:
     # be a bit verbose
     print('Working on ' + patch_version + ' <- ' + base_version)
 
-    p = PatchStack(repo, base_version, base_tag, patch_version, branch_name)
+    base = VersionPoint(base_tag, base_version, get_date_of_commit(repo, base_tag))
+    patch = VersionPoint(branch_name, patch_version, rt_version_dict.get(patch_version))
+    p = PatchStack(repo, branch_name, base, patch)
     patch_stack_list.append(p)
 
 # Sort the stack by patchversion
