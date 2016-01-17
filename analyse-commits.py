@@ -3,16 +3,54 @@
 from distutils.version import LooseVersion
 from git import Repo
 import re
-from subprocess import call
 
 BRANCH_PREFIX = 'analysis-'
 BASE_PREFIX = 'v'
 REPO_LOCATION = './linux/'
 
 GNUPLOT_PREFIX = './plots/'
-DATA_NUM_COMMITS = 'num_commits.dat'
-PLOT_NUM_COMMITS = 'num_commits.gnuplot'
+COMMITCOUNT_PREFIX = 'commitcount-'
 RT_VERSION_DICT = 'resources/releaseDateList.dat'
+
+class StringVersion:
+    """
+    Parse a version string like "rt34"
+    """
+
+    regex = re.compile('([a-zA-Z]+)([0-9]+)')
+
+    def __init__(self, version_string = ''):
+        self.string = ''
+        self.version = -1
+
+        if not version_string:
+            return
+
+        if not self.regex.match(version_string):
+            raise Exception('VersionString does not mach: ' + version_string)
+
+        res = self.regex.search(version_string)
+        self.string = res.group(1)
+        self.version = int(res.group(2))
+
+    def __lt__(self, other):
+        # if self.string is empty, then we are newer than the other one
+        if not self.string and not not other.string:
+            return False
+        elif not other.string and not not self.string:
+            return True
+
+        # if both version strings are defined, then they must equal
+        if self.string != other.string:
+            raise Exception('Unable to compare ' + str(self) + ' with ' + str(other))
+
+        return self.version < other.version
+
+    def __str__(self):
+        if len(self.string) or self.version != -1:
+            return '-' + self.string + str(self.version)
+        return ''
+
 
 
 class KernelVersion:
@@ -30,8 +68,8 @@ class KernelVersion:
     def __init__(self, version_string):
         self.versionString = version_string
         self.version = []
-        self.rc = ''
-        self.extra = ''
+        self.rc = StringVersion()
+        self.extra = StringVersion()
 
         # Split array into version numbers, RC and Extraversion
         parts = self.versionDelimiter.split(version_string)
@@ -49,11 +87,11 @@ class KernelVersion:
 
         # Get optional RC version
         if len(parts) and re.compile('^rc[0-9]+$').match(parts[0]):
-            self.rc = parts.pop(0)
+            self.rc = StringVersion(parts.pop(0))
 
         # Get optional Extraversion
         if len(parts):
-            self.extra = parts.pop(0)
+            self.extra = StringVersion(parts.pop(0))
 
         # This should be the end now
         if len(parts):
@@ -106,11 +144,6 @@ class KernelVersion:
 
         # Version numbers equal so far. Check RC String
         # A version without a RC-String is the newer one
-        if not self.rc and not not other.rc:
-            return False
-        elif not other.rc and not not self.rc:
-            return True
-        # both have 'some' version. Compare it.
         if self.rc < other.rc:
             return True
         elif other.rc < self.rc:
@@ -118,26 +151,13 @@ class KernelVersion:
 
         # We do have the same RC Version. Now check the extraversion
         # The one having an extraversion is considered to be the newer one
-        if not self.extra and not not other.extra:
-            return True
-        elif not other.extra and not not self.extra:
-            return False
-
-        # both have 'some' extraversion. Compare it.
         return self.extra < other.extra
 
     def __str__(self):
         """
         :return: Minimum possible version string
         """
-        retval = self.base_string()
-        if len(self.rc):
-            retval += '-' + self.rc
-
-        if len(self.extra):
-            retval += '-' + self.extra
-
-        return retval
+        return self.base_string() + str(self.rc) + str(self.extra)
 
 
 class VersionPoint:
@@ -189,13 +209,11 @@ def get_date_of_commit(repo, commit):
 def analyse_num_commits(patch_stack_list):
 
     # Create data file
-    f = open(GNUPLOT_PREFIX + DATA_NUM_COMMITS, 'w')
-    f.write('# no\t basbaseVersion\t baseVersion\t baseReleaseDate\t patchVersion\t patchReleaseDate\t numCommits\n')
     cur_version = KernelVersion('0.1')
     xtics = []
+    data = {}
 
-    for (no, i) in enumerate(patch_stack_list):
-        no += 1
+    for i in patch_stack_list:
 
         if i.kernel_version.base_version_equals(KernelVersion('2.6'), 2):
             num_major = 3
@@ -203,41 +221,29 @@ def analyse_num_commits(patch_stack_list):
             num_major = 2
 
         if not i.kernel_version.base_version_equals(cur_version, num_major):
-            xtics.append((i.patch.version, no))
+            xtics.append((i.patch.version, "'" + i.patch.release_date + "'"))
             cur_version = i.kernel_version
+            data[cur_version.base_string()] = []
 
-        f.write(str(no) +
-                ' "' + i.kernel_version.base_string(2) + '" ' +
-                '"' + i.base.version + '" ' +
-                '"' + i.base.release_date + '" ' +
-                '"' + i.patch.version + '" ' +
-                '"' + i.patch.release_date + '" ' +
-                str(i.num_commits()) + '\n')
+        data[cur_version.base_string()].append('"' + \
+                                               i.kernel_version.base_string(2) + '" ' + \
+                                               '"' + i.base.version + '" ' + \
+                                               i.base.release_date + ' ' + \
+                                               '"' + i.patch.version + '" ' + \
+                                               i.patch.release_date + ' ' + \
+                                               str(i.num_commits()))
 
-    f.close()
-
-    location = GNUPLOT_PREFIX + PLOT_NUM_COMMITS
-    f = open(location, 'w')
-    f.write("set title 'PreemptRT: Number of commits'\n"
-            "#set terminal postscript eps enhanced color font 'Helvetica,10'\n"
-            "#set output 'preemptrt_commitcount.eps'\n"
-            "unset xtics\n"
-            "set ylabel 'Number of commits'\n"
-            "set xlabel 'PreemptRT kernel version'\n"
-            "set xtics nomirror rotate by -45\n\n")
+    for key, value in data.items():
+        f = open(GNUPLOT_PREFIX + COMMITCOUNT_PREFIX + key, 'w')
+        f.write('# basbaseVersion\t baseVersion\t baseReleaseDate\t patchVersion\t patchReleaseDate\t numCommits\n')
+        sum = "\n".join(value) + '\n'
+        f.write(sum)
+        f.close()
 
     # set special xtics
-    f.write("set xtics (" +
-            ", ".join(map(lambda x: '"' + x[0] + '" ' + str(x[1]), xtics)) +
-            ")\n")
-
-    # final plot call
-    f.write("plot \"" + GNUPLOT_PREFIX + DATA_NUM_COMMITS + "\" u 1:7 w points notitle\n")
-    f.write("pause -1 'press key to exit'\n")
-    f.close()
-
-    # Call gnuplot
-    call(["gnuplot", location])
+    print("set xtics (" +
+          ", ".join(map(lambda x: '"' + x[0] + '" ' + str(x[1]), xtics)) +
+          ")\n")
 
 # Main
 repo = Repo(REPO_LOCATION)
