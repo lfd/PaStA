@@ -182,6 +182,9 @@ then
   # cleanup
   rm -rf $PATCHDIR || die "rm failed"
   rm -rf $TIMESTAMPS || die "rm failed"
+  rm -rf ${TIMESTAMPS}.tmp || die "rm failed"
+  rm -rf $PATCH_STACK_DEFINITION || die "rm failed"
+  rm -rf ${PATCH_STACK_DEFINITION}.tmp || dir "rm failed"
 
   mkdir $PATCHDIR || die "mkdir failed"
   cd $PATCHDIR
@@ -223,6 +226,9 @@ then
 		  xargs -I Z -n 1 stat Z --format="%Y" | \
 		  xargs -I Z date --date="@Z" +"${rtversion} \"%F\"" >> $TIMESTAMPS.tmp
 
+		basetimestamp=$(git --no-pager --git-dir=${KERNELDST}/.git log --pretty=format:"%at" -1 v$baseversion | xargs -I Z -n 1 date --date="@Z" +"%Y-%m-%d")
+	    echo "$rtversion analysis-$rtversion $baseversion v$baseversion $basetimestamp" >> ${PATCH_STACK_DEFINITION}.tmp
+
         # Manually patch origin.patch.bz2 of versions 2.6.29-rc8-rt[12]
         if [[ ${rtversion} =~ ^2\.6\.29\-rc8\-rt[12]$ ]]; then
           echo "  -> Manually fixing ${rtversion}"
@@ -250,12 +256,15 @@ then
                   -exec rm \{\}.old \;
           fi
         done
+
       else
         echo "  -> already existing, i'll just skip this one..."
       fi
     done
   done
 
+  sort -V ${PATCH_STACK_DEFINITION}.tmp > ${PATCH_STACK_DEFINITION}
+  rm ${PATCH_STACK_DEFINITION}.tmp
   sort -V ${TIMESTAMPS}.tmp > ${TIMESTAMPS}
   rm ${TIMESTAMPS}.tmp
 
