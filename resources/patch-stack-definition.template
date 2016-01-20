@@ -1,4 +1,4 @@
-# PatchVersion BranchName PatchReleaseDate BaseVersion BaseCommit BaseReleaseDate
+PatchVersion BranchName PatchReleaseDate BaseVersion BaseCommit BaseReleaseDate
 
 Erste Spalte: PatchVersion
   String, wie etwa 1.2.3-super4

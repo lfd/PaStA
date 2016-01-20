@@ -200,17 +200,10 @@ def parse_patch_stack_definition(repo, definition_filename):
     retval = []
 
     csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
-    fieldnames = ['PatchVersion',
-                  'BranchName',
-                  'PatchReleaseDate',
-                  'BaseVersion',
-                  'BaseCommit',
-                  'BaseReleaseDate']
 
     with open(definition_filename) as f:
         reader = csv.DictReader(filter(lambda row: row[0] != '#', f),  # Skip lines beginning with #
-                                dialect='patchstack',
-                                fieldnames=fieldnames)
+                                dialect='patchstack')
         for row in reader:
 
             print('Working on ' + row['PatchVersion'] + '...')

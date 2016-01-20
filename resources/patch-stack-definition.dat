@@ -1,4 +1,4 @@
-# PatchVersion BranchName PatchReleaseDate BaseVersion BaseCommit BaseReleaseDate
+PatchVersion BranchName PatchReleaseDate BaseVersion BaseCommit BaseReleaseDate
 2.6.22.1-rt2 analysis-2.6.22.1-rt2 2007-07-12 2.6.22.1 v2.6.22.1 2007-07-10
 2.6.22.1-rt4 analysis-2.6.22.1-rt4 2007-07-16 2.6.22.1 v2.6.22.1 2007-07-10
 2.6.22.1-rt5 analysis-2.6.22.1-rt5 2007-07-23 2.6.22.1 v2.6.22.1 2007-07-10
