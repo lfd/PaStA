@@ -262,7 +262,7 @@ def analyse_num_commits(patch_stack_list):
 
     for key, value in data.items():
         f = open(GNUPLOT_PREFIX + COMMITCOUNT_PREFIX + key, 'w')
-        f.write('# basbaseVersion\t baseVersion\t baseReleaseDate\t patchVersion\t patchReleaseDate\t numCommits\n')
+        f.write('basbaseVersion baseVersion baseReleaseDate patchVersion patchReleaseDate numCommits\n')
         sum = "\n".join(value) + '\n'
         f.write(sum)
         f.close()
