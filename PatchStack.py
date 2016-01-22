@@ -1,6 +1,9 @@
-import re
-from distutils.version import LooseVersion
 import csv
+from distutils.version import LooseVersion
+import functools
+from multiprocessing import Pool, cpu_count
+import re
+
 
 class StringVersion:
     """
@@ -207,24 +210,35 @@ class PatchStack:
         return self.patch.version + ' (' + str(self.num_commits()) + ')'
 
 
+def get_date_of_commit(repo, commit):
+    """
+    :param repo: Git Repository
+    :param commit: Commit Tag (e.g. v4.3 or SHA hash)
+    :return: Author Date in format "YYYY-MM-DD"
+    """
+    return repo.git.log('--pretty=format:%ad', '--date=short', '-1', commit)
+
+
 def get_commit_hashes(repo, start, end):
     hashes = repo.git.log('--pretty=format:%H', start + '...' + end)
     hashes = hashes.split('\n')
     return hashes
 
 
-def parse_patch_stack_definition(repo, definition_filename, cache):
-    retval = []
+def __patch_stack_helper(repo, base_patch, cache):
+    print('Working on ' + base_patch[1].version + '...')
+    return PatchStack(repo, *base_patch, cache=cache)
 
+
+def parse_patch_stack_definition(repo, definition_filename, cache):
+
+    retval = []
     csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
 
     with open(definition_filename) as f:
         reader = csv.DictReader(filter(lambda row: row[0] != '#', f),  # Skip lines beginning with #
                                 dialect='patchstack')
         for row in reader:
-
-            print('Working on ' + row['PatchVersion'] + '...')
-
             base = VersionPoint(row['BaseCommit'],
                                 row['BaseVersion'],
                                 row['BaseReleaseDate'])
@@ -233,18 +247,13 @@ def parse_patch_stack_definition(repo, definition_filename, cache):
                                  row['PatchVersion'],
                                  row['PatchReleaseDate'])
 
-            patch_stack = PatchStack(repo, base, patch, cache=cache)
+            retval.append((base, patch))
 
-            retval.append(patch_stack)
 
+    # Map tuple of (base,patch) to PatchStack
+    pool = Pool(cpu_count())
+    retval = pool.map(functools.partial(__patch_stack_helper, repo, cache=cache), retval)
+
+    # sort by patch version number
     retval.sort()
     return retval
-
-
-def get_date_of_commit(repo, commit):
-    """
-    :param repo: Git Repository
-    :param commit: Commit Tag (e.g. v4.3 or SHA hash)
-    :return: Author Date in format "YYYY-MM-DD"
-    """
-    return repo.git.log('--pretty=format:%ad', '--date=short', '-1', commit)
