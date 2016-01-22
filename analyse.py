@@ -176,27 +176,56 @@ class VersionPoint:
         self.release_date = release_date
 
 
+class Commit:
+    def __init__(self, repo, hash, cache=True):
+        self.hash = hash
+
+        if cache:
+            self.subject()
+            self.body()
+
+    def subject(self):
+        try:
+            self._subject
+        except AttributeError:
+            self._subject = repo.git.show('--pretty=format:%s', self.hash, stdout_as_string=False)
+        return self._subject
+
+    def body(self):
+        try:
+            self._body
+        except AttributeError:
+            self._body = repo.git.show('--pretty=format:%b', self.hash, stdout_as_string=False)
+        return self._body
+
+
 class PatchStack:
-    def __init__(self, repo, base, patch):
+    def __init__(self, repo, base, patch, cache=True):
         self.base = base
         self.patch = patch
         self.patch_version = KernelVersion(patch.version)
 
         # get number of commits between baseversion and rtversion
-        c = repo.git.log('--pretty=format:%s', base.commit + '...' + patch.commit)
-        self.commitlog = c.split('\n')
+        hashes = get_commit_hashes(repo, base.commit, patch.commit)
+        self.commit_log = [Commit(repo, i, cache) for i in hashes]
 
     def __lt__(self, other):
         return self.patch_version < other.patch_version
 
     def num_commits(self):
-        return len(self.commitlog)
+        return len(self.commit_log)
 
     def __repr__(self):
         return self.patch.version + ' (' + str(self.num_commits()) + ')'
 
 
-def parse_patch_stack_definition(repo, definition_filename):
+def get_commit_hashes(repo, start, end):
+    hashes = repo.git.log('--pretty=format:%H', start + '...' + end)
+    hashes = hashes.split('\n')
+    return hashes
+
+
+def parse_patch_stack_definition(repo, definition_filename, cache):
     retval = []
 
     csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
@@ -216,7 +245,7 @@ def parse_patch_stack_definition(repo, definition_filename):
                                  row['PatchVersion'],
                                  row['PatchReleaseDate'])
 
-            patch_stack = PatchStack(repo, base, patch)
+            patch_stack = PatchStack(repo, base, patch, cache=cache)
 
             retval.append(patch_stack)
 
@@ -276,7 +305,6 @@ def analyse_num_commits(patch_stack_list):
 
 # Main
 repo = Repo(REPO_LOCATION)
-patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
-
+patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION, cache=False)
 # Run analyse_num_commits on the patchstack
 analyse_num_commits(patch_stack_list)
