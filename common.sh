@@ -9,6 +9,7 @@ KERNELDST=$BASEDIR/linux
 PATCHDIR=$BASEDIR/quilt-stacks
 TIMESTAMPS=$BASEDIR/resources/timestamps-byPatchModified
 PATCH_STACK_DEFINITION=$BASEDIR/patch-stack-definition.pre
+LOGDIR=$BASEDIR/log
 
 function die {
   echo "$@" 1>&2;
