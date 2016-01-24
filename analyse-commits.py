@@ -56,6 +56,6 @@ def analyse_num_commits(patch_stack_list):
 
 # Main
 repo = Repo(REPO_LOCATION)
-patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION, cache=False)
+patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 # Run analyse_num_commits on the patchstack
 analyse_num_commits(patch_stack_list)

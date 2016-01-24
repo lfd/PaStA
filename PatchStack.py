@@ -167,44 +167,20 @@ class VersionPoint:
         self.release_date = release_date
 
 
-class Commit:
-    def __init__(self, repo, hash, cache=True):
-        self.hash = hash
-
-        if cache:
-            self.subject()
-            self.body()
-
-    def subject(self):
-        try:
-            self._subject
-        except AttributeError:
-            self._subject = repo.git.show('--pretty=format:%s', self.hash, stdout_as_string=False)
-        return self._subject
-
-    def body(self):
-        try:
-            self._body
-        except AttributeError:
-            self._body = repo.git.show('--pretty=format:%b', self.hash, stdout_as_string=False)
-        return self._body
-
-
 class PatchStack:
-    def __init__(self, repo, base, patch, cache=True):
+    def __init__(self, repo, base, patch):
         self.base = base
         self.patch = patch
         self.patch_version = KernelVersion(patch.version)
 
-        # get number of commits between baseversion and rtversion
-        hashes = get_commit_hashes(repo, base.commit, patch.commit)
-        self.commit_log = [Commit(repo, i, cache) for i in hashes]
+        # get commithashes of the patch stack
+        self.commit_hashes = get_commit_hashes(repo, base.commit, patch.commit)
 
     def __lt__(self, other):
         return self.patch_version < other.patch_version
 
     def num_commits(self):
-        return len(self.commit_log)
+        return len(self.commit_hashes)
 
     def __repr__(self):
         return self.patch.version + ' (' + str(self.num_commits()) + ')'
@@ -225,12 +201,12 @@ def get_commit_hashes(repo, start, end):
     return hashes
 
 
-def __patch_stack_helper(repo, base_patch, cache):
+def __patch_stack_helper(repo, base_patch):
     print('Working on ' + base_patch[1].version + '...')
-    return PatchStack(repo, *base_patch, cache=cache)
+    return PatchStack(repo, *base_patch)
 
 
-def parse_patch_stack_definition(repo, definition_filename, cache):
+def parse_patch_stack_definition(repo, definition_filename):
 
     retval = []
     csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
@@ -250,9 +226,9 @@ def parse_patch_stack_definition(repo, definition_filename, cache):
             retval.append((base, patch))
 
 
-    # Map tuple of (base,patch) to PatchStack
+    # Map tuple of (base, patch) to PatchStack
     pool = Pool(cpu_count())
-    retval = pool.map(functools.partial(__patch_stack_helper, repo, cache=cache), retval)
+    retval = pool.map(functools.partial(__patch_stack_helper, repo), retval)
 
     # sort by patch version number
     retval.sort()
