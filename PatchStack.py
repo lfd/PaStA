@@ -13,6 +13,7 @@ AUTHOR_EMAIL_LOCATION = './log/author_emails/'
 DIFFS_LOCATION = './log/diffs/'
 MESSAGES_LOCATION = './log/messages/'
 
+DIFF_REGEX = re.compile('^[ \t]*[-\+]')
 
 commits = {}
 
@@ -277,6 +278,8 @@ def get_commit(commit_hash):
     # Load commit diff
     diff = file_to_string(DIFFS_LOCATION + commit_hash)
     diff = diff.split('\n')
+    # only respect changes
+    diff = list(filter(lambda x: DIFF_REGEX.match(x), diff))
 
     # Load affected files
     affected = file_to_string(AFFECTED_FILES_LOCATION + commit_hash)
