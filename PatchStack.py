@@ -4,7 +4,8 @@ from distutils.version import LooseVersion
 import functools
 from multiprocessing import Pool, cpu_count
 import re
-
+import sys
+from termcolor import colored
 
 AFFECTED_FILES_LOCATION = './log/affected_files/'
 AUTHOR_DATE_LOCATION = './log/author_dates/'
@@ -230,7 +231,8 @@ def get_commit_hashes(repo, start, end):
 
 
 def __patch_stack_helper(repo, base_patch):
-    print('Working on ' + base_patch[1].version + '...')
+    sys.stdout.write('\rLoading ' + base_patch[1].version + '...')
+    sys.stdout.flush()
     return PatchStack(repo, *base_patch)
 
 
@@ -256,6 +258,9 @@ def parse_patch_stack_definition(repo, definition_filename):
     # Map tuple of (base, patch) to PatchStack
     pool = Pool(cpu_count())
     retval = pool.map(functools.partial(__patch_stack_helper, repo), retval)
+    pool.close()
+    pool.join()
+    print(colored(' [done]', 'green'))
 
     # sort by patch version number
     retval.sort()
@@ -290,7 +295,9 @@ def get_commit(commit_hash):
 
 
 def cache_commit_hashes(commit_hashes):
-    print('Caching ' + str(len(commit_hashes)) + ' commits. This may take a while...')
+    sys.stdout.write('Caching ' + str(len(commit_hashes)) +
+                     ' commits. This may take a while...')
+    sys.stdout.flush()
     for commit_hash in commit_hashes:
         get_commit(commit_hash)
-    print('done')
+    print(colored(' [done]', 'green'))
