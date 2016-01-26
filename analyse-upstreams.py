@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
 
 import functools
+
+import sys
 from fuzzywuzzy import fuzz
 from git import Repo
 from multiprocessing import Pool, cpu_count
 from subprocess import call
-
-from PatchStack import PatchStack, \
-    VersionPoint, get_commit_hashes, get_commit, \
-    cache_commit_hashes, file_to_string
+from PatchStack import \
+    KernelVersion, get_commit, cache_commit_hashes, \
+    file_to_string, parse_patch_stack_definition, get_commit_hashes
 from Tools import getch
 
 
 REPO_LOCATION = './linux/'
-CORRELATION_LIST = './similar_patch_list'
+PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
+SIMILAR_PATCHES_FILE = './similar_patch_list'
 
 RESULTS = './upstream-results/'
-SHOW_THRESHOLD = 200
+SHOW_THRESHOLD = 250
 AUTOACCEPT_THRESHOLD = 400
 
 
-def evaluate(original, candidate):
+def evaluate_single_patch(original, candidate):
     orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email = get_commit(original)
     cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email = get_commit(candidate)
 
@@ -75,82 +77,119 @@ def evaluate(original, candidate):
     return candidate, rating, message
 
 
+def evaluate_patch_list(original_hashes, candidate_hashes):
+    """
+    Evaluates two list of original and candidate hashes against each other
+
+    :param original_hashes: original patches
+    :param candidate_hashes: potential candidates
+    :return: a dictionary with originals as keys and a list of potential candidates as value
+    """
+
+    retval = {}
+
+    for i, commit_hash in enumerate(original_hashes):
+        if commit_hash in similar_patches:
+            continue
+
+        sys.stdout.write('\rEvaluating ' + str(i+1) + '/' +
+              str(len(original_hashes)) + ' ' + commit_hash)
+
+
+        f = functools.partial(evaluate_single_patch, commit_hash)
+        #pool = Pool(cpu_count())
+        #result = pool.map(f, candidate_hashes, chunksize=30)
+        #pool.close()
+        #pool.join()
+        result = map(f, candidate_hashes)
+
+        # filter everything beyond threshold
+        result = list(filter(lambda x: x[1] > SHOW_THRESHOLD, result))
+        if not result:
+            continue
+
+        # sort by ratio
+        result.sort(key=lambda x: x[1], reverse=True)
+
+        retval[commit_hash] = result
+
+        with open(RESULTS + commit_hash, 'w') as f:
+            for candidate, rating, message in result:
+                f.write(candidate + ' ' +
+                        str(rating) + ' ' +
+                        message + '\n')
+            f.close()
+    sys.stdout.write('\n\n')
+    return retval
+
+
 repo = Repo(REPO_LOCATION)
-base = VersionPoint('v3.0', '3.0', '2011-07-22')
-patch = VersionPoint('analysis-3.0-rt1', '3.0-rt1', '2011-07-22')
-p = PatchStack(repo, base, patch)
+patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 
-# Load list of potential candidate commit hashes
-print('Loading list of candidate commit hashes')
-cand_commit_hashes = get_commit_hashes(repo, 'v3.0', 'v3.2')
-print('done')
-
-cache_commit_hashes(cand_commit_hashes + p.commit_hashes)
-
-similar_patches_file = file_to_string(CORRELATION_LIST, must_exist=False)
 similar_patches = {}
+check_list = {}
+
+similar_patches_file = file_to_string(SIMILAR_PATCHES_FILE, must_exist=False)
 if similar_patches_file is not None and len(similar_patches_file):
     similar_patches_file = list(filter(None, similar_patches_file.split('\n')))
     for i in similar_patches_file:
-        orig, partner = i.split(' ')
-        similar_patches[orig] = partner
-
-manual_check_list = {}
-
-for i, commit_hash in enumerate(p.commit_hashes):
-    if commit_hash in similar_patches:
-        print('Skipping ' + commit_hash + ': Already evaluated.')
-        continue
-
-    print('Evaluating ' + str(i+1) + '/' + str(len(p.commit_hashes)) + ' ' + commit_hash)
-
-    pool = Pool(cpu_count()+2)
-    f = functools.partial(evaluate, commit_hash)
-    result = pool.map(f, cand_commit_hashes)
-
-    pool.close()
-    pool.join()
-
-    # filter everything beyond threshold
-    result = list(filter(lambda x: x[1] > SHOW_THRESHOLD, result))
-    if not result:
-        continue
-
-    # sort by ratio
-    result.sort(key=lambda x: x[1], reverse=True)
-
-    manual_check_list[commit_hash] = result
-
-    with open(RESULTS + commit_hash, 'w') as f:
-        for candidate, rating, message in result:
-            f.write(candidate + ' ' +
-                    str(rating) + ' ' +
-                    message + '\n')
-        f.close()
+        orig_commit_hash, partner = i.split(' ')
+        similar_patches[orig_commit_hash] = partner
 
 
-for orig, candidates in manual_check_list.items():
-    for cand in candidates:
-        commit_hash, rating, message = cand
+# Check patch stacks against each other
+for index, cur_patch_stack in enumerate(patch_stack_list):
+    # Bounds check
+    if index == len(patch_stack_list)-1:
+        break
 
-        if rating > AUTOACCEPT_THRESHOLD:
+    # Skip till version 3.0
+    #if cur_patch_stack.patch_version < KernelVersion('3.18'):
+    #    continue
+    #if cur_patch_stack.patch_version > KernelVersion('3.20'):
+    #    break
+    break
+
+    next_patch_stack = patch_stack_list[index + 1]
+
+    print('Finding similar patches on: ' +
+          str(cur_patch_stack.patch_version) +
+          ' <-> ' + str(next_patch_stack.patch_version))
+
+    cache_commit_hashes(cur_patch_stack.commit_hashes)
+    cache_commit_hashes(next_patch_stack.commit_hashes)
+
+    evaluation = {}
+    evaluation = evaluate_patch_list(cur_patch_stack.commit_hashes, next_patch_stack.commit_hashes)
+    # Only available in python > 3.5
+    #check_list = {**check_list, **evaluation}
+    check_list.update(evaluation)
+
+
+# Manual rating
+for orig_commit_hash, candidates in check_list.items():
+    for candidate in candidates:
+        cand_commit_hash, cand_rating, cand_message = candidate
+
+        if cand_rating > AUTOACCEPT_THRESHOLD:
+            print('Autoaccepting ' + orig_commit_hash + ' <-> ' + cand_commit_hash)
             yn = 'y'
         else:
             yn = ''
-            call(['./compare_hashes.sh', orig, commit_hash])
-            print('Rating: ' + str(rating) + ' ' + message)
+            call(['./compare_hashes.sh', orig_commit_hash, cand_commit_hash])
+            print('Rating: ' + str(cand_rating) + ' ' + cand_message)
             print('Yay or nay? ')
 
         while yn not in ['y', 'n']:
                 yn = getch()
 
         if yn == 'y':
-                similar_patches[orig] = commit_hash
+                similar_patches[orig_commit_hash] = cand_commit_hash
                 break
         else:
                 print('nay. Hmkay.')
 
-with open(CORRELATION_LIST, 'w') as f:
-        for orig, partner in similar_patches.items():
-                f.write(orig + ' ' + partner + '\n')
+with open(SIMILAR_PATCHES_FILE, 'w') as f:
+        for orig_commit_hash, partner in similar_patches.items():
+                f.write(orig_commit_hash + ' ' + partner + '\n')
         f.close()
