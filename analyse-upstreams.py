@@ -1,50 +1,28 @@
 #!/usr/bin/env python3
 
-from datetime import datetime
 import functools
 from fuzzywuzzy import fuzz
 from git import Repo
-from multiprocessing import Pool, Lock, Value, cpu_count
-import os
+from multiprocessing import Pool, cpu_count
 from subprocess import call
-import time
 
-from PatchStack import PatchStack, KernelVersion, VersionPoint, parse_patch_stack_definition, get_commit_hashes
+from PatchStack import PatchStack, \
+    VersionPoint, get_commit_hashes, get_commit, \
+    cache_commit_hashes, file_to_string
+from Tools import getch
 
 
 REPO_LOCATION = './linux/'
-DIFFS_LOCATION = './log/diffs/'
-AFFECTED_FILES_LOCATION = './log/affected_files/'
-MESSAGES_LOCATION = './log/messages/'
-AUTHOR_DATE_LOCATION = './log/author_dates/'
-AUTHOR_EMAIL_LOCATION = './log/author_emails/'
 CORRELATION_LIST = './similar_patch_list'
 
 RESULTS = './upstream-results/'
-THRESHOLD = 200
-
-def getch():
-        import sys, tty, termios
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-                tty.setraw(sys.stdin.fileno())
-                ch = sys.stdin.read(1)
-        finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
-
-
-def file_to_string(filename):
-    with open(filename, 'rb') as f:
-        retval = str(f.read().decode('iso8859')) # looks strange, but this is a must due to encoding difficulties
-        f.close()
-    return retval
+SHOW_THRESHOLD = 200
+AUTOACCEPT_THRESHOLD = 400
 
 
 def evaluate(original, candidate):
-    orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email = candidates[original]
-    cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email = candidates[candidate]
+    orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email = get_commit(original)
+    cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email = get_commit(candidate)
 
     rating = 0
 
@@ -59,7 +37,11 @@ def evaluate(original, candidate):
 
     rating += common_changed_files * 20
 
-    diff_length_ratio = min(len(orig_diff), len(cand_diff)) / max(len(orig_diff), len(cand_diff))
+    o_len = sum(map(len, orig_diff))
+    c_len = sum(map(len, cand_diff))
+    diff_length_ratio = min(o_len, c_len) / max(o_len, c_len)
+    #diff_length_ratio = min(len(orig_diff), len(cand_diff)) / max(len(orig_diff), len(cand_diff))
+
     if diff_length_ratio < 0.70:
         return candidate, 0, ''
 
@@ -84,7 +66,6 @@ def evaluate(original, candidate):
     else:
         rating -= 20
 
-
     rating += fuzz.token_sort_ratio(orig_diff, cand_diff)
 
     rating += fuzz.token_sort_ratio(orig_message, cand_message)
@@ -104,33 +85,20 @@ print('Loading list of candidate commit hashes')
 cand_commit_hashes = get_commit_hashes(repo, 'v3.0', 'v3.2')
 print('done')
 
-print('Caching candidate commits... This may take a while...')
-candidates = {}
-for i in cand_commit_hashes + p.commit_hashes:
-    message = file_to_string(MESSAGES_LOCATION + i)
-    diff = file_to_string(DIFFS_LOCATION + i)
-    diff = diff.split('\n')
-    affected = file_to_string(AFFECTED_FILES_LOCATION + i)
-    affected = list(filter(None, affected.split('\n')))
-    affected.sort()
-    author_date = file_to_string(AUTHOR_DATE_LOCATION + i)
-    author_date = datetime.fromtimestamp(int(author_date))
-    author_email = file_to_string(AUTHOR_EMAIL_LOCATION + i)
-    candidates[i] = (message, diff, affected, author_date, author_email)
-print('done')
+cache_commit_hashes(cand_commit_hashes + p.commit_hashes)
 
-correlation_file = file_to_string(CORRELATION_LIST)
-correlation_list = {}
-if len(correlation_file):
-    correlation_file = list(filter(None, correlation_file.split('\n')))
-    for i in correlation_file:
+similar_patches_file = file_to_string(CORRELATION_LIST, must_exist=False)
+similar_patches = {}
+if similar_patches_file is not None and len(similar_patches_file):
+    similar_patches_file = list(filter(None, similar_patches_file.split('\n')))
+    for i in similar_patches_file:
         orig, partner = i.split(' ')
-        correlation_list[orig] = partner
+        similar_patches[orig] = partner
 
 manual_check_list = {}
 
 for i, commit_hash in enumerate(p.commit_hashes):
-    if commit_hash in correlation_list:
+    if commit_hash in similar_patches:
         print('Skipping ' + commit_hash + ': Already evaluated.')
         continue
 
@@ -144,7 +112,7 @@ for i, commit_hash in enumerate(p.commit_hashes):
     pool.join()
 
     # filter everything beyond threshold
-    result = list(filter(lambda x: x[1] > THRESHOLD, result))
+    result = list(filter(lambda x: x[1] > SHOW_THRESHOLD, result))
     if not result:
         continue
 
@@ -164,19 +132,25 @@ for i, commit_hash in enumerate(p.commit_hashes):
 for orig, candidates in manual_check_list.items():
     for cand in candidates:
         commit_hash, rating, message = cand
-        call(['./compare_hashes.sh', orig, commit_hash])
-        print('Rating: ' + str(rating) + ' ' + message)
-        yn  = ''
-        print('Yay or nay? ')
-        while not yn in ['y', 'n']:
+
+        if rating > AUTOACCEPT_THRESHOLD:
+            yn = 'y'
+        else:
+            yn = ''
+            call(['./compare_hashes.sh', orig, commit_hash])
+            print('Rating: ' + str(rating) + ' ' + message)
+            print('Yay or nay? ')
+
+        while yn not in ['y', 'n']:
                 yn = getch()
+
         if yn == 'y':
-                correlation_list[orig] = commit_hash
+                similar_patches[orig] = commit_hash
                 break
         else:
-                print('nay')
+                print('nay. Hmkay.')
 
 with open(CORRELATION_LIST, 'w') as f:
-        for orig, partner in correlation_list.items():
+        for orig, partner in similar_patches.items():
                 f.write(orig + ' ' + partner + '\n')
         f.close()

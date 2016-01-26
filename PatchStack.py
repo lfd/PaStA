@@ -1,8 +1,36 @@
 import csv
+from datetime import datetime
 from distutils.version import LooseVersion
 import functools
 from multiprocessing import Pool, cpu_count
 import re
+
+
+AFFECTED_FILES_LOCATION = './log/affected_files/'
+AUTHOR_DATE_LOCATION = './log/author_dates/'
+AUTHOR_EMAIL_LOCATION = './log/author_emails/'
+DIFFS_LOCATION = './log/diffs/'
+MESSAGES_LOCATION = './log/messages/'
+
+
+commits = {}
+
+
+def file_to_string(filename, must_exist=True):
+    try:
+        # Well things are crappy. For decades, encoding has been a real problem
+        # Git commits in the linux kernel are messy and sometimes have non-valid encoding
+        # Anyway, opening a file as binary and decoding it to iso8859 solves the problem :-)
+        with open(filename, 'rb') as f:
+            retval = str(f.read().decode('iso8859'))
+            f.close()
+    except FileNotFoundError:
+        print('Warning, file ' + filename + ' not found!')
+        if must_exist:
+            raise
+        return None
+
+    return retval
 
 
 class StringVersion:
@@ -225,7 +253,6 @@ def parse_patch_stack_definition(repo, definition_filename):
 
             retval.append((base, patch))
 
-
     # Map tuple of (base, patch) to PatchStack
     pool = Pool(cpu_count())
     retval = pool.map(functools.partial(__patch_stack_helper, repo), retval)
@@ -233,3 +260,37 @@ def parse_patch_stack_definition(repo, definition_filename):
     # sort by patch version number
     retval.sort()
     return retval
+
+
+def get_commit(commit_hash):
+    if commit_hash in commits:
+        return commits[commit_hash]
+
+    # Load commit message
+    message = file_to_string(MESSAGES_LOCATION + commit_hash)
+
+    # Load commit diff
+    diff = file_to_string(DIFFS_LOCATION + commit_hash)
+    diff = diff.split('\n')
+
+    # Load affected files
+    affected = file_to_string(AFFECTED_FILES_LOCATION + commit_hash)
+    affected = list(filter(None, affected.split('\n')))
+    affected.sort()
+
+    # Load author date
+    author_date = file_to_string(AUTHOR_DATE_LOCATION + commit_hash)
+    author_date = datetime.fromtimestamp(int(author_date))
+
+    # Load author email
+    author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
+
+    commits[commit_hash] = (message, diff, affected, author_date, author_email)
+    return commits[commit_hash]
+
+
+def cache_commit_hashes(commit_hashes):
+    print('Caching ' + str(len(commit_hashes)) + ' commits. This may take a while...')
+    for commit_hash in commit_hashes:
+        get_commit(commit_hash)
+    print('done')
