@@ -7,6 +7,8 @@ import re
 import sys
 from termcolor import colored
 
+from Tools import file_to_string
+
 AFFECTED_FILES_LOCATION = './log/affected_files/'
 AUTHOR_DATE_LOCATION = './log/author_dates/'
 AUTHOR_EMAIL_LOCATION = './log/author_emails/'
@@ -16,23 +18,6 @@ MESSAGES_LOCATION = './log/messages/'
 DIFF_REGEX = re.compile('^[ \t]*[-\+]')
 
 commits = {}
-
-
-def file_to_string(filename, must_exist=True):
-    try:
-        # Well things are crappy. For decades, encoding has been a real problem
-        # Git commits in the linux kernel are messy and sometimes have non-valid encoding
-        # Anyway, opening a file as binary and decoding it to iso8859 solves the problem :-)
-        with open(filename, 'rb') as f:
-            retval = str(f.read().decode('iso8859'))
-            f.close()
-    except FileNotFoundError:
-        print('Warning, file ' + filename + ' not found!')
-        if must_exist:
-            raise
-        return None
-
-    return retval
 
 
 class StringVersion:

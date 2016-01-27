@@ -9,8 +9,8 @@ from multiprocessing import Pool, cpu_count
 from subprocess import call
 from PatchStack import \
     KernelVersion, get_commit, cache_commit_hashes, \
-    file_to_string, parse_patch_stack_definition, get_commit_hashes
-from Tools import getch
+    parse_patch_stack_definition, get_commit_hashes, TransitiveKeyList, transitive_key_list_from_file
+from Tools import getch, parse_file_to_dictionary, file_to_string, write_dictionary_to_file
 
 
 REPO_LOCATION = './linux/'
