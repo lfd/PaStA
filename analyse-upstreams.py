@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import functools
-
-import sys
 from fuzzywuzzy import fuzz
 from git import Repo
 from multiprocessing import Pool, cpu_count
 from subprocess import call
+import sys
+
 from PatchStack import \
     KernelVersion, get_commit, cache_commit_hashes, \
     parse_patch_stack_definition, get_commit_hashes, TransitiveKeyList, transitive_key_list_from_file
