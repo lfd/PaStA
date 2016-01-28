@@ -49,6 +49,9 @@ def parse_file_to_dictionary(filename, must_exist=True):
 
 
 def write_dictionary_to_file(filename, dict):
+    if len(dict) == 0:
+        return
+
     with open(filename, 'w') as f:
         f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + str(x[1]), dict.items())) + '\n')
         f.close()
