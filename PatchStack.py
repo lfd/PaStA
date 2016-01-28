@@ -201,6 +201,24 @@ class PatchStack:
         return self.patch.version + ' (' + str(self.num_commits()) + ')'
 
 
+class PatchStackList(list):
+    def __init__(self, *args):
+        list.__init__(self, *args)
+
+    def get_all_commit_hashes(self):
+        retval = []
+        for i in self:
+            retval += i.commit_hashes
+        return retval
+
+    def get_stack_of_commit(self, commit_hash):
+        for i in self:
+            if commit_hash in i.commit_hashes:
+                return i
+
+        return None
+
+
 class TransitiveKeyList:
     def __init__(self):
         self.forward_lookup = {}
@@ -337,7 +355,7 @@ def parse_patch_stack_definition(repo, definition_filename):
 
     # Map tuple of (base, patch) to PatchStack
     pool = Pool(cpu_count())
-    retval = pool.map(functools.partial(__patch_stack_helper, repo), retval)
+    retval = PatchStackList(pool.map(functools.partial(__patch_stack_helper, repo), retval))
     pool.close()
     pool.join()
     print(colored(' [done]', 'green'))
