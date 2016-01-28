@@ -16,9 +16,9 @@ from Tools import getch, parse_file_to_dictionary, file_to_string, write_diction
 REPO_LOCATION = './linux/'
 PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
 SIMILAR_PATCHES_FILE = './similar_patch_list'
+FALSE_POSTITIVES_FILES = './false-positives'
 
-RESULTS = './upstream-results/'
-SHOW_THRESHOLD = 250
+SHOW_THRESHOLD = 350
 AUTOACCEPT_THRESHOLD = 400
 
 
@@ -77,7 +77,7 @@ def evaluate_single_patch(original, candidate):
     return candidate, rating, message
 
 
-def evaluate_patch_list(original_hashes, candidate_hashes):
+def evaluate_patch_list(original_hashes, candidate_hashes, parallelize=False, chunksize=10000):
     """
     Evaluates two list of original and candidate hashes against each other
 
@@ -89,19 +89,18 @@ def evaluate_patch_list(original_hashes, candidate_hashes):
     retval = {}
 
     for i, commit_hash in enumerate(original_hashes):
-        if commit_hash in similar_patches:
-            continue
 
         sys.stdout.write('\rEvaluating ' + str(i+1) + '/' +
               str(len(original_hashes)) + ' ' + commit_hash)
 
-
         f = functools.partial(evaluate_single_patch, commit_hash)
-        #pool = Pool(cpu_count())
-        #result = pool.map(f, candidate_hashes, chunksize=30)
-        #pool.close()
-        #pool.join()
-        result = map(f, candidate_hashes)
+        if parallelize:
+            pool = Pool(cpu_count())
+            result = pool.map(f, candidate_hashes, chunksize=10000)
+            pool.close()
+            pool.join()
+        else:
+            result = map(f, candidate_hashes)
 
         # filter everything beyond threshold
         result = list(filter(lambda x: x[1] > SHOW_THRESHOLD, result))
@@ -113,42 +112,110 @@ def evaluate_patch_list(original_hashes, candidate_hashes):
 
         retval[commit_hash] = result
 
-        with open(RESULTS + commit_hash, 'w') as f:
-            for candidate, rating, message in result:
-                f.write(candidate + ' ' +
-                        str(rating) + ' ' +
-                        message + '\n')
-            f.close()
     sys.stdout.write('\n\n')
     return retval
 
 
+def merge_evaluation_results(overall_evaluation, evaluation):
+    """
+    An evaluation is a dictionary with a commit hash as key,
+    and a list of 3-tuples (hash, rating, msg) as value.
+
+    Check if this key already exists in the check_list, if yes, then append to the list
+    """
+
+    for key, value in evaluation.items():
+        if key in overall_evaluation:
+            overall_evaluation[key].append(value)
+        else:
+            overall_evaluation[key] = value
+
+
+def interactive_rating(transitive_list, false_positive_list, evaluation_result):
+
+    already_false_positive = 0
+    already_detected = 0
+    accepted = 0
+    declined = 0
+    skipped = 0
+
+    for orig_commit_hash, candidates in evaluation_result.items():
+        for candidate in candidates:
+            cand_commit_hash, cand_rating, cand_message = candidate
+
+            if cand_commit_hash == orig_commit_hash:
+                print('WHAT THE FUCK IS THE SHIT. go back and check your implementation!')
+                getch()
+
+            if orig_commit_hash in false_positive_list and \
+               false_positive_list[orig_commit_hash] == cand_commit_hash:
+                print('Already marked as false positive. Skipping.')
+                already_false_positive += 1
+                continue
+
+            if transitive_list.is_related(orig_commit_hash, cand_commit_hash):
+                print('Already accepted as similar. Skipping.')
+                already_detected += 1
+                break # THINK ABOUT THIS!!
+
+            if cand_rating > AUTOACCEPT_THRESHOLD:
+                print('Autoaccepting ' + orig_commit_hash + ' <-> ' + cand_commit_hash)
+                yns = 'y'
+            else:
+                yns = ''
+                call(['./compare_hashes.sh', orig_commit_hash, cand_commit_hash])
+                print('Length of list of candidates: ' + str(len(candidates)))
+                print('Rating: ' + str(cand_rating) + ' ' + cand_message)
+                print('Yay or nay or skip?')
+
+            while yns not in ['y', 'n', 's']:
+                yns = getch()
+
+            if yns == 'y':
+                accepted += 1
+                transitive_list.insert(orig_commit_hash, cand_commit_hash)
+                break # THINK ABOUT THIS!!
+            elif yns == 'n':
+                declined += 1
+                print('nay. Hmkay.')
+                false_positive_list[orig_commit_hash] = cand_commit_hash
+            else:
+                skipped += 1
+                print('Skip. Kay...')
+
+    print('\n\nSome statistics:')
+    print(' Accepted: ' + str(accepted))
+    print(' Declined: ' + str(declined))
+    print(' Skipped: ' + str(skipped))
+    print(' Skipped due to previous detection: ' + str(already_detected))
+    print(' Skipped due to false positive mark: ' + str(already_false_positive))
+
+
+
+# Startup
 repo = Repo(REPO_LOCATION)
+
+# Load already known positives and false positives
+similar_patches = transitive_key_list_from_file(SIMILAR_PATCHES_FILE)
+false_positives = parse_file_to_dictionary(FALSE_POSTITIVES_FILES, must_exist=False)
+
+# Load patch stack definition
 patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 
-similar_patches = {}
-check_list = {}
 
-similar_patches_file = file_to_string(SIMILAR_PATCHES_FILE, must_exist=False)
-if similar_patches_file is not None and len(similar_patches_file):
-    similar_patches_file = list(filter(None, similar_patches_file.split('\n')))
-    for i in similar_patches_file:
-        orig_commit_hash, partner = i.split(' ')
-        similar_patches[orig_commit_hash] = partner
-
-
-# Check patch stacks against each other
+# Check patch against next patch version number, patch by patch
+evaluation_result = {}
 for index, cur_patch_stack in enumerate(patch_stack_list):
+
     # Bounds check
     if index == len(patch_stack_list)-1:
         break
 
     # Skip till version 3.0
-    #if cur_patch_stack.patch_version < KernelVersion('3.18'):
+    #if cur_patch_stack.patch_version < KernelVersion('3.0'):
     #    continue
-    #if cur_patch_stack.patch_version > KernelVersion('3.20'):
-    #    break
-    break
+    if cur_patch_stack.patch_version > KernelVersion('3.0'):
+        break
 
     next_patch_stack = patch_stack_list[index + 1]
 
@@ -159,37 +226,14 @@ for index, cur_patch_stack in enumerate(patch_stack_list):
     cache_commit_hashes(cur_patch_stack.commit_hashes)
     cache_commit_hashes(next_patch_stack.commit_hashes)
 
-    evaluation = {}
-    evaluation = evaluate_patch_list(cur_patch_stack.commit_hashes, next_patch_stack.commit_hashes)
-    # Only available in python > 3.5
-    #check_list = {**check_list, **evaluation}
-    check_list.update(evaluation)
+    this_evaluation = evaluate_patch_list(cur_patch_stack.commit_hashes,
+                                          next_patch_stack.commit_hashes,
+                                          parallelize=False,
+                                          chunksize=50)
 
+    merge_evaluation_results(evaluation_result, this_evaluation)
 
-# Manual rating
-for orig_commit_hash, candidates in check_list.items():
-    for candidate in candidates:
-        cand_commit_hash, cand_rating, cand_message = candidate
+interactive_rating(similar_patches, false_positives, evaluation_result)
 
-        if cand_rating > AUTOACCEPT_THRESHOLD:
-            print('Autoaccepting ' + orig_commit_hash + ' <-> ' + cand_commit_hash)
-            yn = 'y'
-        else:
-            yn = ''
-            call(['./compare_hashes.sh', orig_commit_hash, cand_commit_hash])
-            print('Rating: ' + str(cand_rating) + ' ' + cand_message)
-            print('Yay or nay? ')
-
-        while yn not in ['y', 'n']:
-                yn = getch()
-
-        if yn == 'y':
-                similar_patches[orig_commit_hash] = cand_commit_hash
-                break
-        else:
-                print('nay. Hmkay.')
-
-with open(SIMILAR_PATCHES_FILE, 'w') as f:
-        for orig_commit_hash, partner in similar_patches.items():
-                f.write(orig_commit_hash + ' ' + partner + '\n')
-        f.close()
+similar_patches.to_file(SIMILAR_PATCHES_FILE)
+write_dictionary_to_file(FALSE_POSTITIVES_FILES, false_positives)
