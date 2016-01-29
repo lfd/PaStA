@@ -9,8 +9,8 @@ import sys
 
 from PatchStack import \
     KernelVersion, get_commit, cache_commit_hashes, \
-    parse_patch_stack_definition, get_commit_hashes, TransitiveKeyList, transitive_key_list_from_file
-from Tools import getch, parse_file_to_dictionary, file_to_string, write_dictionary_to_file
+    parse_patch_stack_definition, get_commit_hashes
+from Tools import TransitiveKeyList, getch, parse_file_to_dictionary, file_to_string, write_dictionary_to_file
 
 
 REPO_LOCATION = './linux/'
@@ -196,7 +196,7 @@ def interactive_rating(transitive_list, false_positive_list, evaluation_result):
 repo = Repo(REPO_LOCATION)
 
 # Load already known positives and false positives
-similar_patches = transitive_key_list_from_file(SIMILAR_PATCHES_FILE)
+similar_patches = TransitiveKeyList.from_file(SIMILAR_PATCHES_FILE)
 false_positives = parse_file_to_dictionary(FALSE_POSTITIVES_FILES, must_exist=False)
 
 # Load patch stack definition
