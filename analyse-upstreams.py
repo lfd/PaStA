@@ -21,6 +21,7 @@ AUTOACCEPT_THRESHOLD = 400
 
 
 def evaluate_single_patch(original, candidate):
+
     orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email = get_commit(original)
     cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email = get_commit(candidate)
 
@@ -75,21 +76,24 @@ def evaluate_single_patch(original, candidate):
     return candidate, rating, message
 
 
-def evaluate_patch_list(original_hashes, candidate_hashes, parallelize=False, chunksize=10000):
+def evaluate_patch_list(original_hashes, candidate_hashes,
+                        parallelize=False, chunksize=10000):
     """
     Evaluates two list of original and candidate hashes against each other
 
     :param original_hashes: original patches
     :param candidate_hashes: potential candidates
+    :param parallelize: Parallelize evaluation
+    :param chunksize: chunksize
     :return: a dictionary with originals as keys and a list of potential candidates as value
     """
 
     retval = {}
 
-    for i, commit_hash in enumerate(original_hashes):
+    print('Evaluating ' + str(len(original_hashes)) + ' commit hashes against ' +
+          str(len(candidate_hashes)) + ' commit hashes')
 
-        sys.stdout.write('\rEvaluating ' + str(i+1) + '/' +
-              str(len(original_hashes)) + ' ' + commit_hash)
+    for i, commit_hash in enumerate(original_hashes):
 
         f = functools.partial(evaluate_single_patch, commit_hash)
         if parallelize:
@@ -110,8 +114,12 @@ def evaluate_patch_list(original_hashes, candidate_hashes, parallelize=False, ch
 
         retval[commit_hash] = result
 
-    sys.stdout.write('\n\n')
     return retval
+
+
+def _evaluate_patch_list_wrapper(args):
+    orig, cand = args
+    return evaluate_patch_list(orig, cand)
 
 
 def merge_evaluation_results(overall_evaluation, evaluation):
@@ -133,6 +141,7 @@ def interactive_rating(transitive_list, false_positive_list, evaluation_result):
 
     already_false_positive = 0
     already_detected = 0
+    auto_accepted = 0
     accepted = 0
     declined = 0
     skipped = 0
@@ -146,7 +155,7 @@ def interactive_rating(transitive_list, false_positive_list, evaluation_result):
                 getch()
 
             if orig_commit_hash in false_positive_list and \
-               false_positive_list[orig_commit_hash] == cand_commit_hash:
+               cand_commit_hash in false_positive_list[orig_commit_hash]:
                 print('Already marked as false positive. Skipping.')
                 already_false_positive += 1
                 continue
@@ -154,10 +163,11 @@ def interactive_rating(transitive_list, false_positive_list, evaluation_result):
             if transitive_list.is_related(orig_commit_hash, cand_commit_hash):
                 print('Already accepted as similar. Skipping.')
                 already_detected += 1
-                break # THINK ABOUT THIS!!
+                continue
 
             if cand_rating > AUTOACCEPT_THRESHOLD:
                 print('Autoaccepting ' + orig_commit_hash + ' <-> ' + cand_commit_hash)
+                auto_accepted += 1
                 yns = 'y'
             else:
                 yns = ''
@@ -172,22 +182,24 @@ def interactive_rating(transitive_list, false_positive_list, evaluation_result):
             if yns == 'y':
                 accepted += 1
                 transitive_list.insert(orig_commit_hash, cand_commit_hash)
-                break # THINK ABOUT THIS!!
             elif yns == 'n':
                 declined += 1
                 print('nay. Hmkay.')
-                false_positive_list[orig_commit_hash] = cand_commit_hash
+                if orig_commit_hash in false_positive_list:
+                    false_positive_list[orig_commit_hash].append(cand_commit_hash)
+                else:
+                    false_positive_list[orig_commit_hash] = [cand_commit_hash]
             else:
                 skipped += 1
                 print('Skip. Kay...')
 
     print('\n\nSome statistics:')
     print(' Accepted: ' + str(accepted))
+    print('   thereof autoaccepted: ' + str(auto_accepted))
     print(' Declined: ' + str(declined))
     print(' Skipped: ' + str(skipped))
     print(' Skipped due to previous detection: ' + str(already_detected))
     print(' Skipped due to false positive mark: ' + str(already_false_positive))
-
 
 
 # Startup
@@ -200,9 +212,9 @@ false_positives = DictList.from_file(FALSE_POSTITIVES_FILES, human_readable=Fals
 # Load patch stack definition
 patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 
-
 # Check patch against next patch version number, patch by patch
 evaluation_result = {}
+evaluation_list = []
 for index, cur_patch_stack in enumerate(patch_stack_list):
 
     # Bounds check
@@ -210,26 +222,27 @@ for index, cur_patch_stack in enumerate(patch_stack_list):
         break
 
     # Skip till version 3.0
-    #if cur_patch_stack.patch_version < KernelVersion('3.0'):
-    #    continue
-    if cur_patch_stack.patch_version > KernelVersion('3.0'):
-        break
+    if cur_patch_stack.patch_version < KernelVersion('2.6.999'):
+        continue
+    #if cur_patch_stack.patch_version > KernelVersion('3.2'):
+    #    break
 
     next_patch_stack = patch_stack_list[index + 1]
-
-    print('Finding similar patches on: ' +
-          str(cur_patch_stack.patch_version) +
-          ' <-> ' + str(next_patch_stack.patch_version))
+    print('Queueing ' + str(cur_patch_stack.patch_version) + ' <-> ' + str(next_patch_stack.patch_version))
 
     cache_commit_hashes(cur_patch_stack.commit_hashes)
     cache_commit_hashes(next_patch_stack.commit_hashes)
+    print('')
 
-    this_evaluation = evaluate_patch_list(cur_patch_stack.commit_hashes,
-                                          next_patch_stack.commit_hashes,
-                                          parallelize=False,
-                                          chunksize=50)
+    evaluation_list.append((cur_patch_stack.commit_hashes, next_patch_stack.commit_hashes))
 
-    merge_evaluation_results(evaluation_result, this_evaluation)
+pool = Pool(cpu_count())
+results = pool.map(_evaluate_patch_list_wrapper, evaluation_list)
+pool.close()
+pool.join()
+
+for result in results:
+    merge_evaluation_results(evaluation_result, result)
 
 interactive_rating(similar_patches, false_positives, evaluation_result)
 
