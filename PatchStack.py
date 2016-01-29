@@ -9,11 +9,13 @@ from termcolor import colored
 
 from Tools import file_to_string
 
-AFFECTED_FILES_LOCATION = './log/affected_files/'
-AUTHOR_DATE_LOCATION = './log/author_dates/'
-AUTHOR_EMAIL_LOCATION = './log/author_emails/'
-DIFFS_LOCATION = './log/diffs/'
-MESSAGES_LOCATION = './log/messages/'
+LOG_PREFIX='../log/'
+
+AFFECTED_FILES_LOCATION = LOG_PREFIX + 'affected_files/'
+AUTHOR_DATE_LOCATION = LOG_PREFIX + 'author_dates/'
+AUTHOR_EMAIL_LOCATION = LOG_PREFIX + 'author_emails/'
+DIFFS_LOCATION = LOG_PREFIX + 'diffs/'
+MESSAGES_LOCATION = LOG_PREFIX + 'messages/'
 
 DIFF_REGEX = re.compile('^[ \t]*[-\+]')
 
