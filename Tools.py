@@ -1,6 +1,7 @@
+import pickle
 import sys
-import tty
 import termios
+import tty
 
 
 class TransitiveKeyList:
@@ -136,27 +137,44 @@ def file_to_string(filename, must_exist=True):
     return retval
 
 
-def parse_file_to_dictionary(filename, must_exist=True):
-    retval = {}
+class DictList(dict):
+    def __init__(self, *args):
+        dict.__init__(self, *args)
 
-    try:
-        with open(filename, 'r') as f:
-            for line in f:
-                (key, val) = line.split(' ', 1)
-                retval[key] = list(map(lambda x: x.rstrip('\n'), val.split(' ')))
-            f.close()
-    except FileNotFoundError:
-        print('Warning, file ' + filename + ' not found!')
-        if must_exist:
-            raise
+    def to_file(self, filename, human_readable=False):
+        if human_readable:
+            if len(self) == 0:
+                return
 
-    return retval
+            with open(filename, 'w') as f:
+                f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + ' '.join(x[1]), self.items())) + '\n')
+                f.close()
+        else:
+            with open(filename + '.pkl', 'wb') as f:
+                pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def from_file(filename, human_readable=False, must_exist=False):
+        try:
+            if human_readable:
+                retval = DictList()
+                with open(filename, 'r') as f:
+                    for line in f:
+                        (key, val) = line.split(' ', 1)
+                        retval[key] = list(map(lambda x: x.rstrip('\n'), val.split(' ')))
+                    f.close()
+                return retval
+            else:
+                with open(filename + '.pkl', 'rb') as f:
+                    return DictList(pickle.load(f))
+
+        except FileNotFoundError:
+            if human_readable:
+                print('Warning, file ' + filename + ' not found!')
+            else:
+                print('Warning, file ' + filename + '.pkl not found!')
+            if must_exist:
+                raise
+            return DictList()
 
 
-def write_dictionary_to_file(filename, dict):
-    if len(dict) == 0:
-        return
-
-    with open(filename, 'w') as f:
-        f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + ' '.join(x[1]), dict.items())) + '\n')
-        f.close()

@@ -5,13 +5,11 @@ from fuzzywuzzy import fuzz
 from git import Repo
 from multiprocessing import Pool, cpu_count
 from subprocess import call
-import sys
 
 from PatchStack import \
     KernelVersion, get_commit, cache_commit_hashes, \
     parse_patch_stack_definition, get_commit_hashes
-from Tools import TransitiveKeyList, getch, parse_file_to_dictionary, file_to_string, write_dictionary_to_file
-
+from Tools import DictList, TransitiveKeyList, getch
 
 REPO_LOCATION = './linux/'
 PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
@@ -197,7 +195,7 @@ repo = Repo(REPO_LOCATION)
 
 # Load already known positives and false positives
 similar_patches = TransitiveKeyList.from_file(SIMILAR_PATCHES_FILE)
-false_positives = parse_file_to_dictionary(FALSE_POSTITIVES_FILES, must_exist=False)
+false_positives = DictList.from_file(FALSE_POSTITIVES_FILES, human_readable=False)
 
 # Load patch stack definition
 patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
@@ -236,4 +234,5 @@ for index, cur_patch_stack in enumerate(patch_stack_list):
 interactive_rating(similar_patches, false_positives, evaluation_result)
 
 similar_patches.to_file(SIMILAR_PATCHES_FILE)
-write_dictionary_to_file(FALSE_POSTITIVES_FILES, false_positives)
+false_positives.to_file(FALSE_POSTITIVES_FILES, human_readable=False)
+false_positives.to_file(FALSE_POSTITIVES_FILES, human_readable=True)
