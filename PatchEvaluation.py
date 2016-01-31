@@ -7,7 +7,6 @@ from PatchStack import get_commit
 from Tools import getch
 
 
-
 def evaluate_single_patch(original, candidate):
 
     orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email = get_commit(original)
@@ -15,14 +14,17 @@ def evaluate_single_patch(original, candidate):
 
     rating = 0
 
+    if original == candidate:
+        return None
+
     delta = cand_author_date - orig_author_date
     if delta.days < 0:
-        return candidate, 0, ''
+        return None
 
     # Filtert auch merge commits
     common_changed_files = len(list(set(orig_affected).intersection(cand_affected)))
     if common_changed_files == 0:
-        return candidate, 0, ''
+        return None
 
     rating += common_changed_files * 20
 
@@ -32,7 +34,7 @@ def evaluate_single_patch(original, candidate):
     diff_length_ratio = min(len(orig_diff), len(cand_diff)) / max(len(orig_diff), len(cand_diff))
 
     if diff_length_ratio < 0.70:
-        return candidate, 0, ''
+        return None
 
     if diff_length_ratio > 0.999:
         rating += 80
@@ -95,6 +97,13 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
         if not result:
             continue
 
+        # Drop None values
+        result = list(filter(None, result))
+
+        # Check if there are no results at all
+        if not result:
+            continue
+
         # sort by ratio
         result.sort(key=lambda x: x[1], reverse=True)
 
@@ -112,11 +121,16 @@ def merge_evaluation_results(overall_evaluation, evaluation):
     """
 
     for key, value in evaluation.items():
+        # Skip empty evaluation lists
+        if not value:
+            continue
+
         if key in overall_evaluation:
             overall_evaluation[key].append(value)
         else:
             overall_evaluation[key] = value
 
+        overall_evaluation[key].sort(key=lambda x: x[1], reverse=True)
 
 
 def interactive_rating(transitive_list, false_positive_list, evaluation_result,
@@ -137,7 +151,6 @@ def interactive_rating(transitive_list, false_positive_list, evaluation_result,
             # Check if both commit hashes are the same
             if cand_commit_hash == orig_commit_hash:
                 print('Go back and check your implementation!')
-                getch()
                 continue
 
             # Check if patch is already known as false positive
