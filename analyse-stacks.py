@@ -4,7 +4,7 @@ from git import Repo
 from multiprocessing import Pool, cpu_count
 
 from PatchEvaluation import evaluate_patch_list, merge_evaluation_results, interactive_rating
-from PatchStack import KernelVersion, cache_commit_hashes, parse_patch_stack_definition
+from PatchStack import KernelVersion, cache_commit_hashes, parse_patch_stack_definition, get_commit_hashes
 from Tools import DictList, TransitiveKeyList
 
 REPO_LOCATION = './linux/'
@@ -17,7 +17,8 @@ AUTOACCEPT_THRESHOLD = 400
 
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args
-    return evaluate_patch_list(orig, cand)
+    return evaluate_patch_list(orig, cand,
+                               verbose=True)
 
 # Startup
 repo = Repo(REPO_LOCATION)
@@ -29,41 +30,46 @@ false_positives = DictList.from_file(FALSE_POSTITIVES_FILES, human_readable=Fals
 # Load patch stack definition
 patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 
-# Check patch against next patch version number, patch by patch
+# Check patch against all other patches
 evaluation_result = {}
 evaluation_list = []
-for index, cur_patch_stack in enumerate(patch_stack_list):
+candidates = []
 
-    # Bounds check
-    if index == len(patch_stack_list)-1:
-        break
+for cur_patch_stack in patch_stack_list:
 
     # Skip till version 3.0
     if cur_patch_stack.patch_version < KernelVersion('2.6.999'):
         continue
     #if cur_patch_stack.patch_version > KernelVersion('3.1'):
     #    break
+    candidates += cur_patch_stack.commit_hashes
 
-    next_patch_stack = patch_stack_list[index + 1]
-    print('Queueing ' + str(cur_patch_stack.patch_version) + ' <-> ' + str(next_patch_stack.patch_version))
+cache_commit_hashes(candidates)
+for cur_patch_stack in patch_stack_list:
+    # Skip till version 3.0
+    if cur_patch_stack.patch_version < KernelVersion('2.6.999'):
+        continue
+    if cur_patch_stack.patch_version > KernelVersion('3.1'):
+        break
 
-    cache_commit_hashes(cur_patch_stack.commit_hashes)
-    cache_commit_hashes(next_patch_stack.commit_hashes)
-    print('')
+    print('Queueing ' + str(cur_patch_stack.patch_version) + ' <-> All others')
 
-    evaluation_list.append((cur_patch_stack.commit_hashes, next_patch_stack.commit_hashes))
+    print('Starting evaluation.')
+    result = evaluate_patch_list(cur_patch_stack.commit_hashes, candidates,
+                                 parallelize=True, chunksize=5000, verbose=True)
+    print('Evaluation completed.')
+    print('Prefiltering results to save memory.')
+    for orig_commit_hash, list_of_candidates in result.items():
+        result[orig_commit_hash] = list(filter(lambda x: x[1] > INTERACTIVE_THRESHOLD, list_of_candidates))
 
-print('Starting evaluation.')
+    foo = sum(map(lambda x: len(x[1]), result.items()))
+    print('FYI: ' + str(foo) + ' items!')
 
-pool = Pool(cpu_count())
-results = pool.map(_evaluate_patch_list_wrapper, evaluation_list)
-pool.close()
-pool.join()
-
-print('Evaluation completed.')
-
-for result in results:
     merge_evaluation_results(evaluation_result, result)
+
+    # Save memory
+    result = None
+
 
 interactive_rating(similar_patches, false_positives, evaluation_result,
                    AUTOACCEPT_THRESHOLD, INTERACTIVE_THRESHOLD)
