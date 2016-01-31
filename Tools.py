@@ -27,6 +27,9 @@ class TransitiveKeyList:
                 for key in keylist:
                     self.forward_lookup[key] = i
 
+        for i in self.transitive_list:
+            i.sort()
+
     def is_related(self, key1, key2):
         if key1 in self.forward_lookup and key2 in self.forward_lookup:
             return self.forward_lookup[key1] == self.forward_lookup[key2]
@@ -73,6 +76,8 @@ class TransitiveKeyList:
         self.optimize()
 
     def to_file(self, filename):
+        # Optimizing before writing keeps uniformity of data
+        self.optimize()
         with open(filename, 'w') as f:
             f.write(str(self))
             f.close()
