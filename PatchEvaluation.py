@@ -1,4 +1,6 @@
 import functools
+
+import sys
 from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
 from subprocess import call
@@ -67,7 +69,8 @@ def evaluate_single_patch(original, candidate):
 
 
 def evaluate_patch_list(original_hashes, candidate_hashes,
-                        parallelize=False, chunksize=10000):
+                        parallelize=False, chunksize=10000,
+                        verbose=False):
     """
     Evaluates two list of original and candidate hashes against each other
 
@@ -84,6 +87,9 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
           str(len(candidate_hashes)) + ' commit hashes')
 
     for i, commit_hash in enumerate(original_hashes):
+
+        if verbose:
+            sys.stdout.write('\r Evaluating ' + str(i) + '/' + str(len(original_hashes)))
 
         f = functools.partial(evaluate_single_patch, commit_hash)
         if parallelize:
@@ -108,6 +114,9 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
         result.sort(key=lambda x: x[1], reverse=True)
 
         retval[commit_hash] = result
+
+    if verbose:
+        sys.stdout.write('\n')
 
     return retval
 
