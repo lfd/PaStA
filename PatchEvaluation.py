@@ -86,7 +86,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
         f = functools.partial(evaluate_single_patch, commit_hash)
         if parallelize:
             pool = Pool(cpu_count())
-            result = pool.map(f, candidate_hashes, chunksize=10000)
+            result = pool.map(f, candidate_hashes, chunksize)
             pool.close()
             pool.join()
         else:
