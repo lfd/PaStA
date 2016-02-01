@@ -107,6 +107,9 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
     retval = {}
     num_cpus = int(cpu_count() * 1.25)
 
+    print('Evaluating ' + str(len(original_hashes)) + ' commit hashes against ' +
+          str(len(candidate_hashes)) + ' commit hashes')
+
     if verbose:
         print('Running preevaluation.')
     f = functools.partial(_preevaluation_helper, candidate_hashes)
@@ -121,9 +124,6 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
     preeval_result = dict(filter(lambda x: not not x[1], preeval_result))
     if verbose:
         print('Preevaluation finished.')
-
-    print('Evaluating ' + str(len(original_hashes)) + ' commit hashes against ' +
-          str(len(candidate_hashes)) + ' commit hashes')
 
     for i, commit_hash in enumerate(original_hashes):
         if verbose:
