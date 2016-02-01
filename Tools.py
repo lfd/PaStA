@@ -1,4 +1,5 @@
 import pickle
+from subprocess import call
 import sys
 import termios
 import tty
@@ -181,3 +182,6 @@ def file_to_string(filename, must_exist=True):
         return None
 
     return retval
+
+def compare_hashes(orig_commit_hash, cand_commit_hash):
+    call(['./compare_hashes.sh', orig_commit_hash, cand_commit_hash])

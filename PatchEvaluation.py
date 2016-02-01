@@ -4,10 +4,9 @@ import sys
 from fuzzywuzzy import fuzz
 from math import ceil
 from multiprocessing import Pool, cpu_count
-from subprocess import call
 
 from PatchStack import get_commit
-from Tools import getch
+from Tools import getch, compare_hashes
 
 
 def preevaluate_single_patch(original, candidate):
@@ -228,7 +227,7 @@ def interactive_rating(transitive_list, false_positive_list, evaluation_result,
             # Nope? Then let's do an interactive rating by a human
             else:
                 yns = ''
-                call(['./compare_hashes.sh', orig_commit_hash, cand_commit_hash])
+                compare_hashes(orig_commit_hash, cand_commit_hash)
                 print('Length of list of candidates: ' + str(len(candidates)))
                 print('Rating: ' + str(cand_rating) + ' ' + cand_message)
                 print('(y)ay or (n)ay or (s)kip?')
