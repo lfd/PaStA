@@ -8,6 +8,32 @@ from subprocess import call
 from PatchStack import get_commit
 from Tools import getch
 
+def preevaluate_single_patch(original, candidate):
+    orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email = get_commit(original)
+    cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email = get_commit(candidate)
+
+    if original == candidate:
+        return False
+
+    delta = cand_author_date - orig_author_date
+    if delta.days < 0:
+        return False
+
+    if 'serial: 8250: Call flush_to_ldisc when the irq is threaded' in orig_message and \
+        'serial: 8250: Clean up the locking for -rt' in cand_message:
+        return False
+
+    if 'serial: 8250: Call flush_to_ldisc when the irq is threaded' in cand_message and \
+        'serial: 8250: Clean up the locking for -rt' in orig_message:
+        return False
+
+    # Filtert auch merge commits
+    common_changed_files = len(list(set(orig_affected).intersection(cand_affected)))
+    if common_changed_files == 0:
+        return False
+
+    return True
+
 
 def evaluate_single_patch(original, candidate):
 
@@ -15,18 +41,10 @@ def evaluate_single_patch(original, candidate):
     cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email = get_commit(candidate)
 
     rating = 0
-
-    if original == candidate:
-        return None
-
     delta = cand_author_date - orig_author_date
-    if delta.days < 0:
-        return None
 
     # Filtert auch merge commits
     common_changed_files = len(list(set(orig_affected).intersection(cand_affected)))
-    if common_changed_files == 0:
-        return None
 
     rating += common_changed_files * 20
 
@@ -88,17 +106,20 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
 
     for i, commit_hash in enumerate(original_hashes):
 
+        f = functools.partial(preevaluate_single_patch, commit_hash)
+        this_candidates = list(filter(f, candidate_hashes))
+
         if verbose:
             sys.stdout.write('\r Evaluating ' + str(i) + '/' + str(len(original_hashes)))
 
         f = functools.partial(evaluate_single_patch, commit_hash)
         if parallelize:
             pool = Pool(cpu_count())
-            result = pool.map(f, candidate_hashes, chunksize)
+            result = pool.map(f, this_candidates, chunksize)
             pool.close()
             pool.join()
         else:
-            result = list(map(f, candidate_hashes))
+            result = list(map(f, this_candidates))
 
         if not result:
             continue
