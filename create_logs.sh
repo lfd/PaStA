@@ -10,6 +10,8 @@ AUTHOR_EMAILS="$LOGDIR/author_emails"
 DIFF_DIR="$LOGDIR/diffs"
 MESSAGES_DIR="$LOGDIR/messages"
 
+NPROC=$(nproc)
+
 mkdir -p $AFFECTED_FILES_DIR $AUTHOR_DATES_DIR $AUTHOR_EMAILS $DIFF_DIR $MESSAGES_DIR
 
 function create_log {
@@ -19,7 +21,7 @@ function create_log {
 	location=$4
 
 	git -C $KERNELDST --no-pager log --pretty=format:%H $version_range | \
-		xargs -n 1 -P 14 -I {} \
+		xargs -n 1 -P $NPROC -I {} \
 			sh -c 'git -C $1 --no-pager show $2 --pretty=format:$3 $4 > $5/$4' \
 				-- "$KERNELDST" "$additional_argument" "$format_string" "{}" "$location"
 }
