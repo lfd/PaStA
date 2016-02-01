@@ -2,6 +2,7 @@ import functools
 
 import sys
 from fuzzywuzzy import fuzz
+from math import ceil
 from multiprocessing import Pool, cpu_count
 from subprocess import call
 
@@ -87,8 +88,7 @@ def evaluate_single_patch(original, candidate):
 
 
 def evaluate_patch_list(original_hashes, candidate_hashes,
-                        parallelize=False, chunksize=10000,
-                        verbose=False):
+                        parallelize=False, verbose=False):
     """
     Evaluates two list of original and candidate hashes against each other
 
@@ -100,6 +100,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
     """
 
     retval = {}
+    num_cpus = int(cpu_count() * 1.25)
 
     print('Evaluating ' + str(len(original_hashes)) + ' commit hashes against ' +
           str(len(candidate_hashes)) + ' commit hashes')
@@ -107,19 +108,20 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
     for i, commit_hash in enumerate(original_hashes):
 
         f = functools.partial(preevaluate_single_patch, commit_hash)
-        this_candidates = list(filter(f, candidate_hashes))
+        this_candidate_hashes = list(filter(f, candidate_hashes))
 
         if verbose:
             sys.stdout.write('\r Evaluating ' + str(i) + '/' + str(len(original_hashes)))
 
         f = functools.partial(evaluate_single_patch, commit_hash)
-        if parallelize:
-            pool = Pool(cpu_count())
-            result = pool.map(f, this_candidates, chunksize)
+        if parallelize and len(this_candidate_hashes) > 5*num_cpus:
+            chunksize = ceil(len(this_candidate_hashes) / num_cpus)
+            pool = Pool(num_cpus)
+            result = pool.map(f, this_candidate_hashes, chunksize=chunksize)
             pool.close()
             pool.join()
         else:
-            result = list(map(f, this_candidates))
+            result = list(map(f, this_candidate_hashes))
 
         if not result:
             continue

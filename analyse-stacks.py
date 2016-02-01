@@ -56,7 +56,7 @@ for cur_patch_stack in patch_stack_list:
 
     print('Starting evaluation.')
     result = evaluate_patch_list(cur_patch_stack.commit_hashes, candidates,
-                                 parallelize=True, chunksize=5000, verbose=True)
+                                 parallelize=True, verbose=True)
     print('Evaluation completed.')
     print('Prefiltering results to save memory.')
     for orig_commit_hash, list_of_candidates in result.items():
