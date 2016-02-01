@@ -87,6 +87,11 @@ def evaluate_single_patch(original, candidate):
     return candidate, rating, message
 
 
+def _preevaluation_helper(candidate_hashes, orig_hash):
+    f = functools.partial(preevaluate_single_patch, orig_hash)
+    return orig_hash, list(filter(f, candidate_hashes))
+
+
 def evaluate_patch_list(original_hashes, candidate_hashes,
                         parallelize=False, verbose=False):
     """
@@ -102,18 +107,36 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
     retval = {}
     num_cpus = int(cpu_count() * 1.25)
 
+    if verbose:
+        print('Running preevaluation.')
+    f = functools.partial(_preevaluation_helper, candidate_hashes)
+    if parallelize:
+        p = Pool(num_cpus)
+        preeval_result= p.map(f, original_hashes)
+        p.close()
+        p.join()
+    else:
+        preeval_result = list(map(f, original_hashes))
+    # Filter empty candidates
+    preeval_result = dict(filter(lambda x: not not x[1], preeval_result))
+    if verbose:
+        print('Preevaluation finished.')
+
     print('Evaluating ' + str(len(original_hashes)) + ' commit hashes against ' +
           str(len(candidate_hashes)) + ' commit hashes')
 
     for i, commit_hash in enumerate(original_hashes):
-
-        f = functools.partial(preevaluate_single_patch, commit_hash)
-        this_candidate_hashes = list(filter(f, candidate_hashes))
-
         if verbose:
-            sys.stdout.write('\r Evaluating ' + str(i) + '/' + str(len(original_hashes)))
+            sys.stdout.write('\r Evaluating ' + str(i) + '/'
+                             + str(len(original_hashes)))
 
+        # Do we have to consider the commit_hash?
+        if commit_hash not in preeval_result:
+            continue
+
+        this_candidate_hashes = preeval_result[commit_hash]
         f = functools.partial(evaluate_single_patch, commit_hash)
+
         if parallelize and len(this_candidate_hashes) > 5*num_cpus:
             chunksize = ceil(len(this_candidate_hashes) / num_cpus)
             pool = Pool(num_cpus)
@@ -122,9 +145,6 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
             pool.join()
         else:
             result = list(map(f, this_candidate_hashes))
-
-        if not result:
-            continue
 
         # Drop None values
         result = list(filter(None, result))
