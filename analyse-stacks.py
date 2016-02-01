@@ -17,8 +17,7 @@ AUTOACCEPT_THRESHOLD = 400
 
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args
-    return evaluate_patch_list(orig, cand,
-                               verbose=True)
+    return evaluate_patch_list(orig, cand)
 
 # Startup
 repo = Repo(REPO_LOCATION)
@@ -53,23 +52,18 @@ for cur_patch_stack in patch_stack_list:
         break
 
     print('Queueing ' + str(cur_patch_stack.patch_version) + ' <-> All others')
+    evaluation_list.append((cur_patch_stack.commit_hashes, candidates))
 
-    print('Starting evaluation.')
-    result = evaluate_patch_list(cur_patch_stack.commit_hashes, candidates,
-                                 parallelize=True, verbose=True)
-    print('Evaluation completed.')
-    print('Prefiltering results to save memory.')
-    for orig_commit_hash, list_of_candidates in result.items():
-        result[orig_commit_hash] = list(filter(lambda x: x[1] > INTERACTIVE_THRESHOLD, list_of_candidates))
 
-    foo = sum(map(lambda x: len(x[1]), result.items()))
-    print('FYI: ' + str(foo) + ' items!')
+print('Starting evaluation.')
+pool = Pool(cpu_count())
+results = pool.map(_evaluate_patch_list_wrapper, evaluation_list)
+pool.close()
+pool.join()
+print('Evaluation completed.')
 
+for result in results:
     merge_evaluation_results(evaluation_result, result)
-
-    # Save memory
-    result = None
-
 
 interactive_rating(similar_patches, false_positives, evaluation_result,
                    AUTOACCEPT_THRESHOLD, INTERACTIVE_THRESHOLD)
