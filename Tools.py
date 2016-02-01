@@ -15,21 +15,22 @@ class TransitiveKeyList:
         # Get optimized list
         filtered_list = list(filter(None, self.transitive_list))
 
-        # Check if optimization is necessary
-        if len(self.transitive_list) != len(filtered_list):
-            # Reset lookup table
-            self.forward_lookup = {}
+        # Reset lookup table
+        self.forward_lookup = {}
 
-            # Filter orphaned elements
-            self.transitive_list = filtered_list
+        # Filter orphaned elements
+        self.transitive_list = filtered_list
 
-            # Recreate the forward lookup dictionary
-            for i, keylist in enumerate(self.transitive_list):
-                for key in keylist:
-                    self.forward_lookup[key] = i
-
+        # Sort inner lists
         for i in self.transitive_list:
             i.sort()
+        # Sort outer list
+        self.transitive_list.sort()
+
+        # Recreate the forward lookup dictionary
+        for i, keylist in enumerate(self.transitive_list):
+            for key in keylist:
+                self.forward_lookup[key] = i
 
     def is_related(self, key1, key2):
         if key1 in self.forward_lookup and key2 in self.forward_lookup:
@@ -89,6 +90,7 @@ class TransitiveKeyList:
             yield i
 
     def __str__(self):
+        self.optimize()
         return '\n'.join(
                 map(lambda x: ' '.join(map(str, x)),
                     filter(None, self.transitive_list)))
