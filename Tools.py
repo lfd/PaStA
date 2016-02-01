@@ -114,34 +114,6 @@ class TransitiveKeyList:
         return retval
 
 
-def getch():
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    try:
-        tty.setraw(sys.stdin.fileno())
-        ch = sys.stdin.read(1)
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    return ch
-
-
-def file_to_string(filename, must_exist=True):
-    try:
-        # Well things are crappy. For decades, encoding has been a real problem
-        # Git commits in the linux kernel are messy and sometimes have non-valid encoding
-        # Anyway, opening a file as binary and decoding it to iso8859 solves the problem :-)
-        with open(filename, 'rb') as f:
-            retval = str(f.read().decode('iso8859'))
-            f.close()
-    except FileNotFoundError:
-        print('Warning, file ' + filename + ' not found!')
-        if must_exist:
-            raise
-        return None
-
-    return retval
-
-
 class DictList(dict):
     def __init__(self, *args):
         dict.__init__(self, *args)
@@ -181,3 +153,31 @@ class DictList(dict):
             if must_exist:
                 raise
             return DictList()
+
+
+def getch():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+
+def file_to_string(filename, must_exist=True):
+    try:
+        # Well things are crappy. For decades, encoding has been a real problem
+        # Git commits in the linux kernel are messy and sometimes have non-valid encoding
+        # Anyway, opening a file as binary and decoding it to iso8859 solves the problem :-)
+        with open(filename, 'rb') as f:
+            retval = str(f.read().decode('iso8859'))
+            f.close()
+    except FileNotFoundError:
+        print('Warning, file ' + filename + ' not found!')
+        if must_exist:
+            raise
+        return None
+
+    return retval
