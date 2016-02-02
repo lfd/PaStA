@@ -177,9 +177,9 @@ class KernelVersion:
 
 class Commit:
 
-    DIFF_REGEX = re.compile('^[ \t]*[-\+@]')
-    MESSAGE_REGEX = re.compile('^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:)', re.IGNORECASE)
-    REVERT_REGEX = re.compile('revert', re.IGNORECASE)
+    DIFF_REGEX = re.compile(r'^[ \t]*[-\+@]')
+    MESSAGE_REGEX = re.compile(r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:)', re.IGNORECASE)
+    REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
 
     def __init__(self, message, diff, affected, author_date, author_email):
 
