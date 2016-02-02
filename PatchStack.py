@@ -17,10 +17,6 @@ AUTHOR_EMAIL_LOCATION = LOG_PREFIX + 'author_emails/'
 DIFFS_LOCATION = LOG_PREFIX + 'diffs/'
 MESSAGES_LOCATION = LOG_PREFIX + 'messages/'
 
-DIFF_REGEX = re.compile('^[ \t]*[-\+\@]')
-MESSAGE_REGEX = re.compile('^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:)', re.IGNORECASE)
-REVERT_REGEX = re.compile('revert', re.IGNORECASE)
-
 commits = {}
 
 
@@ -180,13 +176,32 @@ class KernelVersion:
 
 
 class Commit:
-    def __init__(self, message, diff, affected, author_date, author_email, is_revert):
+
+    DIFF_REGEX = re.compile('^[ \t]*[-\+@]')
+    MESSAGE_REGEX = re.compile('^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:)', re.IGNORECASE)
+    REVERT_REGEX = re.compile('revert', re.IGNORECASE)
+
+    def __init__(self, message, diff, affected, author_date, author_email):
+
+        self. is_revert = bool(Commit.REVERT_REGEX.search(message))
+
+        message = list(filter(None, message.splitlines()))
+        message = list(filter(lambda x: not Commit.MESSAGE_REGEX.match(x), message))
         self.message = message
+
+        diff = diff.splitlines()
+        diff = list(filter(lambda x: Commit.DIFF_REGEX.match(x), diff))
         self.diff = diff
+
+        # TBD use set()
+        affected = list(filter(None, affected.splitlines()))
+        affected.sort()
         self.affected = affected
+
+        author_date = datetime.fromtimestamp(int(author_date))
         self.author_date = author_date
+
         self.author_email = author_email
-        self.is_revert = is_revert
 
 
 class VersionPoint:
@@ -244,7 +259,7 @@ def get_date_of_commit(repo, commit):
 
 def get_commit_hashes(repo, start, end):
     hashes = repo.git.log('--pretty=format:%H', start + '...' + end)
-    hashes = hashes.split('\n')
+    hashes = hashes.splitlines()
     return hashes
 
 
@@ -289,30 +304,14 @@ def get_commit(commit_hash):
     if commit_hash in commits:
         return commits[commit_hash]
 
-    # Load commit message
     message = file_to_string(MESSAGES_LOCATION + commit_hash)
-    is_revert = bool(REVERT_REGEX.search(message))
-    message = list(filter(None, message.split('\n')))
-    message = list(filter(lambda x: not MESSAGE_REGEX.match(x), message))
-
-    # Load commit diff
     diff = file_to_string(DIFFS_LOCATION + commit_hash)
-    diff = diff.split('\n')
-    diff = list(filter(lambda x: DIFF_REGEX.match(x), diff))
-
-    # Load affected files
     affected = file_to_string(AFFECTED_FILES_LOCATION + commit_hash)
-    affected = list(filter(None, affected.split('\n')))
-    affected.sort()
-
-    # Load author date
     author_date = file_to_string(AUTHOR_DATE_LOCATION + commit_hash)
-    author_date = datetime.fromtimestamp(int(author_date))
-
-    # Load author email
     author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
 
-    commit = Commit(message, diff, affected, author_date, author_email, is_revert)
+    commit = Commit(message, diff, affected, author_date, author_email)
+
     commits[commit_hash] = commit
     return commits[commit_hash]
 
