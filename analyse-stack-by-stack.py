@@ -12,8 +12,8 @@ PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
 SIMILAR_PATCHES_FILE = './similar_patch_list'
 FALSE_POSTITIVES_FILES = './false-positives'
 
-INTERACTIVE_THRESHOLD = 350
-AUTOACCEPT_THRESHOLD = 400
+INTERACTIVE_THRESHOLD = 0.85
+AUTOACCEPT_THRESHOLD = 0.9
 
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args

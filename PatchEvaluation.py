@@ -1,6 +1,5 @@
-import functools
-
 import sys
+import functools
 from fuzzywuzzy import fuzz
 from math import ceil
 from multiprocessing import Pool, cpu_count
@@ -9,78 +8,73 @@ from PatchStack import get_commit
 from Tools import getch, compare_hashes
 
 
-def preevaluate_single_patch(original, candidate):
-    orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email, orig_is_revert = get_commit(original)
-    cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email, cand_is_revert = get_commit(candidate)
+def preevaluate_single_patch(original_hash, candidate_hash):
+    orig = get_commit(original_hash)
+    cand = get_commit(candidate_hash)
 
-    if original == candidate:
+    if original_hash == candidate_hash:
         return False
 
-    delta = cand_author_date - orig_author_date
+    delta = cand.author_date - orig.author_date
     if delta.days < 0:
         return False
 
     # Check if patch is a revertion
-    if orig_is_revert != cand_is_revert:
+    if orig.is_revert != cand.is_revert:
         return False
 
     # Filtert auch merge commits
-    common_changed_files = len(list(set(orig_affected).intersection(cand_affected)))
+    common_changed_files = len(list(set(orig.affected).intersection(cand.affected)))
     if common_changed_files == 0:
         return False
 
     return True
 
 
-def evaluate_single_patch(original, candidate):
+def evaluate_single_patch(original_hash, candidate_hash):
 
-    orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email = get_commit(original)
-    cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email = get_commit(candidate)
-
-    rating = 0
-    delta = cand_author_date - orig_author_date
+    orig = get_commit(original_hash)
+    cand = get_commit(candidate_hash)
 
     # Filtert auch merge commits
-    common_changed_files = len(list(set(orig_affected).intersection(cand_affected)))
+    #common_changed_files = len(list(set(orig_affected).intersection(cand_affected)))
+    #rating += common_changed_files * 20
 
-    rating += common_changed_files * 20
+    o_len = sum(map(len, orig.diff))
+    c_len = sum(map(len, cand.diff))
+    diff_length_ratio = min(o_len, c_len) / max(o_len, c_len)
+    #diff_length_ratio = min(len(orig_diff), len(cand_diff)) / max(len(orig_diff), len(cand_diff))
 
-    #o_len = sum(map(len, orig_diff))
-    #c_len = sum(map(len, cand_diff))
-    #diff_length_ratio = min(o_len, c_len) / max(o_len, c_len)
-    diff_length_ratio = min(len(orig_diff), len(cand_diff)) / max(len(orig_diff), len(cand_diff))
-
-    if diff_length_ratio < 0.70:
+    if diff_length_ratio < 0.75:
         return None
 
-    if diff_length_ratio > 0.999:
-        rating += 80
-    else:
-        rating += int(diff_length_ratio*100 - 70)
-
-    # compare author date
     # killer argument, this means that orig and
     # cand have the _exact_ same timestamp
+    if orig.author_date == cand.author_date:
+        return candidate_hash, 1.0, 'Exact same date'
 
-    if orig_author_date == cand_author_date:
-        rating += 150
-    elif delta.days < 100:
-        rating += 100 - delta.days
+    # compare author date
+    #delta = cand_author_date - orig_author_date
+    #if delta.days < 100:
+    #    rating += 100 - delta.days
+
+    if orig.author_email == cand.author_email:
+        email_rating = 0.0
     else:
-        rating -= delta.days - 100
+        email_rating = 0
 
-    if orig_author_email == cand_author_email:
-        rating += 50
-    else:
-        rating -= 20
 
-    rating += fuzz.token_sort_ratio(orig_diff, cand_diff)
 
-    rating += fuzz.token_sort_ratio(orig_message, cand_message)
+    msg_rating = 0.4 * (fuzz.token_sort_ratio(orig.message, cand.message)/100)
+    diff_rating = 0.8 * (fuzz.token_sort_ratio(orig.diff, cand.diff)/100)
 
-    message = 'diff-length-ratio: ' + str(diff_length_ratio)
+    rating = email_rating + msg_rating + diff_rating
 
-    return candidate, rating, message
+    message = str('Email: ' + str(email_rating) +
+                  ' Msg: ' + str(msg_rating) +
+                  ' Diff: ' + str(diff_rating))
+
+    return candidate_hash, rating, message
 
 
 def _preevaluation_helper(candidate_hashes, orig_hash):

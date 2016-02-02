@@ -179,6 +179,16 @@ class KernelVersion:
         return str(self)
 
 
+class Commit:
+    def __init__(self, message, diff, affected, author_date, author_email, is_revert):
+        self.message = message
+        self.diff = diff
+        self.affected = affected
+        self.author_date = author_date
+        self.author_email = author_email
+        self.is_revert = is_revert
+
+
 class VersionPoint:
     def __init__(self, commit, version, release_date):
         self.commit = commit
@@ -302,7 +312,8 @@ def get_commit(commit_hash):
     # Load author email
     author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
 
-    commits[commit_hash] = (message, diff, affected, author_date, author_email, is_revert)
+    commit = Commit(message, diff, affected, author_date, author_email, is_revert)
+    commits[commit_hash] = commit
     return commits[commit_hash]
 
 
