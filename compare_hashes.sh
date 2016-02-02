@@ -8,6 +8,7 @@ function show_hash {
 	echo $tmp
 }
 
+clear
 lhs=$(show_hash $1)
 rhs=$(show_hash $2)
 pr -w 150 -m -t $lhs $rhs
