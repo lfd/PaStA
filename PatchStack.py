@@ -17,7 +17,9 @@ AUTHOR_EMAIL_LOCATION = LOG_PREFIX + 'author_emails/'
 DIFFS_LOCATION = LOG_PREFIX + 'diffs/'
 MESSAGES_LOCATION = LOG_PREFIX + 'messages/'
 
-DIFF_REGEX = re.compile('^[ \t]*[-\+]')
+DIFF_REGEX = re.compile('^[ \t]*[-\+\@]')
+MESSAGE_REGEX = re.compile('^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:)', re.IGNORECASE)
+REVERT_REGEX = re.compile('revert', re.IGNORECASE)
 
 commits = {}
 
@@ -279,11 +281,13 @@ def get_commit(commit_hash):
 
     # Load commit message
     message = file_to_string(MESSAGES_LOCATION + commit_hash)
+    is_revert = bool(REVERT_REGEX.search(message))
+    message = list(filter(None, message.split('\n')))
+    message = list(filter(lambda x: not MESSAGE_REGEX.match(x), message))
 
     # Load commit diff
     diff = file_to_string(DIFFS_LOCATION + commit_hash)
     diff = diff.split('\n')
-    # only respect changes
     diff = list(filter(lambda x: DIFF_REGEX.match(x), diff))
 
     # Load affected files
@@ -298,7 +302,7 @@ def get_commit(commit_hash):
     # Load author email
     author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
 
-    commits[commit_hash] = (message, diff, affected, author_date, author_email)
+    commits[commit_hash] = (message, diff, affected, author_date, author_email, is_revert)
     return commits[commit_hash]
 
 

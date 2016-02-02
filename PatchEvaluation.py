@@ -10,8 +10,8 @@ from Tools import getch, compare_hashes
 
 
 def preevaluate_single_patch(original, candidate):
-    orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email = get_commit(original)
-    cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email = get_commit(candidate)
+    orig_message, orig_diff, orig_affected, orig_author_date, orig_author_email, orig_is_revert = get_commit(original)
+    cand_message, cand_diff, cand_affected, cand_author_date, cand_author_email, cand_is_revert = get_commit(candidate)
 
     if original == candidate:
         return False
@@ -20,12 +20,8 @@ def preevaluate_single_patch(original, candidate):
     if delta.days < 0:
         return False
 
-    if 'serial: 8250: Call flush_to_ldisc when the irq is threaded' in orig_message and \
-       'serial: 8250: Clean up the locking for -rt' in cand_message:
-        return False
-
-    if 'serial: 8250: Call flush_to_ldisc when the irq is threaded' in cand_message and \
-       'serial: 8250: Clean up the locking for -rt' in orig_message:
+    # Check if patch is a revertion
+    if orig_is_revert != cand_is_revert:
         return False
 
     # Filtert auch merge commits
