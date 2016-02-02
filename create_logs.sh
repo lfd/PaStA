@@ -36,7 +36,7 @@ function create_log_for_version_range {
 	create_log "$version_range" "" "--name-only" $AFFECTED_FILES_DIR
 
 	echo "Creating diff log for ${version_range}..."
-	create_log "$version_range" "" "" $DIFF_DIR
+	create_log "$version_range" "" "--patience" $DIFF_DIR
 
 	echo "Creating author date log for ${version_range}..."
 	create_log "$version_range" "%at" "--quiet" $AUTHOR_DATES_DIR
