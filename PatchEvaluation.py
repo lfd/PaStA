@@ -24,7 +24,7 @@ def preevaluate_single_patch(original_hash, candidate_hash):
         return False
 
     # Filtert auch merge commits
-    common_changed_files = len(list(set(orig.affected).intersection(cand.affected)))
+    common_changed_files = len(orig.affected.intersection(cand.affected))
     if common_changed_files == 0:
         return False
 

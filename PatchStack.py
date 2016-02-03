@@ -185,21 +185,20 @@ class Commit:
 
         self. is_revert = bool(Commit.REVERT_REGEX.search(message))
 
-        message = list(filter(None, message.splitlines()))
-        message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x), message))
-        self.message = message
+        # Split by linebreaks and filter empty lines
+        self.message = list(filter(None, message.splitlines()))
+        # Filter signed-off-by lines
+        self.message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
+                                   self.message))
 
-        diff = diff.splitlines()
-        diff = list(filter(lambda x: Commit.DIFF_REGEX.match(x), diff))
-        self.diff = diff
+        # Split by linebreaks and filter empty lines
+        self.diff = list(filter(None, diff.splitlines()))
+        # Filter parts of interest
+        self.diff = list(filter(lambda x: Commit.DIFF_REGEX.match(x), self.diff))
 
-        # TBD use set()
-        affected = list(filter(None, affected.splitlines()))
-        affected.sort()
-        self.affected = affected
+        self.affected = set(filter(None, affected.splitlines()))
 
-        author_date = datetime.fromtimestamp(int(author_date))
-        self.author_date = author_date
+        self.author_date = datetime.fromtimestamp(int(author_date))
 
         self.author_email = author_email
 
