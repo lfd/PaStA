@@ -1,8 +1,9 @@
-import sys
 import functools
 from fuzzywuzzy import fuzz
 from math import ceil
 from multiprocessing import Pool, cpu_count
+from statistics import mean
+import sys
 
 from PatchStack import get_commit
 from Tools import getch, compare_hashes
@@ -36,42 +37,39 @@ def evaluate_single_patch(original_hash, candidate_hash):
     orig = get_commit(original_hash)
     cand = get_commit(candidate_hash)
 
-    # Filtert auch merge commits
-    #common_changed_files = len(list(set(orig_affected).intersection(cand_affected)))
-    #rating += common_changed_files * 20
-
-    o_len = sum(map(len, orig.diff))
-    c_len = sum(map(len, cand.diff))
-    diff_length_ratio = min(o_len, c_len) / max(o_len, c_len)
-    #diff_length_ratio = min(len(orig_diff), len(cand_diff)) / max(len(orig_diff), len(cand_diff))
-
-    if diff_length_ratio < 0.75:
-        return None
-
-    # killer argument, this means that orig and
-    # cand have the _exact_ same timestamp
-    if orig.author_date == cand.author_date:
-        return candidate_hash, 1.0, 'Exact same date'
-
-    # compare author date
-    #delta = cand_author_date - orig_author_date
-    #if delta.days < 100:
-    #    rating += 100 - delta.days
-
-    if orig.author_email == cand.author_email:
-        email_rating = 0.0
-    else:
-        email_rating = 0
-
-
-
     msg_rating = 0.4 * (fuzz.token_sort_ratio(orig.message, cand.message)/100)
-    diff_rating = 0.8 * (fuzz.token_sort_ratio(orig.diff, cand.diff)/100)
+    #diff_rating = 0.8 * (fuzz.token_sort_ratio(orig.diff, cand.diff)/100)
 
-    rating = email_rating + msg_rating + diff_rating
+    # traverse through the left patch
+    levenshteins = []
+    for file_identifier, lhunks in orig.diff.items():
+        if file_identifier in cand.diff:
+            levenshtein = []
+            rhunks = cand.diff[file_identifier]
 
-    message = str('Email: ' + str(email_rating) +
-                  ' Msg: ' + str(msg_rating) +
+            for key, (lremoved, ladded) in lhunks.items():
+                if key in rhunks:
+                    rremoved, radded = rhunks[key]
+
+                    if lremoved and rremoved:
+                        levenshtein.append(fuzz.token_sort_ratio(lremoved, rremoved))
+                    if ladded and radded:
+                        levenshtein.append(fuzz.token_sort_ratio(ladded, radded))
+
+            if levenshtein:
+                levenshteins.append(mean(levenshtein))
+
+    if not levenshteins:
+        levenshteins = [0]
+
+    diff_rating = mean(levenshteins) / 100
+
+    # normalize
+    diff_rating = 0.8 * diff_rating
+
+    rating = msg_rating + diff_rating
+
+    message = str(' Msg: ' + str(msg_rating) +
                   ' Diff: ' + str(diff_rating))
 
     return candidate_hash, rating, message

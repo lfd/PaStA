@@ -7,7 +7,7 @@ import re
 import sys
 from termcolor import colored
 
-from Tools import file_to_string
+from Tools import file_to_string, group
 
 LOG_PREFIX='../log/'
 
@@ -176,10 +176,17 @@ class KernelVersion:
 
 
 class Commit:
-
-    DIFF_REGEX = re.compile(r'^[ \t]*[-\+@]')
     SIGN_OFF_REGEX = re.compile(r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:|Reported-by:|Tested-by:|LKML-Reference:|Patch:)', re.IGNORECASE)
     REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
+    DIFF_SELECTOR_REGEX = re.compile(r'^[-\+@]')
+
+    # The two-line unified diff headers
+    FILE_SEPARATOR_MINUS_REGEX = re.compile(r'^--- (.*)$')
+    FILE_SEPARATOR_PLUS_REGEX = re.compile(r'^\+\+\+ (.*)$')
+
+    # Hunks inside a file
+    HUNK_REGEX = re.compile(r'^@@.*@@ ?(.*)$')
+    DIFF_REGEX = re.compile(r'^[\+-](.*)$')
 
     def __init__(self, message, diff, affected, author_date, author_email):
 
@@ -204,8 +211,39 @@ class Commit:
         # Split by linebreaks and filter empty lines
         diff = list(filter(None, diff.splitlines()))
         # Filter parts of interest
-        diff = list(filter(lambda x: Commit.DIFF_REGEX.match(x), diff))
-        return diff
+        diff = list(filter(lambda x: Commit.DIFF_SELECTOR_REGEX.match(x), diff))
+
+        def parse_hunks(hunks):
+            header = Commit.HUNK_REGEX.match(hunks[0]).group(1)
+
+            added = []
+            removed = []
+
+            for i in hunks[1:]:
+                diff = Commit.DIFF_REGEX.match(i).group(1)
+
+                # Skip empty lines
+                if not diff:
+                    continue
+
+                if i[0] == '+':
+                    added.append(diff)
+                else:
+                    removed.append(diff)
+
+            return header, (removed, added)
+
+        def parse_file(file):
+            minus = Commit.FILE_SEPARATOR_MINUS_REGEX.match(file[0]).group(1)
+            plus = Commit.FILE_SEPARATOR_PLUS_REGEX.match(file[1]).group(1)
+
+            hunks = group(file[2:], lambda x: Commit.HUNK_REGEX.match(x))
+
+            return (minus, plus), dict(map(parse_hunks, hunks))
+
+        file_groups = group(diff, lambda x: Commit.FILE_SEPARATOR_MINUS_REGEX.match(x))
+        result = dict(map(parse_file, file_groups))
+        return result
 
 
 class VersionPoint:
