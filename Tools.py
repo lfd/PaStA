@@ -187,3 +187,18 @@ def file_to_string(filename, must_exist=True):
 
 def compare_hashes(orig_commit_hash, cand_commit_hash):
     call(['./compare_hashes.sh', orig_commit_hash, cand_commit_hash])
+
+
+def group(l, predicate):
+    retval = []
+
+    index = 0
+    while index < len(l):
+        elem = l[index]
+        if predicate(elem):
+            retval.append([elem])
+        else:
+            retval[-1].append(elem)
+        index += 1
+
+    return retval
