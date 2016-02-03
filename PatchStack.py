@@ -178,7 +178,7 @@ class KernelVersion:
 class Commit:
 
     DIFF_REGEX = re.compile(r'^[ \t]*[-\+@]')
-    MESSAGE_REGEX = re.compile(r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:)', re.IGNORECASE)
+    SIGN_OFF_REGEX = re.compile(r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:|Reported-by:|Tested-by:|LKML-Reference:|Patch:)', re.IGNORECASE)
     REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
 
     def __init__(self, message, diff, affected, author_date, author_email):
@@ -186,7 +186,7 @@ class Commit:
         self. is_revert = bool(Commit.REVERT_REGEX.search(message))
 
         message = list(filter(None, message.splitlines()))
-        message = list(filter(lambda x: not Commit.MESSAGE_REGEX.match(x), message))
+        message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x), message))
         self.message = message
 
         diff = diff.splitlines()
