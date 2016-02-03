@@ -191,16 +191,21 @@ class Commit:
         self.message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
                                    self.message))
 
-        # Split by linebreaks and filter empty lines
-        self.diff = list(filter(None, diff.splitlines()))
-        # Filter parts of interest
-        self.diff = list(filter(lambda x: Commit.DIFF_REGEX.match(x), self.diff))
+        self.diff = Commit._parse_diff(diff)
 
         self.affected = set(filter(None, affected.splitlines()))
 
         self.author_date = datetime.fromtimestamp(int(author_date))
 
         self.author_email = author_email
+
+    @staticmethod
+    def _parse_diff(diff):
+        # Split by linebreaks and filter empty lines
+        diff = list(filter(None, diff.splitlines()))
+        # Filter parts of interest
+        diff = list(filter(lambda x: Commit.DIFF_REGEX.match(x), diff))
+        return diff
 
 
 class VersionPoint:
