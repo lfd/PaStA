@@ -37,8 +37,12 @@ def evaluate_single_patch(original_hash, candidate_hash):
     orig = get_commit(original_hash)
     cand = get_commit(candidate_hash)
 
-    msg_rating = 0.4 * (fuzz.token_sort_ratio(orig.message, cand.message)/100)
-    #diff_rating = 0.8 * (fuzz.token_sort_ratio(orig.diff, cand.diff)/100)
+    left_diff_length = orig.get_diff_length()
+    right_diff_length = cand.get_diff_length()
+
+    diff_length_ratio = min(left_diff_length, right_diff_length) / max(left_diff_length, right_diff_length)
+    if diff_length_ratio < 0.5:
+        return candidate_hash, 0, 'Diff Length Ratio mismatch: ' + str(diff_length_ratio)
 
     # traverse through the left patch
     levenshteins = []
@@ -48,9 +52,24 @@ def evaluate_single_patch(original_hash, candidate_hash):
             rhunks = cand.diff[file_identifier]
 
             for key, (lremoved, ladded) in lhunks.items():
-                if key in rhunks:
-                    rremoved, radded = rhunks[key]
 
+                """
+                 When comparing hunks, it is important to use the 'closest hunk' of the right side.
+                 The left hunk does not necessarily have to be absolutely similar to the name of the right hunk.
+                """
+
+
+                rkey = None
+                if key == '':
+                    if '' in rhunks:
+                        rkey = ''
+                else:
+                    closest_match, rating = sorted(map(lambda x: (x, fuzz.token_sort_ratio(key, x)), rhunks.keys()), key=lambda x: x[1])[-1]
+                    if rating > 50:
+                        rkey = closest_match
+
+                if rkey is not None:
+                    rremoved, radded = rhunks[rkey]
                     if lremoved and rremoved:
                         levenshtein.append(fuzz.token_sort_ratio(lremoved, rremoved))
                     if ladded and radded:
@@ -64,13 +83,16 @@ def evaluate_single_patch(original_hash, candidate_hash):
 
     diff_rating = mean(levenshteins) / 100
 
-    # normalize
-    diff_rating = 0.8 * diff_rating
+    # get rating of message
+    msg_rating = fuzz.token_sort_ratio(orig.message, cand.message) / 100
 
-    rating = msg_rating + diff_rating
+    # Rate msg and diff by 0.4/0.8
+    rating = 0.4 * msg_rating + 0.8 * diff_rating
 
-    message = str(' Msg: ' + str(msg_rating) +
-                  ' Diff: ' + str(diff_rating))
+    # Generate evaluation summary message
+    message = str(' Msg: ' + str(msg_rating*100) +
+                  '% Diff: ' + str(diff_rating*100) +
+                  '% || DLR' + str(diff_length_ratio))
 
     return candidate_hash, rating, message
 
