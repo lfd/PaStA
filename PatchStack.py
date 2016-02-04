@@ -240,7 +240,18 @@ class Commit:
 
             hunks = group(file[2:], lambda x: Commit.HUNK_REGEX.match(x))
 
-            return (minus, plus), dict(map(parse_hunks, hunks))
+            parsed_hunk_list = list(map(parse_hunks, hunks))
+            # A hunk might occur twice
+            parsed_hunk_dict = {}
+            for key, value in parsed_hunk_list:
+                if key not in parsed_hunk_dict:
+                    parsed_hunk_dict[key] = [], []
+
+                parsed_hunk_dict[key] = parsed_hunk_dict[key][0] + value[0],\
+                                        parsed_hunk_dict[key][1] + value[1]
+
+
+            return (minus, plus), parsed_hunk_dict
 
         file_groups = group(diff, lambda x: Commit.FILE_SEPARATOR_MINUS_REGEX.match(x))
         result = dict(map(parse_file, file_groups))
