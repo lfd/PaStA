@@ -2,6 +2,7 @@ import csv
 from datetime import datetime
 from distutils.version import LooseVersion
 import functools
+from math import ceil
 from multiprocessing import Pool, cpu_count
 import re
 import sys
@@ -358,10 +359,21 @@ def get_commit(commit_hash):
     return commits[commit_hash]
 
 
-def cache_commit_hashes(commit_hashes):
+def cache_commit_hashes(commit_hashes, parallelize = False):
+    num_cpus = cpu_count()
+    num_commit_hashes = len(commit_hashes)
+
     sys.stdout.write('Caching ' + str(len(commit_hashes)) +
                      ' commits. This may take a while...')
     sys.stdout.flush()
-    for commit_hash in commit_hashes:
-        get_commit(commit_hash)
+
+    if parallelize and num_commit_hashes > 5*num_cpus:
+        chunksize = ceil(num_commit_hashes / num_cpus)
+        p = Pool(num_cpus)
+        p.map(get_commit, commit_hashes, chunksize=chunksize)
+        p.close()
+        p.join()
+    else:
+        list(map(get_commit, commit_hashes))
+
     print(colored(' [done]', 'green'))
