@@ -12,7 +12,6 @@ from Tools import file_to_string, group
 
 LOG_PREFIX='../log/'
 
-AFFECTED_FILES_LOCATION = LOG_PREFIX + 'affected_files/'
 AUTHOR_DATE_LOCATION = LOG_PREFIX + 'author_dates/'
 AUTHOR_EMAIL_LOCATION = LOG_PREFIX + 'author_emails/'
 DIFFS_LOCATION = LOG_PREFIX + 'diffs/'
@@ -189,7 +188,7 @@ class Commit:
     HUNK_REGEX = re.compile(r'^@@.*@@ ?(.*)$')
     DIFF_REGEX = re.compile(r'^[\+-](.*)$')
 
-    def __init__(self, message, diff, affected, author_date, author_email):
+    def __init__(self, message, diff, author_date, author_email):
 
         self. is_revert = bool(Commit.REVERT_REGEX.search(message))
 
@@ -201,7 +200,13 @@ class Commit:
 
         self.diff = Commit._parse_diff(diff)
 
-        self.affected = set(filter(None, affected.splitlines()))
+        self.affected = set()
+        for i, j in self.diff.keys():
+            # The 2: will strip a/ and b/
+            if '/dev/null' not in i:
+                self.affected.add(i[2:])
+            if '/dev/null' not in j:
+                self.affected.add(j[2:])
 
         self.author_date = datetime.fromtimestamp(int(author_date))
 
@@ -360,11 +365,10 @@ def get_commit(commit_hash):
 
     message = file_to_string(MESSAGES_LOCATION + commit_hash)
     diff = file_to_string(DIFFS_LOCATION + commit_hash)
-    affected = file_to_string(AFFECTED_FILES_LOCATION + commit_hash)
     author_date = file_to_string(AUTHOR_DATE_LOCATION + commit_hash)
     author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
 
-    commit = Commit(message, diff, affected, author_date, author_email)
+    commit = Commit(message, diff, author_date, author_email)
 
     commits[commit_hash] = commit
     return commits[commit_hash]

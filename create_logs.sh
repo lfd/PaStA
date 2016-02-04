@@ -4,7 +4,6 @@ source common.sh
 
 FORMATSTR="%s%n%b"
 
-AFFECTED_FILES_DIR="$LOGDIR/affected_files"
 AUTHOR_DATES_DIR="$LOGDIR/author_dates"
 AUTHOR_EMAILS="$LOGDIR/author_emails"
 DIFF_DIR="$LOGDIR/diffs"
@@ -12,7 +11,7 @@ MESSAGES_DIR="$LOGDIR/messages"
 
 NPROC=$(nproc)
 
-mkdir -p $AFFECTED_FILES_DIR $AUTHOR_DATES_DIR $AUTHOR_EMAILS $DIFF_DIR $MESSAGES_DIR
+mkdir -p $AUTHOR_DATES_DIR $AUTHOR_EMAILS $DIFF_DIR $MESSAGES_DIR
 
 function create_log {
 	version_range=$1
@@ -31,9 +30,6 @@ function create_log_for_version_range {
 
 	echo "Creating message log for ${version_range}..."
 	create_log "$version_range" "%s%n%b" "--quiet" $MESSAGES_DIR
-
-	echo "Creating affected files log for ${version_range}..."
-	create_log "$version_range" "" "--name-only" $AFFECTED_FILES_DIR
 
 	echo "Creating diff log for ${version_range}..."
 	create_log "$version_range" "" "--patience" $DIFF_DIR
