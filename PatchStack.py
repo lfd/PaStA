@@ -202,7 +202,7 @@ class Commit:
 
         self.affected = set()
         for i, j in self.diff.keys():
-            # The 2: will strip a/ and b/
+            # The [2:] will strip a/ and b/
             if '/dev/null' not in i:
                 self.affected.add(i[2:])
             if '/dev/null' not in j:
