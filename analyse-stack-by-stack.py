@@ -32,6 +32,7 @@ patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 # Check patch against next patch version number, patch by patch
 evaluation_result = {}
 evaluation_list = []
+commit_hashes = set()
 for index, cur_patch_stack in enumerate(patch_stack_list):
 
     # Bounds check
@@ -47,12 +48,12 @@ for index, cur_patch_stack in enumerate(patch_stack_list):
     next_patch_stack = patch_stack_list[index + 1]
     print('Queueing ' + str(cur_patch_stack.patch_version) + ' <-> ' + str(next_patch_stack.patch_version))
 
-    cache_commit_hashes(cur_patch_stack.commit_hashes)
-    cache_commit_hashes(next_patch_stack.commit_hashes)
-    print('')
+    commit_hashes = commit_hashes | set(cur_patch_stack.commit_hashes) | set(next_patch_stack.commit_hashes)
 
     evaluation_list.append((cur_patch_stack.commit_hashes, next_patch_stack.commit_hashes))
 
+cache_commit_hashes(commit_hashes, parallelize=True)
+commit_hashes = None
 print('Starting evaluation.')
 
 pool = Pool(cpu_count())
