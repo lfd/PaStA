@@ -212,6 +212,15 @@ class Commit:
 
         self.author_email = author_email
 
+    def get_diff_length(self):
+        return sum(
+                map(lambda x: sum(
+                        map(lambda y:
+                                sum(map(len, y[1][0])) +\
+                                sum(map(len, y[1][1])),
+                            x.items())),
+                    self.diff.values()))
+
     @staticmethod
     def _parse_diff(diff):
         # Split by linebreaks and filter empty lines
