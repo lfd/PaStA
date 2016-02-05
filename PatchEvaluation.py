@@ -51,29 +51,32 @@ def evaluate_single_patch(original_hash, candidate_hash):
             levenshtein = []
             rhunks = cand.diff[file_identifier]
 
-            for key, (lremoved, ladded) in lhunks.items():
-
+            for l_key, (l_removed, l_added) in lhunks.items():
                 """
                  When comparing hunks, it is important to use the 'closest hunk' of the right side.
                  The left hunk does not necessarily have to be absolutely similar to the name of the right hunk.
                 """
 
-
-                rkey = None
-                if key == '':
+                r_key = None
+                if l_key == '':
                     if '' in rhunks:
-                        rkey = ''
+                        r_key = ''
                 else:
-                    closest_match, rating = sorted(map(lambda x: (x, fuzz.token_sort_ratio(key, x)), rhunks.keys()), key=lambda x: x[1])[-1]
-                    if rating > 50:
-                        rkey = closest_match
+                    # This gets the closed levenshtein rating from key against a list of candidate keys
+                    closest_match, rating = sorted(
+                            map(lambda x: (x, fuzz.token_sort_ratio(l_key, x)),
+                                rhunks.keys()),
+                            key=lambda x: x[1])[-1]
+                    if rating > 60:
+                        r_key = closest_match
+                        message += 'LEVENRATE: ' + str(rating) + ' || '
 
-                if rkey is not None:
-                    rremoved, radded = rhunks[rkey]
-                    if lremoved and rremoved:
-                        levenshtein.append(fuzz.token_sort_ratio(lremoved, rremoved))
-                    if ladded and radded:
-                        levenshtein.append(fuzz.token_sort_ratio(ladded, radded))
+                if r_key is not None:
+                    r_removed, r_added = rhunks[r_key]
+                    if l_removed and r_removed:
+                        levenshtein.append(fuzz.token_sort_ratio(l_removed, r_removed))
+                    if l_added and r_added:
+                        levenshtein.append(fuzz.token_sort_ratio(l_added, r_added))
 
             if levenshtein:
                 levenshteins.append(mean(levenshtein))
