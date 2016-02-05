@@ -198,7 +198,7 @@ class Commit:
         self.message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
                                    self.message))
 
-        self.diff = Commit._parse_diff(diff)
+        self.diff_length, self.diff = Commit._parse_diff(diff)
 
         self.affected = set()
         for i, j in self.diff.keys():
@@ -212,21 +212,14 @@ class Commit:
 
         self.author_email = author_email
 
-    def get_diff_length(self):
-        return sum(
-                map(lambda x: sum(
-                        map(lambda y:
-                                sum(map(len, y[1][0])) +\
-                                sum(map(len, y[1][1])),
-                            x.items())),
-                    self.diff.values()))
-
     @staticmethod
     def _parse_diff(diff):
         # Split by linebreaks and filter empty lines
         diff = list(filter(None, diff.splitlines()))
         # Filter parts of interest
         diff = list(filter(lambda x: Commit.DIFF_SELECTOR_REGEX.match(x), diff))
+
+        diff_length = sum(map(len, diff))
 
         def parse_hunks(hunks):
             header = Commit.HUNK_REGEX.match(hunks[0]).group(1)
@@ -269,7 +262,7 @@ class Commit:
 
         file_groups = group(diff, lambda x: Commit.FILE_SEPARATOR_MINUS_REGEX.match(x))
         result = dict(map(parse_file, file_groups))
-        return result
+        return diff_length, result
 
 
 class VersionPoint:

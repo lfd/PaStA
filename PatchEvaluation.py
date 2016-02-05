@@ -37,8 +37,8 @@ def evaluate_single_patch(original_hash, candidate_hash):
     orig = get_commit(original_hash)
     cand = get_commit(candidate_hash)
 
-    left_diff_length = orig.get_diff_length()
-    right_diff_length = cand.get_diff_length()
+    left_diff_length = orig.diff_length
+    right_diff_length = cand.diff_length
 
     diff_length_ratio = min(left_diff_length, right_diff_length) / max(left_diff_length, right_diff_length)
     if diff_length_ratio < 0.5:
