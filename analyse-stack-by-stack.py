@@ -3,17 +3,12 @@
 from git import Repo
 from multiprocessing import Pool, cpu_count
 
-from PatchEvaluation import evaluate_patch_list, merge_evaluation_results, interactive_rating
+from PatchEvaluation import evaluate_patch_list
 from PatchStack import KernelVersion, cache_commit_hashes, parse_patch_stack_definition
-from Tools import DictList, TransitiveKeyList
+from Tools import DictList, TransitiveKeyList, EvaluationResult
 
 REPO_LOCATION = './linux/'
 PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
-SIMILAR_PATCHES_FILE = './similar_patch_list'
-FALSE_POSTITIVES_FILES = './false-positives'
-
-INTERACTIVE_THRESHOLD = 0.85
-AUTOACCEPT_THRESHOLD = 0.9
 
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args
@@ -22,17 +17,14 @@ def _evaluate_patch_list_wrapper(args):
 # Startup
 repo = Repo(REPO_LOCATION)
 
-# Load already known positives and false positives
-similar_patches = TransitiveKeyList.from_file(SIMILAR_PATCHES_FILE)
-false_positives = DictList.from_file(FALSE_POSTITIVES_FILES, human_readable=False)
-
 # Load patch stack definition
 patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 
 # Check patch against next patch version number, patch by patch
-evaluation_result = {}
+evaluation_result = EvaluationResult()
 evaluation_list = []
 commit_hashes = set()
+
 for index, cur_patch_stack in enumerate(patch_stack_list):
 
     # Bounds check
@@ -64,11 +56,6 @@ pool.join()
 print('Evaluation completed.')
 
 for result in results:
-    merge_evaluation_results(evaluation_result, result)
+    evaluation_result.merge(result)
 
-interactive_rating(similar_patches, false_positives, evaluation_result,
-                   AUTOACCEPT_THRESHOLD, INTERACTIVE_THRESHOLD)
-
-similar_patches.to_file(SIMILAR_PATCHES_FILE)
-false_positives.to_file(FALSE_POSTITIVES_FILES, human_readable=False)
-false_positives.to_file(FALSE_POSTITIVES_FILES, human_readable=True)
+evaluation_result.to_file('foofile')

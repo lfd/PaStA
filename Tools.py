@@ -158,6 +158,113 @@ class DictList(dict):
             return DictList()
 
 
+class EvaluationResult(dict):
+    """
+    An evaluation is a dictionary with a commit hash as key,
+    and a list of 3-tuples (hash, rating, msg) as value.
+
+    Check if this key already exists in the check_list, if yes, then append to the list
+    """
+
+    def __init__(self, *args):
+        dict.__init__(self, *args)
+
+    def merge(self, other):
+        for key, value in other.items():
+            # Skip empty evaluation lists
+            if not value:
+                continue
+
+            if key in self:
+                self[key].append(value)
+            else:
+                self[key] = value
+
+            self[key].sort(key=lambda x: x[1], reverse=True)
+
+    def to_file(self, filename):
+        with open(filename + '.pkl', 'wb') as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def from_file(filename):
+        with open(filename + '.pkl', 'rb') as f:
+            return EvaluationResult(pickle.load(f))
+
+    def interactive_rating(self, transitive_list, false_positive_list, autoaccept_threshold, interactive_threshold):
+
+        already_false_positive = 0
+        already_detected = 0
+        auto_accepted = 0
+        auto_declined = 0
+        accepted = 0
+        declined = 0
+        skipped = 0
+
+        for orig_commit_hash, candidates in self.items():
+            for candidate in candidates:
+                cand_commit_hash, cand_rating, cand_message = candidate
+
+                # Check if both commit hashes are the same
+                if cand_commit_hash == orig_commit_hash:
+                    print('Go back and check your implementation!')
+                    continue
+
+                # Check if patch is already known as false positive
+                if orig_commit_hash in false_positive_list and \
+                   cand_commit_hash in false_positive_list[orig_commit_hash]:
+                    already_false_positive += 1
+                    continue
+
+                # Check if those two patches are already related
+                if transitive_list.is_related(orig_commit_hash, cand_commit_hash):
+                    already_detected += 1
+                    continue
+
+                # Maybe we can autoaccept the patch?
+                if cand_rating > autoaccept_threshold:
+                    auto_accepted += 1
+                    yns = 'y'
+                # or even automatically drop it away?
+                elif cand_rating < interactive_threshold:
+                    auto_declined += 1
+                    continue
+                # Nope? Then let's do an interactive rating by a human
+                else:
+                    yns = ''
+                    compare_hashes(orig_commit_hash, cand_commit_hash)
+                    print('Length of list of candidates: ' + str(len(candidates)))
+                    print('Rating: ' + str(cand_rating) + ' ' + cand_message)
+                    print('(y)ay or (n)ay or (s)kip?')
+
+                if yns not in ['y', 'n', 's']:
+                    while yns not in ['y', 'n', 's']:
+                        yns = getch()
+                        if yns == 'y':
+                            accepted += 1
+                        elif yns == 'n':
+                            declined += 1
+                        elif yns == 's':
+                            skipped += 1
+
+                if yns == 'y':
+                    transitive_list.insert(orig_commit_hash, cand_commit_hash)
+                elif yns == 'n':
+                    if orig_commit_hash in false_positive_list:
+                        false_positive_list[orig_commit_hash].append(cand_commit_hash)
+                    else:
+                        false_positive_list[orig_commit_hash] = [cand_commit_hash]
+
+        print('\n\nSome statistics:')
+        print(' Interactive Accepted: ' + str(accepted))
+        print(' Automatically accepted: ' + str(auto_accepted))
+        print(' Interactive declined: ' + str(declined))
+        print(' Automatically declined: ' + str(auto_declined))
+        print(' Skipped: ' + str(skipped))
+        print(' Skipped due to previous detection: ' + str(already_detected))
+        print(' Skipped due to false positive mark: ' + str(already_false_positive))
+
+
 def getch():
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
