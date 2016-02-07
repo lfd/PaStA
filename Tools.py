@@ -292,6 +292,7 @@ def file_to_string(filename, must_exist=True):
 
     return retval
 
+
 def compare_hashes(orig_commit_hash, cand_commit_hash):
     call(['./compare_hashes.sh', orig_commit_hash, cand_commit_hash])
 

@@ -12,6 +12,7 @@ REPO_LOCATION = './linux/'
 PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
 EVALUATION_RESULT_FILENAME = './evaluation-result'
 
+
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args
     return evaluate_patch_list(orig, cand)
