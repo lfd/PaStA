@@ -181,8 +181,8 @@ class Commit:
     DIFF_SELECTOR_REGEX = re.compile(r'^[-\+@]')
 
     # The two-line unified diff headers
-    FILE_SEPARATOR_MINUS_REGEX = re.compile(r'^--- (.*)$')
-    FILE_SEPARATOR_PLUS_REGEX = re.compile(r'^\+\+\+ (.*)$')
+    FILE_SEPARATOR_MINUS_REGEX = re.compile(r'^--- (.+)$')
+    FILE_SEPARATOR_PLUS_REGEX = re.compile(r'^\+\+\+ (.+)$')
 
     # Hunks inside a file
     HUNK_REGEX = re.compile(r'^@@.*@@ ?(.*)$')
