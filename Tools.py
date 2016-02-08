@@ -191,7 +191,8 @@ class EvaluationResult(dict):
         with open(filename + '.pkl', 'rb') as f:
             return EvaluationResult(pickle.load(f))
 
-    def interactive_rating(self, transitive_list, false_positive_list, autoaccept_threshold, interactive_threshold):
+    def interactive_rating(self, transitive_list, false_positive_list,
+                           autoaccept_threshold, interactive_threshold, diff_length_threshold):
 
         already_false_positive = 0
         already_detected = 0
@@ -200,10 +201,11 @@ class EvaluationResult(dict):
         accepted = 0
         declined = 0
         skipped = 0
+        skipped_by_dlr = 0
 
         for orig_commit_hash, candidates in self.items():
             for candidate in candidates:
-                cand_commit_hash, cand_rating, cand_message = candidate
+                cand_commit_hash, msg_rating, diff_rating, diff_length_ratio = candidate
 
                 # Check if both commit hashes are the same
                 if cand_commit_hash == orig_commit_hash:
@@ -221,12 +223,23 @@ class EvaluationResult(dict):
                     already_detected += 1
                     continue
 
+                if diff_length_ratio < diff_length_threshold:
+                    skipped_by_dlr += 1
+                    continue
+
+                # Autoaccept if 100% diff match and at least 10% msg match
+                if False and diff_rating == 1.0 and msg_rating > 0.1:
+                    rating = 1.2
+                else:
+                    # Rate msg and diff by 0.4/0.8
+                    rating = 0.4 * msg_rating + 0.8 * diff_rating
+
                 # Maybe we can autoaccept the patch?
-                if cand_rating > autoaccept_threshold:
+                if rating > autoaccept_threshold:
                     auto_accepted += 1
                     yns = 'y'
                 # or even automatically drop it away?
-                elif cand_rating < interactive_threshold:
+                elif rating < interactive_threshold:
                     auto_declined += 1
                     continue
                 # Nope? Then let's do an interactive rating by a human
@@ -234,7 +247,9 @@ class EvaluationResult(dict):
                     yns = ''
                     compare_hashes(orig_commit_hash, cand_commit_hash)
                     print('Length of list of candidates: ' + str(len(candidates)))
-                    print('Rating: ' + str(cand_rating) + ' ' + cand_message)
+                    print('Rating: ' + str(rating) + ' (' + str(msg_rating) + ' message and ' +
+                          str(diff_rating) + ' diff, diff length ratio: ' +
+                          str(diff_length_ratio) + ')')
                     print('(y)ay or (n)ay or (s)kip?')
 
                 if yns not in ['y', 'n', 's']:
@@ -263,6 +278,7 @@ class EvaluationResult(dict):
         print(' Skipped: ' + str(skipped))
         print(' Skipped due to previous detection: ' + str(already_detected))
         print(' Skipped due to false positive mark: ' + str(already_false_positive))
+        print(' Skipped by diff length ratio mismatch: ' + str(skipped_by_dlr))
 
 
 def getch():

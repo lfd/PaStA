@@ -21,8 +21,10 @@ for i in range(len(commits)-1):
         if retval is None:
             print('Rating: None')
         else:
-            hash, rating, message = retval
-            print('Rating: ' + str(rating) + ' || ' + message)
+            hash, msg_rating, diff_rating, diff_length_ratio = retval
+            print(str(msg_rating) + ' message and ' +
+                  str(diff_rating) + ' diff, diff length ratio: ' +
+                  str(diff_length_ratio))
     else:
         print('Preevaluation: Not related')
     getch()

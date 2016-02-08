@@ -41,8 +41,6 @@ def evaluate_single_patch(original_hash, candidate_hash):
     right_diff_length = cand.diff_length
 
     diff_length_ratio = min(left_diff_length, right_diff_length) / max(left_diff_length, right_diff_length)
-    if diff_length_ratio < 0.5:
-        return candidate_hash, 0, 'Diff Length Ratio mismatch: ' + str(diff_length_ratio)
 
     # traverse through the left patch
     levenshteins = []
@@ -69,7 +67,6 @@ def evaluate_single_patch(original_hash, candidate_hash):
                             key=lambda x: x[1])[-1]
                     if rating > 60:
                         r_key = closest_match
-                        message += 'LEVENRATE: ' + str(rating) + ' || '
 
                 if r_key is not None:
                     r_removed, r_added = rhunks[r_key]
@@ -89,15 +86,7 @@ def evaluate_single_patch(original_hash, candidate_hash):
     # get rating of message
     msg_rating = fuzz.token_sort_ratio(orig.message, cand.message) / 100
 
-    # Rate msg and diff by 0.4/0.8
-    rating = 0.4 * msg_rating + 0.8 * diff_rating
-
-    # Generate evaluation summary message
-    message = str(' Msg: ' + str(msg_rating*100) +
-                  '% Diff: ' + str(diff_rating*100) +
-                  '% || DLR' + str(diff_length_ratio))
-
-    return candidate_hash, rating, message
+    return candidate_hash, msg_rating, diff_rating, diff_length_ratio
 
 
 def _preevaluation_helper(candidate_hashes, orig_hash):
