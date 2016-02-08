@@ -6,7 +6,7 @@ from multiprocessing import Pool, cpu_count
 
 from PatchEvaluation import evaluate_patch_list
 from PatchStack import KernelVersion, cache_commit_hashes, parse_patch_stack_definition, get_commit_hashes
-from Tools import DictList, EvaluationResult, TransitiveKeyList
+from Tools import EvaluationResult
 
 REPO_LOCATION = './linux/'
 PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
