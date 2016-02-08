@@ -184,8 +184,11 @@ class Commit:
     FILE_SEPARATOR_MINUS_REGEX = re.compile(r'^--- (.+)$')
     FILE_SEPARATOR_PLUS_REGEX = re.compile(r'^\+\+\+ (.+)$')
 
+    # Exclude '--cc' diffs
+    EXCLUDE_CC_REGEX = re.compile(r'^diff --cc (.+)$')
+
     # Hunks inside a file
-    HUNK_REGEX = re.compile(r'^@@.*@@ ?(.*)$')
+    HUNK_REGEX = re.compile(r'^@@ -([0-9]+),?([0-9]+)? \+([0-9]+),?([0-9]+)? @@ ?(.*)$')
     DIFF_REGEX = re.compile(r'^[\+-](.*)$')
 
     def __init__(self, message, diff, author_date, author_email):
@@ -216,53 +219,71 @@ class Commit:
     def _parse_diff(diff):
         # Split by linebreaks and filter empty lines
         diff = list(filter(None, diff.splitlines()))
+
+        # diff length ratio
         # Filter parts of interest
-        diff = list(filter(lambda x: Commit.DIFF_SELECTOR_REGEX.match(x), diff))
+        lines_of_interest = list(filter(lambda x: Commit.DIFF_SELECTOR_REGEX.match(x), diff))
+        diff_length = sum(map(len, lines_of_interest))
 
-        diff_length = sum(map(len, diff))
+        # Check if we understand the diff format
+        if diff and Commit.EXCLUDE_CC_REGEX.match(diff[0]):
+            return 0, {}
 
-        def parse_hunks(hunks):
-            header = Commit.HUNK_REGEX.match(hunks[0]).group(1)
+        retval = {}
+        while len(diff):
+            # Consume till the first occurence of '--- '
+            while len(diff):
+                minus = diff.pop(0)
+                if Commit.FILE_SEPARATOR_MINUS_REGEX.match(minus):
+                    break
+            if len(diff) == 0:
+                break
+            minus = Commit.FILE_SEPARATOR_MINUS_REGEX.match(minus).group(1)
+            plus = Commit.FILE_SEPARATOR_PLUS_REGEX.match(diff.pop(0)).group(1)
 
-            added = []
-            removed = []
+            diff_index = minus, plus
+            if diff_index not in retval:
+                retval[diff_index] = {}
 
-            for i in hunks[1:]:
-                diff = Commit.DIFF_REGEX.match(i).group(1)
+            while len(diff) and Commit.HUNK_REGEX.match(diff[0]):
+                hunk = Commit.HUNK_REGEX.match(diff.pop(0))
 
-                # Skip empty lines
-                if not diff:
-                    continue
+                l_start = int(hunk.group(1))
+                l_lines = 1
+                if hunk.group(2):
+                    l_lines = int(hunk.group(2))
 
-                if i[0] == '+':
-                    added.append(diff)
-                else:
-                    removed.append(diff)
+                r_start = int(hunk.group(3))
+                r_lines = 1
+                if hunk.group(4):
+                    r_lines = int(hunk.group(4))
 
-            return header, (removed, added)
+                hunktitle = hunk.group(5)
 
-        def parse_file(file):
-            minus = Commit.FILE_SEPARATOR_MINUS_REGEX.match(file[0]).group(1)
-            plus = Commit.FILE_SEPARATOR_PLUS_REGEX.match(file[1]).group(1)
+                del_cntr = 0
+                add_cntr = 0
+                hunk_changes = [], []  # [removed], [added]
+                while not (del_cntr == l_lines and add_cntr == r_lines):
+                    line = diff.pop(0)
+                    if line[0] == '+':
+                        hunk_changes[1].append(line[1:])
+                        add_cntr += 1
+                    elif line[0] == '-':
+                        hunk_changes[0].append(line[1:])
+                        del_cntr += 1
+                    elif line[0] != '\\': # '\\ No new line... statements
+                        add_cntr += 1
+                        del_cntr += 1
 
-            hunks = group(file[2:], lambda x: Commit.HUNK_REGEX.match(x))
+                hunk_changes = list(filter(None, hunk_changes[0])), \
+                               list(filter(None, hunk_changes[1]))
 
-            parsed_hunk_list = list(map(parse_hunks, hunks))
-            # A hunk might occur twice
-            parsed_hunk_dict = {}
-            for key, value in parsed_hunk_list:
-                if key not in parsed_hunk_dict:
-                    parsed_hunk_dict[key] = [], []
+                if hunktitle not in retval[diff_index]:
+                    retval[diff_index][hunktitle] = [], []
+                retval[diff_index][hunktitle] = retval[diff_index][hunktitle][0] + hunk_changes[0], \
+                                                retval[diff_index][hunktitle][1] + hunk_changes[1]
 
-                parsed_hunk_dict[key] = parsed_hunk_dict[key][0] + value[0],\
-                                        parsed_hunk_dict[key][1] + value[1]
-
-
-            return (minus, plus), parsed_hunk_dict
-
-        file_groups = group(diff, lambda x: Commit.FILE_SEPARATOR_MINUS_REGEX.match(x))
-        result = dict(map(parse_file, file_groups))
-        return diff_length, result
+        return diff_length, retval
 
 
 class VersionPoint:
