@@ -95,6 +95,12 @@ class TransitiveKeyList:
                 map(lambda x: ' '.join(map(str, x)),
                     filter(None, self.transitive_list)))
 
+    def get_commit_hashes(self):
+        retval = []
+        for i in self.transitive_list:
+            retval += i
+        return set(retval)
+
     @staticmethod
     def from_file(filename):
         retval = TransitiveKeyList()
