@@ -77,13 +77,6 @@ class TransitiveKeyList:
                 self.insert(base, j)
         self.optimize()
 
-    def to_file(self, filename):
-        # Optimizing before writing keeps uniformity of data
-        self.optimize()
-        with open(filename, 'w') as f:
-            f.write(str(self))
-            f.close()
-
     def __iter__(self):
         self.optimize()
         for i in self.transitive_list:
@@ -100,6 +93,13 @@ class TransitiveKeyList:
         for i in self.transitive_list:
             retval += i
         return set(retval)
+
+    def to_file(self, filename):
+        # Optimizing before writing keeps uniformity of data
+        self.optimize()
+        with open(filename, 'w') as f:
+            f.write(str(self))
+            f.close()
 
     @staticmethod
     def from_file(filename):
