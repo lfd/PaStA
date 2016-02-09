@@ -72,7 +72,8 @@ stack_candidates = (candidates - similar_patches.get_commit_hashes()) | represen
 
 print('Starting evaluation.')
 evaluation_result = evaluate_patch_list(stack_candidates, upstream_candidates,
-                                        parallelize=True, verbose=True)
+                                        parallelize=True, verbose=True,
+                                        cpu_factor = 0.5)
 print('Evaluation completed.')
 
 evaluation_result.to_file(args.evaluation_result_filename)

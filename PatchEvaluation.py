@@ -95,7 +95,8 @@ def _preevaluation_helper(candidate_hashes, orig_hash):
 
 
 def evaluate_patch_list(original_hashes, candidate_hashes,
-                        parallelize=False, verbose=False):
+                        parallelize=False, verbose=False,
+                        cpu_factor=1.25):
     """
     Evaluates two list of original and candidate hashes against each other
 
@@ -103,11 +104,12 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
     :param candidate_hashes: potential candidates
     :param parallelize: Parallelize evaluation
     :param verbose: Verbose output
+    :param cpu_factor: number of threads to be spawned is the number of CPUs*cpu_factor
     :return: a dictionary with originals as keys and a list of potential candidates as value
     """
 
     retval = EvaluationResult()
-    num_cpus = int(cpu_count() * 1.25)
+    num_threads = int(cpu_count() * cpu_factor)
 
     print('Evaluating ' + str(len(original_hashes)) + ' commit hashes against ' +
           str(len(candidate_hashes)) + ' commit hashes')
@@ -116,7 +118,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
         print('Running preevaluation.')
     f = functools.partial(_preevaluation_helper, candidate_hashes)
     if parallelize:
-        p = Pool(num_cpus)
+        p = Pool(num_threads)
         preeval_result = p.map(f, original_hashes)
         p.close()
         p.join()
@@ -139,9 +141,9 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
         this_candidate_hashes = preeval_result[commit_hash]
         f = functools.partial(evaluate_single_patch, commit_hash)
 
-        if parallelize and len(this_candidate_hashes) > 5*num_cpus:
-            chunksize = ceil(len(this_candidate_hashes) / num_cpus)
-            pool = Pool(num_cpus)
+        if parallelize and len(this_candidate_hashes) > 5*num_threads:
+            chunksize = ceil(len(this_candidate_hashes) / num_threads)
+            pool = Pool(num_threads)
             result = pool.map(f, this_candidate_hashes, chunksize=chunksize)
             pool.close()
             pool.join()
