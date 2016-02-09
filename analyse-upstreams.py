@@ -36,7 +36,7 @@ patch_stack_list = parse_patch_stack_definition(repo, args.stack_def_filename)
 
 # Load and cache upstream commits
 upstream_candidates = set(get_commit_hashes(repo, 'v3.0', 'master'))
-upstream_candidates -= blacklist.linux_upstream_blacklist
+upstream_candidates -= blacklist.linux_blacklist
 
 # Load similar patches file
 similar_patches = TransitiveKeyList.from_file(args.sp_filename)
