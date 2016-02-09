@@ -16,6 +16,7 @@ PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
 EVALUATION_RESULT_FILENAME = './evaluation-result'
 SIMILAR_PATCHES_FILE = './similar_patch_list'
 
+
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args
     return evaluate_patch_list(orig, cand)
@@ -29,11 +30,13 @@ parser.add_argument('-sp', dest='sp_filename', default=SIMILAR_PATCHES_FILE, hel
 
 args = parser.parse_args()
 
-repo = Repo(args.repo_location)
-upstream_candidates = set(get_commit_hashes(repo, 'v3.0', 'master'))
-upstream_candidates = upstream_candidates - blacklist.linux_upstream_blacklist
 # Load patch stack definition
+repo = Repo(args.repo_location)
 patch_stack_list = parse_patch_stack_definition(repo, args.stack_def_filename)
+
+# Load and cache upstream commits
+upstream_candidates = set(get_commit_hashes(repo, 'v3.0', 'master'))
+upstream_candidates -= blacklist.linux_upstream_blacklist
 
 # Load similar patches file
 similar_patches = TransitiveKeyList.from_file(args.sp_filename)
@@ -50,6 +53,7 @@ for cur_patch_stack in patch_stack_list:
 
 candidates = set(candidates)
 cache_commit_hashes(candidates, parallelize=True)
+cache_commit_hashes(upstream_candidates, parallelize=True)
 
 # Iterate over similar patch list and get latest commit of patches
 sys.stdout.write('Determining representatives...')
@@ -66,13 +70,9 @@ for similars in similar_patches:
 print(colored(' [done]', 'green'))
 stack_candidates = (candidates - similar_patches.get_commit_hashes()) | representatives
 
-cache_commit_hashes(upstream_candidates, parallelize=True)
-
 evaluation_list = []
 for i in stack_candidates:
-    evaluation_list += (i, upstream_candidates)
-
-evaluation_result = EvaluationResult()
+    evaluation_list.append(([i], upstream_candidates))
 
 print('Starting evaluation.')
 pool = Pool(cpu_count())
@@ -81,6 +81,7 @@ pool.close()
 pool.join()
 print('Evaluation completed.')
 
+evaluation_result = EvaluationResult()
 for result in results:
     evaluation_result.merge(result)
 
