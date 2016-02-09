@@ -70,19 +70,9 @@ for similars in similar_patches:
 print(colored(' [done]', 'green'))
 stack_candidates = (candidates - similar_patches.get_commit_hashes()) | representatives
 
-evaluation_list = []
-for i in stack_candidates:
-    evaluation_list.append(([i], upstream_candidates))
-
 print('Starting evaluation.')
-pool = Pool(cpu_count())
-results = pool.map(_evaluate_patch_list_wrapper, evaluation_list)
-pool.close()
-pool.join()
+evaluation_result = evaluate_patch_list(stack_candidates, upstream_candidates,
+                                        parallelize=True, verbose=True)
 print('Evaluation completed.')
-
-evaluation_result = EvaluationResult()
-for result in results:
-    evaluation_result.merge(result)
 
 evaluation_result.to_file(args.evaluation_result_filename)
