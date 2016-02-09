@@ -6,7 +6,7 @@ from statistics import mean
 import sys
 
 from PatchStack import get_commit
-from Tools import getch, compare_hashes
+from Tools import EvaluationResult
 
 
 def preevaluate_single_patch(original_hash, candidate_hash):
@@ -106,7 +106,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
     :return: a dictionary with originals as keys and a list of potential candidates as value
     """
 
-    retval = {}
+    retval = EvaluationResult()
     num_cpus = int(cpu_count() * 1.25)
 
     print('Evaluating ' + str(len(original_hashes)) + ' commit hashes against ' +
