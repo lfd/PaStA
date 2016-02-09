@@ -14,14 +14,13 @@ for i in range(len(commits)-1):
     compare_hashes(commit_a, commit_b)
 
     retval = preevaluate_single_patch(commit_a, commit_b)
-    #retval = True
     if retval:
         print('Preevaluation: Possible candidates')
         retval = evaluate_single_patch(commit_a, commit_b)
         if retval is None:
             print('Rating: None')
         else:
-            hash, msg_rating, diff_rating, diff_length_ratio = retval
+            _, msg_rating, diff_rating, diff_length_ratio = retval
             print(str(msg_rating) + ' message and ' +
                   str(diff_rating) + ' diff, diff length ratio: ' +
                   str(diff_length_ratio))

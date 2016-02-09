@@ -8,7 +8,7 @@ import re
 import sys
 from termcolor import colored
 
-from Tools import file_to_string, group
+from Tools import file_to_string
 
 LOG_PREFIX='../log/'
 
@@ -176,7 +176,9 @@ class KernelVersion:
 
 
 class Commit:
-    SIGN_OFF_REGEX = re.compile(r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:|Reported-by:|Tested-by:|LKML-Reference:|Patch:)', re.IGNORECASE)
+    SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:'
+                                 r'|Reported-by:|Tested-by:|LKML-Reference:|Patch:)'),
+                                re.IGNORECASE)
     REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
     DIFF_SELECTOR_REGEX = re.compile(r'^[-\+@]')
 
@@ -248,12 +250,12 @@ class Commit:
             while len(diff) and Commit.HUNK_REGEX.match(diff[0]):
                 hunk = Commit.HUNK_REGEX.match(diff.pop(0))
 
-                l_start = int(hunk.group(1))
+                # l_start = int(hunk.group(1))
                 l_lines = 1
                 if hunk.group(2):
                     l_lines = int(hunk.group(2))
 
-                r_start = int(hunk.group(3))
+                # r_start = int(hunk.group(3))
                 r_lines = 1
                 if hunk.group(4):
                     r_lines = int(hunk.group(4))
@@ -271,17 +273,17 @@ class Commit:
                     elif line[0] == '-':
                         hunk_changes[0].append(line[1:])
                         del_cntr += 1
-                    elif line[0] != '\\': # '\\ No new line... statements
+                    elif line[0] != '\\':  # '\\ No new line... statements
                         add_cntr += 1
                         del_cntr += 1
 
-                hunk_changes = list(filter(None, hunk_changes[0])), \
-                               list(filter(None, hunk_changes[1]))
+                hunk_changes = (list(filter(None, hunk_changes[0])), \
+                                list(filter(None, hunk_changes[1])))
 
                 if hunktitle not in retval[diff_index]:
                     retval[diff_index][hunktitle] = [], []
-                retval[diff_index][hunktitle] = retval[diff_index][hunktitle][0] + hunk_changes[0], \
-                                                retval[diff_index][hunktitle][1] + hunk_changes[1]
+                retval[diff_index][hunktitle] = (retval[diff_index][hunktitle][0] + hunk_changes[0], \
+                                                 retval[diff_index][hunktitle][1] + hunk_changes[1])
 
         return diff_length, retval
 
@@ -397,7 +399,7 @@ def get_commit(commit_hash):
     return commits[commit_hash]
 
 
-def cache_commit_hashes(commit_hashes, parallelize = False):
+def cache_commit_hashes(commit_hashes, parallelize=False):
     num_cpus = cpu_count()
     num_commit_hashes = len(commit_hashes)
 
