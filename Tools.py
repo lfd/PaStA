@@ -124,8 +124,8 @@ class TransitiveKeyList:
 
 
 class DictList(dict):
-    def __init__(self, *args):
-        dict.__init__(self, *args)
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
 
     def to_file(self, filename, human_readable=False):
         if human_readable:
@@ -172,8 +172,8 @@ class EvaluationResult(dict):
     Check if this key already exists in the check_list, if yes, then append to the list
     """
 
-    def __init__(self, *args):
-        dict.__init__(self, *args)
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
 
     def merge(self, other):
         for key, value in other.items():
