@@ -5,3 +5,4 @@ quilt-stacks/
 rt-ftp-mirror/
 rt-ftp/
 log/
+__pycache__/
