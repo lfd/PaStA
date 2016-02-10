@@ -35,6 +35,12 @@ class TransitiveKeyList:
 
         return False
 
+    def insert_single(self, key):
+        if key not in self.forward_lookup:
+            self.transitive_list.append([key])
+            index = len(self.transitive_list) - 1
+            self.forward_lookup[key] = index
+
     def insert(self, key1, key2):
         index1 = key1 in self.forward_lookup
         index2 = key2 in self.forward_lookup
@@ -109,10 +115,13 @@ class TransitiveKeyList:
             for i in content:
                 # split eache line by whitespace
                 commit_hashes = i.split(' ')
-                if len(commit_hashes) < 2:
-                    raise ValueError('Invalid line')
 
+                # choose first element to be a reference
                 base = commit_hashes[0]
+                # insert this single reference
+                retval.insert_single(base)
+
+                # Set all other elements
                 for commit_hash in commit_hashes[1:]:
                     retval.insert(base, commit_hash)
 
