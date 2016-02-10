@@ -6,3 +6,4 @@ rt-ftp-mirror/
 rt-ftp/
 log/
 __pycache__/
+*.pkl
