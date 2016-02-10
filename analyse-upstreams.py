@@ -2,7 +2,6 @@
 
 import argparse
 from git import Repo
-from multiprocessing import Pool, cpu_count
 import sys
 from termcolor import colored
 
