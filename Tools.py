@@ -12,14 +12,11 @@ class TransitiveKeyList:
 
     def optimize(self):
 
-        # Get optimized list
-        filtered_list = list(filter(None, self.transitive_list))
+        # Get optimized list by filtering orphaned elements
+        self.transitive_list = list(filter(None, self.transitive_list))
 
         # Reset lookup table
         self.forward_lookup = {}
-
-        # Filter orphaned elements
-        self.transitive_list = filtered_list
 
         # Sort inner lists
         for i in self.transitive_list:
@@ -86,7 +83,7 @@ class TransitiveKeyList:
         self.optimize()
         return '\n'.join(
                 map(lambda x: ' '.join(map(str, x)),
-                    filter(None, self.transitive_list)))
+                    self.transitive_list))
 
     def get_commit_hashes(self):
         retval = []
@@ -106,9 +103,9 @@ class TransitiveKeyList:
         retval = TransitiveKeyList()
 
         content = file_to_string(filename, must_exist=False)
-        if content is not None and len(content):
+        if content and len(content):
             # split by linebreak
-            content = list(filter(None, content.split('\n')))
+            content = list(filter(None, content.splitlines()))
             for i in content:
                 # split eache line by whitespace
                 commit_hashes = i.split(' ')
