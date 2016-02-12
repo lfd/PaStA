@@ -4,6 +4,22 @@ import sys
 import termios
 import tty
 
+class PropertyList(list):
+    """
+    Just a list that has an additional property
+    """
+    def __init__(self, *args, **kwargs):
+        list.__init__(self, *args, **kwargs)
+        self._property = None
+
+    @property
+    def property(self):
+        return self._property
+
+    @property.setter
+    def property(self, property):
+        self._property = property
+
 
 class TransitiveKeyList:
     def __init__(self):
