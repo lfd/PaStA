@@ -22,6 +22,9 @@ class PropertyList(list):
 
 
 class TransitiveKeyList:
+
+    PROPERTY_SEPARATOR = ' => '
+
     def __init__(self):
         self.forward_lookup = {}
         self.transitive_list = []
@@ -53,16 +56,29 @@ class TransitiveKeyList:
 
     def insert_single(self, key):
         if key not in self.forward_lookup:
-            self.transitive_list.append([key])
+            self.transitive_list.append(PropertyList([key]))
             index = len(self.transitive_list) - 1
             self.forward_lookup[key] = index
+
+    def set_property(self, key, property):
+        if key not in self.forward_lookup:
+            self.insert_single(key)
+
+        index = self.forward_lookup[key]
+        self.transitive_list[index].property = property
+
+    def get_property(self, key):
+        if key not in self.forward_lookup:
+            return None
+        index = self.forward_lookup[key]
+        return self.transitive_list[key].property
 
     def insert(self, key1, key2):
         index1 = key1 in self.forward_lookup
         index2 = key2 in self.forward_lookup
 
         if not index1 and not index2:
-            self.transitive_list.append([key1, key2])
+            self.transitive_list.append(PropertyList([key1, key2]))
             index = len(self.transitive_list) - 1
             self.forward_lookup[key1] = index
             self.forward_lookup[key2] = index
@@ -76,7 +92,7 @@ class TransitiveKeyList:
                 # Merge lists
                 self.transitive_list[index1] += self.transitive_list[index2]
                 # Remove orphaned list
-                self.transitive_list[index2] = []
+                self.transitive_list[index2] = PropertyList()
 
                 for i in self.transitive_list[index1]:
                     self.forward_lookup[i] = index1
@@ -103,9 +119,13 @@ class TransitiveKeyList:
 
     def __str__(self):
         self.optimize()
-        return '\n'.join(
-                map(lambda x: ' '.join(map(str, x)),
-                    self.transitive_list))
+        retval = ''
+        for i in self.transitive_list:
+            retval += ' '.join(map(str, i))
+            if i.property:
+                retval += TransitiveKeyList.PROPERTY_SEPARATOR + str(i.property)
+            retval += '\n'
+        return retval
 
     def get_commit_hashes(self):
         retval = []
@@ -129,6 +149,11 @@ class TransitiveKeyList:
             # split by linebreak
             content = list(filter(None, content.splitlines()))
             for i in content:
+                # Search for property
+                property = None
+                if TransitiveKeyList.PROPERTY_SEPARATOR in i:
+                    i, property = i.split(TransitiveKeyList.PROPERTY_SEPARATOR)
+
                 # split eache line by whitespace
                 commit_hashes = i.split(' ')
 
@@ -140,6 +165,10 @@ class TransitiveKeyList:
                 # Set all other elements
                 for commit_hash in commit_hashes[1:]:
                     retval.insert(base, commit_hash)
+
+                # Set property, if existing
+                if property:
+                    retval.set_property(base, property)
 
         retval.optimize()
         return retval
