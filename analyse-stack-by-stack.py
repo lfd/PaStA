@@ -41,12 +41,6 @@ for index, cur_patch_stack in enumerate(patch_stack_list):
     if index == len(patch_stack_list)-1:
         break
 
-    # Skip till version 3.0
-    if cur_patch_stack.patch_version < KernelVersion('2.6.999'):
-        continue
-    #if cur_patch_stack.patch_version > KernelVersion('3.1'):
-    #    break
-
     next_patch_stack = patch_stack_list[index + 1]
     print('Queueing ' + str(cur_patch_stack.patch_version) + ' <-> ' + str(next_patch_stack.patch_version))
 

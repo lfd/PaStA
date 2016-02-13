@@ -35,15 +35,7 @@ evaluation_result = EvaluationResult()
 evaluation_list = []
 candidates = []
 
-for cur_patch_stack in patch_stack_list:
-
-    # Skip till version 3.0
-    if cur_patch_stack.patch_version < KernelVersion('2.6.999'):
-        continue
-    #if cur_patch_stack.patch_version > KernelVersion('3.1'):
-    #    break
-    candidates += cur_patch_stack.commit_hashes
-
+candidates = set(patch_stack_list.get_all_commit_hashes())
 cache_commit_hashes(candidates, parallelize=True)
 
 for cur_patch_stack in patch_stack_list:
