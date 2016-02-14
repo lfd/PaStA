@@ -8,14 +8,14 @@ import re
 import sys
 from termcolor import colored
 
+from config import *
 from Tools import file_to_string
 
-LOG_PREFIX='../log/'
 
-AUTHOR_DATE_LOCATION = LOG_PREFIX + 'author_dates/'
-AUTHOR_EMAIL_LOCATION = LOG_PREFIX + 'author_emails/'
-DIFFS_LOCATION = LOG_PREFIX + 'diffs/'
-MESSAGES_LOCATION = LOG_PREFIX + 'messages/'
+AUTHOR_DATE_LOCATION = LOG_LOCATION + '/' + 'author_dates/'
+AUTHOR_EMAIL_LOCATION = LOG_LOCATION + '/' + 'author_emails/'
+DIFFS_LOCATION = LOG_LOCATION + '/' + 'diffs/'
+MESSAGES_LOCATION = LOG_LOCATION + '/' + 'messages/'
 
 commits = {}
 
