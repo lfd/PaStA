@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 
 from git import Repo
-from PatchStack import PatchStack, KernelVersion, VersionPoint, parse_patch_stack_definition
 
-BRANCH_PREFIX = 'analysis-'
-BASE_PREFIX = 'v'
-REPO_LOCATION = './linux/'
-
-GNUPLOT_PREFIX = './plots/'
-COMMITCOUNT_PREFIX = 'commitcount-'
-PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
+from PatchStack import KernelVersion, parse_patch_stack_definition
+from config import *
 
 
 def analyse_num_commits(patch_stack_list):

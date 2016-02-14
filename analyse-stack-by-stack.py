@@ -4,12 +4,11 @@ import argparse
 from git import Repo
 from multiprocessing import Pool, cpu_count
 
+from config import *
 from PatchEvaluation import evaluate_patch_list
-from PatchStack import KernelVersion, cache_commit_hashes, parse_patch_stack_definition
+from PatchStack import cache_commit_hashes, parse_patch_stack_definition
 from Tools import EvaluationResult
 
-REPO_LOCATION = './linux/'
-PATCH_STACK_DEFINITION = './resources/patch-stack-definition.dat'
 EVALUATION_RESULT_FILENAME = './evaluation-result'
 
 
@@ -19,16 +18,14 @@ def _evaluate_patch_list_wrapper(args):
 
 # Startup
 parser = argparse.ArgumentParser(description='Analyse stack by stack')
-parser.add_argument('-sd', dest='stack_def_filename', default=PATCH_STACK_DEFINITION, help='Stack definition filename')
-parser.add_argument('-r', dest='repo_location', default=REPO_LOCATION, help='Repo location')
 parser.add_argument('-er', dest='evaluation_result_filename', default=EVALUATION_RESULT_FILENAME, help='Evaluation result filename')
 
 args = parser.parse_args()
 
-repo = Repo(args.repo_location)
+repo = Repo(REPO_LOCATION)
 
 # Load patch stack definition
-patch_stack_list = parse_patch_stack_definition(repo, args.stack_def_filename)
+patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 
 # Check patch against next patch version number, patch by patch
 evaluation_result = EvaluationResult()
