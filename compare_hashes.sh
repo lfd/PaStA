@@ -1,6 +1,6 @@
 #!/bin/bash
 
-repo="./linux"
+repo=$1
 
 function show_hash {
 	tmp=$(mktemp)
@@ -9,7 +9,7 @@ function show_hash {
 }
 
 clear
-lhs=$(show_hash $1)
-rhs=$(show_hash $2)
+lhs=$(show_hash $2)
+rhs=$(show_hash $3)
 pr -w 150 -m -t $lhs $rhs
 rm $rhs $lhs

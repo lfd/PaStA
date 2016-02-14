@@ -4,6 +4,8 @@ import sys
 import termios
 import tty
 
+from config import *
+
 class PropertyList(list):
     """
     Just a list that has an additional property
@@ -302,7 +304,7 @@ class EvaluationResult(dict):
                 # Nope? Then let's do an interactive rating by a human
                 else:
                     yns = ''
-                    compare_hashes(orig_commit_hash, cand_commit_hash)
+                    compare_hashes(REPO_LOCATION, orig_commit_hash, cand_commit_hash)
                     print('Length of list of candidates: ' + str(len(candidates)))
                     print('Rating: ' + str(rating) + ' (' + str(msg_rating) + ' message and ' +
                           str(diff_rating) + ' diff, diff length ratio: ' +
@@ -366,8 +368,8 @@ def file_to_string(filename, must_exist=True):
     return retval
 
 
-def compare_hashes(orig_commit_hash, cand_commit_hash):
-    call(['./compare_hashes.sh', orig_commit_hash, cand_commit_hash])
+def compare_hashes(repo_location, orig_commit_hash, cand_commit_hash):
+    call(['./compare_hashes.sh', repo_location, orig_commit_hash, cand_commit_hash])
 
 
 def group(l, predicate):

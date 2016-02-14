@@ -2,6 +2,7 @@
 
 import sys
 
+from config import *
 from PatchEvaluation import preevaluate_single_patch, evaluate_single_patch
 from Tools import compare_hashes, getch
 
@@ -11,7 +12,7 @@ for i in range(len(commits)-1):
     commit_a = commits[i]
     commit_b = commits[i+1]
 
-    compare_hashes(commit_a, commit_b)
+    compare_hashes(REPO_LOCATION, commit_a, commit_b)
 
     retval = preevaluate_single_patch(commit_a, commit_b)
     if retval:
