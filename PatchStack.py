@@ -337,15 +337,6 @@ class PatchStackList(list):
         return None
 
 
-def get_date_of_commit(repo, commit):
-    """
-    :param repo: Git Repository
-    :param commit: Commit Tag (e.g. v4.3 or SHA hash)
-    :return: Author Date in format "YYYY-MM-DD"
-    """
-    return repo.git.log('--pretty=format:%ad', '--date=short', '-1', commit)
-
-
 def get_commit_hashes(repo, start, end):
     hashes = repo.git.log('--pretty=format:%H', start + '...' + end)
     hashes = hashes.splitlines()
