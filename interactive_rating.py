@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from os import path
 
 from Tools import DictList, EvaluationResult, TransitiveKeyList
 
@@ -23,12 +24,16 @@ args = parser.parse_args()
 
 # Load already known positives and false positives
 similar_patches = TransitiveKeyList.from_file(args.sp_filename)
-false_positives = DictList.from_file(args.fp_filename, human_readable=False)
+human_readable = not args.fp_filename.endswith('.pkl')
+false_positives = DictList.from_file(args.fp_filename, human_readable=human_readable)
 
 evaluation_result = EvaluationResult.from_file(args.er_filename)
 evaluation_result.interactive_rating(similar_patches, false_positives,
                                      args.aa_threshold, args.it_threshold, args.dlr_threshold)
 
 similar_patches.to_file(args.sp_filename)
-false_positives.to_file(args.fp_filename, human_readable=False)
-false_positives.to_file(args.fp_filename, human_readable=True)
+
+fp_filename = args.fp_filename
+if not human_readable:
+    fp_filename = path.splitext(fp_filename)[0]
+false_positives.to_file(fp_filename)

@@ -180,17 +180,16 @@ class DictList(dict):
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
 
-    def to_file(self, filename, human_readable=False):
-        if human_readable:
-            if len(self) == 0:
-                return
+    def to_file(self, filename):
+        if len(self) == 0:
+            return
 
-            with open(filename, 'w') as f:
-                f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + ' '.join(x[1]), self.items())) + '\n')
-                f.close()
-        else:
-            with open(filename + '.pkl', 'wb') as f:
-                pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+        with open(filename, 'w') as f:
+            f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + ' '.join(x[1]), self.items())) + '\n')
+            f.close()
+
+        with open(filename + '.pkl', 'wb') as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
     def from_file(filename, human_readable=False, must_exist=False):
@@ -204,14 +203,11 @@ class DictList(dict):
                     f.close()
                 return retval
             else:
-                with open(filename + '.pkl', 'rb') as f:
+                with open(filename, 'rb') as f:
                     return DictList(pickle.load(f))
 
         except FileNotFoundError:
-            if human_readable:
-                print('Warning, file ' + filename + ' not found!')
-            else:
-                print('Warning, file ' + filename + '.pkl not found!')
+            print('Warning, file ' + filename + ' not found!')
             if must_exist:
                 raise
             return DictList()
