@@ -367,6 +367,15 @@ class PatchStackList(list):
         return False
 
 
+def get_next_release_date(repo, commit_hash):
+    description = repo.git.describe('--contains', commit_hash)
+    description = description.split('~')[0]
+    # The -1 will suppress GPG signatures
+    timestamp = repo.git.show('--pretty=format:%ct', '-1', '--no-patch', '--quiet', description)
+    timestamp = datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d')
+    return timestamp
+
+
 def get_commit_hashes(repo, start, end):
     """
     :param repo: git repository
