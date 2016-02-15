@@ -6,7 +6,7 @@ from multiprocessing import Pool, cpu_count
 
 from config import *
 from PatchEvaluation import evaluate_patch_list
-from PatchStack import KernelVersion, cache_commit_hashes, parse_patch_stack_definition
+from PatchStack import cache_commit_hashes, parse_patch_stack_definition
 from Tools import EvaluationResult
 
 EVALUATION_RESULT_FILENAME = './evaluation-result'
