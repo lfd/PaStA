@@ -314,11 +314,17 @@ class PatchStack:
         # get commithashes of the patch stack
         self.commit_hashes = get_commit_hashes(repo, base.commit, patch.commit)
 
-    def __lt__(self, other):
-        return self.patch_version < other.patch_version
+    def base_release_date(self):
+        return self.base.release_date
+
+    def patch_release_date(self):
+        return self.patch.release_date
 
     def num_commits(self):
         return len(self.commit_hashes)
+
+    def __lt__(self, other):
+        return self.patch_version < other.patch_version
 
     def __repr__(self):
         return self.patch.version + ' (' + str(self.num_commits()) + ')'
