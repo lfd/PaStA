@@ -193,7 +193,12 @@ class Commit:
     HUNK_REGEX = re.compile(r'^@@ -([0-9]+),?([0-9]+)? \+([0-9]+),?([0-9]+)? @@ ?(.*)$')
     DIFF_REGEX = re.compile(r'^[\+-](.*)$')
 
-    def __init__(self, message, diff, author_date, author_email):
+    def __init__(self, commit_hash):
+
+        message = file_to_string(MESSAGES_LOCATION + commit_hash)
+        diff = file_to_string(DIFFS_LOCATION + commit_hash)
+        author_date = file_to_string(AUTHOR_DATE_LOCATION + commit_hash)
+        author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
 
         self. is_revert = bool(Commit.REVERT_REGEX.search(message))
 
@@ -388,12 +393,7 @@ def get_commit(commit_hash):
     if commit_hash in commits:
         return commits[commit_hash]
 
-    message = file_to_string(MESSAGES_LOCATION + commit_hash)
-    diff = file_to_string(DIFFS_LOCATION + commit_hash)
-    author_date = file_to_string(AUTHOR_DATE_LOCATION + commit_hash)
-    author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
-
-    commit = Commit(message, diff, author_date, author_email)
+    commit = Commit(commit_hash)
 
     commits[commit_hash] = commit
     return commits[commit_hash]
