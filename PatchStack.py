@@ -320,6 +320,9 @@ class PatchStack:
     def patch_release_date(self):
         return self.patch.release_date
 
+    def branch_name(self):
+        return self.patch.commit
+
     def num_commits(self):
         return len(self.commit_hashes)
 
@@ -335,23 +338,45 @@ class PatchStackList(list):
         list.__init__(self, *args)
 
     def get_all_commit_hashes(self):
+        """
+        :return: Returns all commit hashes of all patch stacks
+        """
         retval = []
         for i in self:
             retval += i.commit_hashes
-        return retval
+        return set(retval)
 
     def get_stack_of_commit(self, commit_hash):
+        """
+        :param commit_hash: Commit hash
+        :return: Returns the patch stack that contains commit hash or None
+        """
         for i in self:
             if commit_hash in i.commit_hashes:
                 return i
-
         return None
+
+    def __contains__(self, commit_hash):
+        """
+        :param commit_hash: Commit hash
+        :return: Returns true if commit_hash is in one of the patch stacks
+        """
+        for i in self:
+            if commit_hash in i.commit_hashes:
+                return True
+        return False
 
 
 def get_commit_hashes(repo, start, end):
+    """
+    :param repo: git repository
+    :param start: Start commit
+    :param end: End commit
+    :return: Returns a set of all commit hashes between a certain range
+    """
     hashes = repo.git.log('--pretty=format:%H', start + '...' + end)
     hashes = hashes.splitlines()
-    return hashes
+    return set(hashes)
 
 
 def __patch_stack_helper(repo, base_patch):
