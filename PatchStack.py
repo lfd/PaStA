@@ -200,6 +200,8 @@ class Commit:
         author_date = file_to_string(AUTHOR_DATE_LOCATION + commit_hash)
         author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
 
+        self.commit_hash = commit_hash
+
         self. is_revert = bool(Commit.REVERT_REGEX.search(message))
 
         # Split by linebreaks and filter empty lines
