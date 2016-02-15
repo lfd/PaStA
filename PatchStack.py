@@ -12,7 +12,7 @@ from config import *
 from Tools import file_to_string
 
 
-AUTHOR_DATE_LOCATION = LOG_LOCATION + '/' + 'author_dates/'
+DATE_LOCATION = LOG_LOCATION + '/' + 'dates/'
 AUTHOR_EMAIL_LOCATION = LOG_LOCATION + '/' + 'author_emails/'
 DIFFS_LOCATION = LOG_LOCATION + '/' + 'diffs/'
 MESSAGES_LOCATION = LOG_LOCATION + '/' + 'messages/'
@@ -197,7 +197,7 @@ class Commit:
 
         message = file_to_string(MESSAGES_LOCATION + commit_hash)
         diff = file_to_string(DIFFS_LOCATION + commit_hash)
-        author_date = file_to_string(AUTHOR_DATE_LOCATION + commit_hash)
+        date = file_to_string(DATE_LOCATION + commit_hash)
         author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
 
         self.commit_hash = commit_hash
@@ -220,7 +220,10 @@ class Commit:
             if '/dev/null' not in j:
                 self.affected.add(j[2:])
 
-        self.author_date = datetime.fromtimestamp(int(author_date))
+        date = date.splitlines()
+
+        self.author_date = datetime.fromtimestamp(int(date[0]))
+        self.commit_date = datetime.fromtimestamp(int(date[1]))
 
         self.author_email = author_email
 
