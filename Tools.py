@@ -6,6 +6,7 @@ import tty
 
 from config import *
 
+
 class PropertyList(list):
     """
     Just a list that has an additional property
