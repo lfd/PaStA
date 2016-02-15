@@ -130,7 +130,7 @@ class TransitiveKeyList:
             retval += '\n'
         return retval
 
-    def get_commit_hashes(self):
+    def get_all_commit_hashes(self):
         retval = []
         for i in self.transitive_list:
             retval += i

@@ -54,7 +54,7 @@ for similars in similar_patches:
     representatives.add(foo[-1][0])
 
 print(colored(' [done]', 'green'))
-stack_candidates = (candidates - similar_patches.get_commit_hashes()) | representatives
+stack_candidates = (candidates - similar_patches.get_all_commit_hashes()) | representatives
 
 print('Starting evaluation.')
 evaluation_result = evaluate_patch_list(stack_candidates, upstream_candidates,
