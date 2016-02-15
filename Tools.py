@@ -115,22 +115,21 @@ class TransitiveKeyList:
                 self.insert(base, j)
         self.optimize()
 
-    def __iter__(self):
-        self.optimize()
-        for i in self.transitive_list:
-            yield i
-
-    def __str__(self):
-        self.optimize()
-        retval = ''
-        for i in self.transitive_list:
-            retval += ' '.join(map(str, i))
-            if i.property:
-                retval += TransitiveKeyList.PROPERTY_SEPARATOR + str(i.property)
-            retval += '\n'
+    def get_commit_hashes(self, key):
+        """
+        :param key: commit hash
+        :return: Returns a set of all related commit hashes
+        """
+        retval = set()
+        if key in self.forward_lookup:
+            index = self.forward_lookup[key]
+            retval = set(self.transitive_list[index])
         return retval
 
     def get_all_commit_hashes(self):
+        """
+        :return: Returns a set of all commit hashes managed by the object
+        """
         retval = []
         for i in self.transitive_list:
             retval += i
@@ -175,6 +174,24 @@ class TransitiveKeyList:
 
         retval.optimize()
         return retval
+
+    def __iter__(self):
+        self.optimize()
+        for i in self.transitive_list:
+            yield i
+
+    def __str__(self):
+        self.optimize()
+        retval = ''
+        for i in self.transitive_list:
+            retval += ' '.join(map(str, i))
+            if i.property:
+                retval += TransitiveKeyList.PROPERTY_SEPARATOR + str(i.property)
+            retval += '\n'
+        return retval
+
+    def __contains__(self, key):
+        return key in self.forward_lookup
 
 
 class DictList(dict):
