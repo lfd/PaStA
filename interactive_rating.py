@@ -3,9 +3,9 @@
 import argparse
 from os import path
 
+from config import *
 from Tools import DictList, EvaluationResult, TransitiveKeyList
 
-FALSE_POSTITIVES_FILES = './false-positives'
 SIMILAR_PATCHES_FILE = './similar_patch_list'
 EVALUATION_RESULT_FILE = './evaluation-result.pkl'
 INTERACTIVE_THRESHOLD = 0.80
