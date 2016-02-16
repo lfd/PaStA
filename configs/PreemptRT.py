@@ -15,3 +15,5 @@ GNUPLOT_PREFIX = './plots/'
 
 COMMIT_DESCRIPTION_LOCATION = './preemptrt-commit-description'
 PATCH_GROUPS_LOCATION = './preemptrt-patch-groups'
+
+PATCH_FLOW_LOCATION = './R/preemptrt-patch-flow'
