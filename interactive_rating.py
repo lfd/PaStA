@@ -7,7 +7,7 @@ from Tools import DictList, EvaluationResult, TransitiveKeyList
 
 FALSE_POSTITIVES_FILES = './false-positives'
 SIMILAR_PATCHES_FILE = './similar_patch_list'
-EVALUATION_RESULT_FILE = './evaluation-result'
+EVALUATION_RESULT_FILE = './evaluation-result.pkl'
 INTERACTIVE_THRESHOLD = 0.80
 AUTOACCEPT_THRESHOLD = 0.9
 DIFF_LENGTH_RATIO_THRESHOLD = 0.5

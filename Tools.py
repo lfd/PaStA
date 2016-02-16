@@ -261,7 +261,7 @@ class EvaluationResult(dict):
 
     @staticmethod
     def from_file(filename):
-        with open(filename + '.pkl', 'rb') as f:
+        with open(filename, 'rb') as f:
             return EvaluationResult(pickle.load(f))
 
     def interactive_rating(self, transitive_list, false_positive_list,

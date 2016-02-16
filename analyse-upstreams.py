@@ -11,9 +11,7 @@ from PatchEvaluation import evaluate_patch_list
 from PatchStack import cache_commit_hashes, parse_patch_stack_definition, get_commit_hashes, get_commit
 from Tools import TransitiveKeyList
 
-EVALUATION_RESULT_FILENAME = './evaluation-result'
-SIMILAR_PATCHES_FILE = './similar_patch_list'
-
+EVALUATION_RESULT_FILENAME = './evaluation-result.pkl'
 
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args
