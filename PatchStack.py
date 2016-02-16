@@ -312,7 +312,14 @@ class PatchStack:
         self.patch_version = KernelVersion(patch.version)
 
         # get commithashes of the patch stack
-        self.commit_hashes = get_commit_hashes(repo, base.commit, patch.commit)
+        self._commit_hashes = get_commit_hashes(repo, base.commit, patch.commit)
+
+    @property
+    def commit_hashes(self):
+        """
+        :return: A copy of the commit hashes list
+        """
+        return set(self._commit_hashes)
 
     def base_release_date(self):
         return self.base.release_date
@@ -324,7 +331,7 @@ class PatchStack:
         return self.patch.commit
 
     def num_commits(self):
-        return len(self.commit_hashes)
+        return len(self._commit_hashes)
 
     def __lt__(self, other):
         return self.patch_version < other.patch_version
