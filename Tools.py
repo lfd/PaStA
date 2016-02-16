@@ -143,10 +143,10 @@ class TransitiveKeyList:
             f.close()
 
     @staticmethod
-    def from_file(filename):
+    def from_file(filename, must_exist=False):
         retval = TransitiveKeyList()
 
-        content = file_to_string(filename, must_exist=False)
+        content = file_to_string(filename, must_exist=must_exist)
         if content and len(content):
             # split by linebreak
             content = list(filter(None, content.splitlines()))
