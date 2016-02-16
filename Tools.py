@@ -74,7 +74,7 @@ class TransitiveKeyList:
         if key not in self.forward_lookup:
             return None
         index = self.forward_lookup[key]
-        return self.transitive_list[key].property
+        return self.transitive_list[index].property
 
     def insert(self, key1, key2):
         index1 = key1 in self.forward_lookup
