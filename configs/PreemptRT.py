@@ -12,3 +12,6 @@ BRANCH_PREFIX = 'preemptrt-'
 
 COMMITCOUNT_PREFIX = 'commitcount-'
 GNUPLOT_PREFIX = './plots/'
+
+COMMIT_DESCRIPTION_LOCATION = './preemptrt-commit-description'
+PATCH_GROUPS_LOCATION = './preemptrt-patch-groups'
