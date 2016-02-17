@@ -10,5 +10,5 @@ FALSE_POSTITIVES_FILES = 'PSA-resources/PreemptRT/resources/false-positives/fals
 
 BRANCH_PREFIX = 'preemptrt-'
 
-COMMITCOUNT_PREFIX = 'commitcount-preemptrt-'
+COMMITCOUNT_PREFIX = 'commitcount-'
 GNUPLOT_PREFIX = './plots/'
