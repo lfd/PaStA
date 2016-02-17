@@ -156,7 +156,8 @@ class PatchStack:
         self._stack = stack
 
         # Commit hashes of the patch stack
-        self._commit_hashes = get_commit_hashes(repo, base.commit, stack.commit)
+        self._commit_hashes = file_to_string(STACK_HASHES_LOCATION + str(stack.version),
+                                             must_exist=True).splitlines()
 
     @property
     def commit_hashes(self):
