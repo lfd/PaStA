@@ -301,18 +301,17 @@ class Commit:
 class VersionPoint:
     def __init__(self, commit, version, release_date):
         self.commit = commit
-        self.version = version
+        self.version = KernelVersion(version)
         self.release_date = release_date
 
 
 class PatchStack:
-    def __init__(self, repo, base, patch):
-        self.base = base
-        self.patch = patch
-        self.patch_version = KernelVersion(patch.version)
+    def __init__(self, repo, base, stack):
+        self._base = base
+        self._stack = stack
 
-        # get commithashes of the patch stack
-        self._commit_hashes = get_commit_hashes(repo, base.commit, patch.commit)
+        # Commit hashes of the patch stack
+        self._commit_hashes = get_commit_hashes(repo, base.commit, stack.commit)
 
     @property
     def commit_hashes(self):
@@ -321,23 +320,33 @@ class PatchStack:
         """
         return set(self._commit_hashes)
 
-    def base_release_date(self):
-        return self.base.release_date
+    @property
+    def base_version(self):
+        return self._base.version
 
-    def patch_release_date(self):
-        return self.patch.release_date
+    @property
+    def stack_version(self):
+        return self._stack.version
+
+    @property
+    def stack_release_date(self):
+        return self._stack.release_date
+
+    @property
+    def base_release_date(self):
+        return self._base.release_date
 
     def branch_name(self):
-        return self.patch.commit
+        return self._stack.commit
 
     def num_commits(self):
         return len(self._commit_hashes)
 
     def __lt__(self, other):
-        return self.patch_version < other.patch_version
+        return self.stack_version < other.stack_version
 
     def __repr__(self):
-        return self.patch.version + ' (' + str(self.num_commits()) + ')'
+        return '%s (%d)' % (self.stack_version, self.num_commits())
 
 
 class PatchStackList(list):
@@ -395,10 +404,11 @@ def get_commit_hashes(repo, start, end):
     return set(hashes)
 
 
-def __patch_stack_helper(repo, base_patch):
-    sys.stdout.write('\rLoading ' + base_patch[1].version + '...')
+def __patch_stack_helper(repo, args):
+    base, patch = args
+    sys.stdout.write('\rLoading %s...' % patch.version)
     sys.stdout.flush()
-    return PatchStack(repo, *base_patch)
+    return PatchStack(repo, *args)
 
 
 def parse_patch_stack_definition(repo, definition_filename):

@@ -13,25 +13,25 @@ def analyse_num_commits(patch_stack_list):
     xtics = []
     data = {}
 
-    for i in patch_stack_list:
+    for patch_stack in patch_stack_list:
 
-        if i.patch_version.base_version_equals(KernelVersion('2.6'), 2):
+        # TBD! This is linux kernel specific
+        if patch_stack.stack_version.base_version_equals(KernelVersion('2.6'), 2):
             num_major = 3
         else:
             num_major = 2
 
-        if not i.patch_version.base_version_equals(cur_version, num_major):
-            xtics.append((i.patch.version, i.patch.release_date, i.num_commits()))
-            cur_version = i.patch_version
+        if not patch_stack.stack_version.base_version_equals(cur_version, num_major):
+            xtics.append((patch_stack.stack_version, patch_stack.stack_release_date, patch_stack.num_commits()))
+            cur_version = patch_stack.stack_version
             data[cur_version.base_string()] = []
 
-        data[cur_version.base_string()].append('"' +
-                                               i.patch_version.base_string(2) + '" ' +
-                                               '"' + i.base.version + '" ' +
-                                               i.base.release_date + ' ' +
-                                               '"' + i.patch.version + '" ' +
-                                               i.patch.release_date + ' ' +
-                                               str(i.num_commits()))
+        data[cur_version.base_string()].append('"%s" "%s" %s "%s" %s %d' % (patch_stack.stack_version.base_string(2),
+                                                                                patch_stack.base_version,
+                                                                                patch_stack.base_release_date,
+                                                                                patch_stack.stack_version,
+                                                                                patch_stack.stack_release_date,
+                                                                                patch_stack.num_commits()))
 
     for key, value in data.items():
         f = open(GNUPLOT_PREFIX + COMMITCOUNT_PREFIX + key, 'w')
@@ -42,10 +42,10 @@ def analyse_num_commits(patch_stack_list):
 
     # set special xtics
     for tic in xtics:
-        print("set xtics add ('" + tic[1] + "')")
+        print("set xtics add ('%s')" % tic[1])
 
     for tic in xtics:
-        print("set label '" + tic[0] + "'\tat '" + tic[1] + "', " + str(tic[2]) + " offset -4, -1")
+        print("set label '%s'\tat '%s', %d offset -4, -1" % tic)
 
 
 # Main

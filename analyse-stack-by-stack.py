@@ -39,7 +39,7 @@ for index, cur_patch_stack in enumerate(patch_stack_list):
         break
 
     next_patch_stack = patch_stack_list[index + 1]
-    print('Queueing ' + str(cur_patch_stack.patch_version) + ' <-> ' + str(next_patch_stack.patch_version))
+    print('Queueing %s <-> %s' % (cur_patch_stack.stack_version, next_patch_stack.stack_version))
 
     commit_hashes = commit_hashes | set(cur_patch_stack.commit_hashes) | set(next_patch_stack.commit_hashes)
 
