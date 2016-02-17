@@ -7,7 +7,7 @@ class StringVersion:
     Parse a version string like "rt34"
     """
 
-    regex = re.compile('([a-zA-Z]+)([0-9]+)')
+    SEPARATOR_REGEX = re.compile('([a-zA-Z]+)([0-9]+)')
 
     def __init__(self, version_string=''):
         self.string = ''
@@ -16,10 +16,10 @@ class StringVersion:
         if not version_string:
             return
 
-        if not self.regex.match(version_string):
+        if not StringVersion.SEPARATOR_REGEX.match(version_string):
             raise Exception('VersionString does not mach: ' + version_string)
 
-        res = self.regex.search(version_string)
+        res = StringVersion.SEPARATOR_REGEX.search(version_string)
         self.string = res.group(1)
         self.version = int(res.group(2))
 
@@ -72,8 +72,8 @@ class KernelVersion:
             else:
                 break
 
-        # Remove trailing '.0's'
-        while len(self.version) > 1 and self.version[-1] == 0:
+        # Allow only one trailing zero
+        while len(self.version) > 2 and self.version[-2:] == [0, 0]:
                 self.version.pop()
 
         if not self.version:
