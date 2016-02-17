@@ -70,7 +70,8 @@ class KernelVersion:
     and is able to compare versions of the class
     """
 
-    versionDelimiter = re.compile('\.|\-')
+    VERSION_DELIMITER = re.compile('\.|\-')
+    RC_REGEX = re.compile('^rc[0-9]+$')
 
     def __init__(self, version_string):
         self.versionString = version_string
@@ -79,21 +80,25 @@ class KernelVersion:
         self.extra = StringVersion()
 
         # Split array into version numbers, RC and Extraversion
-        parts = self.versionDelimiter.split(version_string)
+        parts = self.VERSION_DELIMITER.split(version_string)
 
         # Get versions
         while len(parts):
             if parts[0].isdigit():
-                self.version.append(parts.pop(0))
+                no = int(parts.pop(0))
+                self.version.append(no)
             else:
                 break
 
         # Remove trailing '.0's'
-        while self.version[-1] == 0:
-            self.version.pop()
+        while len(self.version) > 1 and self.version[-1] == 0:
+                self.version.pop()
+
+        if not self.version:
+            self.version = [0]
 
         # Get optional RC version
-        if len(parts) and re.compile('^rc[0-9]+$').match(parts[0]):
+        if len(parts) and KernelVersion.RC_REGEX.match(parts[0]):
             self.rc = StringVersion(parts.pop(0))
 
         # Get optional Extraversion
