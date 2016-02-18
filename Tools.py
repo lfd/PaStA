@@ -251,7 +251,7 @@ class DictList(dict):
 class EvaluationResult(dict):
     """
     An evaluation is a dictionary with a commit hash as key,
-    and a list of 3-tuples (hash, rating, msg) as value.
+    and a list of 3-tuples (hash, msg_rating, diff_rating, diff-length-ratio) as value.
 
     Check if this key already exists in the check_list, if yes, then append to the list
     """
