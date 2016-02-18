@@ -277,10 +277,7 @@ def parse_patch_stack_definition(repo, definition_filename):
             retval.append((base, patch))
 
     # Map tuple of (base, patch) to PatchStack
-    pool = Pool(cpu_count())
-    retval = PatchStackList(pool.map(functools.partial(__patch_stack_helper, repo), retval))
-    pool.close()
-    pool.join()
+    retval = PatchStackList(map(functools.partial(__patch_stack_helper, repo), retval))
     print(colored(' [done]', 'green'))
 
     # sort by patch version number
