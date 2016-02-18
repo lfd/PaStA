@@ -266,7 +266,7 @@ class EvaluationResult(dict):
                 continue
 
             if key in self:
-                self[key].append(value)
+                self[key] += value
             else:
                 self[key] = value
 
