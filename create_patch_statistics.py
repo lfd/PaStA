@@ -29,50 +29,47 @@ def write_patch_flow_csv(patchflow, filename):
                                                          len(pf.invariant), len(pf.dropped), len(pf.new), len(pf.upstreams)))
 
 
+def get_patch_group_ids(patch_groups, commit_list):
+    retval = set()
+    for i in commit_list:
+        equivalent_id = patch_groups.get_equivalence_id(i)
+        if equivalent_id is None:
+            raise ValueError('commit not in patch group')
+
+        retval.add(equivalent_id)
+    return retval
+
+
 def analyse_patch_flow(l, r, verbose=False):
-    lcommits = l.commit_hashes
-    rcommits = r.commit_hashes
+    lcommits = get_patch_group_ids(patch_groups, l.commit_hashes)
+    rcommits = get_patch_group_ids(patch_groups, r.commit_hashes)
 
     if verbose:
         print('Comparing ' + str(l) + ' <-> ' + str(r))
 
     # Surviving invariant patches
     # This is a dictionary from a left-side commit hash to a set of right-side patches
-    invariant = dict()
+    invariant = set()
     # Dropped patches
     dropped = set()
     # Patches that went upstream
-    upstreams = dict()
+    upstreams = set()
     # New patches
     new = copy.deepcopy(rcommits)
 
     # Iterate over all commits on the left stack side
     for lcommit in lcommits:
-        # Check if lcommit is in the patch group. This check should never fail.
-        if lcommit not in patch_groups:
-            raise ValueError('lcommit not in patch group')
-
-        # Get all related commit hashes of that group
-        related_to_lcommit = patch_groups.get_commit_hashes(lcommit)
-
-        # The intersection of related_to_lcommit and rcommits denotes the relation of
-        # lcommit to a set of patches in rcommits. Beware that this set may contain more than one element!
-        # This might be the case, if a patch is e.g. split into several further commits
-        intersect = related_to_lcommit & rcommits
 
         # If the set is not empty, the patch survived. Otherwise the patch was either dropped or
         # or the patch went upstream.
-        if len(intersect):
-            # TBD! THINK! Anything special in this case? Actually not...
-            #if len(intersect) > 1:
-            #    print()
-            invariant[lcommit] = intersect
-            new -= intersect
+        if lcommit in rcommits:
+            invariant.add(lcommit)
+            new.remove(lcommit)
         else:
-            upstream = patch_groups.get_property(lcommit)
+            upstream = patch_groups.get_property_by_id(lcommit)
             # Did the patch go upstream? Otherwise it was dropped.
             if upstream:
-                upstreams[lcommit] = upstream
+                upstreams.add(lcommit)
             else:
                 dropped.add(lcommit)
 
