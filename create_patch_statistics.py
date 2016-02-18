@@ -3,10 +3,23 @@
 import argparse
 import copy
 from git import Repo
+from multiprocessing import Pool, cpu_count
 
 from config import *
 from PatchStack import parse_patch_stack_definition
 from Tools import TransitiveKeyList
+
+
+def write_patch_flow_csv(patchflow, filename):
+    with open(filename, 'w') as f:
+        f.write('left_hand right_hand left_release_date right_release_date num_patches_left num_patches_right invariant dropped new upstream\n')
+        for key, value in patchflow:
+            l_stack, r_stack = key
+            invariant, dropped, upstreams, new = value
+            f.write('%s %s %s %s %d %d %d %d %d %d\n' % (l_stack.stack_version, r_stack.stack_version,
+                                                         l_stack.stack_release_date, r_stack.stack_release_date,
+                                                         l_stack.num_commits(), r_stack.num_commits(),
+                                                         len(invariant), len(dropped), len(new), len(upstreams)))
 
 
 def analyse_patch_flow(l, r, verbose=False):
@@ -68,6 +81,9 @@ def analyse_patch_flow(l, r, verbose=False):
     return key, value
 
 
+def _analyse_patch_flow_helper(args):
+    return analyse_patch_flow(*args)
+
 parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
 parser.add_argument('-pg', dest='pg_filename', default=PATCH_GROUPS_LOCATION, help='Patch group file')
 parser.add_argument('-pf', dest='pf_filename', default=PATCH_FLOW_LOCATION, help='Output: Patch Flow file for R')
@@ -80,16 +96,13 @@ patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 
 patch_groups = TransitiveKeyList.from_file(args.pg_filename, must_exist=True)
 
-patchflow = []
+todo = []
 for i in range(0, len(patch_stack_list)-1):
-    retval = analyse_patch_flow(patch_stack_list[i], patch_stack_list[i+1], verbose=True)
-    patchflow.append(retval)
+    todo.append((patch_stack_list[i], patch_stack_list[i+1]))
 
-with open(args.pf_filename, 'w') as f:
-    f.write('left_hand right_hand left_release_date right_release_date invariant dropped new upstream\n')
-    for key, value in patchflow:
-        l_stack, r_stack = key
-        invariant, dropped, upstreams, new = value
-        f.write('%s %s %s %s %d %d %d %d\n' % (l_stack.stack_version, r_stack.stack_version,
-                                               l_stack.stack_release_date, r_stack.stack_release_date,
-                                               len(invariant), len(dropped), len(new), len(upstreams)))
+pool = Pool(cpu_count())
+patchflow = pool.map(_analyse_patch_flow_helper, todo)
+pool.close()
+pool.join()
+
+write_patch_flow_csv(patchflow, args.pf_filename)
