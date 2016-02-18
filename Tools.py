@@ -256,7 +256,7 @@ class EvaluationResult(dict):
             self[key].sort(key=lambda x: x[1], reverse=True)
 
     def to_file(self, filename):
-        with open(filename + '.pkl', 'wb') as f:
+        with open(filename, 'wb') as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
