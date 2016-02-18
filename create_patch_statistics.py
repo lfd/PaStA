@@ -10,16 +10,23 @@ from PatchStack import parse_patch_stack_definition
 from Tools import TransitiveKeyList
 
 
+class PatchFlow:
+    def __init__(self, invariant, dropped, upstreams, new):
+        self.invariant = invariant
+        self.dropped = dropped
+        self.upstreams = upstreams
+        self.new = new
+
+
 def write_patch_flow_csv(patchflow, filename):
     with open(filename, 'w') as f:
         f.write('left_hand right_hand left_release_date right_release_date num_patches_left num_patches_right invariant dropped new upstream\n')
-        for key, value in patchflow:
+        for key, pf in patchflow:
             l_stack, r_stack = key
-            invariant, dropped, upstreams, new = value
             f.write('%s %s %s %s %d %d %d %d %d %d\n' % (l_stack.stack_version, r_stack.stack_version,
                                                          l_stack.stack_release_date, r_stack.stack_release_date,
                                                          l_stack.num_commits(), r_stack.num_commits(),
-                                                         len(invariant), len(dropped), len(new), len(upstreams)))
+                                                         len(pf.invariant), len(pf.dropped), len(pf.new), len(pf.upstreams)))
 
 
 def analyse_patch_flow(l, r, verbose=False):
@@ -77,7 +84,7 @@ def analyse_patch_flow(l, r, verbose=False):
         print()
 
     key = l, r
-    value = invariant, dropped, upstreams, new
+    value = PatchFlow(invariant, dropped, upstreams, new)
     return key, value
 
 
