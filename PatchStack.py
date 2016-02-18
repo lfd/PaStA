@@ -9,7 +9,6 @@ from termcolor import colored
 
 from config import *
 from Tools import file_to_string
-from Version import KernelVersion
 
 
 DATE_LOCATION = LOG_LOCATION + '/' + 'dates/'
@@ -146,7 +145,7 @@ class Commit:
 class VersionPoint:
     def __init__(self, commit, version, release_date):
         self.commit = commit
-        self.version = KernelVersion(version)
+        self.version = version
         self.release_date = release_date
 
 
@@ -189,25 +188,23 @@ class PatchStack:
     def num_commits(self):
         return len(self._commit_hashes)
 
-    def __lt__(self, other):
-        return self.stack_version < other.stack_version
-
     def __repr__(self):
         return '%s (%d)' % (self.stack_version, self.num_commits())
 
 
-class PatchStackList(list):
-    def __init__(self, *args):
-        list.__init__(self, *args)
+class PatchStackList:
+    def __init__(self, patch_stack_groups):
+        self.patch_stack_groups = patch_stack_groups
+
+        self.all_commit_hashes = set()
+        for i in self:
+            self.all_commit_hashes |= i.commit_hashes
 
     def get_all_commit_hashes(self):
         """
         :return: Returns all commit hashes of all patch stacks
         """
-        retval = []
-        for i in self:
-            retval += i.commit_hashes
-        return set(retval)
+        return self.all_commit_hashes
 
     def get_stack_of_commit(self, commit_hash):
         """
@@ -219,15 +216,17 @@ class PatchStackList(list):
                 return i
         return None
 
-    def __contains__(self, commit_hash):
-        """
-        :param commit_hash: Commit hash
-        :return: Returns true if commit_hash is in one of the patch stacks
-        """
-        for i in self:
-            if commit_hash in i.commit_hashes:
-                return True
-        return False
+    def iter_groups(self):
+        for i in self.patch_stack_groups:
+            yield i
+
+    def __contains__(self, item):
+        return item in self.all_commit_hashes
+
+    def __iter__(self):
+        for foo, patch_stack_group in self.patch_stack_groups:
+            for patch_stack in patch_stack_group:
+                yield patch_stack
 
 
 def get_next_release_date(repo, commit_hash):
@@ -262,27 +261,53 @@ def parse_patch_stack_definition(repo, definition_filename):
 
     retval = []
     csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
+    HEADER_NAME_REGEX = re.compile(r'## (.*)')
 
+    sys.stdout.write('Parsing patch stack definition...')
+
+    retval = []
     with open(definition_filename) as f:
-        reader = csv.DictReader(filter(lambda row: row[0] != '#', f),  # Skip lines beginning with #
-                                dialect='patchstack')
+        line_list = f.readlines()
+
+    # Get the global CSV header which is the same for all groups
+    csv_header = line_list.pop(0)
+
+    csv_groups = []
+    header = None
+    for line in line_list:
+        if line.startswith('## '):
+            if header:
+                csv_groups.append((header, content))
+            header = HEADER_NAME_REGEX.match(line).group(1)
+            content = [csv_header]
+        elif line.startswith('#'):  # skip comments
+            continue
+        else:
+            content.append(line)
+
+    # Add last group
+    csv_groups.append((header,content))
+
+    for group_name, csv_list in csv_groups:
+        reader = csv.DictReader(csv_list, dialect='patchstack')
+        this_group = []
         for row in reader:
             base = VersionPoint(row['BaseCommit'],
                                 row['BaseVersion'],
                                 row['BaseReleaseDate'])
 
-            patch = VersionPoint(row['BranchName'],
+            stack = VersionPoint(row['BranchName'],
                                  row['PatchVersion'],
                                  row['PatchReleaseDate'])
 
-            retval.append((base, patch))
+            this_group.append(PatchStack(repo, base, stack))
 
-    # Map tuple of (base, patch) to PatchStack
-    retval = PatchStackList(map(functools.partial(__patch_stack_helper, repo), retval))
+        retval.append((group_name, this_group))
+
+    # Create patch stack list
+    retval = PatchStackList(retval)
     print(colored(' [done]', 'green'))
 
-    # sort by patch version number
-    retval.sort()
     return retval
 
 

@@ -30,23 +30,19 @@ patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 # Check patch against next patch version number, patch by patch
 evaluation_result = EvaluationResult()
 evaluation_list = []
-commit_hashes = set()
 
-for index, cur_patch_stack in enumerate(patch_stack_list):
+pred = None
+for patch_stack in patch_stack_list:
+    if not pred:
+        pred = patch_stack
+        continue
 
-    # Bounds check
-    if index == len(patch_stack_list)-1:
-        break
+    print('Queueing %s <-> %s' % (pred.stack_version, patch_stack.stack_version))
 
-    next_patch_stack = patch_stack_list[index + 1]
-    print('Queueing %s <-> %s' % (cur_patch_stack.stack_version, next_patch_stack.stack_version))
+    evaluation_list.append((pred.commit_hashes, patch_stack.commit_hashes))
+    pred = patch_stack
 
-    commit_hashes = commit_hashes | cur_patch_stack.commit_hashes | next_patch_stack.commit_hashes
-
-    evaluation_list.append((cur_patch_stack.commit_hashes, next_patch_stack.commit_hashes))
-
-cache_commit_hashes(commit_hashes, parallelize=True)
-commit_hashes = None
+cache_commit_hashes(patch_stack_list.get_all_commit_hashes(), parallelize=True)
 print('Starting evaluation.')
 
 pool = Pool(cpu_count())

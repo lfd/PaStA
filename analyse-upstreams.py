@@ -13,6 +13,7 @@ from Tools import TransitiveKeyList
 
 EVALUATION_RESULT_FILENAME = './evaluation-result.pkl'
 
+
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args
     return evaluate_patch_list(orig, cand)

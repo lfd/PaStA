@@ -33,13 +33,11 @@ evaluation_list = []
 candidates = []
 
 candidates = set(patch_stack_list.get_all_commit_hashes())
-cache_commit_hashes(candidates, parallelize=True)
-
 for patch_stack in patch_stack_list:
     print('Queueing %s <-> All others' % patch_stack.stack_version)
-
     evaluation_list.append((patch_stack.commit_hashes, candidates))
 
+cache_commit_hashes(candidates, parallelize=True)
 
 print('Starting evaluation.')
 pool = Pool(cpu_count())

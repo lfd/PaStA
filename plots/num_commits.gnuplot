@@ -62,21 +62,21 @@ set xtics add ('2015-12-23')
 #set label '4.1.2-rt1'		at '2015-07-14', 266 offset -4, -1
 #set label '4.4-rc6-rt1'		at '2015-12-23', 256 offset -4, -1
 
-plot "commitcount-2.6.22.1"	every ::1 using 5:6 linetype 1 linecolor 1 title '2.6.22-rt', \
-	 "commitcount-2.6.23"	every ::1 using 5:6 linetype 1 linecolor 2 title '2.6.23-rt', \
-	 "commitcount-2.6.24" 	every ::1 using 5:6 linetype 1 linecolor 3 title '2.6.24-rt', \
-	 "commitcount-2.6.25.4" every ::1 using 5:6 linetype 1 linecolor 4 title '2.6.25.4-rt', \
-	 "commitcount-2.6.26" 	every ::1 using 5:6 linetype 1 linecolor 5 title '2.6.26-rt', \
-	 "commitcount-2.6.29"	every ::1 using 5:6 linetype 1 linecolor 7 title '2.6.29-rt', \
-	 "commitcount-3.0"		every ::1 using 5:6 linetype 1 linecolor 8 title '3.0-rt', \
-	 "commitcount-3.2"		every ::1 using 5:6 linetype 1 linecolor 9 title '3.2-rt', \
-	 "commitcount-3.4"		every ::1 using 5:6 linetype 1 linecolor 10 title '3.4-rt', \
-	 "commitcount-3.6.1"	every ::1 using 5:6 linetype 1 linecolor 11 title '3.6.1-rt', \
-	 "commitcount-3.8.4"	every ::1 using 5:6 linetype 1 linecolor 12 title '3.8.4-rt', \
-	 "commitcount-3.10.4"	every ::1 using 5:6 linetype 1 linecolor 13 title '3.10.4-rt', \
-	 "commitcount-3.12.0"	every ::1 using 5:6 linetype 1 linecolor 14 title '3.12.0-rt', \
-	 "commitcount-3.14.0"	every ::1 using 5:6 linetype 1 linecolor 16 title '3.14.0-rt', \
-	 "commitcount-3.18.7"	every ::1 using 5:6 linetype 1 linecolor 17 title '3.18.7-rt', \
-	 "commitcount-4.0.4"	every ::1 using 5:6 linetype 1 linecolor 18 title '4.0.4-rt', \
-	 "commitcount-4.1.2"	every ::1 using 5:6 linetype 1 linecolor 19 title '4.1.2-rt', \
-	 "commitcount-4.4"		every ::1 using 5:6 linetype 1 linecolor 20 title '4.4-rt', \
+plot "commitcount-2.6.22-rt"	every ::1 using 2:5 linetype 1 linecolor 1 title '2.6.22-rt', \
+	 "commitcount-2.6.23-rt"	every ::1 using 2:5 linetype 1 linecolor 2 title '2.6.23-rt', \
+	 "commitcount-2.6.24-rt"	every ::1 using 2:5 linetype 1 linecolor 3 title '2.6.24-rt', \
+	 "commitcount-2.6.25-rt"	every ::1 using 2:5 linetype 1 linecolor 4 title '2.6.25-rt', \
+	 "commitcount-2.6.26-rt"	every ::1 using 2:5 linetype 1 linecolor 5 title '2.6.26-rt', \
+	 "commitcount-2.6.29-rt"	every ::1 using 2:5 linetype 1 linecolor 7 title '2.6.29-rt', \
+	 "commitcount-3.0-rt"		every ::1 using 2:5 linetype 1 linecolor 8 title '3.0-rt', \
+	 "commitcount-3.2-rt"		every ::1 using 2:5 linetype 1 linecolor 9 title '3.2-rt', \
+	 "commitcount-3.4-rt"		every ::1 using 2:5 linetype 1 linecolor 10 title '3.4-rt', \
+	 "commitcount-3.6-rt"		every ::1 using 2:5 linetype 1 linecolor 11 title '3.6-rt', \
+	 "commitcount-3.8-rt"		every ::1 using 2:5 linetype 1 linecolor 12 title '3.8-rt', \
+	 "commitcount-3.10-rt"		every ::1 using 2:5 linetype 1 linecolor 13 title '3.10-rt', \
+	 "commitcount-3.12-rt"		every ::1 using 2:5 linetype 1 linecolor 14 title '3.12-rt', \
+	 "commitcount-3.14-rt"		every ::1 using 2:5 linetype 1 linecolor 16 title '3.14-rt', \
+	 "commitcount-3.18-rt"		every ::1 using 2:5 linetype 1 linecolor 17 title '3.18-rt', \
+	 "commitcount-4.0-rt"		every ::1 using 2:5 linetype 1 linecolor 18 title '4.0-rt', \
+	 "commitcount-4.1-rt"		every ::1 using 2:5 linetype 1 linecolor 19 title '4.1-rt', \
+	 "commitcount-4.4-rt"		every ::1 using 2:5 linetype 1 linecolor 20 title '4.4-rt'

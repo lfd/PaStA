@@ -101,8 +101,13 @@ patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 patch_groups = TransitiveKeyList.from_file(args.pg_filename, must_exist=True)
 
 todo = []
-for i in range(0, len(patch_stack_list)-1):
-    todo.append((patch_stack_list[i], patch_stack_list[i+1]))
+pred = None
+for i in patch_stack_list:
+    if not pred:
+        pred = i
+        continue
+    todo.append((pred, i))
+    pred = i
 
 pool = Pool(cpu_count())
 patchflow = pool.map(_analyse_patch_flow_helper, todo)
