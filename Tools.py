@@ -76,6 +76,12 @@ class TransitiveKeyList:
         index = self.forward_lookup[key]
         return self.transitive_list[index].property
 
+    def get_property_by_id(self, id):
+        try:
+            return self.transitive_list[id].property
+        except IndexError:
+            return None
+
     def insert(self, key1, key2):
         index1 = key1 in self.forward_lookup
         index2 = key2 in self.forward_lookup
@@ -114,6 +120,17 @@ class TransitiveKeyList:
             for j in i[1:]:
                 self.insert(base, j)
         self.optimize()
+
+    def get_equivalence_id(self, key):
+        if key in self.forward_lookup:
+            return self.forward_lookup[key]
+        return None
+
+    def get_commit_hashes_by_id(self, id):
+        try:
+            return set(self.transitive_list[id])
+        except IndexError:
+            return None
 
     def get_commit_hashes(self, key):
         """
