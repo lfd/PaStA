@@ -45,7 +45,7 @@ def analyse_patch_flow(l, r, verbose=False):
     rcommits = get_patch_group_ids(patch_groups, r.commit_hashes)
 
     if verbose:
-        print('Comparing ' + str(l) + ' <-> ' + str(r))
+        print('Comparing %s <-> %s' % (l, r))
 
     # Surviving invariant patches
     # This is a dictionary from a left-side commit hash to a set of right-side patches
