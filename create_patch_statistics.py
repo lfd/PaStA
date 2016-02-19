@@ -20,10 +20,10 @@ class PatchFlow:
 
 def write_patch_flow_csv(patchflow, filename):
     with open(filename, 'w') as f:
-        f.write('left_hand right_hand left_release_date right_release_date num_patches_left num_patches_right invariant dropped new upstream\n')
+        f.write('versions left_release_date right_release_date num_patches_left num_patches_right invariant dropped new upstream\n')
         for key, pf in patchflow:
             l_stack, r_stack = key
-            f.write('%s %s %s %s %d %d %d %d %d %d\n' % (l_stack.stack_version, r_stack.stack_version,
+            f.write('"%s <-> %s" %s %s %d %d %d %d %d %d\n' % (l_stack.stack_version, r_stack.stack_version,
                                                          l_stack.stack_release_date, r_stack.stack_release_date,
                                                          l_stack.num_commits(), r_stack.num_commits(),
                                                          len(pf.invariant), len(pf.dropped), len(pf.new), len(pf.upstreams)))
