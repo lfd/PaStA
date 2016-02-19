@@ -261,10 +261,6 @@ class EvaluationResult(dict):
 
     def merge(self, other):
         for key, value in other.items():
-            # Skip empty evaluation lists
-            if not value:
-                continue
-
             if key in self:
                 self[key] += value
             else:
@@ -294,6 +290,8 @@ class EvaluationResult(dict):
         skipped_by_dlr = 0
 
         for orig_commit_hash, candidates in self.items():
+            transitive_list.insert_single(orig_commit_hash)
+
             for candidate in candidates:
                 cand_commit_hash, msg_rating, diff_rating, diff_length_ratio = candidate
 
@@ -359,6 +357,8 @@ class EvaluationResult(dict):
                         false_positive_list[orig_commit_hash].append(cand_commit_hash)
                     else:
                         false_positive_list[orig_commit_hash] = [cand_commit_hash]
+
+        transitive_list.optimize()
 
         print('\n\nSome statistics:')
         print(' Interactive Accepted: ' + str(accepted))

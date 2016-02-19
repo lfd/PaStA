@@ -151,10 +151,6 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
         # Drop None values
         result = list(filter(None, result))
 
-        # Check if there are no results at all
-        if not result:
-            continue
-
         # sort by ratio
         result.sort(key=lambda x: x[1], reverse=True)
 
