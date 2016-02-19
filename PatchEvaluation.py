@@ -111,8 +111,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
     retval = EvaluationResult()
     num_threads = int(cpu_count() * cpu_factor)
 
-    print('Evaluating ' + str(len(original_hashes)) + ' commit hashes against ' +
-          str(len(candidate_hashes)) + ' commit hashes')
+    print('Evaluating %d commit hashes against %d commit hashes' % (len(original_hashes), len(candidate_hashes)))
 
     if verbose:
         print('Running preevaluation.')
@@ -131,8 +130,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
 
     for i, commit_hash in enumerate(original_hashes):
         if verbose:
-            sys.stdout.write('\r Evaluating ' + str(i) + '/' +
-                             str(len(original_hashes)))
+            sys.stdout.write('\r Evaluating %d/%d' % (i, len(original_hashes)))
 
         # Do we have to consider the commit_hash?
         if commit_hash not in preeval_result:
