@@ -15,8 +15,8 @@ from Tools import TransitiveKeyList
 def describe_commit(commit_hash):
     if commit_hash in patch_stack_list:
         stack = patch_stack_list.get_stack_of_commit(commit_hash)
-        branch_name = stack.branch_name()
-        release_date = stack.patch_release_date()
+        branch_name = stack.stack_name
+        release_date = stack.stack_release_date
     else:
         branch_name = 'master'
         release_date = get_next_release_date(repo, commit_hash)
@@ -98,10 +98,12 @@ for i in patch_groups:
         all_commit_hashes.append(i.property)
 cache_commit_hashes(all_commit_hashes, parallelize=True)
 
+sys.stdout.write('Getting descriptions...')
 pool = Pool(cpu_count())
 all_description = dict(pool.map(describe_commit, all_commit_hashes))
 pool.close()
 pool.join()
+print(colored(' [done]', 'green'))
 
 sys.stdout.write('Writing commit descriptions file... ')
 with open(args.cd_filename, 'w') as f:

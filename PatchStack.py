@@ -182,7 +182,8 @@ class PatchStack:
     def base_release_date(self):
         return self._base.release_date
 
-    def branch_name(self):
+    @property
+    def stack_name(self):
         return self._stack.commit
 
     def num_commits(self):
