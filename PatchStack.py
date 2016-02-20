@@ -272,6 +272,9 @@ def parse_patch_stack_definition(repo, definition_filename):
     # Get the global CSV header which is the same for all groups
     csv_header = line_list.pop(0)
 
+    # Filter empty lines
+    line_list = list(filter(lambda x: x != '\n', line_list))
+
     csv_groups = []
     header = None
     for line in line_list:
@@ -297,8 +300,8 @@ def parse_patch_stack_definition(repo, definition_filename):
                                 row['BaseReleaseDate'])
 
             stack = VersionPoint(row['BranchName'],
-                                 row['PatchVersion'],
-                                 row['PatchReleaseDate'])
+                                 row['StackVersion'],
+                                 row['StackReleaseDate'])
 
             this_group.append(PatchStack(repo, base, stack))
 
