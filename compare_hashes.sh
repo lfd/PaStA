@@ -4,7 +4,7 @@ repo=$1
 
 function show_hash {
 	tmp=$(mktemp)
-	git -C $repo --no-pager show $1 > $tmp
+	git -C $repo --no-pager show --pretty=fuller $1 > $tmp
 	echo $tmp
 }
 
