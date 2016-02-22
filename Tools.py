@@ -319,8 +319,8 @@ class EvaluationResult(dict):
                 if False and diff_rating == 1.0 and msg_rating > 0.1:
                     rating = 1.2
                 else:
-                    # Rate msg and diff by 0.4/0.8
-                    rating = 0.4 * msg_rating + 0.8 * diff_rating
+                    # Rate msg and diff by (1/3)/(2/3)
+                    rating = msg_rating / 3 + 2 *  diff_rating / 3
 
                 # Maybe we can autoaccept the patch?
                 if rating > autoaccept_threshold:

@@ -7,8 +7,8 @@ from config import *
 from Tools import DictList, EvaluationResult, TransitiveKeyList
 
 EVALUATION_RESULT_FILE = './evaluation-result.pkl'
-INTERACTIVE_THRESHOLD = 0.80
-AUTOACCEPT_THRESHOLD = 0.9
+INTERACTIVE_THRESHOLD = 0.70
+AUTOACCEPT_THRESHOLD = 0.95
 DIFF_LENGTH_RATIO_THRESHOLD = 0.5
 
 parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
