@@ -2,10 +2,8 @@
 
 import argparse
 from git import Repo
-import sys
 from termcolor import colored
 
-import blacklist
 from config import *
 from PatchEvaluation import evaluate_patch_list
 from PatchStack import cache_commit_hashes, parse_patch_stack_definition, get_commit_hashes, get_commit
@@ -31,7 +29,7 @@ patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
 
 # Load and cache upstream commits
 upstream_candidates = set(get_commit_hashes(repo, UPSTREAM_MIN, UPSTREAM_MAX))
-upstream_candidates -= blacklist.linux_blacklist
+upstream_candidates -= COMMITHASH_BLACKLIST
 
 # Load similar patches file
 similar_patches = TransitiveKeyList.from_file(args.sp_filename)
