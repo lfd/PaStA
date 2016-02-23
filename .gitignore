@@ -2,3 +2,6 @@
 __pycache__/
 *.pkl
 PSA-resources/
+config.py
+.Rhistory
+plots/commitcount-*
