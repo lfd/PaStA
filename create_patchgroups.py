@@ -4,12 +4,11 @@ import argparse
 import copy
 from git import Repo
 from multiprocessing import Pool, cpu_count
-import sys
 from termcolor import colored
 
 from config import *
+from EquivalenceClass import EquivalenceClass
 from PatchStack import parse_patch_stack_definition, get_commit, get_next_release_date, cache_commit_hashes
-from Tools import TransitiveKeyList
 
 
 def describe_commit(commit_hash):
@@ -36,13 +35,13 @@ args = parser.parse_args()
 
 # Load patch stack definition
 repo = Repo(REPO_LOCATION)
-patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
+patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
 
 # similar patch groups
-similar_patches = TransitiveKeyList.from_file(args.sp_filename)
+similar_patches = EquivalenceClass.from_file(args.sp_filename)
 
 # upstream results
-upstream_results = TransitiveKeyList.from_file(args.ur_filename)
+upstream_results = EquivalenceClass.from_file(args.ur_filename)
 
 stack_commit_hashes = patch_stack_list.get_all_commit_hashes()
 

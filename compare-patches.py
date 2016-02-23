@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
-import sys
-
 from config import *
-from PatchEvaluation import preevaluate_single_patch, evaluate_single_patch
-from Tools import compare_hashes, getch
+from PatchEvaluation import preevaluate_single_patch, evaluate_single_patch, compare_hashes, getch
 
 commits = sys.argv[1:]
 

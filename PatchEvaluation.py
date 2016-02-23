@@ -2,11 +2,185 @@ import functools
 from fuzzywuzzy import fuzz
 from math import ceil
 from multiprocessing import Pool, cpu_count
+import pickle
 from statistics import mean
-import sys
+from subprocess import call
+import termios
+import tty
 
+from config import *
 from PatchStack import get_commit
-from Tools import EvaluationResult
+
+
+class EvaluationResult(dict):
+    """
+    An evaluation is a dictionary with a commit hash as key,
+    and a list of 3-tuples (hash, msg_rating, diff_rating, diff-length-ratio) as value.
+
+    Check if this key already exists in the check_list, if yes, then append to the list
+    """
+
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+
+    def merge(self, other):
+        for key, value in other.items():
+            if key in self:
+                self[key] += value
+            else:
+                self[key] = value
+
+            self[key].sort(key=lambda x: x[1], reverse=True)
+
+    def to_file(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def from_file(filename):
+        with open(filename, 'rb') as f:
+            return EvaluationResult(pickle.load(f))
+
+    def interactive_rating(self, transitive_list, false_positive_list,
+                           autoaccept_threshold, interactive_threshold, diff_length_threshold,
+                           respect_commitdate=False):
+
+        already_false_positive = 0
+        already_detected = 0
+        auto_accepted = 0
+        auto_declined = 0
+        accepted = 0
+        declined = 0
+        skipped = 0
+        skipped_by_dlr = 0
+        skipped_by_commit_date = 0
+
+        for orig_commit_hash, candidates in self.items():
+            transitive_list.insert_single(orig_commit_hash)
+
+            for candidate in candidates:
+                cand_commit_hash, msg_rating, diff_rating, diff_length_ratio = candidate
+
+                # Check if both commit hashes are the same
+                if cand_commit_hash == orig_commit_hash:
+                    print('Go back and check your implementation!')
+                    continue
+
+                # Check if patch is already known as false positive
+                if orig_commit_hash in false_positive_list and \
+                   cand_commit_hash in false_positive_list[orig_commit_hash]:
+                    already_false_positive += 1
+                    continue
+
+                # Check if those two patches are already related
+                if transitive_list.is_related(orig_commit_hash, cand_commit_hash):
+                    already_detected += 1
+                    continue
+
+                if diff_length_ratio < diff_length_threshold:
+                    skipped_by_dlr += 1
+                    continue
+
+                if respect_commitdate:
+                    l = get_commit(orig_commit_hash)
+                    r = get_commit(cand_commit_hash)
+                    if l.commit_date > r.commit_date:
+                        skipped_by_commit_date += 1
+                        continue
+
+                # Autoaccept if 100% diff match and at least 10% msg match
+                if False and diff_rating == 1.0 and msg_rating > 0.1:
+                    rating = 1.2
+                else:
+                    # Rate msg and diff by (1/3)/(2/3)
+                    rating = msg_rating / 3 + 2 *  diff_rating / 3
+
+                # Maybe we can autoaccept the patch?
+                if rating > autoaccept_threshold:
+                    auto_accepted += 1
+                    yns = 'y'
+                # or even automatically drop it away?
+                elif rating < interactive_threshold:
+                    auto_declined += 1
+                    continue
+                # Nope? Then let's do an interactive rating by a human
+                else:
+                    yns = ''
+                    compare_hashes(REPO_LOCATION, orig_commit_hash, cand_commit_hash)
+                    print('Length of list of candidates: ' + str(len(candidates)))
+                    print('Rating: ' + str(rating) + ' (' + str(msg_rating) + ' message and ' +
+                          str(diff_rating) + ' diff, diff length ratio: ' +
+                          str(diff_length_ratio) + ')')
+                    print('(y)ay or (n)ay or (s)kip?')
+
+                if yns not in ['y', 'n', 's']:
+                    while yns not in ['y', 'n', 's']:
+                        yns = getch()
+                        if yns == 'y':
+                            accepted += 1
+                        elif yns == 'n':
+                            declined += 1
+                        elif yns == 's':
+                            skipped += 1
+
+                if yns == 'y':
+                    transitive_list.insert(orig_commit_hash, cand_commit_hash)
+                elif yns == 'n':
+                    if orig_commit_hash in false_positive_list:
+                        false_positive_list[orig_commit_hash].append(cand_commit_hash)
+                    else:
+                        false_positive_list[orig_commit_hash] = [cand_commit_hash]
+
+        transitive_list.optimize()
+
+        print('\n\nSome statistics:')
+        print(' Interactive Accepted: ' + str(accepted))
+        print(' Automatically accepted: ' + str(auto_accepted))
+        print(' Interactive declined: ' + str(declined))
+        print(' Automatically declined: ' + str(auto_declined))
+        print(' Skipped: ' + str(skipped))
+        print(' Skipped due to previous detection: ' + str(already_detected))
+        print(' Skipped due to false positive mark: ' + str(already_false_positive))
+        print(' Skipped by diff length ratio mismatch: ' + str(skipped_by_dlr))
+        if respect_commitdate:
+            print(' Skipped by commit date mismatch: ' + str(skipped_by_commit_date))
+
+
+class DictList(dict):
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+
+    def to_file(self, filename):
+        if len(self) == 0:
+            return
+
+        with open(filename, 'w') as f:
+            f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + ' '.join(x[1]), self.items())) + '\n')
+            f.close()
+
+        with open(filename + '.pkl', 'wb') as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def from_file(filename, human_readable=False, must_exist=False):
+        try:
+            if human_readable:
+                retval = DictList()
+                with open(filename, 'r') as f:
+                    for line in f:
+                        (key, val) = line.split(' ', 1)
+                        retval[key] = list(map(lambda x: x.rstrip('\n'), val.split(' ')))
+                    f.close()
+                return retval
+            else:
+                with open(filename, 'rb') as f:
+                    return DictList(pickle.load(f))
+
+        except FileNotFoundError:
+            print('Warning, file ' + filename + ' not found!')
+            if must_exist:
+                raise
+            return DictList()
 
 
 def preevaluate_single_patch(original_hash, candidate_hash):
@@ -160,3 +334,18 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
         sys.stdout.write('\n')
 
     return retval
+
+
+def getch():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+
+def compare_hashes(repo_location, orig_commit_hash, cand_commit_hash):
+    call(['./compare_hashes.sh', repo_location, orig_commit_hash, cand_commit_hash])

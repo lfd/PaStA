@@ -6,8 +6,8 @@ from git import Repo
 from multiprocessing import Pool, cpu_count
 
 from config import *
+from EquivalenceClass import EquivalenceClass
 from PatchStack import parse_patch_stack_definition
-from Tools import TransitiveKeyList
 
 
 class PatchFlow:
@@ -96,9 +96,9 @@ args = parser.parse_args()
 
 # Load patch stack definition
 repo = Repo(REPO_LOCATION)
-patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
+patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
 
-patch_groups = TransitiveKeyList.from_file(args.pg_filename, must_exist=True)
+patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
 
 todo = []
 pred = None

@@ -1,14 +1,11 @@
 import csv
 from datetime import datetime
-import functools
 from math import ceil
 from multiprocessing import Pool, cpu_count
 import re
-import sys
 from termcolor import colored
 
 from config import *
-from Tools import file_to_string
 
 
 DATE_LOCATION = LOG_LOCATION + '/' + 'dates/'
@@ -150,7 +147,7 @@ class VersionPoint:
 
 
 class PatchStack:
-    def __init__(self, repo, base, stack):
+    def __init__(self, base, stack):
         self._base = base
         self._stack = stack
 
@@ -250,22 +247,13 @@ def get_commit_hashes(repo, start, end):
     return set(hashes)
 
 
-def __patch_stack_helper(repo, args):
-    base, patch = args
-    sys.stdout.write('\rLoading %s...' % patch.version)
-    sys.stdout.flush()
-    return PatchStack(repo, *args)
+def parse_patch_stack_definition(definition_filename):
 
-
-def parse_patch_stack_definition(repo, definition_filename):
-
-    retval = []
     csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
     HEADER_NAME_REGEX = re.compile(r'## (.*)')
 
     sys.stdout.write('Parsing patch stack definition...')
 
-    retval = []
     with open(definition_filename) as f:
         line_list = f.readlines()
 
@@ -289,8 +277,9 @@ def parse_patch_stack_definition(repo, definition_filename):
             content.append(line)
 
     # Add last group
-    csv_groups.append((header,content))
+    csv_groups.append((header, content))
 
+    retval = []
     for group_name, csv_list in csv_groups:
         reader = csv.DictReader(csv_list, dialect='patchstack')
         this_group = []
@@ -303,7 +292,7 @@ def parse_patch_stack_definition(repo, definition_filename):
                                  row['StackVersion'],
                                  row['StackReleaseDate'])
 
-            this_group.append(PatchStack(repo, base, stack))
+            this_group.append(PatchStack(base, stack))
 
         retval.append((group_name, this_group))
 
@@ -342,3 +331,20 @@ def cache_commit_hashes(commit_hashes, parallelize=False):
         list(map(get_commit, commit_hashes))
 
     print(colored(' [done]', 'green'))
+
+
+def file_to_string(filename, must_exist=True):
+    try:
+        # Well things are crappy. For decades, encoding has been a real problem
+        # Git commits in the linux kernel are messy and sometimes have non-valid encoding
+        # Anyway, opening a file as binary and decoding it to iso8859 solves the problem :-)
+        with open(filename, 'rb') as f:
+            retval = str(f.read().decode('iso8859'))
+            f.close()
+    except FileNotFoundError:
+        print('Warning, file ' + filename + ' not found!')
+        if must_exist:
+            raise
+        return None
+
+    return retval

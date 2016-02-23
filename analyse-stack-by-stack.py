@@ -5,9 +5,8 @@ from git import Repo
 from multiprocessing import Pool, cpu_count
 
 from config import *
-from PatchEvaluation import evaluate_patch_list
+from PatchEvaluation import EvaluationResult, evaluate_patch_list
 from PatchStack import cache_commit_hashes, parse_patch_stack_definition
-from Tools import EvaluationResult
 
 EVALUATION_RESULT_FILENAME = './evaluation-result.pkl'
 
@@ -25,7 +24,7 @@ args = parser.parse_args()
 repo = Repo(REPO_LOCATION)
 
 # Load patch stack definition
-patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
+patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
 
 # Check patch against next patch version number, patch by patch
 evaluation_result = EvaluationResult()

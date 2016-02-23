@@ -5,9 +5,9 @@ from git import Repo
 from termcolor import colored
 
 from config import *
+from EquivalenceClass import EquivalenceClass
 from PatchEvaluation import evaluate_patch_list
 from PatchStack import cache_commit_hashes, parse_patch_stack_definition, get_commit_hashes, get_commit
-from Tools import TransitiveKeyList
 
 EVALUATION_RESULT_FILENAME = './evaluation-result.pkl'
 
@@ -25,14 +25,14 @@ args = parser.parse_args()
 
 # Load patch stack definition
 repo = Repo(REPO_LOCATION)
-patch_stack_list = parse_patch_stack_definition(repo, PATCH_STACK_DEFINITION)
+patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
 
 # Load and cache upstream commits
 upstream_candidates = set(get_commit_hashes(repo, UPSTREAM_MIN, UPSTREAM_MAX))
 upstream_candidates -= COMMITHASH_BLACKLIST
 
 # Load similar patches file
-similar_patches = TransitiveKeyList.from_file(args.sp_filename)
+similar_patches = EquivalenceClass.from_file(args.sp_filename)
 
 candidates = set(patch_stack_list.get_all_commit_hashes())
 cache_commit_hashes(candidates, parallelize=True)
