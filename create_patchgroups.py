@@ -58,8 +58,9 @@ patch_groups.optimize()
 # Merge upstream results and patch group list
 for i in upstream_results:
 
-    # First it is important to understand, that the commit hashes in the ....
     similar_hashes = set(i)
+    if len(similar_hashes) < 2:
+        continue
 
     upstream = None
     for commit_hash in similar_hashes:
@@ -69,8 +70,7 @@ for i in upstream_results:
             break
 
     if upstream is None:
-        print('ERROR')
-        quit()
+        raise ValueError('None of the commits is an upstream commit')
 
     hashes_in_patch_stacks = similar_hashes - set([upstream])
 
