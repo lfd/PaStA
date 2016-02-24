@@ -90,13 +90,13 @@ class EvaluationResult(dict):
 
                 # Autoaccept if 100% diff match and at least 10% msg match
                 if False and diff_rating == 1.0 and msg_rating > 0.1:
-                    rating = 1.2
+                    rating = 1.0
                 else:
                     # Rate msg and diff by (1/3)/(2/3)
                     rating = msg_rating / 3 + 2 *  diff_rating / 3
 
                 # Maybe we can autoaccept the patch?
-                if rating > autoaccept_threshold:
+                if rating >= autoaccept_threshold:
                     auto_accepted += 1
                     yns = 'y'
                 # or even automatically drop it away?
