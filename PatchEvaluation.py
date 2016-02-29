@@ -55,7 +55,13 @@ class EvaluationResult(dict):
         skipped_by_dlr = 0
         skipped_by_commit_date = 0
 
+        halt_save = False
+
         for orig_commit_hash, candidates in self.items():
+
+            if halt_save:
+                break
+
             transitive_list.insert_single(orig_commit_hash)
 
             for candidate in candidates:
@@ -111,10 +117,10 @@ class EvaluationResult(dict):
                     print('Rating: ' + str(rating) + ' (' + str(msg_rating) + ' message and ' +
                           str(diff_rating) + ' diff, diff length ratio: ' +
                           str(diff_length_ratio) + ')')
-                    print('(y)ay or (n)ay or (s)kip?')
+                    print('(y)ay or (n)ay or (s)kip?  To abort: halt and (d)iscard, (h)alt and save')
 
-                if yns not in ['y', 'n', 's']:
-                    while yns not in ['y', 'n', 's']:
+                if yns not in {'y', 'n', 's', 'd', 'h'}:
+                    while yns not in {'y', 'n', 's', 'd', 'h'}:
                         yns = getch()
                         if yns == 'y':
                             accepted += 1
@@ -122,6 +128,11 @@ class EvaluationResult(dict):
                             declined += 1
                         elif yns == 's':
                             skipped += 1
+                        elif yns == 'd':
+                            quit()
+                        elif yns == 'h':
+                            halt_save = True
+                            break
 
                 if yns == 'y':
                     transitive_list.insert(orig_commit_hash, cand_commit_hash)
