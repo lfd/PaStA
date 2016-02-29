@@ -166,7 +166,7 @@ class DictList(dict):
             return
 
         with open(filename, 'w') as f:
-            f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + ' '.join(x[1]), self.items())) + '\n')
+            f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + ' '.join(sorted(x[1])), sorted(self.items()))) + '\n')
             f.close()
 
         with open(filename + '.pkl', 'wb') as f:
