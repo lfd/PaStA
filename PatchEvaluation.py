@@ -94,8 +94,11 @@ class EvaluationResult(dict):
                         skipped_by_commit_date += 1
                         continue
 
+                # Overall rating is 0, if diff_rating is 0
+                if diff_rating == 0:
+                    rating = 0
                 # Autoaccept if 100% diff match and at least 10% msg match
-                if False and diff_rating == 1.0 and msg_rating > 0.1:
+                elif False and diff_rating == 1.0 and msg_rating > 0.1:
                     rating = 1.0
                 else:
                     # Rate msg and diff by (1/3)/(2/3)
