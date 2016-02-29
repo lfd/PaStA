@@ -17,6 +17,8 @@ commits = {}
 
 
 class Commit:
+    COMMIT_HASH_LOCATION = re.compile(r'(..)(..).*')
+
     SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:'
                                  r'|Reported-by:|Tested-by:|LKML-Reference:|Patch:)'),
                                 re.IGNORECASE)
@@ -36,14 +38,17 @@ class Commit:
 
     def __init__(self, commit_hash):
 
-        message = file_to_string(MESSAGES_LOCATION + commit_hash)
-        diff = file_to_string(DIFFS_LOCATION + commit_hash)
-        date = file_to_string(DATE_LOCATION + commit_hash)
-        author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash)
-
         self.commit_hash = commit_hash
 
-        self. is_revert = bool(Commit.REVERT_REGEX.search(message))
+        tmp = Commit.COMMIT_HASH_LOCATION.match(commit_hash)
+        commit_hash_location = '%s/%s/%s' % (tmp.group(1), tmp.group(2), commit_hash)
+
+        message = file_to_string(MESSAGES_LOCATION + commit_hash_location)
+        diff = file_to_string(DIFFS_LOCATION + commit_hash_location)
+        date = file_to_string(DATE_LOCATION + commit_hash_location)
+        author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash_location)
+
+        self.is_revert = bool(Commit.REVERT_REGEX.search(message))
 
         # Split by linebreaks and filter empty lines
         self.message = list(filter(None, message.splitlines()))
