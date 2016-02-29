@@ -198,9 +198,18 @@ class PatchStackList:
     def __init__(self, patch_stack_groups):
         self.patch_stack_groups = patch_stack_groups
 
+        self._stack_version_to_int = {}
+        self._hash_to_version_lookup = {}
+
         self.all_commit_hashes = set()
+        cntr = 0
         for i in self:
             self.all_commit_hashes |= i.commit_hashes
+            self._stack_version_to_int[i] = cntr
+            cntr += 1
+
+            for commit_hash in i.commit_hashes:
+                self._hash_to_version_lookup[commit_hash] = i
 
     def get_all_commit_hashes(self):
         """
@@ -213,14 +222,14 @@ class PatchStackList:
         :param commit_hash: Commit hash
         :return: Returns the patch stack that contains commit hash or None
         """
-        for i in self:
-            if commit_hash in i.commit_hashes:
-                return i
-        return None
+        return self._hash_to_version_lookup[commit_hash]
 
     def iter_groups(self):
         for i in self.patch_stack_groups:
             yield i
+
+    def is_stack_version_greater(self, lhs, rhs):
+        return self._stack_version_to_int[lhs] > self._stack_version_to_int[rhs]
 
     def __contains__(self, item):
         return item in self.all_commit_hashes
