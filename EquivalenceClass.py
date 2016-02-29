@@ -123,6 +123,29 @@ class EquivalenceClass:
         except IndexError:
             return None
 
+    def get_representative_system(self, compare_function):
+        """
+        Return a complete representative system of the equivalence class
+
+        :param compare_function: a function that compares two elements of an equivalence class
+        :return:
+        """
+        retval = set()
+        for equivclass in self.transitive_list:
+            if len(equivclass) == 0:
+                continue
+            if len(equivclass) == 1:
+                retval.add(equivclass[0])
+                continue
+
+            rep = equivclass[0]
+            for element in equivclass[1:]:
+                if compare_function(element, rep):
+                    rep = element
+            retval.add(rep)
+
+        return retval
+
     def get_commit_hashes(self, key):
         """
         :param key: commit hash
