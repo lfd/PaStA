@@ -16,14 +16,15 @@ class EvaluationResult(dict):
     """
     An evaluation is a dictionary with a commit hash as key,
     and a list of 3-tuples (hash, msg_rating, diff_rating, diff-length-ratio) as value.
-
-    Check if this key already exists in the check_list, if yes, then append to the list
     """
 
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
+        self.universe = set()
 
     def merge(self, other):
+        # Check if this key already exists in the check_list
+        # if yes, then append to the list
         for key, value in other.items():
             if key in self:
                 self[key] += value
@@ -36,10 +37,13 @@ class EvaluationResult(dict):
         with open(filename, 'wb') as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
+    def set_universe(self, universe):
+        self.universe = set(universe)
+
     @staticmethod
     def from_file(filename):
         with open(filename, 'rb') as f:
-            return EvaluationResult(pickle.load(f))
+            return pickle.load(f)
 
     def interactive_rating(self, transitive_list, false_positive_list,
                            autoaccept_threshold, interactive_threshold, diff_length_threshold,
@@ -57,12 +61,13 @@ class EvaluationResult(dict):
 
         halt_save = False
 
+        for i in self.universe:
+            transitive_list.insert_single(i)
+
         for orig_commit_hash, candidates in self.items():
 
             if halt_save:
                 break
-
-            transitive_list.insert_single(orig_commit_hash)
 
             for candidate in candidates:
                 cand_commit_hash, msg_rating, diff_rating, diff_length_ratio = candidate

@@ -27,9 +27,7 @@ repo = Repo(REPO_LOCATION)
 patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
 
 # Check patch against next patch version number, patch by patch
-evaluation_result = EvaluationResult()
 evaluation_list = []
-
 pred = None
 for patch_stack in patch_stack_list:
     if not pred:
@@ -51,6 +49,8 @@ pool.join()
 
 print('Evaluation completed.')
 
+evaluation_result = EvaluationResult()
+evaluation_result.set_universe(patch_stack_list.get_all_commit_hashes())
 for result in results:
     evaluation_result.merge(result)
 

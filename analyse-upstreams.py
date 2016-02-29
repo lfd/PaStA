@@ -58,5 +58,6 @@ evaluation_result = evaluate_patch_list(stack_candidates, upstream_candidates,
                                         parallelize=True, verbose=True,
                                         cpu_factor = 0.5)
 print('Evaluation completed.')
-
+# We don't have a universe in this case
+evaluation_result.set_universe(set())
 evaluation_result.to_file(args.evaluation_result_filename)

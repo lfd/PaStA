@@ -43,6 +43,7 @@ pool.join()
 print('Evaluation completed.')
 
 evaluation_result = EvaluationResult()
+evaluation_result.set_universe(candidates)
 for result in results:
     evaluation_result.merge(result)
 
