@@ -39,22 +39,20 @@ cache_commit_hashes(candidates, parallelize=True)
 cache_commit_hashes(upstream_candidates, parallelize=True)
 
 # Iterate over similar patch list and get latest commit of patches
-sys.stdout.write('Determining representatives...')
+sys.stdout.write('Determining patch stack representative system...')
 sys.stdout.flush()
-representatives = set()
-for similars in similar_patches:
-    # Get latest patch in similars
 
-    foo = list(map(lambda x: (x, get_commit(x).author_date), similars))
-    foo.sort(key=lambda x: x[1]) # Checken, ob sortierung so stimmt
-
-    representatives.add(foo[-1][0])
+# Get the complete representative system
+# The lambda compares two patches of an equivalence class and chooses the one with
+# the later release version
+representatives = similar_patches.get_representative_system(
+    lambda x, y: patch_stack_list.is_stack_version_greater(patch_stack_list.get_stack_of_commit(x),
+                                                           patch_stack_list.get_stack_of_commit(y)))
 
 print(colored(' [done]', 'green'))
-stack_candidates = (candidates - similar_patches.get_all_commit_hashes()) | representatives
 
 print('Starting evaluation.')
-evaluation_result = evaluate_patch_list(stack_candidates, upstream_candidates,
+evaluation_result = evaluate_patch_list(representatives, upstream_candidates,
                                         parallelize=True, verbose=True,
                                         cpu_factor = 0.5)
 print('Evaluation completed.')
