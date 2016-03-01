@@ -38,10 +38,8 @@ candidates = set(patch_stack_list.get_all_commit_hashes())
 cache_commit_hashes(candidates, parallelize=True)
 cache_commit_hashes(upstream_candidates, parallelize=True)
 
-# Iterate over similar patch list and get latest commit of patches
 sys.stdout.write('Determining patch stack representative system...')
 sys.stdout.flush()
-
 # Get the complete representative system
 # The lambda compares two patches of an equivalence class and chooses the one with
 # the later release version
