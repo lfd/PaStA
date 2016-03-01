@@ -65,8 +65,9 @@ for i in upstream_results:
     for commit_hash in similar_hashes:
         if commit_hash not in stack_commit_hashes:
             # We found the upstream commit hash
+            if upstream:
+                raise ValueError('Has multiple upstream candidates: %s' % commit_hash)
             upstream = commit_hash
-            break
 
     if upstream is None:
         raise ValueError('None of the commits is an upstream commit')
