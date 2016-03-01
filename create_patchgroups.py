@@ -77,16 +77,6 @@ for i in upstream_results:
     for hash in hashes_in_patch_stacks:
         patch_groups.set_property(hash, upstream)
 
-
-num_patch_groups = len(patch_groups.transitive_list)
-print('Overall number of patches in all stacks: ' + str(len(stack_commit_hashes)))
-print('Number of patches, that appeared more than once in the stack: ' + str(len(similar_patches.transitive_list)))
-print('Number of patch groups: ' + str(num_patch_groups))
-
-upstreams = set(filter(None, map(lambda x: x.property, patch_groups)))
-upstream_percentage = len(upstreams) / num_patch_groups
-print('All in all, %d patches went upstream (%f)' % (len(upstreams), upstream_percentage))
-
 sys.stdout.write('Writing Patch Group file... ')
 patch_groups.to_file(args.pg_filename)
 print(colored(' [done]', 'green'))
