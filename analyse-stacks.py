@@ -4,6 +4,9 @@ import argparse
 from git import Repo
 from multiprocessing import Pool, cpu_count
 
+from termcolor import colored
+
+from EquivalenceClass import EquivalenceClass
 from config import *
 from PatchEvaluation import EvaluationResult, evaluate_patch_list
 from PatchStack import cache_commit_hashes, parse_patch_stack_definition
@@ -18,6 +21,7 @@ def _evaluate_patch_list_wrapper(args):
 # Startup
 parser = argparse.ArgumentParser(description='Analyse stack by stack')
 parser.add_argument('-er', dest='evaluation_result_filename', default=EVALUATION_RESULT_FILENAME, help='Evaluation result filename')
+parser.add_argument('-sp', dest='sp_filename', default=SIMILAR_PATCHES_FILE, help='Similar Patches filename')
 
 args = parser.parse_args()
 
@@ -26,25 +30,24 @@ repo = Repo(REPO_LOCATION)
 # Load patch stack definition
 patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
 
-# Check patch against all other patches
-evaluation_list = []
-candidates = set(patch_stack_list.get_all_commit_hashes())
-for patch_stack in patch_stack_list:
-    print('Queueing %s <-> All others' % patch_stack.stack_version)
-    evaluation_list.append((patch_stack.commit_hashes, candidates))
+# Load similar patches file
+similar_patches = EquivalenceClass.from_file(args.sp_filename)
 
-cache_commit_hashes(candidates, parallelize=True)
+# Iterate over similar patch list and get latest commit of patches
+sys.stdout.write('Determining patch stack representative system...')
+sys.stdout.flush()
+# Get the complete representative system
+# The lambda compares two patches of an equivalence class and chooses the one with
+# the later release version
+representatives = similar_patches.get_representative_system(
+    lambda x, y: patch_stack_list.is_stack_version_greater(patch_stack_list.get_stack_of_commit(x),
+                                                           patch_stack_list.get_stack_of_commit(y)))
 
-print('Starting evaluation.')
-pool = Pool(cpu_count())
-results = pool.map(_evaluate_patch_list_wrapper, evaluation_list)
-pool.close()
-pool.join()
-print('Evaluation completed.')
+print(colored(' [done]', 'green'))
 
-evaluation_result = EvaluationResult()
-evaluation_result.set_universe(candidates)
-for result in results:
-    evaluation_result.merge(result)
-
+evaluation_result = evaluate_patch_list(representatives,
+                                        representatives,
+                                        parallelize=True,
+                                        verbose=True)
+evaluation_result.set_universe(representatives)
 evaluation_result.to_file(args.evaluation_result_filename)
