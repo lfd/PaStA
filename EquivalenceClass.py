@@ -233,3 +233,6 @@ class EquivalenceClass:
 
     def __contains__(self, key):
         return key in self.forward_lookup
+
+    def num_classes(self):
+        return len([x for x in self.transitive_list if x])
