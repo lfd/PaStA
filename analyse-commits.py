@@ -8,13 +8,14 @@ from config import *
 
 def analyse_num_commits(patch_stack_list):
 
+    dt = lambda x : x.strftime('%Y-%m-%d')
     for header, patch_stack_group in patch_stack_list.iter_groups():
         data = []
         for patch_stack in patch_stack_group:
             data.append('"%s" %s "%s" %s %d' % (patch_stack.stack_version,
-                                                patch_stack.stack_release_date,
+                                                dt(patch_stack.stack_release_date),
                                                 patch_stack.base_version,
-                                                patch_stack.base_release_date,
+                                                dt(patch_stack.base_release_date),
                                                 patch_stack.num_commits()))
 
         with open(GNUPLOT_PREFIX + COMMITCOUNT_PREFIX + header, 'w') as f:

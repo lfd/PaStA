@@ -21,6 +21,7 @@ def describe_commit(commit_hash):
         release_date = get_next_release_date(repo, commit_hash)
 
     commit = get_commit(commit_hash)
+    release_date = release_date.strftime('%Y-%m-%d')
     author_date = commit.author_date.strftime('%Y-%m-%d')
     commit_date = commit.commit_date.strftime('%Y-%m-%d')
     return commit_hash, (branch_name, author_date, commit_date, release_date)

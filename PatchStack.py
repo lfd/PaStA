@@ -148,7 +148,7 @@ class VersionPoint:
     def __init__(self, commit, version, release_date):
         self.commit = commit
         self.version = version
-        self.release_date = release_date
+        self.release_date = datetime.strptime(release_date, '%Y-%m-%d')
 
 
 class PatchStack:
@@ -245,8 +245,7 @@ def get_next_release_date(repo, commit_hash):
     description = description.split('~')[0]
     # The -1 will suppress GPG signatures
     timestamp = repo.git.show('--pretty=format:%ct', '-1', '--no-patch', '--quiet', description)
-    timestamp = datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d')
-    return timestamp
+    return datetime.fromtimestamp(int(timestamp))
 
 
 def get_commit_hashes(repo, start, end):
