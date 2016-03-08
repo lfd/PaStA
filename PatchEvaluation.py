@@ -121,10 +121,9 @@ class EvaluationResult(dict):
                 else:
                     yns = ''
                     compare_hashes(REPO_LOCATION, orig_commit_hash, cand_commit_hash)
-                    print('Length of list of candidates: ' + str(len(candidates)))
-                    print('Rating: ' + str(rating) + ' (' + str(msg_rating) + ' message and ' +
-                          str(diff_rating) + ' diff, diff length ratio: ' +
-                          str(diff_length_ratio) + ')')
+                    print('Length of list of candidates: %d' % len(candidates))
+                    print('Rating: %3.2f (%3.2f message and %3.2f diff, diff length ratio: %3.2f)' %
+                          (rating, msg_rating, diff_rating, diff_length_ratio))
                     print('(y)ay or (n)ay or (s)kip?  To abort: halt and (d)iscard, (h)alt and save')
 
                 if yns not in {'y', 'n', 's', 'd', 'h'}:
