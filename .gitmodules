@@ -1,0 +1,3 @@
+[submodule "PaStA-resources"]
+	path = PaStA-resources
+	url = git@gitlab.lfd.sturhax.de:ralf/PaStA-resources.git
