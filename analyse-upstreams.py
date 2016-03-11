@@ -30,13 +30,10 @@ patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
 # Load and cache upstream commits
 upstream_candidates = get_commit_hashes(repo, UPSTREAM_MIN, UPSTREAM_MAX)
 upstream_candidates -= COMMITHASH_BLACKLIST
+cache_commit_hashes(upstream_candidates, parallelize=True)
 
 # Load similar patches file
 similar_patches = EquivalenceClass.from_file(args.sp_filename)
-
-candidates = set(patch_stack_list.get_all_commit_hashes())
-cache_commit_hashes(candidates, parallelize=True)
-cache_commit_hashes(upstream_candidates, parallelize=True)
 
 sys.stdout.write('Determining patch stack representative system...')
 sys.stdout.flush()
@@ -48,6 +45,7 @@ representatives = similar_patches.get_representative_system(
                                                            patch_stack_list.get_stack_of_commit(y)))
 
 print(colored(' [done]', 'green'))
+cache_commit_hashes(representatives, parallelize=True)
 
 print('Starting evaluation.')
 evaluation_result = evaluate_patch_list(representatives, upstream_candidates,
