@@ -28,7 +28,7 @@ repo = Repo(REPO_LOCATION)
 patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
 
 # Load and cache upstream commits
-upstream_candidates = set(get_commit_hashes(repo, UPSTREAM_MIN, UPSTREAM_MAX))
+upstream_candidates = get_commit_hashes(repo, UPSTREAM_MIN, UPSTREAM_MAX)
 upstream_candidates -= COMMITHASH_BLACKLIST
 
 # Load similar patches file
