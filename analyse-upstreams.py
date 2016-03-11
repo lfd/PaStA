@@ -51,12 +51,15 @@ cache_commit_hashes(representatives, parallelize=True)
 print('Searching for cherry-picks...')
 cherry_picks = EvaluationResult()
 cherry_picks.set_universe(set())
-cherry_regex = re.compile(r'.*pick.*', re.IGNORECASE)
+cherry_rgxs = [r'.*pick.*',
+	       r'.*upstream.*commit.*',
+               r'.*commit.*upstream.*']
+cherry_rgxs = re.compile('(' + ')|('.join(cherry_rgxs) + ')', re.IGNORECASE)
 sha1_regex = re.compile(r'\b([0-9a-fA-F]{5,40})\b')
 for commit_hash in representatives:
     commit = get_commit(commit_hash)
     for line in commit.message:
-        if cherry_regex.match(line):
+        if cherry_rgxs.match(line):
             sha_found = sha1_regex.search(line)
             if not sha_found:
                 continue
