@@ -19,7 +19,7 @@ set style data lines
 set xdata time
 set timefmt '%Y-%m-%d'
 set format x '%Y-%m-%d'
-set xrange ['2007-06-01' : '2016-03-01']
+set xrange ['2007-06-01' : '2016-04-01']
 
 unset xtics
 set xtics nomirror rotate by -45
