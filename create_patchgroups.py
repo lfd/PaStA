@@ -76,6 +76,8 @@ for i in upstream_results:
     hashes_in_patch_stacks = similar_hashes - set([upstream])
 
     for hash in hashes_in_patch_stacks:
+        if patch_groups.get_property(hash) is not None:
+            raise ValueError('%s already has a property: %s. I wanted to set: %s Maybe double assignement?' % (hash, patch_groups.get_property(hash), upstream))
         patch_groups.set_property(hash, upstream)
 
 sys.stdout.write('Writing Patch Group file... ')
