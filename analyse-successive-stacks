@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+
+import argparse
+from multiprocessing import Pool, cpu_count
+
+from PaStA.PatchEvaluation import EvaluationResult, evaluate_patch_list
+from PaStA.PatchStack import cache_commit_hashes
+from PaStA import patch_stack_list
+
+
+EVALUATION_RESULT_FILENAME = './evaluation-result.pkl'
+
+
+def _evaluate_patch_list_wrapper(args):
+    orig, cand = args
+    return evaluate_patch_list(orig, cand)
+
+
+def main():
+    # Startup
+    parser = argparse.ArgumentParser(description='Analyse stack by stack')
+    parser.add_argument('-er', dest='evaluation_result_filename', default=EVALUATION_RESULT_FILENAME,
+                        help='Evaluation result filename')
+    args = parser.parse_args()
+
+    # Check patch against next patch version number, patch by patch
+    evaluation_list = []
+    pred = None
+    for patch_stack in patch_stack_list:
+        if not pred:
+            pred = patch_stack
+            continue
+
+        print('Queueing %s <-> %s' % (pred.stack_version, patch_stack.stack_version))
+
+        evaluation_list.append((pred.commit_hashes, patch_stack.commit_hashes))
+        pred = patch_stack
+
+    cache_commit_hashes(patch_stack_list.get_all_commit_hashes(), parallelize=True)
+    print('Starting evaluation.')
+
+    pool = Pool(cpu_count())
+    results = pool.map(_evaluate_patch_list_wrapper, evaluation_list)
+    pool.close()
+    pool.join()
+
+    print('Evaluation completed.')
+
+    evaluation_result = EvaluationResult()
+    evaluation_result.set_universe(patch_stack_list.get_all_commit_hashes())
+    for result in results:
+        evaluation_result.merge(result)
+
+    evaluation_result.to_file(args.evaluation_result_filename)
+
+
+if __name__ == '__main__':
+    main()

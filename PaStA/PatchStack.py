@@ -361,3 +361,7 @@ def file_to_string(filename, must_exist=True):
         return None
 
     return retval
+
+
+def format_date_ymd(dt):
+    return dt.strftime('%Y-%m-%d')

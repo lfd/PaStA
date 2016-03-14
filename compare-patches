@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+
+from PaStA.PatchEvaluation import preevaluate_single_patch, evaluate_single_patch, compare_hashes, getch
+
+from config import *
+
+
+def compare_patches(commits):
+    for i in range(len(commits)-1):
+        commit_a = commits[i]
+        commit_b = commits[i+1]
+
+        compare_hashes(REPO_LOCATION, commit_a, commit_b)
+
+        retval = preevaluate_single_patch(commit_a, commit_b)
+        if retval:
+            print('Preevaluation: Possible candidates')
+            retval = evaluate_single_patch(commit_a, commit_b)
+            if retval is None:
+                print('Rating: None')
+            else:
+                _, msg_rating, diff_rating, diff_length_ratio = retval
+                print(str(msg_rating) + ' message and ' +
+                      str(diff_rating) + ' diff, diff length ratio: ' +
+                      str(diff_length_ratio))
+        else:
+            print('Preevaluation: Not related')
+        getch()
+
+if __name__ == '__main__':
+    compare_patches(sys.argv[1:])

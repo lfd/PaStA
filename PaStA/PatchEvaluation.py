@@ -9,7 +9,7 @@ import termios
 import tty
 
 from config import *
-from PatchStack import get_commit
+from PaStA.PatchStack import get_commit
 
 
 class EvaluationResult(dict):
