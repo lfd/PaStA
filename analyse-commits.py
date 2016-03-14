@@ -7,7 +7,6 @@ from config import *
 
 
 def analyse_num_commits(patch_stack_list):
-
     dt = lambda x : x.strftime('%Y-%m-%d')
     for header, patch_stack_group in patch_stack_list.iter_groups():
         data = []
@@ -24,8 +23,17 @@ def analyse_num_commits(patch_stack_list):
             f.write(sum)
 
 
-# Main
-repo = Repo(REPO_LOCATION)
-patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
-# Run analyse_num_commits on the patchstack
-analyse_num_commits(patch_stack_list)
+def main():
+    repo = Repo(REPO_LOCATION)
+    patch_stack_list = parse_patch_stack_definition(PATCH_STACK_DEFINITION)
+
+    # Create destination directory if not existing
+    if not os.path.exists(GNUPLOT_PREFIX):
+        os.makedirs(GNUPLOT_PREFIX)
+
+    # Run analyse_num_commits on the patchstack
+    analyse_num_commits(patch_stack_list)
+
+
+if __name__ == '__main__':
+    main()
