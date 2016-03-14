@@ -10,8 +10,6 @@ from PaStA import patch_stack_list
 
 from config import *
 
-EVALUATION_RESULT_FILENAME = './evaluation-result.pkl'
-
 
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args

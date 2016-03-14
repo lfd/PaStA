@@ -7,17 +7,12 @@ from PaStA.PatchEvaluation import DictList, EvaluationResult
 
 from config import *
 
-EVALUATION_RESULT_FILE = './evaluation-result.pkl'
-INTERACTIVE_THRESHOLD = 0.70
-AUTOACCEPT_THRESHOLD = 0.95
-DIFF_LENGTH_RATIO_THRESHOLD = 0.5
-
 
 def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-fp', dest='fp_filename', default=FALSE_POSTITIVES_FILES, help='False Positive PKL filename')
     parser.add_argument('-sp', dest='sp_filename', default=SIMILAR_PATCHES_FILE, help='Similar Patches filename')
-    parser.add_argument('-er', dest='er_filename', default=EVALUATION_RESULT_FILE,
+    parser.add_argument('-er', dest='er_filename', default=EVALUATION_RESULT_FILENAME,
                         help='Evaluation Result PKL filename')
     parser.add_argument('-aat', dest='aa_threshold', type=float, default=AUTOACCEPT_THRESHOLD,
                         help='Autoaccept Threshold')

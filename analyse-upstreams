@@ -11,8 +11,6 @@ from PaStA import repo, patch_stack_list
 
 from config import *
 
-EVALUATION_RESULT_FILENAME = './evaluation-result.pkl'
-
 
 def _evaluate_patch_list_wrapper(args):
     orig, cand = args
@@ -28,7 +26,7 @@ def main():
     args = parser.parse_args()
 
     # Load and cache upstream commits
-    upstream_candidates = get_commit_hashes(repo, UPSTREAM_MIN, UPSTREAM_MAX)
+    upstream_candidates = get_commit_hashes(repo, UPSTREAM_RANGE[0], UPSTREAM_RANGE[1])
     upstream_candidates -= COMMITHASH_BLACKLIST
     cache_commit_hashes(upstream_candidates, parallelize=True)
 

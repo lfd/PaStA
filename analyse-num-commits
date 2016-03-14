@@ -6,7 +6,7 @@ from PaStA import patch_stack_list
 from config import *
 
 
-def analyse_num_commits(patch_stack_list):
+def analyse_num_commits():
     for header, patch_stack_group in patch_stack_list.iter_groups():
         data = []
         for patch_stack in patch_stack_group:
@@ -16,18 +16,18 @@ def analyse_num_commits(patch_stack_list):
                                                 format_date_ymd(patch_stack.base_release_date),
                                                 patch_stack.num_commits()))
 
-        with open(GNUPLOT_PREFIX + COMMITCOUNT_PREFIX + header, 'w') as f:
+        with open(COMMITCOUNT_PREFIX + PROJECT_NAME + '-' + header, 'w') as f:
             f.write('stackVersion stackReleaseDate baseVersion baseReleaseDate numCommits\n')
             f.write("\n".join(data) + '\n')
 
 
 def main():
     # Create destination directory if not existing
-    if not os.path.exists(GNUPLOT_PREFIX):
-        os.makedirs(GNUPLOT_PREFIX)
+    if not os.path.exists(COMMITCOUNT_PREFIX):
+        os.makedirs(COMMITCOUNT_PREFIX)
 
     # Run analyse_num_commits on the patchstack
-    analyse_num_commits(patch_stack_list)
+    analyse_num_commits()
 
 
 if __name__ == '__main__':
