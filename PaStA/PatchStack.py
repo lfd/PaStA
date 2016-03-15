@@ -2,16 +2,12 @@ import csv
 from datetime import datetime
 from math import ceil
 from multiprocessing import Pool, cpu_count
+import os
 import re
+import sys
 from termcolor import colored
 
-from config import *
-
-
-DATE_LOCATION = LOG_LOCATION + '/' + 'dates/'
-AUTHOR_EMAIL_LOCATION = LOG_LOCATION + '/' + 'author_emails/'
-DIFFS_LOCATION = LOG_LOCATION + '/' + 'diffs/'
-MESSAGES_LOCATION = LOG_LOCATION + '/' + 'messages/'
+from PaStA import config, repo
 
 # dictionary for globally cached commits
 commits = {}
@@ -44,10 +40,11 @@ class Commit:
         tmp = Commit.COMMIT_HASH_LOCATION.match(commit_hash)
         commit_hash_location = '%s/%s/%s' % (tmp.group(1), tmp.group(2), commit_hash)
 
-        message = file_to_string(MESSAGES_LOCATION + commit_hash_location)
-        diff = file_to_string(DIFFS_LOCATION + commit_hash_location)
-        date = file_to_string(DATE_LOCATION + commit_hash_location)
-        author_email = file_to_string(AUTHOR_EMAIL_LOCATION + commit_hash_location)
+        get_content = lambda x: file_to_string(os.path.join(x, commit_hash_location))
+        message = get_content(config.commit.messages)
+        diff = get_content(config.commit.diffs)
+        date = get_content(config.commit.date)
+        author_email = get_content(config.commit.author_email)
 
         self.is_revert = bool(Commit.REVERT_REGEX.search(message))
 
@@ -158,8 +155,7 @@ class PatchStack:
         self._stack = stack
 
         # Commit hashes of the patch stack
-        self._commit_hashes = file_to_string(STACK_HASHES_LOCATION + str(stack.version),
-                                             must_exist=True).splitlines()
+        self._commit_hashes = get_commits_from_file(os.path.join(config.stack_hashes, str(stack.version)))
 
     @property
     def commit_hashes(self):
@@ -241,7 +237,17 @@ class PatchStackList:
                 yield patch_stack
 
 
-def get_next_release_date(repo, commit_hash):
+def get_commits_from_file(filename):
+    content = file_to_string(filename, must_exist=True).splitlines()
+    # Filter empty lines
+    content = filter(None, content)
+    # Filter comment lines
+    content = filter(lambda x: not x.startswith('#'), content)
+    # return filtered set
+    return set(content)
+
+
+def get_next_release_date(commit_hash):
     description = repo.git.describe('--contains', commit_hash)
     description = description.split('~')[0]
     # The -1 will suppress GPG signatures
@@ -249,9 +255,8 @@ def get_next_release_date(repo, commit_hash):
     return datetime.fromtimestamp(int(timestamp))
 
 
-def get_commit_hashes(repo, start, end):
+def get_commit_hashes(start, end):
     """
-    :param repo: git repository
     :param start: Start commit
     :param end: End commit
     :return: Returns a set of all commit hashes between a certain range

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from PaStA.PatchStack import format_date_ymd
-from PaStA import patch_stack_list
+import os
 
-from config import *
+from PaStA.PatchStack import format_date_ymd
+from PaStA import config, patch_stack_list
+
 
 
 def analyse_num_commits():
@@ -16,15 +17,15 @@ def analyse_num_commits():
                                                 format_date_ymd(patch_stack.base_release_date),
                                                 patch_stack.num_commits()))
 
-        with open(COMMITCOUNT_PREFIX + PROJECT_NAME + '-' + header, 'w') as f:
+        with open(config.commitcount_prefix + header, 'w') as f:
             f.write('stackVersion stackReleaseDate baseVersion baseReleaseDate numCommits\n')
             f.write("\n".join(data) + '\n')
 
 
 def main():
     # Create destination directory if not existing
-    if not os.path.exists(COMMITCOUNT_PREFIX):
-        os.makedirs(COMMITCOUNT_PREFIX)
+    if not os.path.exists(config.commitcount):
+        os.makedirs(config.commitcount)
 
     # Run analyse_num_commits on the patchstack
     analyse_num_commits()

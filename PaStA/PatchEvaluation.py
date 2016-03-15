@@ -5,11 +5,12 @@ from multiprocessing import Pool, cpu_count
 import pickle
 from statistics import mean
 from subprocess import call
+import sys
 import termios
 import tty
 
-from config import *
 from PaStA.PatchStack import get_commit
+from PaStA import config
 
 
 class EvaluationResult(dict):
@@ -120,7 +121,7 @@ class EvaluationResult(dict):
                 # Nope? Then let's do an interactive rating by a human
                 else:
                     yns = ''
-                    compare_hashes(REPO_LOCATION, orig_commit_hash, cand_commit_hash)
+                    compare_hashes(orig_commit_hash, cand_commit_hash)
                     print('Length of list of candidates: %d' % len(candidates))
                     print('Rating: %3.2f (%3.2f message and %3.2f diff, diff length ratio: %3.2f)' %
                           (rating, msg_rating, diff_rating, diff_length_ratio))
@@ -365,5 +366,5 @@ def getch():
     return ch
 
 
-def compare_hashes(repo_location, orig_commit_hash, cand_commit_hash):
-    call(['./compare_hashes.sh', repo_location, orig_commit_hash, cand_commit_hash])
+def compare_hashes(orig_commit_hash, cand_commit_hash):
+    call(['./compare_hashes.sh', config.repo, orig_commit_hash, cand_commit_hash])

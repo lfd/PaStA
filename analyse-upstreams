@@ -2,14 +2,13 @@
 
 import argparse
 import re
+import sys
 from termcolor import colored
 
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchEvaluation import evaluate_patch_list, EvaluationResult
-from PaStA.PatchStack import cache_commit_hashes, get_commit_hashes, get_commit
-from PaStA import repo, patch_stack_list
-
-from config import *
+from PaStA.PatchStack import cache_commit_hashes, get_commit_hashes, get_commit, get_commits_from_file
+from PaStA import config, patch_stack_list, repo
 
 
 def _evaluate_patch_list_wrapper(args):
@@ -20,14 +19,14 @@ def _evaluate_patch_list_wrapper(args):
 def main():
     # Startup
     parser = argparse.ArgumentParser(description='Analyse stack by stack')
-    parser.add_argument('-er', dest='evaluation_result_filename', default=EVALUATION_RESULT_FILENAME,
+    parser.add_argument('-er', dest='evaluation_result_filename', default=config.evaluation_result,
                         help='Evaluation result filename')
-    parser.add_argument('-sp', dest='sp_filename', default=SIMILAR_PATCHES_FILE, help='Similar Patches filename')
+    parser.add_argument('-sp', dest='sp_filename', default=config.similar_patches, help='Similar Patches filename')
     args = parser.parse_args()
 
     # Load and cache upstream commits
-    upstream_candidates = get_commit_hashes(repo, UPSTREAM_RANGE[0], UPSTREAM_RANGE[1])
-    upstream_candidates -= COMMITHASH_BLACKLIST
+    upstream_candidates = get_commit_hashes(config.upstream_range[0], config.upstream_range[1])
+    upstream_candidates -= get_commits_from_file(config.upstream_blacklist)
     cache_commit_hashes(upstream_candidates, parallelize=True)
 
     # Load similar patches file

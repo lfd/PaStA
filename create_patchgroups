@@ -5,13 +5,12 @@ import copy
 
 import functools
 from multiprocessing import Pool, cpu_count
+import sys
 from termcolor import colored
 
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchStack import get_commit, get_next_release_date, cache_commit_hashes, format_date_ymd
-from PaStA import repo, patch_stack_list
-
-from config import *
+from PaStA import config, patch_stack_list, repo
 
 
 def describe_commit(commit_hash):
@@ -21,7 +20,7 @@ def describe_commit(commit_hash):
         release_date = stack.stack_release_date
     else:
         branch_name = 'master'
-        release_date = get_next_release_date(repo, commit_hash)
+        release_date = get_next_release_date(commit_hash)
 
     commit = get_commit(commit_hash)
     release_date = format_date_ymd(release_date)
@@ -32,10 +31,10 @@ def describe_commit(commit_hash):
 
 def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-sp', dest='sp_filename', default=SIMILAR_PATCHES_FILE, help='Similar Patches filename')
-    parser.add_argument('-ur', dest='ur_filename', default=UPSTREAM_RESULT_LOCATION, help='Upstream result file')
-    parser.add_argument('-cd', dest='cd_filename', default=COMMIT_DESCRIPTION_LOCATION, help='Output: Commit description file')
-    parser.add_argument('-pg', dest='pg_filename', default=PATCH_GROUPS_LOCATION, help='Output: Patch groups')
+    parser.add_argument('-sp', dest='sp_filename', default=config.similar_patches, help='Similar Patches filename')
+    parser.add_argument('-ur', dest='ur_filename', default=config.similar_upstream, help='Similar Upstream filename')
+    parser.add_argument('-cd', dest='cd_filename', default=config.commit_description, help='Output: Commit description file')
+    parser.add_argument('-pg', dest='pg_filename', default=config.patch_groups, help='Output: Patch groups')
     args = parser.parse_args()
 
     # similar patch groups
@@ -99,8 +98,7 @@ def main():
 
     sys.stdout.write('Getting descriptions...')
     pool = Pool(cpu_count())
-    f = functools.partial(describe_commit, repo, patch_stack_list)
-    all_description = dict(pool.map(f, all_commit_hashes))
+    all_description = dict(pool.map(describe_commit, all_commit_hashes))
     pool.close()
     pool.join()
     print(colored(' [done]', 'green'))

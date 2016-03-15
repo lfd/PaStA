@@ -2,13 +2,12 @@
 
 import argparse
 from termcolor import colored
+import sys
 
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchEvaluation import evaluate_patch_list
 from PaStA.PatchStack import cache_commit_hashes
-from PaStA import patch_stack_list
-
-from config import *
+from PaStA import config, patch_stack_list
 
 
 def _evaluate_patch_list_wrapper(args):
@@ -19,9 +18,10 @@ def _evaluate_patch_list_wrapper(args):
 def main():
     # Startup
     parser = argparse.ArgumentParser(description='Analyse stack by stack')
-    parser.add_argument('-er', dest='evaluation_result_filename', default=EVALUATION_RESULT_FILENAME,
+    parser.add_argument('-er', dest='evaluation_result_filename', default=config.evaluation_result,
                         help='Evaluation result filename')
-    parser.add_argument('-sp', dest='sp_filename', default=SIMILAR_PATCHES_FILE, help='Similar Patches filename')
+    parser.add_argument('-sp', dest='sp_filename', default=config.similar_patches,
+                        help='Similar Patches filename')
     args = parser.parse_args()
 
     # Load similar patches file

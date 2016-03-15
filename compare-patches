@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from PaStA.PatchEvaluation import preevaluate_single_patch, evaluate_single_patch, compare_hashes, getch
+import sys
 
-from config import *
+from PaStA.PatchEvaluation import preevaluate_single_patch, evaluate_single_patch, compare_hashes, getch
 
 
 def compare_patches(commits):
@@ -10,7 +10,7 @@ def compare_patches(commits):
         commit_a = commits[i]
         commit_b = commits[i+1]
 
-        compare_hashes(REPO_LOCATION, commit_a, commit_b)
+        compare_hashes(commit_a, commit_b)
 
         retval = preevaluate_single_patch(commit_a, commit_b)
         if retval:

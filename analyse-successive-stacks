@@ -5,10 +5,7 @@ from multiprocessing import Pool, cpu_count
 
 from PaStA.PatchEvaluation import EvaluationResult, evaluate_patch_list
 from PaStA.PatchStack import cache_commit_hashes
-from PaStA import patch_stack_list
-
-
-EVALUATION_RESULT_FILENAME = './evaluation-result.pkl'
+from PaStA import config, patch_stack_list
 
 
 def _evaluate_patch_list_wrapper(args):
@@ -19,7 +16,7 @@ def _evaluate_patch_list_wrapper(args):
 def main():
     # Startup
     parser = argparse.ArgumentParser(description='Analyse stack by stack')
-    parser.add_argument('-er', dest='evaluation_result_filename', default=EVALUATION_RESULT_FILENAME,
+    parser.add_argument('-er', dest='evaluation_result_filename', default=config.evaluation_result,
                         help='Evaluation result filename')
     args = parser.parse_args()
 

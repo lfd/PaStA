@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchEvaluation import DictList, EvaluationResult
-
-from config import *
+from PaStA import config
 
 
 def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-fp', dest='fp_filename', default=FALSE_POSTITIVES_FILES, help='False Positive PKL filename')
-    parser.add_argument('-sp', dest='sp_filename', default=SIMILAR_PATCHES_FILE, help='Similar Patches filename')
-    parser.add_argument('-er', dest='er_filename', default=EVALUATION_RESULT_FILENAME,
+    parser.add_argument('-fp', dest='fp_filename', default=config.false_positives, help='False Positive PKL filename')
+    parser.add_argument('-sp', dest='sp_filename', default=config.similar_patches, help='Similar Patches filename')
+    parser.add_argument('-er', dest='er_filename', default=config.evaluation_result,
                         help='Evaluation Result PKL filename')
-    parser.add_argument('-aat', dest='aa_threshold', type=float, default=AUTOACCEPT_THRESHOLD,
+    parser.add_argument('-aat', dest='aa_threshold', type=float, default=config.autoaccept_threshold,
                         help='Autoaccept Threshold')
-    parser.add_argument('-it', dest='it_threshold', type=float, default=AUTOACCEPT_THRESHOLD,
+    parser.add_argument('-it', dest='it_threshold', type=float, default=config.interactive_threshold,
                         help='Interactive Threshold')
-    parser.add_argument('-dlr', dest='dlr_threshold', type=float, default=DIFF_LENGTH_RATIO_THRESHOLD,
+    parser.add_argument('-dlr', dest='dlr_threshold', type=float, default=config.diff_length_ratio,
                         help='Diff Length Ratio Threshold')
     parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', help='Respect order of commit date')
     parser.set_defaults(resp_commit_date=False)
@@ -38,7 +38,7 @@ def main():
 
     fp_filename = args.fp_filename
     if not human_readable:
-        fp_filename = path.splitext(fp_filename)[0]
+        fp_filename = os.path.splitext(fp_filename)[0]
     false_positives.to_file(fp_filename)
 
 
