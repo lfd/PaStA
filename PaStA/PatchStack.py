@@ -13,6 +13,7 @@ AUTHOR_EMAIL_LOCATION = LOG_LOCATION + '/' + 'author_emails/'
 DIFFS_LOCATION = LOG_LOCATION + '/' + 'diffs/'
 MESSAGES_LOCATION = LOG_LOCATION + '/' + 'messages/'
 
+# dictionary for globally cached commits
 commits = {}
 
 
@@ -120,7 +121,7 @@ class Commit:
 
                 del_cntr = 0
                 add_cntr = 0
-                hunk_changes = [], []  # [removed], [added]
+                hunk_changes = [], []  # [removed], [inserted]
                 while not (del_cntr == l_lines and add_cntr == r_lines):
                     line = diff.pop(0)
                     if line[0] == '+':
