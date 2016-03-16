@@ -61,6 +61,7 @@ class Config:
         self.evaluation_result = os.path.join(self._project_root, pasta.get('EVALUATION_RESULT'))
         self.log_location = os.path.join(self._project_root, pasta.get('LOG'))
         self.commit = Config.CommitLocation(self.log_location)
+        self.R_resources = os.path.join(self._project_root, pasta.get('R_RESOURCES'))
         self.upstream_blacklist = pasta.get('UPSTREAM_BLACKLIST')
         if self.upstream_blacklist:
             self.upstream_blacklist = os.path.join(Config.BLACKLIST_LOCATION, self.upstream_blacklist)
@@ -68,5 +69,3 @@ class Config:
         self.interactive_threshold = pasta.get('INTERACTIVE_THRESHOLD')
         self.autoaccept_threshold = pasta.get('AUTOACCEPT_THRESHOLD')
         self.diff_length_ratio = pasta.get('DIFF_LENGTH_RATIO')
-
-        self.patch_flow = pasta.get('PATCH_FLOW')
