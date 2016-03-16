@@ -55,8 +55,6 @@ class Config:
         self.similar_upstream = os.path.join(self._project_root, pasta.get('SIMILAR_UPSTREAM'))
         self.false_positives = os.path.join(self._project_root, pasta.get('FALSE_POSTITIVES'))
         self.patch_groups = os.path.join(self._project_root, pasta.get('PATCH_GROUPS'))
-        self.commitcount = os.path.join(self._project_root, pasta.get('COMMITCOUNT'))
-        self.commitcount_prefix = os.path.join(self.commitcount, self.project_name + '-')
         self.commit_description = os.path.join(self._project_root, pasta.get('COMMIT_DESCRIPTION'))
         self.evaluation_result = os.path.join(self._project_root, pasta.get('EVALUATION_RESULT'))
         self.log_location = os.path.join(self._project_root, pasta.get('LOG'))
