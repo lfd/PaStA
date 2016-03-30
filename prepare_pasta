@@ -1,0 +1,9 @@
+#!/bin/bash
+
+echo "This may take a while. Take a cup of coffe. Really."
+
+git submodule init
+git submodule update
+
+cd PaStA-resources
+./prepare_projects
