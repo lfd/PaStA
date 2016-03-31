@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-fp', dest='fp_filename', default=config.false_positives, help='False Positive PKL filename')
     parser.add_argument('-sp', dest='sp_filename', default=config.similar_patches, help='Similar Patches filename')
+    parser.add_argument('-su', dest='su_filename', default=config.similar_upstream, help='Similar Upstream filename')
     parser.add_argument('-er', dest='er_filename', default=config.evaluation_result,
                         help='Evaluation Result PKL filename')
     parser.add_argument('-aat', dest='aa_threshold', type=float, default=config.autoaccept_threshold,
@@ -20,22 +21,30 @@ def main():
                         help='Interactive Threshold')
     parser.add_argument('-dlr', dest='dlr_threshold', type=float, default=config.diff_length_ratio,
                         help='Diff Length Ratio Threshold')
+    parser.add_argument('-type', dest='type', default="patch", help='What to rate: patch or upstream')
     parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', help='Respect order of commit date')
     parser.set_defaults(resp_commit_date=False)
     args = parser.parse_args()
 
     # Load already known positives and false positives
     similar_patches = EquivalenceClass.from_file(args.sp_filename)
+    similar_upstream = EquivalenceClass.from_file(args.su_filename)
     human_readable = not args.fp_filename.endswith('.pkl')
     false_positives = DictList.from_file(args.fp_filename, human_readable=human_readable)
 
     evaluation_result = EvaluationResult.from_file(args.er_filename)
-    evaluation_result.interactive_rating(similar_patches, false_positives,
-                                         args.aa_threshold, args.it_threshold, args.dlr_threshold,
-                                         args.resp_commit_date)
 
+    if args.type == 'patch':
+        evaluation_result.interactive_rating(similar_patches, false_positives,
+                                             args.aa_threshold, args.it_threshold, args.dlr_threshold,
+                                             args.resp_commit_date)
+    elif args.type == 'upstream':
+        raise NotImplementedError('Not implemented yet')
+    else:
+        raise ValueError('Unknown type: "%s"' % args.type)
+
+    similar_upstream.to_file(args.su_filename)
     similar_patches.to_file(args.sp_filename)
-
     fp_filename = args.fp_filename
     if not human_readable:
         fp_filename = os.path.splitext(fp_filename)[0]
