@@ -4,7 +4,7 @@ import argparse
 import os
 
 from PaStA.EquivalenceClass import EquivalenceClass
-from PaStA.PatchEvaluation import DictList, EvaluationResult
+from PaStA.PatchEvaluation import DictList, EvaluationResult, Thresholds
 from PaStA import config
 
 
@@ -31,6 +31,8 @@ def main():
                         help='Respect order of commit date')
     args = parser.parse_args()
 
+    thresholds = Thresholds(args.aa_threshold, args.it_threshold, args.dlr_threshold)
+
     # Load already known positives and false positives
     similar_patches = EquivalenceClass.from_file(args.sp_filename)
     similar_upstream = EquivalenceClass.from_file(args.su_filename)
@@ -41,12 +43,9 @@ def main():
 
     if args.type == 'patch':
         evaluation_result.interactive_rating(similar_patches, false_positives,
-                                             args.aa_threshold, args.it_threshold, args.dlr_threshold,
-                                             args.resp_commit_date)
-    elif args.type == 'upstream':
-        raise NotImplementedError('Not implemented yet')
+                                             thresholds, args.resp_commit_date)
     else:
-        raise ValueError('Unknown type: "%s"' % args.type)
+        raise NotImplementedError('Not implemented yet')
 
     similar_upstream.to_file(args.su_filename)
     similar_patches.to_file(args.sp_filename)

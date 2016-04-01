@@ -13,6 +13,13 @@ from PaStA.PatchStack import get_commit
 from PaStA import config
 
 
+class Thresholds:
+    def __init__(self, autoaccept, interactive, diff_length):
+        self.autoaccept = autoaccept
+        self.interactive = interactive
+        self.diff_length = diff_length
+
+
 class EvaluationResult(dict):
     """
     An evaluation is a dictionary with a commit hash as key,
@@ -47,8 +54,7 @@ class EvaluationResult(dict):
             return pickle.load(f)
 
     def interactive_rating(self, transitive_list, false_positive_list,
-                           autoaccept_threshold, interactive_threshold, diff_length_threshold,
-                           respect_commitdate=False):
+                           thresholds, respect_commitdate=False):
 
         already_false_positive = 0
         already_detected = 0
@@ -89,7 +95,7 @@ class EvaluationResult(dict):
                     already_detected += 1
                     continue
 
-                if diff_length_ratio < diff_length_threshold:
+                if diff_length_ratio < thresholds.diff_length:
                     skipped_by_dlr += 1
                     continue
 
@@ -111,11 +117,11 @@ class EvaluationResult(dict):
                     rating = msg_rating / 3 + 2 *  diff_rating / 3
 
                 # Maybe we can autoaccept the patch?
-                if rating >= autoaccept_threshold:
+                if rating >= thresholds.autoaccept:
                     auto_accepted += 1
                     yns = 'y'
                 # or even automatically drop it away?
-                elif rating < interactive_threshold:
+                elif rating < thresholds.interactive:
                     auto_declined += 1
                     continue
                 # Nope? Then let's do an interactive rating by a human
