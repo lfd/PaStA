@@ -53,7 +53,7 @@ class EvaluationResult(dict):
         with open(filename, 'rb') as f:
             return pickle.load(f)
 
-    def interactive_rating(self, transitive_list, false_positive_list,
+    def interactive_rating(self, equivalence_class, false_positive_list,
                            thresholds, respect_commitdate=False):
 
         already_false_positive = 0
@@ -69,7 +69,7 @@ class EvaluationResult(dict):
         halt_save = False
 
         for i in self.universe:
-            transitive_list.insert_single(i)
+            equivalence_class.insert_single(i)
 
         for orig_commit_hash, candidates in self.items():
 
@@ -91,7 +91,7 @@ class EvaluationResult(dict):
                     continue
 
                 # Check if those two patches are already related
-                if transitive_list.is_related(orig_commit_hash, cand_commit_hash):
+                if equivalence_class.is_related(orig_commit_hash, cand_commit_hash):
                     already_detected += 1
                     continue
 
@@ -149,14 +149,14 @@ class EvaluationResult(dict):
                             break
 
                 if yns == 'y':
-                    transitive_list.insert(orig_commit_hash, cand_commit_hash)
+                    equivalence_class.insert(orig_commit_hash, cand_commit_hash)
                 elif yns == 'n':
                     if orig_commit_hash in false_positive_list:
                         false_positive_list[orig_commit_hash].append(cand_commit_hash)
                     else:
                         false_positive_list[orig_commit_hash] = [cand_commit_hash]
 
-        transitive_list.optimize()
+        equivalence_class.optimize()
 
         print('\n\nSome statistics:')
         print(' Interactive Accepted: ' + str(accepted))
