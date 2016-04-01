@@ -8,6 +8,17 @@ from PaStA.PatchEvaluation import DictList, EvaluationResult, Thresholds
 from PaStA import config
 
 
+def patch_stack_rating(evaluation_result, similar_patches, false_positives,
+                       thresholds, resp_commit_date):
+    evaluation_result.interactive_rating(similar_patches, false_positives,
+                                         thresholds, resp_commit_date)
+
+
+def upstream_rating(evaluation_result, similar_patches, similar_upstream,
+                    false_positives, thresholds, resp_commit_date):
+    raise NotImplementedError('Not implemented yet')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
 
@@ -42,10 +53,13 @@ def main():
     evaluation_result = EvaluationResult.from_file(args.er_filename)
 
     if args.type == 'patch':
-        evaluation_result.interactive_rating(similar_patches, false_positives,
-                                             thresholds, args.resp_commit_date)
+        print('Running patch stack rating...')
+        patch_stack_rating(evaluation_result, similar_patches, false_positives,
+                           thresholds, args.resp_commit_date)
     else:
-        raise NotImplementedError('Not implemented yet')
+        print('Running upstream rating...')
+        upstream_rating(evaluation_result, similar_patches, similar_upstream,
+                         false_positives, thresholds, args.resp_commit_date)
 
     similar_upstream.to_file(args.su_filename)
     similar_patches.to_file(args.sp_filename)
