@@ -10,20 +10,25 @@ from PaStA import config
 
 def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-fp', dest='fp_filename', default=config.false_positives, help='False Positive PKL filename')
-    parser.add_argument('-sp', dest='sp_filename', default=config.similar_patches, help='Similar Patches filename')
-    parser.add_argument('-su', dest='su_filename', default=config.similar_upstream, help='Similar Upstream filename')
-    parser.add_argument('-er', dest='er_filename', default=config.evaluation_result,
+
+    parser.add_argument('-fp', dest='fp_filename', metavar='filename', default=config.false_positives,
+                        help='False Positive PKL filename')
+    parser.add_argument('-sp', dest='sp_filename', metavar='filename', default=config.similar_patches,
+                        help='Similar Patches filename')
+    parser.add_argument('-su', dest='su_filename', metavar='filename', default=config.similar_upstream,
+                        help='Similar Upstream filename')
+    parser.add_argument('-er', dest='er_filename', metavar='filename', default=config.evaluation_result,
                         help='Evaluation Result PKL filename')
-    parser.add_argument('-aat', dest='aa_threshold', type=float, default=config.autoaccept_threshold,
-                        help='Autoaccept Threshold')
-    parser.add_argument('-it', dest='it_threshold', type=float, default=config.interactive_threshold,
-                        help='Interactive Threshold')
-    parser.add_argument('-dlr', dest='dlr_threshold', type=float, default=config.diff_length_ratio,
-                        help='Diff Length Ratio Threshold')
-    parser.add_argument('-type', dest='type', default="patch", help='What to rate: patch or upstream')
-    parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', help='Respect order of commit date')
-    parser.set_defaults(resp_commit_date=False)
+    parser.add_argument('-aat', dest='aa_threshold', metavar='threshold', type=float,
+                        default=config.autoaccept_threshold, help='Autoaccept Threshold (default: %(default)s)')
+    parser.add_argument('-it', dest='it_threshold', metavar='threshold', type=float,
+                        default=config.interactive_threshold, help='Interactive Threshold (default: %(default)s)')
+    parser.add_argument('-dlr', dest='dlr_threshold', metavar='threshold',  type=float,
+                        default=config.diff_length_ratio, help='Diff Length Ratio Threshold (default: %(default)s)')
+    parser.add_argument('-type', dest='type', default='patch', choices=['patch', 'upstream'],
+                        help='What to rate: patch or upstream (default: %(default)s)')
+    parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', default=False,
+                        help='Respect order of commit date')
     args = parser.parse_args()
 
     # Load already known positives and false positives

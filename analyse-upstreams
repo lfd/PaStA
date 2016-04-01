@@ -19,9 +19,10 @@ def _evaluate_patch_list_wrapper(args):
 def main():
     # Startup
     parser = argparse.ArgumentParser(description='Analyse stack by stack')
-    parser.add_argument('-er', dest='evaluation_result_filename', default=config.evaluation_result,
-                        help='Evaluation result filename')
-    parser.add_argument('-sp', dest='sp_filename', default=config.similar_patches, help='Similar Patches filename')
+    parser.add_argument('-er', dest='evaluation_result_filename', metavar='filename',
+                        default=config.evaluation_result, help='Evaluation result filename')
+    parser.add_argument('-sp', dest='sp_filename', metavar='filename',
+                        default=config.similar_patches, help='Similar Patches filename')
     args = parser.parse_args()
 
     # Load and cache upstream commits

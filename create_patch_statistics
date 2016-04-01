@@ -113,10 +113,12 @@ def release_sort(release_sort_filename):
 
 def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-pg', dest='pg_filename', default=config.patch_groups, help='Patch group file')
-    parser.add_argument('-R', dest='r_resources', default=config.R_resources, help='Output directory for R resources')
-    parser.add_argument('-ds', dest='date_selector', default='SRD',
-                        help='Date selector: Either Commit Date (CD) or Stack Release Date (SRD, default)')
+    parser.add_argument('-pg', dest='pg_filename', metavar='filename',
+                        default=config.patch_groups, help='Patch group file')
+    parser.add_argument('-R', dest='r_resources', metavar='directory',
+                        default=config.R_resources, help='Output directory for R resources')
+    parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['SRD', 'CD'],
+                        help='Date selector: Either Commit Date or Stack Release Date (default: %(default)s)')
     parser.add_argument('-noR', dest='R', action='store_false', help='Don\'t invoke R')
     parser.set_defaults(R=True)
     args = parser.parse_args()

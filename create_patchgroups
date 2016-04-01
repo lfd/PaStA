@@ -31,10 +31,14 @@ def describe_commit(commit_hash):
 
 def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-sp', dest='sp_filename', default=config.similar_patches, help='Similar Patches filename')
-    parser.add_argument('-ur', dest='ur_filename', default=config.similar_upstream, help='Similar Upstream filename')
-    parser.add_argument('-cd', dest='cd_filename', default=config.commit_description, help='Output: Commit description file')
-    parser.add_argument('-pg', dest='pg_filename', default=config.patch_groups, help='Output: Patch groups')
+    parser.add_argument('-sp', dest='sp_filename', metavar='filename',
+                        default=config.similar_patches, help='Similar Patches filename')
+    parser.add_argument('-ur', dest='ur_filename', metavar='filename',
+                        default=config.similar_upstream, help='Similar Upstream filename')
+    parser.add_argument('-cd', dest='cd_filename', metavar='filename',
+                        default=config.commit_description, help='Output: Commit description file')
+    parser.add_argument('-pg', dest='pg_filename', metavar='filename',
+                        default=config.patch_groups, help='Output: Patch groups')
     args = parser.parse_args()
 
     # similar patch groups
