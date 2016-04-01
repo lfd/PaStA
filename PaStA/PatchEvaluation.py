@@ -56,9 +56,6 @@ class EvaluationResult(dict):
     def interactive_rating(self, equivalence_class, false_positive_list,
                            thresholds, respect_commitdate=False, upstream_rating=True):
 
-        if upstream_rating == True:
-            raise NotImplementedError('Upstream rating not implemented yet')
-
         already_false_positive = 0
         already_detected = 0
         auto_accepted = 0
@@ -152,7 +149,12 @@ class EvaluationResult(dict):
                             break
 
                 if yns == 'y':
-                    equivalence_class.insert(orig_commit_hash, cand_commit_hash)
+                    if upstream_rating:
+                        equivalence_class.set_property(orig_commit_hash, cand_commit_hash)
+                        # Upstream rating can not have multiple candidates. So break after the first match
+                        break
+                    else:
+                        equivalence_class.insert(orig_commit_hash, cand_commit_hash)
                 elif yns == 'n':
                     if orig_commit_hash in false_positive_list:
                         false_positive_list[orig_commit_hash].append(cand_commit_hash)
