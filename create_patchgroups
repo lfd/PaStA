@@ -45,7 +45,7 @@ def main():
     similar_patches = EquivalenceClass.from_file(args.sp_filename)
 
     # upstream results
-    upstream_results = EquivalenceClass.from_file(args.ur_filename)
+    similar_upstream = EquivalenceClass.from_file(args.ur_filename)
 
     stack_commit_hashes = patch_stack_list.get_all_commit_hashes()
 
@@ -59,35 +59,8 @@ def main():
     patch_groups.optimize()
 
     # Merge upstream results and patch group list
-    for i in upstream_results:
-
-        similar_hashes = set(i)
-        if len(similar_hashes) < 2:
-            continue
-
-        # Unfortunatelly, the upstream search is basically the same as comparing patches
-        # So Hashes of previous detections might occur in the similar_upstream list
-        # Separate upstream and stack hashes
-        upstream = None
-        for commit_hash in similar_hashes:
-            if commit_hash not in stack_commit_hashes:
-                # We found the upstream commit hash
-                if upstream:
-                    raise ValueError('Has multiple upstream candidates: %s' % commit_hash)
-                upstream = commit_hash
-
-        if upstream is None:
-            raise ValueError('None of the commits is an upstream commit')
-
-        hashes_in_patch_stacks = similar_hashes - set([upstream])
-
-        for hash in hashes_in_patch_stacks:
-            # If the equivalence class already has an upstream candidate, just skip it, as long as it remains the same
-            if patch_groups.get_property(hash) is not None:
-                if patch_groups.get_property(hash) == upstream:
-                     continue
-                raise ValueError('%s already has a property: %s. I wanted to set: %s Maybe double assignement?' % (hash, patch_groups.get_property(hash), upstream))
-            patch_groups.set_property(hash, upstream)
+    for i in similar_upstream:
+        patch_groups.set_property(i[0], i.property)
 
     sys.stdout.write('Writing Patch Group file... ')
     patch_groups.to_file(args.pg_filename)
