@@ -54,7 +54,10 @@ class EvaluationResult(dict):
             return pickle.load(f)
 
     def interactive_rating(self, equivalence_class, false_positive_list,
-                           thresholds, respect_commitdate=False):
+                           thresholds, respect_commitdate=False, upstream_rating=True):
+
+        if upstream_rating == True:
+            raise NotImplementedError('Upstream rating not implemented yet')
 
         already_false_positive = 0
         already_detected = 0

@@ -5,18 +5,27 @@ import os
 
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchEvaluation import DictList, EvaluationResult, Thresholds
-from PaStA import config
+from PaStA import config, patch_stack_list
 
 
 def patch_stack_rating(evaluation_result, similar_patches, false_positives,
                        thresholds, resp_commit_date):
     evaluation_result.interactive_rating(similar_patches, false_positives,
-                                         thresholds, resp_commit_date)
+                                         thresholds, resp_commit_date, upstream_rating=False)
 
 
 def upstream_rating(evaluation_result, similar_patches, similar_upstream,
                     false_positives, thresholds, resp_commit_date):
-    raise NotImplementedError('Not implemented yet')
+
+    have_upstreams = set(map(lambda x: similar_patches.get_equivalence_id(x[0]), similar_upstream))
+
+    # Prefilter Evaluation Result: Equivalence classes, that already have upstream candidates must be dropped.
+    for key in list(evaluation_result.keys()):
+        if similar_patches.get_equivalence_id(key) in have_upstreams:
+            del evaluation_result[key]
+
+    evaluation_result.interactive_rating(similar_upstream, false_positives,
+                                         thresholds, resp_commit_date, upstream_rating=True)
 
 
 def main():
