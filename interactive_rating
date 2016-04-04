@@ -5,7 +5,7 @@ import os
 
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchEvaluation import DictList, EvaluationResult, Thresholds
-from PaStA import config, patch_stack_list
+from PaStA import config
 
 
 def patch_stack_rating(evaluation_result, similar_patches, false_positives,
@@ -61,14 +61,13 @@ def main():
 
     evaluation_result = EvaluationResult.from_file(args.er_filename)
 
+    print('Running %s rating...' % args.type)
     if args.type == 'patch':
-        print('Running patch stack rating...')
         patch_stack_rating(evaluation_result, similar_patches, false_positives,
                            thresholds, args.resp_commit_date)
     else:
-        print('Running upstream rating...')
         upstream_rating(evaluation_result, similar_patches, similar_upstream,
-                         false_positives, thresholds, args.resp_commit_date)
+                        false_positives, thresholds, args.resp_commit_date)
 
     similar_upstream.to_file(args.su_filename)
     similar_patches.to_file(args.sp_filename)
