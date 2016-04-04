@@ -25,7 +25,7 @@ def main():
     args = parser.parse_args()
 
     # Load similar patches file
-    similar_patches = EquivalenceClass.from_file(args.sp_filename)
+    similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=True)
 
     # Iterate over similar patch list and get latest commit of patches
     sys.stdout.write('Determining patch stack representative system...')
