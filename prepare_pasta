@@ -1,9 +1,14 @@
 #!/bin/bash
 
+function die {
+  echo "$@" 1>&2;
+  exit -1;
+}
+
 echo "This may take a while. Take a cup of coffe. Really."
 
-git submodule init
-git submodule update
+git submodule init || die "submodule init failed"
+git submodule update || die "submodule update failed"
 
 cd PaStA-resources
 ./prepare_projects
