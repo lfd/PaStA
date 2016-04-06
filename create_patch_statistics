@@ -125,7 +125,7 @@ def main():
 
     patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
 
-    r_resources = args.R_resources
+    r_resources = args.r_resources
     if not os.path.exists(r_resources):
         os.makedirs(r_resources)
 
