@@ -332,7 +332,7 @@ def get_commit(commit_hash):
     return commits[commit_hash]
 
 
-def cache_commit_hashes(commit_hashes, parallelize=False):
+def cache_commit_hashes(commit_hashes, parallelize=True):
     num_cpus = cpu_count()
     num_commit_hashes = len(commit_hashes)
 
