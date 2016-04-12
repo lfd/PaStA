@@ -47,9 +47,7 @@ def analyse_succ():
     return evaluation_result
 
 
-def analyse_stack(sp_filename):
-    # Load similar patches file
-    similar_patches = EquivalenceClass.from_file(sp_filename, must_exist=True)
+def analyse_stack(similar_patches):
 
     # Iterate over similar patch list and get latest commit of patches
     sys.stdout.write('Determining patch stack representative system...')
@@ -74,13 +72,10 @@ def analyse_stack(sp_filename):
     return result
 
 
-def analyse_upstream(sp_filename):
+def analyse_upstream(similar_patches):
     # Load and cache upstream commits
     upstream_candidates = get_commit_hashes(config.upstream_range[0], config.upstream_range[1])
     upstream_candidates -= get_commits_from_file(config.upstream_blacklist)
-
-    # Load similar patches file
-    similar_patches = EquivalenceClass.from_file(sp_filename)
 
     sys.stdout.write('Determining patch stack representative system...')
     sys.stdout.flush()
@@ -138,19 +133,29 @@ def main():
                         default=config.evaluation_result, help='Evaluation result filename')
     parser.add_argument('-sp', dest='sp_filename', metavar='filename',
                         default=config.similar_patches, help='Similar Patches filename')
-    parser.add_argument('-mode', dest='mode', default='stack-succ', choices=['stack-succ', 'stack-rep', 'upstream'],
+    parser.add_argument('-mode', dest='mode', default='stack-succ',
+                        choices=['init', 'stack-succ', 'stack-rep', 'upstream'],
                         help='Analysation mode: Successive patches on the stack, Compare Representants on the stack,\
                               Upstream Analysis (default: %(default)s)')
     args = parser.parse_args()
 
-    if args.mode == 'stack-succ':
-        result = analyse_succ()
-    elif args.mode == 'stack-rep':
-        result = analyse_stack(args.sp_filename)
-    elif args.mode == 'upstream':
-        result = analyse_upstream(args.sp_filename)
+    if args.mode == 'init':
+        similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=False)
+        for commit_hash in patch_stack_list.get_all_commit_hashes():
+            similar_patches.insert_single(commit_hash)
+        similar_patches.to_file(args.sp_filename)
+    else:
+        # Load similar patches file
+        similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=True)
 
-    result.to_file(args.evaluation_result_filename)
+        if args.mode == 'stack-succ':
+            result = analyse_succ()
+        elif args.mode == 'stack-rep':
+            result = analyse_stack(similar_patches)
+        elif args.mode == 'upstream':
+            result = analyse_upstream(similar_patches)
+
+        result.to_file(args.evaluation_result_filename)
 
 
 if __name__ == '__main__':
