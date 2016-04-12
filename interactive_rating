@@ -4,7 +4,7 @@ import argparse
 import os
 
 from PaStA.EquivalenceClass import EquivalenceClass
-from PaStA.PatchEvaluation import DictList, EvaluationResult, Thresholds
+from PaStA.PatchEvaluation import DictList, EvaluationResult, Thresholds, EvaluationType
 from PaStA import config
 
 
@@ -45,8 +45,6 @@ def main():
                         default=config.interactive_threshold, help='Interactive Threshold (default: %(default)s)')
     parser.add_argument('-dlr', dest='dlr_threshold', metavar='threshold',  type=float,
                         default=config.diff_length_ratio, help='Diff Length Ratio Threshold (default: %(default)s)')
-    parser.add_argument('-type', dest='type', default='patch', choices=['patch', 'upstream'],
-                        help='What to rate: patch or upstream (default: %(default)s)')
     parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', default=False,
                         help='Respect order of commit date')
     args = parser.parse_args()
@@ -61,13 +59,16 @@ def main():
 
     evaluation_result = EvaluationResult.from_file(args.er_filename)
 
-    print('Running %s rating...' % args.type)
-    if args.type == 'patch':
+    if evaluation_result.eval_type == EvaluationType.PatchStack:
+        print('Running patch stack rating...')
         patch_stack_rating(evaluation_result, similar_patches, false_positives,
                            thresholds, args.resp_commit_date)
-    else:
+    elif evaluation_result.eval_type == EvaluationType.Upstream:
+        print('Running upstream rating...')
         upstream_rating(evaluation_result, similar_patches, similar_upstream,
                         false_positives, thresholds, args.resp_commit_date)
+    else:
+        pass
 
     similar_upstream.to_file(args.su_filename)
     similar_patches.to_file(args.sp_filename)

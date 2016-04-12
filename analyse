@@ -7,14 +7,14 @@ import sys
 from termcolor import colored
 
 from PaStA.EquivalenceClass import EquivalenceClass
-from PaStA.PatchEvaluation import EvaluationResult, evaluate_patch_list
+from PaStA.PatchEvaluation import EvaluationResult, EvaluationType, evaluate_patch_list
 from PaStA import config, patch_stack_list
 from PaStA.PatchStack import cache_commit_hashes, get_commit_hashes, get_commits_from_file, get_commit
 
 
 def _evaluate_patch_list_wrapper(args):
-    orig, cand = args
-    return evaluate_patch_list(orig, cand)
+    orig, cand, type = args
+    return evaluate_patch_list(orig, cand, type)
 
 
 def analyse_succ():
@@ -27,7 +27,7 @@ def analyse_succ():
             continue
 
         print('Queueing %s <-> %s' % (pred.stack_version, patch_stack.stack_version))
-        evaluation_list.append((pred.commit_hashes, patch_stack.commit_hashes))
+        evaluation_list.append((pred.commit_hashes, patch_stack.commit_hashes, EvaluationType.PatchStack))
         pred = patch_stack
 
     cache_commit_hashes(patch_stack_list.get_all_commit_hashes())
@@ -39,7 +39,7 @@ def analyse_succ():
     pool.join()
     print('Evaluation completed.')
 
-    evaluation_result = EvaluationResult()
+    evaluation_result = EvaluationResult(EvaluationType.PatchStack)
     evaluation_result.set_universe(patch_stack_list.get_all_commit_hashes())
     for result in results:
         evaluation_result.merge(result)
@@ -65,6 +65,7 @@ def analyse_stack(similar_patches):
 
     result = evaluate_patch_list(representatives,
                                  representatives,
+                                 EvaluationType.PatchStack,
                                  parallelize=True,
                                  verbose=True)
     result.set_universe(representatives)
@@ -91,7 +92,7 @@ def analyse_upstream(similar_patches):
     cache_commit_hashes(representatives)
 
     print('Auto-detecting cherry-picks...')
-    cherry_picks = EvaluationResult()
+    cherry_picks = EvaluationResult(EvaluationType.Upstream)
     cherry_picks.set_universe(set())
     cherry_rgxs = [r'.*pick.*',
                    r'.*upstream.*commit.*',
@@ -114,7 +115,7 @@ def analyse_upstream(similar_patches):
     print('Done. Found %d cherry-picks' % len(cherry_picks))
 
     print('Starting evaluation.')
-    evaluation_result = evaluate_patch_list(representatives, upstream_candidates,
+    evaluation_result = evaluate_patch_list(representatives, upstream_candidates, EvaluationType.Upstream,
                                             parallelize=True, verbose=True,
                                             cpu_factor=0.5)
     print('Evaluation completed.')

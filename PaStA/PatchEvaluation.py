@@ -1,3 +1,4 @@
+from enum import Enum
 import functools
 from fuzzywuzzy import fuzz
 from math import ceil
@@ -20,17 +21,30 @@ class Thresholds:
         self.diff_length = diff_length
 
 
+class EvaluationType(Enum):
+    PatchStack = 1
+    Upstream = 2
+
+
 class EvaluationResult(dict):
     """
     An evaluation is a dictionary with a commit hash as key,
     and a list of 3-tuples (hash, msg_rating, diff_rating, diff-length-ratio) as value.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, eval_type, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
         self.universe = set()
+        self._eval_type = eval_type
+
+    @property
+    def eval_type(self):
+        return self._eval_type
 
     def merge(self, other):
+        if self.eval_type != other.eval_type:
+            raise ValueError('Unable to merge results of different types')
+
         # Check if this key already exists in the check_list
         # if yes, then append to the list
         for key, value in other.items():
@@ -298,7 +312,7 @@ def _preevaluation_helper(candidate_hashes, orig_hash):
     return orig_hash, list(filter(f, candidate_hashes))
 
 
-def evaluate_patch_list(original_hashes, candidate_hashes,
+def evaluate_patch_list(original_hashes, candidate_hashes, eval_type,
                         parallelize=False, verbose=False,
                         cpu_factor=1.25):
     """
@@ -312,7 +326,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes,
     :return: a dictionary with originals as keys and a list of potential candidates as value
     """
 
-    retval = EvaluationResult()
+    retval = EvaluationResult(eval_type=eval_type)
     num_threads = int(cpu_count() * cpu_factor)
 
     print('Evaluating %d commit hashes against %d commit hashes' % (len(original_hashes), len(candidate_hashes)))
