@@ -74,6 +74,7 @@ num_commits <- function() {
   maxdate <- max(commitcount$ReleaseDate)
 
   vgs <- unique(commitcount$VersionGroup)
+  vgs <- sort(vgs)
 
   xticks <- do.call("c", lapply(vgs, function(x)
     c(min(subset(commitcount, VersionGroup == x)$ReleaseDate)#,
@@ -81,27 +82,25 @@ num_commits <- function() {
     )
   ))
   
-  
-  p <- ggplot() +
+  p <- ggplot(commitcount,
+              aes(x = ReleaseDate,
+                  y = NumCommits,
+                  group = VersionGroup,
+                  colour = VersionGroup)) +
+    geom_line(size = 1.2) +
     ylim(200, max(commitcount$NumCommits)) +
     scale_x_date(date_labels = "%b %Y",
                  limits = c(mindate, maxdate),
                  breaks = xticks) +
+    theme_bw(base_size = 15) +
     scale_color_manual(values = cols) +
     xlab("Timeline") + 
     ylab("Number of commits") +
-    theme(legend.position = "bottom",
+    theme(legend.position = "top",
           legend.title = element_blank(),
-          axis.text.x = element_text(angle = 55,
+          axis.line = element_line(),
+          axis.text.x = element_text(angle = 65,
                                      hjust = 1))
-  
-  for (i in vgs) {
-    p <- p + geom_line(data=subset(commitcount, VersionGroup == i),
-                       aes(x=ReleaseDate,
-                           y=NumCommits,
-                           colour=VersionGroup),
-                       size=1.2)
-  }
   return(p)
 }
 
