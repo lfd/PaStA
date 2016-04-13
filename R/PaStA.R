@@ -144,7 +144,7 @@ branch_observation <- function() {
   create_plot <- function(ver_grp) {
     observation <- subset(branch_observation, VersionGroup == ver_grp)
     plot <- ggplot(observation,
-              aes(x = StackVersion, y = V1, fill = Type)) +
+                   aes(x = StackVersion, y = V1, fill = Type)) +
       geom_bar(stat = "identity") +
       xlab("Stack Version") +
       theme(legend.position = "right",
@@ -152,12 +152,48 @@ branch_observation <- function() {
             axis.text.x = element_text(angle = 90,
                                        hjust = 1)) +
       scale_fill_discrete(name = ver_grp)
-    #guides(fill = guide_legend(title = x))
     return(list(ver_grp, plot))
   }
 
   results <- lapply(ord_version_grps, create_plot)
   return(results)
+}
+
+# Stack future (maybe merge with branch observation)
+stack_future <- function(stack_versions) {
+
+  pg <- merge(x = patch_groups[, c("PatchGroup", "StackVersion")],
+              y = stack_release_dates[, c("VersionGroup", "Version")],
+              by.x = "StackVersion",
+              by.y = "Version",
+              all.x = TRUE,
+              all.y = FALSE)
+
+  pg <- merge(x = pg,
+              y = upstream[, c("PatchGroup", "Type")],
+              by = "PatchGroup",
+              all.x = TRUE,
+              all.y = FALSE)
+
+  pg$PatchGroup <- NULL
+
+  pg$Type <- replace(pg$Type, is.na(pg$Type), "invariant")
+
+  branch_observation <- ddply(pg, .(VersionGroup, StackVersion, Type), nrow)
+
+  observation <- subset(branch_observation, StackVersion %in% stack_versions)
+  plot <- ggplot(observation,
+                 aes(x = StackVersion, y = V1, fill = Type)) +
+    geom_bar(stat = "identity") +
+    xlab("Stack Version") +
+    ylab("Number of commits") +
+    theme_bw(base_size = 15) +
+    theme(legend.position = "top",
+          axis.line = element_line(),
+          axis.text.x = element_text(angle = 65,
+                                     hjust = 1)) +
+    scale_fill_discrete(name = "Types of patches")
+  return(plot)
 }
 
 
