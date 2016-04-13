@@ -129,3 +129,12 @@ PROJECT_NAME = foobar
 UPSTREAM_MIN = v1.0
 UPSTREAM_MAX = v2.0
 ```
+
+### Set active configuration
+For setting the current active project **PaStA**, just create a symbolic link of
+the configuration file to the root directory of **PaStA**. E.g.:
+```
+$ ln -sf PaStA-resources/PreemptRT/PreemptRT.cfg ./config
+```
+
+All further calls on **PaStA** tools will use this configuration file.
