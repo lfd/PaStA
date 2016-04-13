@@ -108,12 +108,16 @@ num_commits <- function() {
 upstream_analysis <- function(binwidth) {
   p <- ggplot(upstream, aes(upstream$DateDiff)) +
     xlab("Days between release and upstream") +
-    ylab("Number of upstream patches") +
-    geom_histogram(binwidth = binwidth)
+    ylab("Upstream patch density [a.u.]") +
+    theme_bw(base_size = 15) +
+    theme(axis.line = element_line()) +
+    #geom_histogram(binwidth = binwidth)
+    geom_density() +
+    geom_vline(xintercept = 0,
+               colour = "red")
 
   return(p)
 }
-
 
 # Branch observation
 branch_observation <- function() {
