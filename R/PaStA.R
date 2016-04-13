@@ -39,11 +39,10 @@ convertDate <- function(table, columns) {
 # Save as ggplot as tikz and png
 savePlot <- function(filename, plot) {
   TEXWIDTH <- 5.87614
-
   tex_filename <- file.path(output_dir, paste(project_name, "-", filename, ".tex", sep = ""))
   png_filename <- file.path(output_dir, paste(project_name, "-", filename, ".png", sep = ""))
   
-  tikz(tex_filename, standAlone = FALSE, width = TEXWIDTH)
+  tikz(tex_filename, standAlone = FALSE, width = 5, height = 5)
   print(plot)
   dev.off()
 
