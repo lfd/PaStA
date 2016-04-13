@@ -106,10 +106,7 @@ num_commits <- function() {
 
 # Upstream analysis
 upstream_analysis <- function(binwidth) {
-  upstream$DateDiff <- as.numeric(upstream$DateDiff, units="days")
-
-  p <- ggplot(data = upstream,
-             aes(upstream$DateDiff)) +
+  p <- ggplot(upstream, aes(upstream$DateDiff)) +
     xlab("Days between release and upstream") +
     ylab("Number of upstream patches") +
     geom_histogram(binwidth = binwidth)
@@ -206,6 +203,7 @@ upstream <- convertDate(upstream, c("UpstreamCommitDate", "FirstStackOccurence")
 
 # Prepare Tables
 upstream$DateDiff <- upstream$UpstreamCommitDate - upstream$FirstStackOccurence
+upstream$DateDiff <- as.numeric(upstream$DateDiff, units="days")
 upstream$Type <- sapply(upstream$DateDiff, function(x) {
   if (x < -1)
     "backport"
