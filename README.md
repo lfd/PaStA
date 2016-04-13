@@ -7,6 +7,11 @@ Cloning
 $ git clone git@gitlab.lfd.sturhax.de:PaStA/PaStA.git
 ```
 
+**PaStA** runs on *Python3*.
+Dependencies:
+- git-python
+- termcolor
+
 Running PaStA
 -------------
 
@@ -75,4 +80,52 @@ plots in the same directory as *png* and *tikz* files taht can be used for
 
 If you want **PaStA** only to create the *csv* files without running **R**, you
 can invoke it by using `./run-statistics -noR -R /tmp/foo/`.  This will not
-invoke **R** and place the *csv*s in `/tmp/foo`
+invoke **R** and place the *csv*s in `/tmp/foo`.
+
+PaStA commands in detail
+------------------------
+### Main Components
+To see a list of available options, run main components with `-h`.
+
+### Tools
+#### compare-patches
+`compare-patches` evaluates a list of commit hashes and displays the evaluation
+result as well as the original commits.
+
+#### prepare_pasta
+Initialises git submodules
+
+Creating a new PaStA project
+----------------------------
+### Preparing the repository
+All project-relevant file are located in `PaStA-resources/PROJECT_NAME/`.
+Default locations inside that directory:
+- `PROJECT_NAME.cfg`: the main configuration file of the project. This file sets
+  the project name, different version ranges and default thresholds.
+- `repo/`: This is the default location of the repository of the project
+- `resources/patch-stack-definition.dat`: Definition of the patch stacks.
+  Lines beginning with **#** are interpreted as comments, lines beginning with
+  **##** group major versions of projects. Have a look at existing patch stack
+  definitions.
+
+### Rolling out history and identifying the commit hashes on patch stacks
+For reasons of performance, **PaStA** rolls out the complete git history.
+`log/` is the default location of the history of the project.
+After creating the patch stack definition configuration file and the project
+configuration file, add your project to the `PaStA-resources/prepare_projects`
+script. Invoking this script will create the patch stack commit hash list inside
+`PaStA-resources/PROJECT_NAME/resources/stack-hashes/` and roll out the git
+history of the project.
+
+### PaStA configuration format
+The **PaStA** configuration file scheme is similar to the Windows *ini* format.
+All configuration file inherit from `PaStA-resources/common/default.cfg` and
+must implement some mandatory values. This is a minimal example for a project
+configuration file:
+```
+[PaStA]
+PROJECT_NAME = foobar
+
+UPSTREAM_MIN = v1.0
+UPSTREAM_MAX = v2.0
+```
