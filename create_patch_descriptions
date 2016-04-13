@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
-import copy
 
-import functools
 from multiprocessing import Pool, cpu_count
 import sys
 from termcolor import colored
 
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchStack import get_commit, get_next_release_date, cache_commit_hashes, format_date_ymd
-from PaStA import config, patch_stack_list, repo
+from PaStA import config, patch_stack_list
 
 
 def describe_commit(commit_hash):
@@ -31,10 +29,6 @@ def describe_commit(commit_hash):
 
 def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-sp', dest='sp_filename', metavar='filename',
-                        default=config.similar_patches, help='Similar Patches filename')
-    parser.add_argument('-ur', dest='ur_filename', metavar='filename',
-                        default=config.similar_upstream, help='Similar Upstream filename')
     parser.add_argument('-cd', dest='cd_filename', metavar='filename',
                         default=config.commit_description, help='Output: Commit description file')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
@@ -42,29 +36,7 @@ def main():
     args = parser.parse_args()
 
     # similar patch groups
-    similar_patches = EquivalenceClass.from_file(args.sp_filename)
-
-    # upstream results
-    similar_upstream = EquivalenceClass.from_file(args.ur_filename)
-
-    stack_commit_hashes = patch_stack_list.get_all_commit_hashes()
-
-    # create a copy of the similar patch list
-    patch_groups = copy.deepcopy(similar_patches)
-
-    # Insert every single key of the patch stack into the transitive list. Already existing keys will be skipped.
-    # This results in a list with at least one key for each patch set
-    for i in stack_commit_hashes:
-        patch_groups.insert_single(i)
-    patch_groups.optimize()
-
-    # Merge upstream results and patch group list
-    for i in similar_upstream:
-        patch_groups.set_property(i[0], i.property)
-
-    sys.stdout.write('Writing Patch Group file... ')
-    patch_groups.to_file(args.pg_filename)
-    print(colored(' [done]', 'green'))
+    patch_groups = EquivalenceClass.from_file(args.pg_filename)
 
     all_commit_hashes = []
     for i in patch_groups:

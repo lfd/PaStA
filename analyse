@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import copy
 from multiprocessing import Pool, cpu_count
 import re
 import sys
@@ -128,14 +129,45 @@ def analyse_upstream(similar_patches):
     return evaluation_result
 
 
+def create_patch_groups(sp_filename, su_filename, pg_filename):
+    # similar patch groups
+    similar_patches = EquivalenceClass.from_file(sp_filename, must_exist=True)
+
+    # upstream results
+    similar_upstream = EquivalenceClass.from_file(su_filename, must_exist=True)
+
+    # create a copy of the similar patch list
+    patch_groups = copy.deepcopy(similar_patches)
+
+    # Insert every single key of the patch stack into the transitive list. Already existing keys will be skipped.
+    # This results in a list with at least one key for each patch set
+    stack_commit_hashes = patch_stack_list.get_all_commit_hashes()
+    for i in stack_commit_hashes:
+        patch_groups.insert_single(i)
+    patch_groups.optimize()
+
+    # Merge upstream results and patch group list
+    for i in similar_upstream:
+        patch_groups.set_property(i[0], i.property)
+
+    sys.stdout.write('Writing Patch Group file... ')
+    patch_groups.to_file(pg_filename)
+    print(colored(' [done]', 'green'))
+
 def main():
     parser = argparse.ArgumentParser(description='Analyse stack by stack')
     parser.add_argument('-er', dest='evaluation_result_filename', metavar='filename',
                         default=config.evaluation_result, help='Evaluation result filename')
     parser.add_argument('-sp', dest='sp_filename', metavar='filename',
                         default=config.similar_patches, help='Similar Patches filename')
+    parser.add_argument('-su', dest='su_filename', metavar='filename',
+                        default=config.similar_upstream,
+                        help='Similar Upstream filename. Only required together with -mode finish')
+    parser.add_argument('-pg', dest='pg_filename', metavar='filename',
+                        default=config.patch_groups,
+                        help='Patch groups filename. Only required with -mode finish')
     parser.add_argument('-mode', dest='mode', default='stack-succ',
-                        choices=['init', 'stack-succ', 'stack-rep', 'upstream'],
+                        choices=['init', 'stack-succ', 'stack-rep', 'upstream', 'finish'],
                         help='Analysation mode: Successive patches on the stack, Compare Representants on the stack,\
                               Upstream Analysis (default: %(default)s)')
     args = parser.parse_args()
@@ -145,6 +177,8 @@ def main():
         for commit_hash in patch_stack_list.get_all_commit_hashes():
             similar_patches.insert_single(commit_hash)
         similar_patches.to_file(args.sp_filename)
+    elif args.mode == 'finish':
+        create_patch_groups(args.sp_filename, args.su_filename, args.pg_filename)
     else:
         # Load similar patches file
         similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=True)
