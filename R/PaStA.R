@@ -296,9 +296,36 @@ stack_release_dates$Version <- factor(stack_release_dates$Version,
                                       ordered = TRUE,
                                       levels = ord_stack_ver)
 
+fl_stack_versions <- factor(c(),
+                            ordered = TRUE,
+                            levels = ord_stack_ver)
+f_stack_versions <- factor(c(),
+                           ordered = TRUE,
+                           levels = ord_stack_ver)
+l_stack_versions <- factor(c(),
+                           ordered = TRUE,
+                           levels = ord_stack_ver)
+for (i in ord_version_grps) {
+  stacks_of_grp <- subset(stack_release_dates, VersionGroup == i)
+  minver <- min(stacks_of_grp$Version)
+  maxver <- max(stacks_of_grp$Version)
+  fl_stack_versions[length(fl_stack_versions)+1] <- minver[1]
+  fl_stack_versions[length(fl_stack_versions)+1] <- maxver[1]
+
+  f_stack_versions[length(f_stack_versions)+1] <- minver[1]
+  l_stack_versions[length(l_stack_versions)+1] <- maxver [1]
+}
+
+binwidth <- 7
+
 commitcount_plot <- num_commits()
-upstream_analysis_plot <- upstream_analysis(7)
+upstream_analysis_plot <- upstream_analysis(binwidth)
 branch_observation_plots <- branch_observation()
+
+fl_sf_plot <- stack_future(fl_stack_versions)
+f_sf_plot <- stack_future(f_stack_versions)
+l_sf_plot <- stack_future(l_stack_versions)
+
 
 if (persistent) {
   savePlot("commitcount", commitcount_plot)
@@ -308,10 +335,16 @@ if (persistent) {
                    i[[1]],
                    sep = ""), i[[2]])
   }
+  savePlot("fl_sf_plot", fl_sf_plot)
+  savePlot("f_sf_plot", f_sf_plot)
+  savePlot("l_sf_plot", l_sf_plot)
 } else {
   print(commitcount_plot)
   print(upstream_analysis_plot)
   for(i in branch_observation_plots) {
     print(i[[2]])
   }
+  print(fl_sf_plot)
+  print(f_sf_plot)
+  print(l_sf_plot)
 }
