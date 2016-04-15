@@ -14,13 +14,6 @@ from PaStA.PatchStack import get_commit
 from PaStA import config
 
 
-class Thresholds:
-    def __init__(self, autoaccept, interactive, diff_length):
-        self.autoaccept = autoaccept
-        self.interactive = interactive
-        self.diff_length = diff_length
-
-
 class EvaluationType(Enum):
     PatchStack = 1
     Upstream = 2

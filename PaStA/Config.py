@@ -2,6 +2,13 @@ import configparser
 import os
 
 
+class Thresholds:
+    def __init__(self, autoaccept, interactive, diff_length):
+        self.autoaccept = autoaccept
+        self.interactive = interactive
+        self.diff_length = diff_length
+
+
 class Config:
 
     # Configuration file containing default parameters
@@ -64,6 +71,6 @@ class Config:
         if self.upstream_blacklist:
             self.upstream_blacklist = os.path.join(Config.BLACKLIST_LOCATION, self.upstream_blacklist)
 
-        self.interactive_threshold = pasta.get('INTERACTIVE_THRESHOLD')
-        self.autoaccept_threshold = pasta.get('AUTOACCEPT_THRESHOLD')
-        self.diff_length_ratio = pasta.get('DIFF_LENGTH_RATIO')
+        self.thresholds = Thresholds(pasta.get('AUTOACCEPT_THRESHOLD'),
+                                     pasta.get('INTERACTIVE_THRESHOLD'),
+                                     pasta.get('DIFF_LENGTH_RATIO'))

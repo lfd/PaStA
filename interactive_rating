@@ -3,8 +3,9 @@
 import argparse
 import os
 
+from PaStA.Config import Thresholds
 from PaStA.EquivalenceClass import EquivalenceClass
-from PaStA.PatchEvaluation import DictList, EvaluationResult, Thresholds, EvaluationType
+from PaStA.PatchEvaluation import DictList, EvaluationResult, EvaluationType
 from PaStA import config
 
 
@@ -39,17 +40,23 @@ def main():
                         help='Similar Upstream filename')
     parser.add_argument('-er', dest='er_filename', metavar='filename', default=config.evaluation_result,
                         help='Evaluation Result PKL filename')
+
+    # Thresholds
     parser.add_argument('-aat', dest='aa_threshold', metavar='threshold', type=float,
-                        default=config.autoaccept_threshold, help='Autoaccept Threshold (default: %(default)s)')
+                        default=config.thresholds.autoaccept, help='Autoaccept Threshold (default: %(default)s)')
     parser.add_argument('-it', dest='it_threshold', metavar='threshold', type=float,
-                        default=config.interactive_threshold, help='Interactive Threshold (default: %(default)s)')
+                        default=config.thresholds.interactive, help='Interactive Threshold (default: %(default)s)')
     parser.add_argument('-dlr', dest='dlr_threshold', metavar='threshold',  type=float,
-                        default=config.diff_length_ratio, help='Diff Length Ratio Threshold (default: %(default)s)')
+                        default=config.thresholds.diff_length,
+                        help='Diff Length Ratio Threshold (default: %(default)s)')
+
     parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', default=False,
                         help='Respect order of commit date')
     args = parser.parse_args()
 
-    thresholds = Thresholds(args.aa_threshold, args.it_threshold, args.dlr_threshold)
+    config.thresholds = Thresholds(args.aa_threshold,
+                                   args.it_threshold,
+                                   args.dlr_threshold)
 
     # Load already known positives and false positives
     similar_patches = EquivalenceClass.from_file(args.sp_filename)
@@ -62,11 +69,11 @@ def main():
     if evaluation_result.eval_type == EvaluationType.PatchStack:
         print('Running patch stack rating...')
         patch_stack_rating(evaluation_result, similar_patches, false_positives,
-                           thresholds, args.resp_commit_date)
+                           config.thresholds, args.resp_commit_date)
     elif evaluation_result.eval_type == EvaluationType.Upstream:
         print('Running upstream rating...')
         upstream_rating(evaluation_result, similar_patches, similar_upstream,
-                        false_positives, thresholds, args.resp_commit_date)
+                        false_positives, config.thresholds, args.resp_commit_date)
     else:
         pass
 
