@@ -15,7 +15,7 @@ def compare_patches(commits):
         retval = preevaluate_single_patch(commit_a, commit_b)
         if retval:
             print('Preevaluation: Possible candidates')
-            retval = evaluate_single_patch(commit_a, commit_b)
+            retval = evaluate_single_patch(config.thresholds, commit_a, commit_b)
             if retval is None:
                 print('Rating: None')
             else:

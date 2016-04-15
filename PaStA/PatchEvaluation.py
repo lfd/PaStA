@@ -243,7 +243,7 @@ def preevaluate_single_patch(original_hash, candidate_hash):
     return True
 
 
-def evaluate_single_patch(original_hash, candidate_hash):
+def evaluate_single_patch(thresholds, original_hash, candidate_hash):
 
     orig = get_commit(original_hash)
     cand = get_commit(candidate_hash)
@@ -305,7 +305,7 @@ def _preevaluation_helper(candidate_hashes, orig_hash):
     return orig_hash, list(filter(f, candidate_hashes))
 
 
-def evaluate_patch_list(original_hashes, candidate_hashes, eval_type,
+def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds,
                         parallelize=False, verbose=False,
                         cpu_factor=1.25):
     """
@@ -348,7 +348,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type,
             continue
 
         this_candidate_hashes = preeval_result[commit_hash]
-        f = functools.partial(evaluate_single_patch, commit_hash)
+        f = functools.partial(evaluate_single_patch, thresholds, commit_hash)
 
         if parallelize and len(this_candidate_hashes) > 5*num_threads:
             chunksize = ceil(len(this_candidate_hashes) / num_threads)

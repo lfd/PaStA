@@ -15,7 +15,7 @@ from PaStA.PatchStack import cache_commit_hashes, get_commit_hashes, get_commits
 
 def _evaluate_patch_list_wrapper(args):
     orig, cand, type = args
-    return evaluate_patch_list(orig, cand, type)
+    return evaluate_patch_list(orig, cand, type, config.thresholds)
 
 
 def analyse_succ():
@@ -67,6 +67,7 @@ def analyse_stack(similar_patches):
     result = evaluate_patch_list(representatives,
                                  representatives,
                                  EvaluationType.PatchStack,
+                                 config.thresholds,
                                  parallelize=True,
                                  verbose=True)
     result.set_universe(representatives)
@@ -117,6 +118,7 @@ def analyse_upstream(similar_patches):
 
     print('Starting evaluation.')
     evaluation_result = evaluate_patch_list(representatives, upstream_candidates, EvaluationType.Upstream,
+                                            config.thresholds,
                                             parallelize=True, verbose=True,
                                             cpu_factor=0.5)
     print('Evaluation completed.')
