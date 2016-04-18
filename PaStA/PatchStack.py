@@ -332,7 +332,7 @@ def get_commit(commit_hash):
     return commits[commit_hash]
 
 
-def cache_commit_hashes(commit_hashes, parallelize=True):
+def cache_commit_hashes(commit_hashes, parallelise=True):
     num_cpus = cpu_count()
     num_commit_hashes = len(commit_hashes)
 
@@ -340,7 +340,7 @@ def cache_commit_hashes(commit_hashes, parallelize=True):
                      ' commits. This may take a while...')
     sys.stdout.flush()
 
-    if parallelize and num_commit_hashes > 5*num_cpus:
+    if parallelise and num_commit_hashes > 5*num_cpus:
         chunksize = ceil(num_commit_hashes / num_cpus)
         p = Pool(num_cpus)
         p.map(get_commit, commit_hashes, chunksize=chunksize)

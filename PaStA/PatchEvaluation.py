@@ -306,14 +306,14 @@ def _preevaluation_helper(candidate_hashes, orig_hash):
 
 
 def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds,
-                        parallelize=False, verbose=False,
+                        parallelise=False, verbose=False,
                         cpu_factor=1.25):
     """
     Evaluates two list of original and candidate hashes against each other
 
     :param original_hashes: original patches
     :param candidate_hashes: potential candidates
-    :param parallelize: Parallelize evaluation
+    :param parallelise: Parallelise evaluation
     :param verbose: Verbose output
     :param cpu_factor: number of threads to be spawned is the number of CPUs*cpu_factor
     :return: a dictionary with originals as keys and a list of potential candidates as value
@@ -327,7 +327,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
     if verbose:
         print('Running preevaluation.')
     f = functools.partial(_preevaluation_helper, candidate_hashes)
-    if parallelize:
+    if parallelise:
         p = Pool(num_threads)
         preeval_result = p.map(f, original_hashes)
         p.close()
@@ -350,7 +350,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
         this_candidate_hashes = preeval_result[commit_hash]
         f = functools.partial(evaluate_single_patch, thresholds, commit_hash)
 
-        if parallelize and len(this_candidate_hashes) > 5*num_threads:
+        if parallelise and len(this_candidate_hashes) > 5*num_threads:
             chunksize = ceil(len(this_candidate_hashes) / num_threads)
             pool = Pool(num_threads)
             result = pool.map(f, this_candidate_hashes, chunksize=chunksize)

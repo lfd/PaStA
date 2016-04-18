@@ -68,7 +68,7 @@ def analyse_stack(similar_patches):
                                  representatives,
                                  EvaluationType.PatchStack,
                                  config.thresholds,
-                                 parallelize=True,
+                                 parallelise=True,
                                  verbose=True)
     result.set_universe(representatives)
 
@@ -119,7 +119,7 @@ def analyse_upstream(similar_patches):
     print('Starting evaluation.')
     evaluation_result = evaluate_patch_list(representatives, upstream_candidates, EvaluationType.Upstream,
                                             config.thresholds,
-                                            parallelize=True, verbose=True,
+                                            parallelise=True, verbose=True,
                                             cpu_factor=0.5)
     print('Evaluation completed.')
 
