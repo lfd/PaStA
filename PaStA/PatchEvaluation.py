@@ -120,8 +120,9 @@ class EvaluationResult(dict):
                 elif False and diff_rating == 1.0 and msg_rating > 0.1:
                     rating = 1.0
                 else:
-                    # Rate msg and diff by (1/3)/(2/3)
-                    rating = msg_rating / 3 + 2 *  diff_rating / 3
+                    # Weight by message_diff_weight
+                    rating = thresholds.message_diff_weight * msg_rating +\
+                             (1-thresholds.message_diff_weight) * diff_rating
 
                 # Maybe we can autoaccept the patch?
                 if rating >= thresholds.autoaccept:
@@ -276,7 +277,7 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
                             map(lambda x: (x, fuzz.token_sort_ratio(l_key, x)),
                                 rhunks.keys()),
                             key=lambda x: x[1])[-1]
-                    if rating > 60:
+                    if rating >= thresholds.heading * 100:
                         r_key = closest_match
 
                 if r_key is not None:

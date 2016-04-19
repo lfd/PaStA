@@ -42,21 +42,26 @@ def main():
                         help='Evaluation Result PKL filename')
 
     # Thresholds
-    parser.add_argument('-aat', dest='aa_threshold', metavar='threshold', type=float,
+    parser.add_argument('-ta', dest='thres_accept', metavar='threshold', type=float,
                         default=config.thresholds.autoaccept, help='Autoaccept Threshold (default: %(default)s)')
-    parser.add_argument('-it', dest='it_threshold', metavar='threshold', type=float,
+    parser.add_argument('-ti', dest='thres_interactive', metavar='threshold', type=float,
                         default=config.thresholds.interactive, help='Interactive Threshold (default: %(default)s)')
-    parser.add_argument('-dlr', dest='dlr_threshold', metavar='threshold',  type=float,
+    parser.add_argument('-dlr', dest='thres_diff_length', metavar='threshold',  type=float,
                         default=config.thresholds.diff_length,
                         help='Diff Length Ratio Threshold (default: %(default)s)')
+    parser.add_argument('-weight', dest='weight', metavar='weight', type=float,
+                        default=config.thresholds.message_diff_weight,
+                        help='Heuristic factor for message to diff rating. (default: %(default)s)')
 
     parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', default=False,
                         help='Respect order of commit date')
     args = parser.parse_args()
 
-    config.thresholds = Thresholds(args.aa_threshold,
-                                   args.it_threshold,
-                                   args.dlr_threshold)
+    config.thresholds = Thresholds(args.thres_accept,
+                                   args.thres_interactive,
+                                   args.thres_diff_length,
+                                   config.thresholds.heading, # does not matter for interactive rating
+                                   args.weight)
 
     # Load already known positives and false positives
     similar_patches = EquivalenceClass.from_file(args.sp_filename)

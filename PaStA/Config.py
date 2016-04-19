@@ -3,9 +3,27 @@ import os
 
 
 class Thresholds:
-    def __init__(self, autoaccept, interactive, diff_length):
+    def __init__(self, autoaccept, interactive, diff_length,
+                 heading, message_diff_weight):
+        """
+
+        :param autoaccept: Auto accept threshold. Ratings with at least this threshold will automatically be accepted.
+        :param interactive: Ratings with at least this threshold are presented to the user for interactive rating.
+               Ratings below this threshold will automatically be discarded.
+        :param diff_length: Minimum ratio of shorter diff / longer diff
+        :param heading: Minimung similarity rating of the section heading of a diff
+        :param message_diff_weight: heuristic factor of message rating to diff rating
+        """
+
+        # t_a
         self.autoaccept = autoaccept
+        # t_i
         self.interactive = interactive
+        # t_h
+        self.heading = heading
+        # w
+        self.message_diff_weight = message_diff_weight
+
         self.diff_length = diff_length
 
 
@@ -71,6 +89,8 @@ class Config:
         if self.upstream_blacklist:
             self.upstream_blacklist = os.path.join(Config.BLACKLIST_LOCATION, self.upstream_blacklist)
 
-        self.thresholds = Thresholds(pasta.get('AUTOACCEPT_THRESHOLD'),
-                                     pasta.get('INTERACTIVE_THRESHOLD'),
-                                     pasta.get('DIFF_LENGTH_RATIO'))
+        self.thresholds = Thresholds(float(pasta.get('AUTOACCEPT_THRESHOLD')),
+                                     float(pasta.get('INTERACTIVE_THRESHOLD')),
+                                     float(pasta.get('DIFF_LENGTH_RATIO')),
+                                     float(pasta.get('HEADING_THRESHOLD')),
+                                     float(pasta.get('MESSAGE_DIFF_WEIGHT')))
