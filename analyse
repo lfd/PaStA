@@ -181,17 +181,17 @@ def main():
 
     config.thresholds.heading = args.thres_heading
 
+    # Load similar patches file. If args.mode is 'init', it does not necessarily have to exist.
+    sp_must_exist = args.mode != 'init'
+    similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=sp_must_exist)
+
     if args.mode == 'init':
-        similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=False)
         for commit_hash in patch_stack_list.get_all_commit_hashes():
             similar_patches.insert_single(commit_hash)
         similar_patches.to_file(args.sp_filename)
     elif args.mode == 'finish':
         create_patch_groups(args.sp_filename, args.su_filename, args.pg_filename)
     else:
-        # Load similar patches file
-        similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=True)
-
         if args.mode == 'stack-succ':
             result = analyse_succ()
         elif args.mode == 'stack-rep':
