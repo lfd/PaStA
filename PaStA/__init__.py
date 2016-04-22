@@ -8,4 +8,4 @@ config = Config('config')
 repo = Repo(config.repo)
 
 from PaStA.PatchStack import parse_patch_stack_definition
-patch_stack_list = parse_patch_stack_definition(config.patch_stack_definition)
+patch_stack_definition = parse_patch_stack_definition(config.patch_stack_definition)

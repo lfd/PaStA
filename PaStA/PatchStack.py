@@ -191,7 +191,7 @@ class PatchStack:
         return '%s (%d)' % (self.stack_version, self.num_commits())
 
 
-class PatchStackList:
+class PatchStackDefinition:
     def __init__(self, patch_stack_groups):
         self.patch_stack_groups = patch_stack_groups
 
@@ -316,7 +316,7 @@ def parse_patch_stack_definition(definition_filename):
         retval.append((group_name, this_group))
 
     # Create patch stack list
-    retval = PatchStackList(retval)
+    retval = PatchStackDefinition(retval)
     print(colored(' [done]', 'green'))
 
     return retval

@@ -8,12 +8,12 @@ from termcolor import colored
 
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchStack import get_commit, get_next_release_date, cache_commit_hashes, format_date_ymd
-from PaStA import config, patch_stack_list
+from PaStA import config, patch_stack_definition
 
 
 def describe_commit(commit_hash):
-    if commit_hash in patch_stack_list:
-        stack = patch_stack_list.get_stack_of_commit(commit_hash)
+    if commit_hash in patch_stack_definition:
+        stack = patch_stack_definition.get_stack_of_commit(commit_hash)
         branch_name = stack.stack_name
         release_date = stack.stack_release_date
     else:
