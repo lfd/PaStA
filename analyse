@@ -76,10 +76,6 @@ def analyse_stack(similar_patches):
 
 
 def analyse_upstream(similar_patches):
-    # Load and cache upstream commits
-    upstream_candidates = get_commit_hashes(config.upstream_range[0], config.upstream_range[1])
-    upstream_candidates -= get_commits_from_file(config.upstream_blacklist)
-
     sys.stdout.write('Determining patch stack representative system...')
     sys.stdout.flush()
     # Get the complete representative system
@@ -90,7 +86,7 @@ def analyse_upstream(similar_patches):
                                                                      patch_stack_definition.get_stack_of_commit(y)))
     print(colored(' [done]', 'green'))
 
-    cache_commit_hashes(upstream_candidates)
+    cache_commit_hashes(patch_stack_definition.upstream_hashes)
     cache_commit_hashes(representatives)
 
     print('Auto-detecting cherry-picks...')
@@ -109,7 +105,7 @@ def analyse_upstream(similar_patches):
                 if not sha_found:
                     continue
                 upstream_hash = sha_found.group(1)
-                if upstream_hash in upstream_candidates:
+                if upstream_hash in patch_stack_definition.upstream_hashes:
                     cherry_picks[commit_hash] = [(upstream_hash, 1.0, 1.0, 1.0)]
                 else:
                     print('Found cherry-pick: %s <-> %s but upstream is not in upstream candidates list.' %
@@ -117,8 +113,8 @@ def analyse_upstream(similar_patches):
     print('Done. Found %d cherry-picks' % len(cherry_picks))
 
     print('Starting evaluation.')
-    evaluation_result = evaluate_patch_list(representatives, upstream_candidates, EvaluationType.Upstream,
-                                            config.thresholds,
+    evaluation_result = evaluate_patch_list(representatives, patch_stack_definition.upstream_hashes,
+                                            EvaluationType.Upstream, config.thresholds,
                                             parallelise=True, verbose=True,
                                             cpu_factor=0.5)
     print('Evaluation completed.')

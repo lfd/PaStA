@@ -194,8 +194,9 @@ class PatchStack:
 class PatchStackDefinition:
     HEADER_NAME_REGEX = re.compile(r'## (.*)')
 
-    def __init__(self, patch_stack_groups):
+    def __init__(self, patch_stack_groups, upstream_hashes):
         self.patch_stack_groups = patch_stack_groups
+        self._upstream_hashes = upstream_hashes
 
         self._stack_version_to_int = {}
         self._hash_to_version_lookup = {}
@@ -209,6 +210,10 @@ class PatchStackDefinition:
 
             for commit_hash in i.commit_hashes:
                 self._hash_to_version_lookup[commit_hash] = i
+
+    @property
+    def upstream_hashes(self):
+        return self._upstream_hashes
 
     @property
     def commits_on_stacks(self):
@@ -270,7 +275,7 @@ class PatchStackDefinition:
         # Add last group
         csv_groups.append((header, content))
 
-        retval = []
+        patch_stack_groups = []
         for group_name, csv_list in csv_groups:
             reader = csv.DictReader(csv_list, dialect='patchstack')
             this_group = []
@@ -285,10 +290,13 @@ class PatchStackDefinition:
 
                 this_group.append(PatchStack(base, stack))
 
-            retval.append((group_name, this_group))
+            patch_stack_groups.append((group_name, this_group))
+
+        upstream = get_commits_from_file(os.path.join(config.stack_hashes, 'upstream'))
+        upstream -= get_commits_from_file(config.upstream_blacklist)
 
         # Create patch stack list
-        retval = PatchStackDefinition(retval)
+        retval = PatchStackDefinition(patch_stack_groups, upstream)
         print(colored(' [done]', 'green'))
 
         return retval
