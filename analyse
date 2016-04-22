@@ -10,7 +10,7 @@ from termcolor import colored
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchEvaluation import EvaluationResult, EvaluationType, evaluate_patch_list
 from PaStA import config, patch_stack_definition
-from PaStA.PatchStack import cache_commit_hashes, get_commit_hashes, get_commits_from_file, get_commit
+from PaStA.PatchStack import cache_commit_hashes, get_commit
 
 
 def _evaluate_patch_list_wrapper(args):
