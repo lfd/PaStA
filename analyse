@@ -31,7 +31,7 @@ def analyse_succ():
         evaluation_list.append((pred.commit_hashes, patch_stack.commit_hashes, EvaluationType.PatchStack))
         pred = patch_stack
 
-    cache_commit_hashes(patch_stack_definition.get_all_commit_hashes())
+    cache_commit_hashes(patch_stack_definition.commits_on_stacks)
 
     print('Starting evaluation.')
     pool = Pool(cpu_count())
@@ -41,7 +41,7 @@ def analyse_succ():
     print('Evaluation completed.')
 
     evaluation_result = EvaluationResult(EvaluationType.PatchStack)
-    evaluation_result.set_universe(patch_stack_definition.get_all_commit_hashes())
+    evaluation_result.set_universe(patch_stack_definition.commits_on_stacks)
     for result in results:
         evaluation_result.merge(result)
 
@@ -143,7 +143,7 @@ def create_patch_groups(sp_filename, su_filename, pg_filename):
 
     # Insert every single key of the patch stack into the transitive list. Already existing keys will be skipped.
     # This results in a list with at least one key for each patch set
-    stack_commit_hashes = patch_stack_definition.get_all_commit_hashes()
+    stack_commit_hashes = patch_stack_definition.commits_on_stacks
     for i in stack_commit_hashes:
         patch_groups.insert_single(i)
     patch_groups.optimize()
@@ -186,7 +186,7 @@ def main():
     similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=sp_must_exist)
 
     if args.mode == 'init':
-        for commit_hash in patch_stack_definition.get_all_commit_hashes():
+        for commit_hash in patch_stack_definition.commits_on_stacks:
             similar_patches.insert_single(commit_hash)
         similar_patches.to_file(args.sp_filename)
     elif args.mode == 'finish':

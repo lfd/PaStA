@@ -200,21 +200,22 @@ class PatchStackDefinition:
         self._stack_version_to_int = {}
         self._hash_to_version_lookup = {}
 
-        self.all_commit_hashes = set()
+        self._commits_on_stacks = set()
         cntr = 0
         for i in self:
-            self.all_commit_hashes |= i.commit_hashes
+            self._commits_on_stacks |= i.commit_hashes
             self._stack_version_to_int[i] = cntr
             cntr += 1
 
             for commit_hash in i.commit_hashes:
                 self._hash_to_version_lookup[commit_hash] = i
 
-    def get_all_commit_hashes(self):
+    @property
+    def commits_on_stacks(self):
         """
         :return: Returns all commit hashes of all patch stacks
         """
-        return self.all_commit_hashes
+        return self._commits_on_stacks
 
     def get_stack_of_commit(self, commit_hash):
         """
@@ -231,7 +232,7 @@ class PatchStackDefinition:
         return self._stack_version_to_int[lhs] > self._stack_version_to_int[rhs]
 
     def __contains__(self, item):
-        return item in self.all_commit_hashes
+        return item in self._commits_on_stacks
 
     def __iter__(self):
         for foo, patch_stack_group in self.patch_stack_groups:
