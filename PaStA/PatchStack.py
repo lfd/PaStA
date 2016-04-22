@@ -192,6 +192,8 @@ class PatchStack:
 
 
 class PatchStackDefinition:
+    HEADER_NAME_REGEX = re.compile(r'## (.*)')
+
     def __init__(self, patch_stack_groups):
         self.patch_stack_groups = patch_stack_groups
 
@@ -236,6 +238,60 @@ class PatchStackDefinition:
             for patch_stack in patch_stack_group:
                 yield patch_stack
 
+    @staticmethod
+    def parse_definition_file(definition_filename):
+        csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
+
+        sys.stdout.write('Parsing patch stack definition...')
+
+        with open(definition_filename) as f:
+            line_list = f.readlines()
+
+        # Get the global CSV header which is the same for all groups
+        csv_header = line_list.pop(0)
+
+        # Filter empty lines
+        line_list = list(filter(lambda x: x != '\n', line_list))
+
+        csv_groups = []
+        header = None
+        for line in line_list:
+            if line.startswith('## '):
+                if header:
+                    csv_groups.append((header, content))
+                header = PatchStackDefinition.HEADER_NAME_REGEX.match(line).group(1)
+                content = [csv_header]
+            elif line.startswith('#'):  # skip comments
+                continue
+            else:
+                content.append(line)
+
+        # Add last group
+        csv_groups.append((header, content))
+
+        retval = []
+        for group_name, csv_list in csv_groups:
+            reader = csv.DictReader(csv_list, dialect='patchstack')
+            this_group = []
+            for row in reader:
+                base = VersionPoint(row['BaseCommit'],
+                                    row['BaseVersion'],
+                                    row['BaseReleaseDate'])
+
+                stack = VersionPoint(row['BranchName'],
+                                     row['StackVersion'],
+                                     row['StackReleaseDate'])
+
+                this_group.append(PatchStack(base, stack))
+
+            retval.append((group_name, this_group))
+
+        # Create patch stack list
+        retval = PatchStackDefinition(retval)
+        print(colored(' [done]', 'green'))
+
+        return retval
+
 
 def get_commits_from_file(filename):
     content = file_to_string(filename, must_exist=True).splitlines()
@@ -264,62 +320,6 @@ def get_commit_hashes(start, end):
     hashes = repo.git.log('--pretty=format:%H', start + '...' + end)
     hashes = hashes.splitlines()
     return set(hashes)
-
-
-def parse_patch_stack_definition(definition_filename):
-
-    csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
-    HEADER_NAME_REGEX = re.compile(r'## (.*)')
-
-    sys.stdout.write('Parsing patch stack definition...')
-
-    with open(definition_filename) as f:
-        line_list = f.readlines()
-
-    # Get the global CSV header which is the same for all groups
-    csv_header = line_list.pop(0)
-
-    # Filter empty lines
-    line_list = list(filter(lambda x: x != '\n', line_list))
-
-    csv_groups = []
-    header = None
-    for line in line_list:
-        if line.startswith('## '):
-            if header:
-                csv_groups.append((header, content))
-            header = HEADER_NAME_REGEX.match(line).group(1)
-            content = [csv_header]
-        elif line.startswith('#'):  # skip comments
-            continue
-        else:
-            content.append(line)
-
-    # Add last group
-    csv_groups.append((header, content))
-
-    retval = []
-    for group_name, csv_list in csv_groups:
-        reader = csv.DictReader(csv_list, dialect='patchstack')
-        this_group = []
-        for row in reader:
-            base = VersionPoint(row['BaseCommit'],
-                                row['BaseVersion'],
-                                row['BaseReleaseDate'])
-
-            stack = VersionPoint(row['BranchName'],
-                                 row['StackVersion'],
-                                 row['StackReleaseDate'])
-
-            this_group.append(PatchStack(base, stack))
-
-        retval.append((group_name, this_group))
-
-    # Create patch stack list
-    retval = PatchStackDefinition(retval)
-    print(colored(' [done]', 'green'))
-
-    return retval
 
 
 def get_commit(commit_hash):

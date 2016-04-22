@@ -7,5 +7,5 @@ config = Config('config')
 
 repo = Repo(config.repo)
 
-from PaStA.PatchStack import parse_patch_stack_definition
-patch_stack_definition = parse_patch_stack_definition(config.patch_stack_definition)
+from PaStA.PatchStack import PatchStackDefinition
+patch_stack_definition = PatchStackDefinition.parse_definition_file(config.patch_stack_definition)
