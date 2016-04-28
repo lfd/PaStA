@@ -74,7 +74,8 @@ class Commit:
     @staticmethod
     def _parse_diff(diff):
         # Split by linebreaks and filter empty lines
-        diff = list(filter(None, diff.splitlines()))
+        # Only split at \n and not at \r
+        diff = list(filter(None, diff.split('\n')))
 
         # diff length ratio
         # Filter parts of interest
