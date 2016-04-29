@@ -16,13 +16,10 @@ def compare_patches(commits):
         if retval:
             print('Preevaluation: Possible candidates')
             retval = evaluate_single_patch(config.thresholds, commit_a, commit_b)
-            if retval is None:
-                print('Rating: None')
-            else:
-                _, msg_rating, diff_rating, diff_length_ratio = retval
-                print(str(msg_rating) + ' message and ' +
-                      str(diff_rating) + ' diff, diff length ratio: ' +
-                      str(diff_length_ratio))
+            _, msg_rating, diff_rating, diff_length_ratio = retval
+            print(str(msg_rating) + ' message and ' +
+                  str(diff_rating) + ' diff, diff length ratio: ' +
+                  str(diff_length_ratio))
         else:
             print('Preevaluation: Not related')
         getch()
