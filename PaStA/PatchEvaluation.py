@@ -360,9 +360,6 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
         else:
             result = list(map(f, this_candidate_hashes))
 
-        # Drop None values
-        result = list(filter(None, result))
-
         # sort by ratio
         result.sort(key=lambda x: x[1], reverse=True)
 
