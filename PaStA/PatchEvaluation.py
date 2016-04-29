@@ -19,6 +19,28 @@ class EvaluationType(Enum):
     Upstream = 2
 
 
+class SimRating:
+    def __init__(self, msg_rating, diff_rating, diff_length_ratio):
+        self._msg_rating = msg_rating
+        self._diff_rating = diff_rating
+        self._diff_length_ratio = diff_length_ratio
+
+    @property
+    def msg_rating(self):
+        return self._msg_rating
+
+    @property
+    def diff_rating(self):
+        return self._diff_rating
+
+    @property
+    def diff_length_ratio(self):
+        return self._diff_length_ratio
+
+    def __lt__(self, other):
+        return self.msg_rating + self.diff_rating < other.msg_rating + other.diff_rating
+
+
 class EvaluationResult(dict):
     """
     An evaluation is a dictionary with a commit hash as key,
@@ -46,6 +68,7 @@ class EvaluationResult(dict):
             else:
                 self[key] = value
 
+            # Sort by SimRating
             self[key].sort(key=lambda x: x[1], reverse=True)
 
     def to_file(self, filename):
@@ -83,12 +106,9 @@ class EvaluationResult(dict):
             if halt_save:
                 break
 
-            for candidate in candidates:
-                cand_commit_hash, msg_rating, diff_rating, diff_length_ratio = candidate
-
+            for cand_commit_hash, rating in candidates:
                 # Check if both commit hashes are the same
                 if cand_commit_hash == orig_commit_hash:
-                    print('Go back and check your implementation!')
                     continue
 
                 # Check if patch is already known as false positive
@@ -102,7 +122,7 @@ class EvaluationResult(dict):
                     already_detected += 1
                     continue
 
-                if diff_length_ratio < thresholds.diff_length:
+                if rating.diff_length_ratio < thresholds.diff_length:
                     skipped_by_dlr += 1
                     continue
 
@@ -114,15 +134,15 @@ class EvaluationResult(dict):
                         continue
 
                 # Overall rating is 0, if diff_rating is 0
-                if diff_rating == 0:
+                if rating.diff_rating == 0:
                     rating = 0
                 # Autoaccept if 100% diff match and at least 10% msg match
-                elif False and diff_rating == 1.0 and msg_rating > 0.1:
+                elif False and rating.diff_rating == 1.0 and rating.msg_rating > 0.1:
                     rating = 1.0
                 else:
                     # Weight by message_diff_weight
-                    rating = thresholds.message_diff_weight * msg_rating +\
-                             (1-thresholds.message_diff_weight) * diff_rating
+                    rating = thresholds.message_diff_weight * rating.msg_rating +\
+                             (1-thresholds.message_diff_weight) * rating.diff_rating
 
                 # Maybe we can autoaccept the patch?
                 if rating >= thresholds.autoaccept:
@@ -138,7 +158,7 @@ class EvaluationResult(dict):
                     compare_hashes(orig_commit_hash, cand_commit_hash)
                     print('Length of list of candidates: %d' % len(candidates))
                     print('Rating: %3.2f (%3.2f message and %3.2f diff, diff length ratio: %3.2f)' %
-                          (rating, msg_rating, diff_rating, diff_length_ratio))
+                          (rating, rating.msg_rating, rating.diff_rating, rating.diff_length_ratio))
                     print('(y)ay or (n)ay or (s)kip?  To abort: halt and (d)iscard, (h)alt and save')
 
                 if yns not in {'y', 'n', 's', 'd', 'h'}:
@@ -252,7 +272,7 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
     # to False for equivalent commit hashes.
     if original_hash == candidate_hash:
         print('Autoreturning on %s' % original_hash)
-        return candidate_hash, 1, 1, 1
+        return SimRating(1, 1, 1)
 
     orig = get_commit(original_hash)
     cand = get_commit(candidate_hash)
@@ -306,7 +326,7 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
 
     diff_rating = mean(levenshteins) / 100
 
-    return candidate_hash, msg_rating, diff_rating, diff_length_ratio
+    return SimRating(msg_rating, diff_rating, diff_length_ratio)
 
 
 def _preevaluation_helper(candidate_hashes, orig_hash):
@@ -363,8 +383,11 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
         else:
             result = list(map(f, candidate_list))
 
-        # sort by sum of ratings
-        result.sort(key=lambda x: x.msg_rating + x.diff_rating, reverse=True)
+        # Zip candidate hashes and corresponding results
+        result = list(zip(candidate_list, result))
+
+        # sort SimRating
+        result.sort(key=lambda x: x[1], reverse=True)
 
         retval[original_hash] = result
 
