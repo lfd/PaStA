@@ -1,6 +1,6 @@
 import csv
 from datetime import datetime
-from math import ceil
+import time
 from multiprocessing import Pool, cpu_count
 import os
 import re
@@ -333,31 +333,30 @@ def get_commit_hashes(start, end):
 
 
 def get_commit(commit_hash):
+    # If commit is already present, return it
     if commit_hash in commits:
         return commits[commit_hash]
 
-    commit = Commit(commit_hash)
-
-    commits[commit_hash] = commit
+    # If it is not present, load it
+    commits[commit_hash] = Commit(commit_hash)
     return commits[commit_hash]
 
 
 def cache_commit_hashes(commit_hashes, parallelise=True):
-    num_cpus = cpu_count()
-    num_commit_hashes = len(commit_hashes)
-
-    sys.stdout.write('Caching ' + str(len(commit_hashes)) +
-                     ' commits. This may take a while...')
+    sys.stdout.write('Caching %d commits. This may take a while...' % len(commit_hashes))
     sys.stdout.flush()
 
-    if parallelise and num_commit_hashes > 5*num_cpus:
-        chunksize = ceil(num_commit_hashes / num_cpus)
-        p = Pool(num_cpus)
-        p.map(get_commit, commit_hashes, chunksize=chunksize)
+    if parallelise:
+        p = Pool(cpu_count())
+        result = p.map(Commit, commit_hashes)
         p.close()
         p.join()
     else:
-        list(map(get_commit, commit_hashes))
+        result = list(map(Commit, commit_hashes))
+
+    # Fill cache
+    for commit_hash, commit in zip(commit_hashes, result):
+        commits[commit_hash] = commit
 
     print(colored(' [done]', 'green'))
 
