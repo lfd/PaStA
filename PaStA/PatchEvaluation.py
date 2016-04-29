@@ -254,6 +254,9 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
 
     diff_length_ratio = min(left_diff_length, right_diff_length) / max(left_diff_length, right_diff_length)
 
+    # get rating of message
+    msg_rating = fuzz.token_sort_ratio(orig.message, cand.message) / 100
+
     # traverse through the left patch
     levenshteins = []
     for file_identifier, lhunks in orig.diff.items():
@@ -294,9 +297,6 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
         levenshteins = [0]
 
     diff_rating = mean(levenshteins) / 100
-
-    # get rating of message
-    msg_rating = fuzz.token_sort_ratio(orig.message, cand.message) / 100
 
     return candidate_hash, msg_rating, diff_rating, diff_length_ratio
 
