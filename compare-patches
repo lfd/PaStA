@@ -12,14 +12,13 @@ def compare_patches(commits):
 
         compare_hashes(commit_a, commit_b)
 
-        retval = preevaluate_single_patch(commit_a, commit_b)
-        if retval:
+        rating = preevaluate_single_patch(commit_a, commit_b)
+        if rating:
             print('Preevaluation: Possible candidates')
-            retval = evaluate_single_patch(config.thresholds, commit_a, commit_b)
-            _, msg_rating, diff_rating, diff_length_ratio = retval
-            print(str(msg_rating) + ' message and ' +
-                  str(diff_rating) + ' diff, diff length ratio: ' +
-                  str(diff_length_ratio))
+            rating = evaluate_single_patch(config.thresholds, commit_a, commit_b)
+            print(str(rating.msg_rating) + ' message and ' +
+                  str(rating.diff_rating) + ' diff, diff length ratio: ' +
+                  str(rating.diff_length_ratio))
         else:
             print('Preevaluation: Not related')
         getch()
