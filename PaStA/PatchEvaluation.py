@@ -225,6 +225,7 @@ def preevaluate_single_patch(original_hash, candidate_hash):
     orig = get_commit(original_hash)
     cand = get_commit(candidate_hash)
 
+    # We do not need to evaluate equivalent commit hashes, as they are already belong to the same equivalence class
     if original_hash == candidate_hash:
         return False
 
@@ -245,6 +246,13 @@ def preevaluate_single_patch(original_hash, candidate_hash):
 
 
 def evaluate_single_patch(thresholds, original_hash, candidate_hash):
+
+    # Just in case.
+    # Actually, patches with the same commit hashes should never be compares, as preevaluate_single_patch will evaluate
+    # to False for equivalent commit hashes.
+    if original_hash == candidate_hash:
+        print('Autoreturning on %s' % original_hash)
+        return candidate_hash, 1, 1, 1
 
     orig = get_commit(original_hash)
     cand = get_commit(candidate_hash)
