@@ -321,7 +321,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
     """
 
     retval = EvaluationResult(eval_type=eval_type)
-    num_threads = int(cpu_count() * cpu_factor)
+    poolsize = int(cpu_count() * cpu_factor)
 
     print('Evaluating %d commit hashes against %d commit hashes' % (len(original_hashes), len(candidate_hashes)))
 
@@ -329,7 +329,7 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
         print('Running preevaluation.')
     f = functools.partial(_preevaluation_helper, candidate_hashes)
     if parallelise:
-        p = Pool(num_threads)
+        p = Pool(poolsize)
         preeval_result = p.map(f, original_hashes)
         p.close()
         p.join()
@@ -351,9 +351,9 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
         this_candidate_hashes = preeval_result[commit_hash]
         f = functools.partial(evaluate_single_patch, thresholds, commit_hash)
 
-        if parallelise and len(this_candidate_hashes) > 5*num_threads:
-            chunksize = ceil(len(this_candidate_hashes) / num_threads)
-            pool = Pool(num_threads)
+        if parallelise:
+            chunksize = ceil(len(this_candidate_hashes) / poolsize)
+            pool = Pool(poolsize)
             result = pool.map(f, this_candidate_hashes, chunksize=chunksize)
             pool.close()
             pool.join()
