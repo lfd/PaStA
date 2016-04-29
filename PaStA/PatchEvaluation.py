@@ -320,8 +320,8 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
     """
     Evaluates two list of original and candidate hashes against each other
 
-    :param original_hashes: original patches
-    :param candidate_hashes: potential candidates
+    :param original_hashes: list of commit hashes
+    :param candidate_hashes: list of commit hashes to compare against
     :param parallelise: Parallelise evaluation
     :param verbose: Verbose output
     :param cpu_factor: number of threads to be spawned is the number of CPUs*cpu_factor
@@ -348,30 +348,25 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
     if verbose:
         print('Preevaluation finished.')
 
-    for i, commit_hash in enumerate(original_hashes):
+    for i, (original_hash, candidate_list) in enumerate(preeval_result.items()):
         if verbose:
-            sys.stdout.write('\r Evaluating %d/%d' % (i+1, len(original_hashes)))
+            sys.stdout.write('\r Evaluating %d/%d' % (i+1, len(preeval_result)))
 
-        # Do we have to consider the commit_hash?
-        if commit_hash not in preeval_result:
-            continue
-
-        this_candidate_hashes = preeval_result[commit_hash]
-        f = functools.partial(evaluate_single_patch, thresholds, commit_hash)
+        f = functools.partial(evaluate_single_patch, thresholds, original_hash)
 
         if parallelise:
-            chunksize = ceil(len(this_candidate_hashes) / poolsize)
+            chunksize = ceil(len(candidate_list) / poolsize)
             pool = Pool(poolsize)
-            result = pool.map(f, this_candidate_hashes, chunksize=chunksize)
+            result = pool.map(f, candidate_list, chunksize=chunksize)
             pool.close()
             pool.join()
         else:
-            result = list(map(f, this_candidate_hashes))
+            result = list(map(f, candidate_list))
 
-        # sort by ratio
-        result.sort(key=lambda x: x[1], reverse=True)
+        # sort by sum of ratings
+        result.sort(key=lambda x: x.msg_rating + x.diff_rating, reverse=True)
 
-        retval[commit_hash] = result
+        retval[original_hash] = result
 
     if verbose:
         sys.stdout.write('\n')
