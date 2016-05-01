@@ -20,25 +20,31 @@ class EvaluationType(Enum):
 
 
 class SimRating:
-    def __init__(self, msg_rating, diff_rating, diff_length_ratio):
-        self._msg_rating = msg_rating
-        self._diff_rating = diff_rating
+    def __init__(self, msg, diff, diff_length_ratio):
+        """
+        Args:
+            msg: Message rating
+            diff: Diff rating
+            diff_length_ration: Ratio of shorter diff to longer diff
+        """
+        self._msg = msg
+        self._diff = diff
         self._diff_length_ratio = diff_length_ratio
 
     @property
-    def msg_rating(self):
-        return self._msg_rating
+    def msg(self):
+        return self._msg
 
     @property
-    def diff_rating(self):
-        return self._diff_rating
+    def diff(self):
+        return self._diff
 
     @property
     def diff_length_ratio(self):
         return self._diff_length_ratio
 
     def __lt__(self, other):
-        return self.msg_rating + self.diff_rating < other.msg_rating + other.diff_rating
+        return self.msg + self.diff < other.msg + other.diff
 
 
 class EvaluationResult(dict):
@@ -106,7 +112,7 @@ class EvaluationResult(dict):
             if halt_save:
                 break
 
-            for cand_commit_hash, rating in candidates:
+            for cand_commit_hash, sim_rating in candidates:
                 # Check if both commit hashes are the same
                 if cand_commit_hash == orig_commit_hash:
                     continue
@@ -122,7 +128,7 @@ class EvaluationResult(dict):
                     already_detected += 1
                     continue
 
-                if rating.diff_length_ratio < thresholds.diff_length:
+                if sim_rating.diff_length_ratio < thresholds.diff_length:
                     skipped_by_dlr += 1
                     continue
 
@@ -134,15 +140,15 @@ class EvaluationResult(dict):
                         continue
 
                 # Overall rating is 0, if diff_rating is 0
-                if rating.diff_rating == 0:
+                if sim_rating.diff == 0:
                     rating = 0
                 # Autoaccept if 100% diff match and at least 10% msg match
-                elif False and rating.diff_rating == 1.0 and rating.msg_rating > 0.1:
+                elif False and sim_rating.diff == 1.0 and sim_rating.msg > 0.1:
                     rating = 1.0
                 else:
                     # Weight by message_diff_weight
-                    rating = thresholds.message_diff_weight * rating.msg_rating +\
-                             (1-thresholds.message_diff_weight) * rating.diff_rating
+                    rating = thresholds.message_diff_weight * sim_rating.msg +\
+                             (1-thresholds.message_diff_weight) * sim_rating.diff
 
                 # Maybe we can autoaccept the patch?
                 if rating >= thresholds.autoaccept:
@@ -158,7 +164,7 @@ class EvaluationResult(dict):
                     compare_hashes(orig_commit_hash, cand_commit_hash)
                     print('Length of list of candidates: %d' % len(candidates))
                     print('Rating: %3.2f (%3.2f message and %3.2f diff, diff length ratio: %3.2f)' %
-                          (rating, rating.msg_rating, rating.diff_rating, rating.diff_length_ratio))
+                          (rating, sim_rating.msg, sim_rating.diff, sim_rating.diff_length_ratio))
                     print('(y)ay or (n)ay or (s)kip?  To abort: halt and (d)iscard, (h)alt and save')
 
                 if yns not in {'y', 'n', 's', 'd', 'h'}:
