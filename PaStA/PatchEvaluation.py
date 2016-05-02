@@ -49,7 +49,7 @@ class SimRating:
 class EvaluationResult(dict):
     """
     An evaluation is a dictionary with a commit hash as key,
-    and a list of 3-tuples (hash, msg_rating, diff_rating, diff-length-ratio) as value.
+    and a list of tuples (hash, SimRating) as value.
     """
 
     def __init__(self, eval_type, *args, **kwargs):
