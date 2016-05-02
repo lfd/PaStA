@@ -18,7 +18,7 @@ def compare_patches(commits):
             rating = evaluate_single_patch(config.thresholds, commit_a, commit_b)
             print(str(rating.msg_rating) + ' message and ' +
                   str(rating.diff_rating) + ' diff, diff length ratio: ' +
-                  str(rating.diff_length_ratio))
+                  str(rating.diff_lines_ratio))
         else:
             print('Preevaluation: Not related')
         getch()

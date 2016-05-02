@@ -20,16 +20,15 @@ class EvaluationType(Enum):
 
 
 class SimRating:
-    def __init__(self, msg, diff, diff_length_ratio):
+    def __init__(self, msg, diff, diff_lines_ratio):
         """
-        Args:
-            msg: Message rating
-            diff: Diff rating
-            diff_length_ration: Ratio of shorter diff to longer diff
+        :param msg: Message rating
+        :param diff: Diff rating
+        :param diff_lines_ration: Ratio of number of lines shorter diff to longer diff
         """
         self._msg = msg
         self._diff = diff
-        self._diff_length_ratio = diff_length_ratio
+        self._diff_lines_ratio = diff_lines_ratio
 
     @property
     def msg(self):
@@ -40,8 +39,8 @@ class SimRating:
         return self._diff
 
     @property
-    def diff_length_ratio(self):
-        return self._diff_length_ratio
+    def diff_lines_ratio(self):
+        return self._diff_lines_ratio
 
     def __lt__(self, other):
         return self.msg + self.diff < other.msg + other.diff
@@ -128,7 +127,7 @@ class EvaluationResult(dict):
                     already_detected += 1
                     continue
 
-                if sim_rating.diff_length_ratio < thresholds.diff_length:
+                if sim_rating.diff_lines_ratio < thresholds.diff_lines_ratio:
                     skipped_by_dlr += 1
                     continue
 
@@ -164,7 +163,7 @@ class EvaluationResult(dict):
                     compare_hashes(orig_commit_hash, cand_commit_hash)
                     print('Length of list of candidates: %d' % len(candidates))
                     print('Rating: %3.2f (%3.2f message and %3.2f diff, diff length ratio: %3.2f)' %
-                          (rating, sim_rating.msg, sim_rating.diff, sim_rating.diff_length_ratio))
+                          (rating, sim_rating.msg, sim_rating.diff, sim_rating.diff_lines_ratio))
                     print('(y)ay or (n)ay or (s)kip?  To abort: halt and (d)iscard, (h)alt and save')
 
                 if yns not in {'y', 'n', 's', 'd', 'h'}:
@@ -283,10 +282,10 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
     orig = get_commit(original_hash)
     cand = get_commit(candidate_hash)
 
-    left_diff_length = orig.diff_length
-    right_diff_length = cand.diff_length
+    left_diff_lines = orig.diff_lines
+    right_diff_lines = cand.diff_lines
 
-    diff_length_ratio = min(left_diff_length, right_diff_length) / max(left_diff_length, right_diff_length)
+    diff_lines_ratio = min(left_diff_lines, right_diff_lines) / max(left_diff_lines, right_diff_lines)
 
     # get rating of message
     msg_rating = fuzz.token_sort_ratio(orig.message, cand.message) / 100
@@ -332,7 +331,7 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
 
     diff_rating = mean(levenshteins) / 100
 
-    return SimRating(msg_rating, diff_rating, diff_length_ratio)
+    return SimRating(msg_rating, diff_rating, diff_lines_ratio)
 
 
 def _preevaluation_helper(candidate_hashes, orig_hash):

@@ -54,7 +54,7 @@ class Commit:
         self.message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
                                    self.message))
 
-        self.diff_length, self.diff = Commit._parse_diff(diff)
+        self.diff_lines, self.diff = Commit._parse_diff(diff)
 
         self.affected = set()
         for i, j in self.diff.keys():
@@ -80,7 +80,7 @@ class Commit:
         # diff length ratio
         # Filter parts of interest
         lines_of_interest = list(filter(lambda x: Commit.DIFF_SELECTOR_REGEX.match(x), diff))
-        diff_length = sum(map(len, lines_of_interest))
+        diff_lines = sum(map(len, lines_of_interest))
 
         # Check if we understand the diff format
         if diff and Commit.EXCLUDE_CC_REGEX.match(diff[0]):
@@ -140,7 +140,7 @@ class Commit:
                 retval[diff_index][hunktitle] = (retval[diff_index][hunktitle][0] + hunk_changes[0], \
                                                  retval[diff_index][hunktitle][1] + hunk_changes[1])
 
-        return diff_length, retval
+        return diff_lines, retval
 
 
 class VersionPoint:
