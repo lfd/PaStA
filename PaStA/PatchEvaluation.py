@@ -364,8 +364,6 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
     if parallelise:
         p = Pool(poolsize)
         preeval_result = p.map(f, original_hashes)
-        p.close()
-        p.join()
     else:
         preeval_result = list(map(f, original_hashes))
     # Filter empty candidates
@@ -379,12 +377,8 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
 
         f = functools.partial(evaluate_single_patch, thresholds, original_hash)
 
-        if parallelise:
-            chunksize = ceil(len(candidate_list) / poolsize)
-            pool = Pool(poolsize)
-            result = pool.map(f, candidate_list, chunksize=chunksize)
-            pool.close()
-            pool.join()
+        if parallelise and len(candidate_list) > 3*poolsize:
+            result = p.map(f, candidate_list)
         else:
             result = list(map(f, candidate_list))
 
@@ -395,6 +389,10 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
         result.sort(key=lambda x: x[1], reverse=True)
 
         retval[original_hash] = result
+
+    if parallelise:
+        p.close()
+        p.join()
 
     if verbose:
         sys.stdout.write('\n')
