@@ -8,7 +8,7 @@ import sys
 from termcolor import colored
 
 from PaStA.EquivalenceClass import EquivalenceClass
-from PaStA.PatchEvaluation import EvaluationResult, EvaluationType, evaluate_patch_list
+from PaStA.PatchEvaluation import EvaluationResult, EvaluationType, evaluate_patch_list, SimRating
 from PaStA import config, patch_stack_definition
 from PaStA.PatchStack import cache_commit_hashes, get_commit
 
@@ -16,6 +16,36 @@ from PaStA.PatchStack import cache_commit_hashes, get_commit
 def _evaluate_patch_list_wrapper(args):
     orig, cand, type = args
     return evaluate_patch_list(orig, cand, type, config.thresholds)
+
+
+def find_cherries(commit_hashes, dest_list, type):
+    print('Auto-detecting cherry-picks...')
+    cherries = EvaluationResult(type)
+    cherries.set_universe(set())
+
+    cherry_rgxs = [r'.*pick.*',
+                   r'.*upstream.*commit.*',
+                   r'.*commit.*upstream.*']
+    cherry_rgxs = re.compile('(' + ')|('.join(cherry_rgxs) + ')', re.IGNORECASE)
+    sha1_regex = re.compile(r'\b([0-9a-fA-F]{5,40})\b')
+
+    for commit_hash in commit_hashes:
+        commit = get_commit(commit_hash)
+        for line in commit.message:
+            if cherry_rgxs.match(line):
+                sha_found = sha1_regex.search(line)
+                if not sha_found:
+                    continue
+
+                cherry = sha_found.group(1)
+                if cherry in dest_list:
+                    cherries[commit_hash] = [(cherry, SimRating(1.0, 1.0, 1.0))]
+                else:
+                    print('Found cherry-pick: %s <-> %s but it is not a valid reference in this context' %
+                          (commit_hash, cherry))
+
+    print('Done. Found %d cherry-picks' % len(cherries))
+    return cherries
 
 
 def analyse_succ():
@@ -33,6 +63,10 @@ def analyse_succ():
 
     cache_commit_hashes(patch_stack_definition.commits_on_stacks)
 
+    cherries = find_cherries(patch_stack_definition.commits_on_stacks,
+                             patch_stack_definition.commits_on_stacks,
+                             EvaluationType.PatchStack)
+
     print('Starting evaluation.')
     pool = Pool(cpu_count())
     results = pool.map(_evaluate_patch_list_wrapper, evaluation_list, chunksize=1)
@@ -44,6 +78,7 @@ def analyse_succ():
     evaluation_result.set_universe(patch_stack_definition.commits_on_stacks)
     for result in results:
         evaluation_result.merge(result)
+    evaluation_result.merge(cherries)
 
     return evaluation_result
 
@@ -64,15 +99,20 @@ def analyse_stack(similar_patches):
     # Cache commits
     cache_commit_hashes(representatives)
 
-    result = evaluate_patch_list(representatives,
-                                 representatives,
-                                 EvaluationType.PatchStack,
-                                 config.thresholds,
-                                 parallelise=True,
-                                 verbose=True)
-    result.set_universe(representatives)
+    cherries = find_cherries(representatives,
+                             patch_stack_definition.commits_on_stacks,
+                             EvaluationType.PatchStack)
 
-    return result
+    evaluation_result = evaluate_patch_list(representatives,
+                                            representatives,
+                                            EvaluationType.PatchStack,
+                                            config.thresholds,
+                                            parallelise=True,
+                                            verbose=True)
+    evaluation_result.merge(cherries)
+    evaluation_result.set_universe(representatives)
+
+    return evaluation_result
 
 
 def analyse_upstream(similar_patches):
@@ -89,28 +129,9 @@ def analyse_upstream(similar_patches):
     cache_commit_hashes(patch_stack_definition.upstream_hashes)
     cache_commit_hashes(representatives)
 
-    print('Auto-detecting cherry-picks...')
-    cherry_picks = EvaluationResult(EvaluationType.Upstream)
-    cherry_picks.set_universe(set())
-    cherry_rgxs = [r'.*pick.*',
-                   r'.*upstream.*commit.*',
-                   r'.*commit.*upstream.*']
-    cherry_rgxs = re.compile('(' + ')|('.join(cherry_rgxs) + ')', re.IGNORECASE)
-    sha1_regex = re.compile(r'\b([0-9a-fA-F]{5,40})\b')
-    for commit_hash in representatives:
-        commit = get_commit(commit_hash)
-        for line in commit.message:
-            if cherry_rgxs.match(line):
-                sha_found = sha1_regex.search(line)
-                if not sha_found:
-                    continue
-                upstream_hash = sha_found.group(1)
-                if upstream_hash in patch_stack_definition.upstream_hashes:
-                    cherry_picks[commit_hash] = [(upstream_hash, 1.0, 1.0, 1.0)]
-                else:
-                    print('Found cherry-pick: %s <-> %s but upstream is not in upstream candidates list.' %
-                          (commit_hash, upstream_hash))
-    print('Done. Found %d cherry-picks' % len(cherry_picks))
+    cherries = find_cherries(representatives,
+                             patch_stack_definition.upstream_hashes,
+                             EvaluationType.Upstream)
 
     print('Starting evaluation.')
     evaluation_result = evaluate_patch_list(representatives, patch_stack_definition.upstream_hashes,
@@ -119,7 +140,7 @@ def analyse_upstream(similar_patches):
                                             cpu_factor=0.5)
     print('Evaluation completed.')
 
-    evaluation_result.merge(cherry_picks)
+    evaluation_result.merge(cherries)
 
     # We don't have a universe in this case
     evaluation_result.set_universe(set())
