@@ -339,6 +339,21 @@ def _preevaluation_helper(candidate_hashes, orig_hash):
     return orig_hash, list(filter(f, candidate_hashes))
 
 
+def _evaluation_helper(thresholds, orig_cands, verbose=False):
+    orig, cands = orig_cands
+    if verbose:
+        print('Evaluating 1 commit hash against %d commit hashes' % len(cands))
+
+    f = functools.partial(evaluate_single_patch, thresholds, orig)
+    results = list(map(f, cands))
+    results = list(zip(cands, results))
+
+    # sort SimRating
+    results.sort(key=lambda x: x[1], reverse=True)
+
+    return orig, results
+
+
 def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds,
                         parallelise=False, verbose=False,
                         cpu_factor=1.25):
@@ -353,49 +368,38 @@ def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds
     :return: a dictionary with originals as keys and a list of potential candidates as value
     """
 
-    retval = EvaluationResult(eval_type=eval_type)
     poolsize = int(cpu_count() * cpu_factor)
 
     print('Evaluating %d commit hashes against %d commit hashes' % (len(original_hashes), len(candidate_hashes)))
 
+    # Bind candidate hashes to preevaluation
+    f_preeval = functools.partial(_preevaluation_helper, candidate_hashes)
+    # Bind thresholds to evaluation
+    f_eval = functools.partial(_evaluation_helper, thresholds, verbose=True)
+
     if verbose:
         print('Running preevaluation.')
-    f = functools.partial(_preevaluation_helper, candidate_hashes)
     if parallelise:
         p = Pool(poolsize)
-        preeval_result = p.map(f, original_hashes)
+        preeval_result = p.map(f_preeval, original_hashes)
     else:
-        preeval_result = list(map(f, original_hashes))
+        preeval_result = list(map(f_preeval, original_hashes))
+
     # Filter empty candidates
     preeval_result = dict(filter(lambda x: not not x[1], preeval_result))
     if verbose:
         print('Preevaluation finished.')
 
-    for i, (original_hash, candidate_list) in enumerate(preeval_result.items()):
-        if verbose:
-            sys.stdout.write('\r Evaluating %d/%d' % (i+1, len(preeval_result)))
-
-        f = functools.partial(evaluate_single_patch, thresholds, original_hash)
-
-        if parallelise and len(candidate_list) > 3*poolsize:
-            result = p.map(f, candidate_list)
-        else:
-            result = list(map(f, candidate_list))
-
-        # Zip candidate hashes and corresponding results
-        result = list(zip(candidate_list, result))
-
-        # sort SimRating
-        result.sort(key=lambda x: x[1], reverse=True)
-
-        retval[original_hash] = result
-
     if parallelise:
+        result = p.map(f_eval, preeval_result.items())
         p.close()
         p.join()
+    else:
+        result = list(map(f_eval, preeval_result.items()))
 
-    if verbose:
-        sys.stdout.write('\n')
+    retval = EvaluationResult(eval_type=eval_type)
+    for orig, evaluation in result:
+        retval[orig] = evaluation
 
     return retval
 
