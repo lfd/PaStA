@@ -35,7 +35,7 @@ def analyse_succ():
 
     print('Starting evaluation.')
     pool = Pool(cpu_count())
-    results = pool.map(_evaluate_patch_list_wrapper, evaluation_list)
+    results = pool.map(_evaluate_patch_list_wrapper, evaluation_list, chunksize=1)
     pool.close()
     pool.join()
     print('Evaluation completed.')
