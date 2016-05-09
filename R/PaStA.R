@@ -42,7 +42,7 @@ savePlot <- function(filename, plot) {
   tex_filename <- file.path(output_dir, paste(project_name, "-", filename, ".tex", sep = ""))
   png_filename <- file.path(output_dir, paste(project_name, "-", filename, ".png", sep = ""))
   
-  tikz(tex_filename, standAlone = FALSE, width = 5, height = 5)
+  tikz(tex_filename, standAlone = FALSE, width = 5, height = 5, sanitize = TRUE)
   print(plot)
   dev.off()
 
