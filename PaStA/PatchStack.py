@@ -202,7 +202,7 @@ class PatchStackDefinition:
         # Set containing all upstream commit hashes
         self._upstream_hashes = upstream_hashes
 
-        # Each PatchStack is assigned to an identifying number
+        # Bidirectional map: each PatchStack is assigned to an identifying number et vice versa
         self._stack_version_to_int = {}
 
         # This dict is used to map a commit hash to a patch stack
@@ -213,7 +213,10 @@ class PatchStackDefinition:
         cntr = 0
         for i in self:
             self._commits_on_stacks |= i.commit_hashes
+
+            # Allow forward as well as reverse lookups
             self._stack_version_to_int[i] = cntr
+            self._stack_version_to_int[cntr] = i
             cntr += 1
 
             for commit_hash in i.commit_hashes:
