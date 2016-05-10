@@ -295,6 +295,10 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
     # get rating of message
     msg_rating = fuzz.token_sort_ratio(orig.message, cand.message) / 100
 
+    # Skip on diff_lines_ratio less than 1%
+    if diff_lines_ratio < 0.01:
+        return SimRating(msg_rating, 0, diff_lines_ratio)
+
     # traverse through the left patch
     levenshteins = []
     for file_identifier, lhunks in orig.diff.items():
