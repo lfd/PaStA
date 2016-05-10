@@ -1,6 +1,5 @@
 import csv
 from datetime import datetime
-import time
 from multiprocessing import Pool, cpu_count
 import os
 import re
