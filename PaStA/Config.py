@@ -62,10 +62,10 @@ class Config:
         if not self.project_name:
             raise RuntimeError('Project name not found')
 
-        self.repo = pasta.get('REPO')
-        if not self.repo:
+        self.repo_location = pasta.get('REPO')
+        if not self.repo_location:
             raise RuntimeError('Location of repository not found')
-        self.repo = os.path.join(self._project_root, self.repo)
+        self.repo_location = os.path.join(self._project_root, self.repo_location)
 
         self.upstream_range = pasta.get('UPSTREAM_MIN'), pasta.get('UPSTREAM_MAX')
         if not all(self.upstream_range):
