@@ -222,6 +222,9 @@ class PatchStackDefinition:
             for commit_hash in i.commit_hashes:
                 self._hash_to_version_lookup[commit_hash] = i
 
+        # Absolute number of patch stacks
+        self._num_stacks = cntr
+
     @property
     def upstream_hashes(self):
         return self._upstream_hashes
@@ -239,6 +242,34 @@ class PatchStackDefinition:
         :return: Returns the patch stack that contains commit hash or None
         """
         return self._hash_to_version_lookup[commit_hash]
+
+    def get_predecessor(self, stack):
+        """
+        Get the predecessor patch stack of 'stack'
+        :param stack: Stack version
+        :return: PatchStack predecessing stack or None
+        """
+        i = self._stack_version_to_int[stack]
+        if i == 0:
+            return None
+        return self._stack_version_to_int[i-1]
+
+    def get_successor(self, stack):
+        """
+        Get the successor patch stack of 'stack'
+        :param stack: Stack version
+        :return: PatchStack successing stack or None
+        """
+        i = self._stack_version_to_int[stack]
+        if i >= self._num_stacks - 1:
+            return None
+        return self._stack_version_to_int[i+1]
+
+    def get_latest_stack(self):
+        return self.patch_stack_groups[-1][1][-1]
+
+    def get_oldest_stack(self):
+        return self.patch_stack_groups[0][1][0]
 
     def iter_groups(self):
         for i in self.patch_stack_groups:
