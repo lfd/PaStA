@@ -50,7 +50,10 @@ def find_cherries(commit_hashes, dest_list, type):
 
                 cherry = sha_found.group(1)
                 if cherry in dest_list:
-                    cherries[commit_hash] = [(cherry, SimRating(1.0, 1.0, 1.0))]
+                    if commit_hash in cherries:
+                        cherries[commit_hash].append((cherry, SimRating(1.0, 1.0, 1.0)))
+                    else:
+                        cherries[commit_hash] = [(cherry, SimRating(1.0, 1.0, 1.0))]
                 else:
                     print('Found cherry-pick: %s <-> %s but it is not a valid reference in this context' %
                           (commit_hash, cherry))
