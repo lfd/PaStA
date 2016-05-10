@@ -259,9 +259,10 @@ def preevaluate_single_patch(original_hash, candidate_hash):
     if original_hash == candidate_hash:
         return False
 
-    delta = cand.author_date - orig.author_date
-    if delta.days < 0:
-        return False
+    # Don't rely on author dates!
+    #delta = cand.author_date - orig.author_date
+    #if delta.days < 0:
+    #    return False
 
     # Check if patch is a revertion
     if orig.is_revert != cand.is_revert:
