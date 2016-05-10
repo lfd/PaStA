@@ -106,7 +106,12 @@ class EvaluationResult(dict):
         for i in self.universe:
             equivalence_class.insert_single(i)
 
-        for orig_commit_hash, candidates in self.items():
+        # Convert the dictionary of evaluation results to a sorted list,
+        # sorted by its SimRating
+        sorted_er = list(self.items())
+        sorted_er.sort(key=lambda x: x[1][0][1])
+
+        for orig_commit_hash, candidates in sorted_er:
 
             if halt_save:
                 break
