@@ -196,12 +196,19 @@ class PatchStackDefinition:
     HEADER_NAME_REGEX = re.compile(r'## (.*)')
 
     def __init__(self, patch_stack_groups, upstream_hashes):
+
+        # List containing all patch stacks, grouped in major versions
         self.patch_stack_groups = patch_stack_groups
+        # Set containing all upstream commit hashes
         self._upstream_hashes = upstream_hashes
 
+        # Each PatchStack is assigned to an identifying number
         self._stack_version_to_int = {}
+
+        # This dict is used to map a commit hash to a patch stack
         self._hash_to_version_lookup = {}
 
+        # Set containing all commit hashes on the patch stacks
         self._commits_on_stacks = set()
         cntr = 0
         for i in self:
