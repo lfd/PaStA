@@ -11,7 +11,6 @@ from PaStA import config, repo
 # dictionary for globally cached commits
 commits = {}
 
-
 class Commit:
     COMMIT_HASH_LOCATION = re.compile(r'(..)(..).*')
 
@@ -35,24 +34,26 @@ class Commit:
     def __init__(self, commit_hash):
 
         self.commit_hash = commit_hash
+        commit = repo[commit_hash]
 
-        tmp = Commit.COMMIT_HASH_LOCATION.match(commit_hash)
-        commit_hash_location = '%s/%s/%s' % (tmp.group(1), tmp.group(2), commit_hash)
-
-        get_content = lambda x: file_to_string(os.path.join(x, commit_hash_location))
-        message = get_content(config.commit.messages)
-        diff = get_content(config.commit.diffs)
-        date = get_content(config.commit.date)
-        author_email = get_content(config.commit.author_email)
-
+        message = commit.message
+        # Is a revert message?
         self.is_revert = bool(Commit.REVERT_REGEX.search(message))
-
         # Split by linebreaks and filter empty lines
         self.message = list(filter(None, message.splitlines()))
         # Filter signed-off-by lines
         self.message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
                                    self.message))
 
+        # Respect timezone offsets?
+        self.author_date = datetime.fromtimestamp(commit.author.time)
+        self.commit_date = datetime.fromtimestamp(commit.commit_time)
+
+        self.author_email = commit.author.email
+
+        tmp = Commit.COMMIT_HASH_LOCATION.match(commit_hash)
+        commit_hash_location = '%s/%s/%s' % (tmp.group(1), tmp.group(2), commit_hash)
+        diff = file_to_string(os.path.join(config.diffs_location, commit_hash_location))
         self.diff_lines, self.diff = Commit._parse_diff(diff)
 
         self.affected = set()
@@ -62,13 +63,6 @@ class Commit:
                 self.affected.add(i[2:])
             if '/dev/null' not in j:
                 self.affected.add(j[2:])
-
-        date = date.splitlines()
-
-        self.author_date = datetime.fromtimestamp(int(date[0]))
-        self.commit_date = datetime.fromtimestamp(int(date[1]))
-
-        self.author_email = author_email
 
     @staticmethod
     def _parse_diff(diff):
@@ -351,25 +345,6 @@ def get_commits_from_file(filename):
     content = filter(lambda x: not x.startswith('#'), content)
     # return filtered set
     return set(content)
-
-
-def get_next_release_date(commit_hash):
-    description = repo.git.describe('--contains', commit_hash)
-    description = description.split('~')[0]
-    # The -1 will suppress GPG signatures
-    timestamp = repo.git.show('--pretty=format:%ct', '-1', '--no-patch', '--quiet', description)
-    return datetime.fromtimestamp(int(timestamp))
-
-
-def get_commit_hashes(start, end):
-    """
-    :param start: Start commit
-    :param end: End commit
-    :return: Returns a set of all commit hashes between a certain range
-    """
-    hashes = repo.git.log('--pretty=format:%H', start + '...' + end)
-    hashes = hashes.splitlines()
-    return set(hashes)
 
 
 def get_commit(commit_hash):

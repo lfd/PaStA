@@ -2,13 +2,28 @@
 
 import argparse
 
+from datetime import datetime
 from multiprocessing import Pool, cpu_count
 import sys
 from termcolor import colored
 
 from PaStA.EquivalenceClass import EquivalenceClass
-from PaStA.PatchStack import get_commit, get_next_release_date, cache_commit_hashes, format_date_ymd
-from PaStA import config, patch_stack_definition
+from PaStA.PatchStack import get_commit, cache_commit_hashes, format_date_ymd
+from PaStA import config, patch_stack_definition, repo
+
+# In this case, we have to use GitPython as pygit2 does not support describe --contains
+import git as gitpython
+
+
+my_repo = gitpython.Repo(config.repo_location)
+
+
+def get_next_release_date(commit_hash):
+    description = my_repo.git.describe('--contains', commit_hash)
+    description = description.split('~')[0]
+
+    timestamp = repo.lookup_reference('refs/tags/' + description).get_object().commit_time
+    return datetime.fromtimestamp(int(timestamp))
 
 
 def describe_commit(commit_hash):

@@ -31,18 +31,6 @@ class Config:
     DEFAULT_CONFIG = 'PaStA-resources/common/default.cfg'
     BLACKLIST_LOCATION = 'PaStA-resources/common/blacklists'
 
-    class CommitLocation:
-        DATE = 'dates/'
-        AUTHOR_EMAIL = 'author_emails/'
-        DIFFS = 'diffs/'
-        MESSAGES = 'messages/'
-
-        def __init__(self, log_location):
-            self.date = os.path.join(log_location, Config.CommitLocation.DATE)
-            self.author_email = os.path.join(log_location, Config.CommitLocation.AUTHOR_EMAIL)
-            self.diffs = os.path.join(log_location, Config.CommitLocation.DIFFS)
-            self.messages = os.path.join(log_location, Config.CommitLocation.MESSAGES)
-
     def __init__(self, config_file):
         self._project_root = os.path.dirname(os.path.realpath(config_file))
         self._config_file = config_file
@@ -80,8 +68,7 @@ class Config:
         self.patch_groups = os.path.join(self._project_root, pasta.get('PATCH_GROUPS'))
         self.commit_description = os.path.join(self._project_root, pasta.get('COMMIT_DESCRIPTION'))
         self.evaluation_result = os.path.join(self._project_root, pasta.get('EVALUATION_RESULT'))
-        self.log_location = os.path.join(self._project_root, pasta.get('LOG'))
-        self.commit = Config.CommitLocation(self.log_location)
+        self.diffs_location = os.path.join(self._project_root, pasta.get('DIFFS'))
         self.R_resources = os.path.join(self._project_root, pasta.get('R_RESOURCES'))
         self.upstream_blacklist = pasta.get('UPSTREAM_BLACKLIST')
         if self.upstream_blacklist:
