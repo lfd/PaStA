@@ -19,6 +19,17 @@ def _evaluate_patch_list_wrapper(args):
 
 
 def find_cherries(commit_hashes, dest_list, type):
+    """
+    find_cherries() takes a list of commit hashes, a list of potential candidates and
+    the type of the evaluation (PatchStack / Upstream).
+
+    A cherry pick can happen on both sides: Pick from one patch stacks to another one or
+    a pick from upstream. We have to distinguish between those types.
+    :param commit_hashes: list of commit-hashes
+    :param dest_list: list of potential cherry-pick hashes
+    :param type: PatchStack or Upstream
+    :return: EvaluationResult containing all detected cherry picks
+    """
     print('Auto-detecting cherry-picks...')
     cherries = EvaluationResult(type)
     cherries.set_universe(set())
