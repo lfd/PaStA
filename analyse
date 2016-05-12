@@ -63,17 +63,15 @@ def find_cherries(commit_hashes, dest_list, type):
 
 
 def analyse_succ():
-    # Check patch against next patch version number, patch by patch
+    # Check stacks against successive stacks
     evaluation_list = []
-    pred = None
     for patch_stack in patch_stack_definition:
-        if not pred:
-            pred = patch_stack
-            continue
+        successor = patch_stack_definition.get_successor(patch_stack)
+        if successor == None:
+            break
 
-        print('Queueing %s <-> %s' % (pred.stack_version, patch_stack.stack_version))
-        evaluation_list.append((pred.commit_hashes, patch_stack.commit_hashes, EvaluationType.PatchStack))
-        pred = patch_stack
+        print('Queueing %s <-> %s' % (patch_stack.stack_version, successor.stack_version))
+        evaluation_list.append((patch_stack.commit_hashes, successor.commit_hashes, EvaluationType.PatchStack))
 
     cache_commit_hashes(patch_stack_definition.commits_on_stacks)
 
