@@ -185,6 +185,7 @@ def create_patch_groups(sp_filename, su_filename, pg_filename):
     patch_groups.to_file(pg_filename)
     print(colored(' [done]', 'green'))
 
+
 def main():
     parser = argparse.ArgumentParser(description='Analyse stack by stack')
     parser.add_argument('-er', dest='evaluation_result_filename', metavar='filename',
