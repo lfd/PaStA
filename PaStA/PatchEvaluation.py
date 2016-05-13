@@ -72,10 +72,11 @@ class EvaluationResult(dict):
             else:
                 self[key] = value
 
-            # Sort by SimRating
-            self[key].sort(key=lambda x: x[1], reverse=True)
-
     def to_file(self, filename):
+        # Sort by SimRating
+        for i in self.keys():
+            self[i].sort(key=lambda x: x[1], reverse=True)
+
         with open(filename, 'wb') as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
