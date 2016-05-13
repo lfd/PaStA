@@ -10,6 +10,7 @@ $ git clone git@gitlab.lfd.sturhax.de:PaStA/PaStA.git
 **PaStA** runs on *Python3*.
 Dependencies:
 - git-python
+- pygit2
 - termcolor
 
 Running PaStA
