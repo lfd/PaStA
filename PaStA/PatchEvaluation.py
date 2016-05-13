@@ -142,13 +142,10 @@ class EvaluationResult(dict):
                         skipped_by_commit_date += 1
                         continue
 
-                # Set rating to 1 if 100% diff match and at least 10% msg match
-                elif False and sim_rating.diff == 1.0 and sim_rating.msg > 0.1:
-                    rating = 1.0
-                else:
-                    # Weight by message_diff_weight
-                    rating = thresholds.message_diff_weight * sim_rating.msg +\
-                             (1-thresholds.message_diff_weight) * sim_rating.diff
+
+                # Weight by message_diff_weight
+                rating = thresholds.message_diff_weight * sim_rating.msg +\
+                         (1-thresholds.message_diff_weight) * sim_rating.diff
 
                 # Maybe we can autoaccept the patch?
                 if rating >= thresholds.autoaccept:
