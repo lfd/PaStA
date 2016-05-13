@@ -11,6 +11,7 @@ from PaStA import config, repo
 # dictionary for globally cached commits
 commits = {}
 
+
 class Commit:
     COMMIT_HASH_LOCATION = re.compile(r'(..)(..).*')
 
