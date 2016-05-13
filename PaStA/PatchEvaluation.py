@@ -1,7 +1,6 @@
 from enum import Enum
 import functools
 from fuzzywuzzy import fuzz
-from math import ceil
 from multiprocessing import Pool, cpu_count
 import pickle
 from statistics import mean
@@ -426,4 +425,4 @@ def getch():
 
 
 def compare_hashes(orig_commit_hash, cand_commit_hash):
-    call(['./compare_hashes.sh', config.repo, orig_commit_hash, cand_commit_hash])
+    call(['./compare_hashes.sh', config.repo_location, orig_commit_hash, cand_commit_hash])
