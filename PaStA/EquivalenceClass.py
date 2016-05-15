@@ -23,6 +23,51 @@ class EquivalenceClass:
         self.forward_lookup = {}
         self.transitive_list = []
 
+    def insert_single(self, key):
+        if key not in self.forward_lookup:
+            self.transitive_list.append(PropertyList([key]))
+            new_id = len(self.transitive_list) - 1
+            self.forward_lookup[key] = new_id
+
+    def insert(self, key1, key2):
+        id1 = key1 in self.forward_lookup
+        id2 = key2 in self.forward_lookup
+
+        if not id1 and not id2:
+            self.transitive_list.append(PropertyList([key1, key2]))
+            id = len(self.transitive_list) - 1
+            self.forward_lookup[key1] = id
+            self.forward_lookup[key2] = id
+        elif id1 and id2:
+            # Get indices
+            id1 = self.forward_lookup[key1]
+            id2 = self.forward_lookup[key2]
+
+            # if indices equal, then we have nothing to do
+            if id1 != id2:
+                # Merge lists
+                self.transitive_list[id1] += self.transitive_list[id2]
+                # Remove orphaned list
+                self.transitive_list[id2] = PropertyList()
+
+                for i in self.transitive_list[id1]:
+                    self.forward_lookup[i] = id1
+        elif id1:
+            id = self.forward_lookup[key1]
+            self.transitive_list[id].append(key2)
+            self.forward_lookup[key2] = id
+        else:
+            id = self.forward_lookup[key2]
+            self.transitive_list[id].append(key1)
+            self.forward_lookup[key1] = id
+
+    def merge(self, other):
+        for i in other.transitive_list:
+            base = i[0]
+            for j in i[1:]:
+                self.insert(base, j)
+        self.optimize()
+
     def optimize(self):
 
         # Get optimized list by filtering orphaned elements
@@ -45,83 +90,35 @@ class EquivalenceClass:
     def is_related(self, key1, key2):
         if key1 in self.forward_lookup and key2 in self.forward_lookup:
             return self.forward_lookup[key1] == self.forward_lookup[key2]
-
         return False
-
-    def insert_single(self, key):
-        if key not in self.forward_lookup:
-            self.transitive_list.append(PropertyList([key]))
-            index = len(self.transitive_list) - 1
-            self.forward_lookup[key] = index
 
     def set_property(self, key, property):
         if key not in self.forward_lookup:
             self.insert_single(key)
+        id = self.forward_lookup[key]
+        self.set_property_by_id(id, property)
 
-        index = self.forward_lookup[key]
-        self.transitive_list[index].property = property
+    def set_property_by_id(self, id, property):
+        if id < 0:
+            raise IndexError('Out of bounds')
+        self.transitive_list[id].property = property
 
     def get_property(self, key):
-        if key not in self.forward_lookup:
-            return None
-        index = self.forward_lookup[key]
-        return self.transitive_list[index].property
+        id = self.forward_lookup[key]
+        return self.get_property_by_id(id)
 
     def get_property_by_id(self, id):
-        try:
-            return self.transitive_list[id].property
-        except IndexError:
-            return None
-
-    def insert(self, key1, key2):
-        index1 = key1 in self.forward_lookup
-        index2 = key2 in self.forward_lookup
-
-        if not index1 and not index2:
-            self.transitive_list.append(PropertyList([key1, key2]))
-            index = len(self.transitive_list) - 1
-            self.forward_lookup[key1] = index
-            self.forward_lookup[key2] = index
-        elif index1 and index2:
-            # Get indices
-            index1 = self.forward_lookup[key1]
-            index2 = self.forward_lookup[key2]
-
-            # if indices equal, then we have nothing to do
-            if index1 != index2:
-                # Merge lists
-                self.transitive_list[index1] += self.transitive_list[index2]
-                # Remove orphaned list
-                self.transitive_list[index2] = PropertyList()
-
-                for i in self.transitive_list[index1]:
-                    self.forward_lookup[i] = index1
-        elif index1:
-            index = self.forward_lookup[key1]
-            self.transitive_list[index].append(key2)
-            self.forward_lookup[key2] = index
-        else:
-            index = self.forward_lookup[key2]
-            self.transitive_list[index].append(key1)
-            self.forward_lookup[key1] = index
-
-    def merge(self, other):
-        for i in other.transitive_list:
-            base = i[0]
-            for j in i[1:]:
-                self.insert(base, j)
-        self.optimize()
+        if id < 0:
+            raise IndexError('Out of bounds')
+        return self.transitive_list[id].property
 
     def get_equivalence_id(self, key):
         if key in self.forward_lookup:
             return self.forward_lookup[key]
-        return None
-
-    def get_commit_hashes_by_id(self, id):
-        try:
-            return set(self.transitive_list[id])
-        except IndexError:
-            return None
+        for i in self:
+            if i.property and i.property == key:
+                return self.forward_lookup[i[0]]
+        raise IndexError('Unable to find equivalence id for %s' % key)
 
     def get_representative_system(self, compare_function):
         """
@@ -151,11 +148,13 @@ class EquivalenceClass:
         :param key: commit hash
         :return: Returns a set of all related commit hashes
         """
-        retval = set()
-        if key in self.forward_lookup:
-            index = self.forward_lookup[key]
-            retval = set(self.transitive_list[index])
-        return retval
+        id = self.forward_lookup[key]
+        return self.get_commit_hashes_by_id(id)
+
+    def get_commit_hashes_by_id(self, id):
+        if id < 0:
+            raise IndexError('Out of bounds')
+        return set(self.transitive_list[id])
 
     def get_all_commit_hashes(self):
         """
