@@ -18,3 +18,5 @@ from PaStA.Config import Thresholds
 
 from PaStA import config, patch_stack_definition
 from PaStA.PatchStack import cache_commit_hashes, get_commit, format_date_ymd
+
+from PaStA.Export import release_dates, release_sort, upstream_analysis
