@@ -221,6 +221,9 @@ class PatchStackDefinition:
 
     @property
     def upstream_hashes(self):
+        """
+        :return: All upstream commit hashes considered in analysation
+        """
         return self._upstream_hashes
 
     @property
