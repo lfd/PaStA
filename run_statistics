@@ -39,18 +39,18 @@ def main():
     else:
         raise NotImplementedError('Unknown date selector: ' % args.date_selector)
 
-    # Write upstream occurence file
-    upstream_analysis(upstream_filename,
-                      patches_filename,
-                      occurrence_filename,
-                      patch_groups, date_selector)
+    # Export sorted list of release names
+    export_sorted_release_names(release_sort_filename)
 
-    # Write release dates file
-    release_dates(mainline_release_dates_filename,
-                  stack_release_dates_filename)
+    # Export release dates
+    export_release_dates(mainline_release_dates_filename,
+                         stack_release_dates_filename)
 
-    # Write release sort file
-    release_sort(release_sort_filename)
+    # Export information of patch groups
+    export_patch_groups(upstream_filename,
+                        patches_filename,
+                        occurrence_filename,
+                        patch_groups, date_selector)
 
     if args.R:
         call(['./R/PaStA.R',

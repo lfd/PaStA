@@ -1,7 +1,7 @@
 from PaStA import patch_stack_definition, format_date_ymd, get_commit
 
 
-def release_dates(mainline_release_dates_filename, stack_release_dates_filename):
+def export_release_dates(mainline_release_dates_filename, stack_release_dates_filename):
     stacks = dict()
     base = dict()
 
@@ -24,7 +24,15 @@ def release_dates(mainline_release_dates_filename, stack_release_dates_filename)
                                     format_date_ymd(date)))
 
 
-def upstream_analysis(upstream_filename, patches_filename, occurrence_filename, patch_groups, date_selector):
+def export_sorted_release_names(release_sort_filename):
+    with open(release_sort_filename, 'w') as f:
+        f.write('VersionGroup Version\n')
+        for version_group, stacks in patch_stack_definition.iter_groups():
+            for stack in stacks:
+                f.write('%s %s\n' % (version_group, stack.stack_version))
+
+
+def export_patch_groups(upstream_filename, patches_filename, occurrence_filename, patch_groups, date_selector):
     upstream = open(upstream_filename, 'w')
     patches = open(patches_filename, 'w')
     occurrence = open(occurrence_filename, 'w')
@@ -93,11 +101,3 @@ def upstream_analysis(upstream_filename, patches_filename, occurrence_filename, 
     upstream.close()
     patches.close()
     occurrence.close()
-
-
-def release_sort(release_sort_filename):
-    with open(release_sort_filename, 'w') as f:
-        f.write('VersionGroup Version\n')
-        for version_group, stacks in patch_stack_definition.iter_groups():
-            for stack in stacks:
-                f.write('%s %s\n' % (version_group, stack.stack_version))
