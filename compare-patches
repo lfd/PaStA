@@ -2,8 +2,7 @@
 
 import sys
 
-from PaStA.PatchEvaluation import preevaluate_single_patch, evaluate_single_patch, compare_hashes, getch
-from PaStA import config
+from PaStA import *
 
 def compare_patches(commits):
     for i in range(len(commits)-1):

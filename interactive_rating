@@ -3,10 +3,7 @@
 import argparse
 import os
 
-from PaStA.Config import Thresholds
-from PaStA.EquivalenceClass import EquivalenceClass
-from PaStA.PatchEvaluation import DictList, EvaluationResult, EvaluationType
-from PaStA import config
+from PaStA import *
 
 
 def patch_stack_rating(evaluation_result, similar_patches, false_positives,

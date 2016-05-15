@@ -4,9 +4,7 @@ import argparse
 import os
 from subprocess import call
 
-from PaStA.EquivalenceClass import EquivalenceClass
-from PaStA.PatchStack import get_commit, format_date_ymd
-from PaStA import config, patch_stack_definition
+from PaStA import *
 
 
 def release_dates(mainline_release_dates_filename, stack_release_dates_filename):
