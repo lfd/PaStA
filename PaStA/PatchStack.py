@@ -272,6 +272,17 @@ class PatchStackDefinition:
         for i in self.patch_stack_groups:
             yield i
 
+    def get_stack_by_name(self, name):
+        """
+        Lookup stack by name
+        :param name: stack version
+        :return: corresponding patch stack
+        """
+        for stack in self:
+            if stack.stack_version == name:
+                return stack
+        raise ValueError('Stack not found: %s' % name)
+
     def is_stack_version_greater(self, lhs, rhs):
         return self._stack_version_to_int[lhs] > self._stack_version_to_int[rhs]
 
