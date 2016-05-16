@@ -12,14 +12,17 @@ from PaStA import config, repo
 commits = {}
 
 
-def get_commits_from_file(filename):
+def get_commits_from_file(filename, ordered=True):
     content = file_to_string(filename, must_exist=True).splitlines()
     # Filter empty lines
     content = filter(None, content)
     # Filter comment lines
     content = filter(lambda x: not x.startswith('#'), content)
-    # return filtered set
-    return set(content)
+    # return filtered list or set
+    if ordered == True:
+        return list(content)
+    else:
+        return set(content)
 
 
 def file_to_string(filename, must_exist=True):
@@ -233,7 +236,7 @@ class PatchStack:
         """
         :return: A copy of the commit hashes list
         """
-        return set(self._commit_hashes)
+        return list(self._commit_hashes)
 
     @property
     def base_version(self):
@@ -282,7 +285,7 @@ class PatchStackDefinition:
         self._commits_on_stacks = set()
         cntr = 0
         for i in self:
-            self._commits_on_stacks |= i.commit_hashes
+            self._commits_on_stacks |= set(i.commit_hashes)
 
             # Allow forward as well as reverse lookups
             self._stack_version_to_int[i] = cntr
@@ -419,7 +422,8 @@ class PatchStackDefinition:
             patch_stack_groups.append((group_name, this_group))
 
         upstream = get_commits_from_file(os.path.join(config.stack_hashes, 'upstream'))
-        upstream -= get_commits_from_file(config.upstream_blacklist)
+        blacklist = get_commits_from_file(config.upstream_blacklist, ordered=False)
+        upstream = [x for x in upstream if x not in blacklist]
 
         # Create patch stack list
         retval = PatchStackDefinition(patch_stack_groups, upstream)
