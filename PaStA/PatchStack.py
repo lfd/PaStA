@@ -81,6 +81,7 @@ class Commit:
         self.author_date = datetime.fromtimestamp(commit.author.time)
         self.commit_date = datetime.fromtimestamp(commit.commit_time)
 
+        self.author = commit.author.name
         self.author_email = commit.author.email
 
         tmp = Commit.COMMIT_HASH_LOCATION.match(commit_hash)
