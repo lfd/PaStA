@@ -118,6 +118,10 @@ class Commit:
         return self._message
 
     @property
+    def subject(self):
+        return self._message[0]
+
+    @property
     def author_date(self):
         return self._author_date
 
