@@ -224,12 +224,10 @@ class VersionPoint:
 
 
 class PatchStack:
-    def __init__(self, base, stack):
+    def __init__(self, base, stack, commit_hashes):
         self._base = base
         self._stack = stack
-
-        # Commit hashes of the patch stack
-        self._commit_hashes = get_commits_from_file(os.path.join(config.stack_hashes, stack.version))
+        self._commit_hashes = commit_hashes
 
     @property
     def commit_hashes(self):
@@ -417,7 +415,10 @@ class PatchStackDefinition:
                                      row['StackVersion'],
                                      row['StackReleaseDate'])
 
-                this_group.append(PatchStack(base, stack))
+                # Commit hashes of the patch stack
+                commit_hashes = get_commits_from_file(os.path.join(config.stack_hashes, stack.version))
+
+                this_group.append(PatchStack(base, stack, commit_hashes))
 
             patch_stack_groups.append((group_name, this_group))
 
