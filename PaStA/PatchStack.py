@@ -413,3 +413,15 @@ def cache_commit_hashes(commit_hashes, parallelise=True):
         commits[commit_hash] = commit
 
     print(colored(' [done]', 'green'))
+
+
+def get_date_selector(selector):
+    # Date selector "Stack Release Date"
+    if selector == 'SRD':
+        date_selector = lambda x: patch_stack_definition.get_stack_of_commit(x).stack_release_date
+    # Date selector "Commit Date"
+    elif selector == 'CD':
+        date_selector = lambda x: get_commit(x).commit_date
+    else:
+        raise NotImplementedError('Unknown date selector: ' % selector)
+    return date_selector

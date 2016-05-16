@@ -32,12 +32,7 @@ def main():
     upstream_filename = os.path.join(r_resources, 'upstream')
     occurrence_filename = os.path.join(r_resources, 'patch-occurrence')
 
-    if args.date_selector == 'SRD':
-        date_selector = lambda x: patch_stack_definition.get_stack_of_commit(x).stack_release_date
-    elif args.date_selector == 'CD':
-        date_selector = lambda x: get_commit(x).commit_date
-    else:
-        raise NotImplementedError('Unknown date selector: ' % args.date_selector)
+    date_selector = get_date_selector(args.date_selector)
 
     # Export sorted list of release names
     export_sorted_release_names(release_sort_filename)
