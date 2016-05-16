@@ -12,6 +12,37 @@ from PaStA import config, repo
 commits = {}
 
 
+def get_commits_from_file(filename):
+    content = file_to_string(filename, must_exist=True).splitlines()
+    # Filter empty lines
+    content = filter(None, content)
+    # Filter comment lines
+    content = filter(lambda x: not x.startswith('#'), content)
+    # return filtered set
+    return set(content)
+
+
+def file_to_string(filename, must_exist=True):
+    try:
+        # Well things are crappy. For decades, encoding has been a real problem
+        # Git commits in the linux kernel are messy and sometimes have non-valid encoding
+        # Anyway, opening a file as binary and decoding it to iso8859 solves the problem :-)
+        with open(filename, 'rb') as f:
+            retval = str(f.read().decode('iso8859'))
+            f.close()
+    except FileNotFoundError:
+        print('Warning, file ' + filename + ' not found!')
+        if must_exist:
+            raise
+        return None
+
+    return retval
+
+
+def format_date_ymd(dt):
+    return dt.strftime('%Y-%m-%d')
+
+
 class Commit:
     COMMIT_HASH_LOCATION = re.compile(r'(..)(..).*')
 
@@ -352,14 +383,7 @@ class PatchStackDefinition:
         return retval
 
 
-def get_commits_from_file(filename):
-    content = file_to_string(filename, must_exist=True).splitlines()
-    # Filter empty lines
-    content = filter(None, content)
-    # Filter comment lines
-    content = filter(lambda x: not x.startswith('#'), content)
-    # return filtered set
-    return set(content)
+patch_stack_definition = PatchStackDefinition.parse_definition_file(config.patch_stack_definition)
 
 
 def get_commit(commit_hash):
@@ -389,24 +413,3 @@ def cache_commit_hashes(commit_hashes, parallelise=True):
         commits[commit_hash] = commit
 
     print(colored(' [done]', 'green'))
-
-
-def file_to_string(filename, must_exist=True):
-    try:
-        # Well things are crappy. For decades, encoding has been a real problem
-        # Git commits in the linux kernel are messy and sometimes have non-valid encoding
-        # Anyway, opening a file as binary and decoding it to iso8859 solves the problem :-)
-        with open(filename, 'rb') as f:
-            retval = str(f.read().decode('iso8859'))
-            f.close()
-    except FileNotFoundError:
-        print('Warning, file ' + filename + ' not found!')
-        if must_exist:
-            raise
-        return None
-
-    return retval
-
-
-def format_date_ymd(dt):
-    return dt.strftime('%Y-%m-%d')

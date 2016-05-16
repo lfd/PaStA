@@ -6,8 +6,7 @@ config = Config('config')
 
 repo = Repository(config.repo_location)
 
-from PaStA.PatchStack import PatchStackDefinition
-patch_stack_definition = PatchStackDefinition.parse_definition_file(config.patch_stack_definition)
+from PaStA.PatchStack import patch_stack_definition
 
 # Import statements
 from PaStA.EquivalenceClass import EquivalenceClass
@@ -16,7 +15,6 @@ from PaStA.PatchEvaluation import DictList, EvaluationResult, EvaluationType, ev
 
 from PaStA.Config import Thresholds
 
-from PaStA import config, patch_stack_definition
 from PaStA.PatchStack import cache_commit_hashes, get_commit, format_date_ymd
 
 from PaStA.Export import export_release_dates, export_sorted_release_names, export_patch_groups
