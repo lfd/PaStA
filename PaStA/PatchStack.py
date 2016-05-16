@@ -65,37 +65,77 @@ class Commit:
 
     def __init__(self, commit_hash):
 
-        self.commit_hash = commit_hash
+        self._commit_hash = commit_hash
         commit = repo[commit_hash]
 
         message = commit.message
         # Is a revert message?
-        self.is_revert = bool(Commit.REVERT_REGEX.search(message))
+        self._is_revert = bool(Commit.REVERT_REGEX.search(message))
         # Split by linebreaks and filter empty lines
-        self.message = list(filter(None, message.splitlines()))
+        self._message = list(filter(None, message.splitlines()))
         # Filter signed-off-by lines
-        self.message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
+        self._message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
                                    self.message))
 
         # Respect timezone offsets?
-        self.author_date = datetime.fromtimestamp(commit.author.time)
-        self.commit_date = datetime.fromtimestamp(commit.commit_time)
+        self._author_date = datetime.fromtimestamp(commit.author.time)
+        self._commit_date = datetime.fromtimestamp(commit.commit_time)
 
-        self.author = commit.author.name
-        self.author_email = commit.author.email
+        self._author = commit.author.name
+        self._author_email = commit.author.email
 
         tmp = Commit.COMMIT_HASH_LOCATION.match(commit_hash)
         commit_hash_location = '%s/%s/%s' % (tmp.group(1), tmp.group(2), commit_hash)
         diff = file_to_string(os.path.join(config.diffs_location, commit_hash_location))
-        self.diff_lines, self.diff = Commit._parse_diff(diff)
+        self._diff_lines, self._diff = Commit._parse_diff(diff)
 
-        self.affected = set()
+        self._affected = set()
         for i, j in self.diff.keys():
             # The [2:] will strip a/ and b/
             if '/dev/null' not in i:
-                self.affected.add(i[2:])
+                self._affected.add(i[2:])
             if '/dev/null' not in j:
-                self.affected.add(j[2:])
+                self._affected.add(j[2:])
+
+    @property
+    def commit_hash(self):
+        return self._commit_hash
+
+    @property
+    def is_revert(self):
+        return self._is_revert
+
+    @property
+    def diff_lines(self):
+        return self._diff_lines
+
+    @property
+    def diff(self):
+        return self._diff
+
+    @property
+    def message(self):
+        return self._message
+
+    @property
+    def author_date(self):
+        return self._author_date
+
+    @property
+    def commit_date(self):
+        return self._commit_date
+
+    @property
+    def author(self):
+        return self._author
+
+    @property
+    def author_email(self):
+        return self._author_email
+
+    @property
+    def affected(self):
+        return self._affected
 
     @staticmethod
     def _parse_diff(diff):
