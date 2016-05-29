@@ -65,7 +65,6 @@ def format_date_ymd(dt):
 
 
 class Commit:
-    COMMIT_HASH_LOCATION = re.compile(r'(..)(..).*')
     SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:'
                                  r'|Reported-by:|Tested-by:|LKML-Reference:|Patch:)'),
                                 re.IGNORECASE)
@@ -132,9 +131,13 @@ class Commit:
 
     @staticmethod
     def get_diff(commit_hash):
-        tmp = Commit.COMMIT_HASH_LOCATION.match(commit_hash)
-        commit_hash_location = '%s/%s/%s' % (tmp.group(1), tmp.group(2), commit_hash)
-        return file_to_string(os.path.join(config.diffs_location, commit_hash_location))
+        commit = repo[commit_hash]
+        if len(commit.parents) == 1:
+            diff = repo.diff(commit.parents[0], commit).patch
+        else:
+            # Filter merge commits and commits with no parents
+            diff = None
+        return diff or ''
 
     @property
     def commit_hash(self):

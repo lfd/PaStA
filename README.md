@@ -129,15 +129,6 @@ Default locations inside that directory:
   **##** group major versions of projects. Take a look at existing patch stack
   definitions.
 
-### Rolling out history and identifying the commit hashes on patch stacks
-For performance reasons, **PaStA** stores the diffs of all commit hashes as
-single files. `diffs/` is the location of the patches of the project. After
-creating the patch stack definition configuration file and the project
-configuration file, add your project to the `PaStA-resources/prepare_projects`
-script. Invoking this script will create the patch stack commit hash list inside
-`PaStA-resources/PROJECT_NAME/resources/stack-hashes/` and roll out the git
-history of the project.
-
 ### PaStA configuration format
 The **PaStA** configuration file scheme is similar to the Windows *ini* format.
 All configuration file inherit from `PaStA-resources/common/default.cfg` and
