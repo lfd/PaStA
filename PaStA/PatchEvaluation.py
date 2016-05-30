@@ -263,7 +263,7 @@ def preevaluate_single_patch(original_hash, candidate_hash):
         return False
 
     # Filtert auch merge commits
-    common_changed_files = len(orig.affected.intersection(cand.affected))
+    common_changed_files = len(orig.diff.affected.intersection(cand.diff.affected))
     if common_changed_files == 0:
         return False
 
@@ -282,8 +282,8 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
     orig = get_commit(original_hash)
     cand = get_commit(candidate_hash)
 
-    left_diff_lines = orig.diff_lines
-    right_diff_lines = cand.diff_lines
+    left_diff_lines = orig.diff.lines
+    right_diff_lines = cand.diff.lines
 
     diff_lines_ratio = min(left_diff_lines, right_diff_lines) / max(left_diff_lines, right_diff_lines)
 
@@ -296,10 +296,10 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
 
     # traverse through the left patch
     levenshteins = []
-    for file_identifier, lhunks in orig.diff.items():
-        if file_identifier in cand.diff:
+    for file_identifier, lhunks in orig.diff.patches.items():
+        if file_identifier in cand.diff.patches:
             levenshtein = []
-            rhunks = cand.diff[file_identifier]
+            rhunks = cand.diff.patches[file_identifier]
 
             for l_key, (l_removed, l_added) in lhunks.items():
                 """
