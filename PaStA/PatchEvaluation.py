@@ -270,6 +270,58 @@ def preevaluate_single_patch(original_hash, candidate_hash):
     return True
 
 
+def rate_diffs(thresholds, ldiff, rdiff):
+
+    levenshteins = []
+
+    for file_identifier, lhunks in ldiff.patches.items():
+        if file_identifier in rdiff.patches:
+            levenshtein = []
+            rhunks = rdiff.patches[file_identifier]
+
+            for l_hunk_heading, lhunk in lhunks.items():
+                """
+                 When comparing hunks, it is important to use the 'closest hunk' of the right side.
+                 The left hunk does not necessarily have to be absolutely similar to the name of the right hunk.
+                """
+
+                # Try to find closest hunk match on the right side
+                # First, assume that we have no match at all
+                r_hunk_heading = None
+
+                # Is the left hunk heading empty?
+                if l_hunk_heading == '':
+                    # Then search for an empty hunk heading on the right side
+                    if '' in rhunks:
+                        r_hunk_heading = ''
+                else:
+                    # This gets the closed levenshtein rating from key against a list of candidate keys
+                    closest_match, rating = sorted(
+                            map(lambda x: (x, fuzz.token_sort_ratio(l_hunk_heading, x)),
+                                rhunks.keys()),
+                            key=lambda x: x[1])[-1]
+                    if rating >= thresholds.heading * 100:
+                        r_hunk_heading = closest_match
+
+                # Only do comparison if we found an corresponding hunk on the right side
+                if r_hunk_heading is not None:
+                    rhunk = rhunks[r_hunk_heading]
+                    if lhunk.deletions and rhunk.deletions:
+                        levenshtein.append(fuzz.token_sort_ratio(lhunk.deletions, rhunk.deletions))
+                    if lhunk.insertions and rhunk.insertions:
+                        levenshtein.append(fuzz.token_sort_ratio(lhunk.insertions, rhunk.insertions))
+
+            if levenshtein:
+                levenshteins.append(mean(levenshtein))
+
+    if not levenshteins:
+        levenshteins = [0]
+
+    diff_rating = mean(levenshteins) / 100
+
+    return diff_rating
+
+
 def evaluate_single_patch(thresholds, original_hash, candidate_hash):
 
     # Just in case.
@@ -294,46 +346,8 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
     if diff_lines_ratio < 0.01:
         return SimRating(msg_rating, 0, diff_lines_ratio)
 
-    # traverse through the left patch
-    levenshteins = []
-    for file_identifier, lhunks in orig.diff.patches.items():
-        if file_identifier in cand.diff.patches:
-            levenshtein = []
-            rhunks = cand.diff.patches[file_identifier]
-
-            for l_key, lhunk in lhunks.items():
-                """
-                 When comparing hunks, it is important to use the 'closest hunk' of the right side.
-                 The left hunk does not necessarily have to be absolutely similar to the name of the right hunk.
-                """
-
-                r_key = None
-                if l_key == '':
-                    if '' in rhunks:
-                        r_key = ''
-                else:
-                    # This gets the closed levenshtein rating from key against a list of candidate keys
-                    closest_match, rating = sorted(
-                            map(lambda x: (x, fuzz.token_sort_ratio(l_key, x)),
-                                rhunks.keys()),
-                            key=lambda x: x[1])[-1]
-                    if rating >= thresholds.heading * 100:
-                        r_key = closest_match
-
-                if r_key is not None:
-                    rhunk = rhunks[r_key]
-                    if lhunk.deletions and rhunk.deletions:
-                        levenshtein.append(fuzz.token_sort_ratio(lhunk.deletions, rhunk.deletions))
-                    if lhunk.insertions and rhunk.insertions:
-                        levenshtein.append(fuzz.token_sort_ratio(lhunk.insertions, rhunk.insertions))
-
-            if levenshtein:
-                levenshteins.append(mean(levenshtein))
-
-    if not levenshteins:
-        levenshteins = [0]
-
-    diff_rating = mean(levenshteins) / 100
+    # get rating of diff
+    diff_rating = rate_diffs(thresholds, orig.diff, cand.diff)
 
     return SimRating(msg_rating, diff_rating, diff_lines_ratio)
 
