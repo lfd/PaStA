@@ -301,7 +301,7 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
             levenshtein = []
             rhunks = cand.diff.patches[file_identifier]
 
-            for l_key, (l_removed, l_added) in lhunks.items():
+            for l_key, lhunk in lhunks.items():
                 """
                  When comparing hunks, it is important to use the 'closest hunk' of the right side.
                  The left hunk does not necessarily have to be absolutely similar to the name of the right hunk.
@@ -321,11 +321,11 @@ def evaluate_single_patch(thresholds, original_hash, candidate_hash):
                         r_key = closest_match
 
                 if r_key is not None:
-                    r_removed, r_added = rhunks[r_key]
-                    if l_removed and r_removed:
-                        levenshtein.append(fuzz.token_sort_ratio(l_removed, r_removed))
-                    if l_added and r_added:
-                        levenshtein.append(fuzz.token_sort_ratio(l_added, r_added))
+                    rhunk = rhunks[r_key]
+                    if lhunk.deletions and rhunk.deletions:
+                        levenshtein.append(fuzz.token_sort_ratio(lhunk.deletions, rhunk.deletions))
+                    if lhunk.insertions and rhunk.insertions:
+                        levenshtein.append(fuzz.token_sort_ratio(lhunk.insertions, rhunk.insertions))
 
             if levenshtein:
                 levenshteins.append(mean(levenshtein))

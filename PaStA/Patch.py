@@ -1,6 +1,32 @@
 import re
 
 
+class Hunk:
+
+    def __init__(self, insertions=None, deletions=None, invariant=None):
+        self._insertions = insertions or []
+        self._deletions = deletions or []
+        self._invariant = invariant or []
+
+    def merge(self, other):
+        self._insertions += other._insertions
+        self._deletions += other._deletions
+        self._invariant += other._invariant
+        pass
+
+    @property
+    def deletions(self):
+        return self._deletions
+
+    @property
+    def insertions(self):
+        return self._insertions
+
+    @property
+    def invariant(self):
+        return self._invariant
+
+
 class Diff:
     DIFF_SELECTOR_REGEX = re.compile(r'^[-\+@]')
 
@@ -88,25 +114,41 @@ class Diff:
 
                 del_cntr = 0
                 add_cntr = 0
-                hunk_changes = [], []  # [removed], [inserted]
+
+                insertions = []
+                deletions = []
+                invariant = []
+
                 while not (del_cntr == l_lines and add_cntr == r_lines):
                     line = diff.pop(0)
-                    if line[0] == '+':
-                        hunk_changes[1].append(line[1:])
+
+                    identifier = line[0]
+                    payload = line[1:]
+
+                    if identifier == '+':
+                        insertions.append(payload)
                         add_cntr += 1
-                    elif line[0] == '-':
-                        hunk_changes[0].append(line[1:])
+                    elif identifier == '-':
+                        deletions.append(payload)
                         del_cntr += 1
-                    elif line[0] != '\\':  # '\\ No new line... statements
+                    elif identifier == ' ':  # invariant
+                        invariant.append(payload)
+                        add_cntr += 1
+                        del_cntr += 1
+                    elif identifier != '\\':  # '\\ No new line... statements
                         add_cntr += 1
                         del_cntr += 1
 
-                hunk_changes = (list(filter(None, hunk_changes[0])),
-                                list(filter(None, hunk_changes[1])))
+                # remove empty lines
+                insertions = list(filter(None, insertions))
+                deletions = list(filter(None, deletions))
+                invariant = list(filter(None, invariant))
+
+                h = Hunk(insertions, deletions, invariant)
 
                 if hunktitle not in retval[diff_index]:
-                    retval[diff_index][hunktitle] = [], []
-                retval[diff_index][hunktitle] = (retval[diff_index][hunktitle][0] + hunk_changes[0],
-                                                 retval[diff_index][hunktitle][1] + hunk_changes[1])
+                    retval[diff_index][hunktitle] = Hunk()
+
+                retval[diff_index][hunktitle].merge(h)
 
         return Diff(retval, diff_lines)
