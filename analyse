@@ -70,7 +70,7 @@ def analyse_succ():
         print('Queueing %s <-> %s' % (patch_stack.stack_version, successor.stack_version))
         evaluation_list.append((patch_stack.commit_hashes, successor.commit_hashes, EvaluationType.PatchStack))
 
-    cache_commit_hashes(patch_stack_definition.commits_on_stacks)
+    cache_commits(patch_stack_definition.commits_on_stacks)
 
     cherries = find_cherries(patch_stack_definition.commits_on_stacks,
                              patch_stack_definition.commits_on_stacks,
@@ -106,7 +106,7 @@ def analyse_stack(similar_patches):
     print(colored(' [done]', 'green'))
 
     # Cache commits
-    cache_commit_hashes(representatives)
+    cache_commits(representatives)
 
     cherries = find_cherries(representatives,
                              patch_stack_definition.commits_on_stacks,
@@ -135,8 +135,8 @@ def analyse_upstream(similar_patches):
                                                                      patch_stack_definition.get_stack_of_commit(y)))
     print(colored(' [done]', 'green'))
 
-    cache_commit_hashes(patch_stack_definition.upstream_hashes)
-    cache_commit_hashes(representatives)
+    cache_commits(patch_stack_definition.upstream_hashes)
+    cache_commits(representatives)
 
     cherries = find_cherries(representatives,
                              patch_stack_definition.upstream_hashes,

@@ -27,8 +27,7 @@ def get_commits_from_file(filename, ordered=True):
 
 def file_to_string(filename, must_exist=True):
     try:
-        # Well things are crappy. For decades, encoding has been a real problem
-        # Git commits in the linux kernel are messy and sometimes have non-valid encoding
+        # I HATE ENCONDING!
         # Anyway, opening a file as binary and decoding it to iso8859 solves the problem :-)
         with open(filename, 'rb') as f:
             retval = str(f.read().decode('iso8859'))
@@ -65,7 +64,7 @@ class Commit:
         self._message = list(filter(None, message.splitlines()))
         # Filter signed-off-by lines
         self._message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
-                                   self.message))
+                                    self.message))
 
         # Respect timezone offsets?
         self._author_date = datetime.fromtimestamp(commit.author.time)
@@ -168,7 +167,6 @@ class PatchStackDefinition:
     HEADER_NAME_REGEX = re.compile(r'## (.*)')
 
     def __init__(self, patch_stack_groups, upstream_hashes):
-
         # List containing all patch stacks, grouped in major versions
         self.patch_stack_groups = patch_stack_groups
         # Set containing all upstream commit hashes
@@ -274,6 +272,11 @@ class PatchStackDefinition:
 
     @staticmethod
     def parse_definition_file(definition_filename):
+        """
+        Parses a patch stack definition file
+        :param definition_filename: filename of patch stack definition
+        :return: PatchStackDefinition
+        """
         csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
 
         sys.stdout.write('Parsing patch stack definition...')
@@ -316,15 +319,17 @@ class PatchStackDefinition:
                                      row['StackVersion'],
                                      row['StackReleaseDate'])
 
-                # Commit hashes of the patch stack
+                # get commit hashes of the patch stack
                 commit_hashes = get_commits_from_file(os.path.join(config.stack_hashes, stack.version))
 
                 this_group.append(PatchStack(base, stack, commit_hashes))
 
             patch_stack_groups.append((group_name, this_group))
 
+        # get upstream commit hashes
         upstream = get_commits_from_file(os.path.join(config.stack_hashes, 'upstream'))
         blacklist = get_commits_from_file(config.upstream_blacklist, ordered=False)
+        # filter blacklistes commit hashes
         upstream = [x for x in upstream if x not in blacklist]
 
         # Create patch stack list
@@ -335,16 +340,27 @@ class PatchStackDefinition:
 
 
 def get_commit(commit_hash):
-    # If commit is already present, return it
+    """
+    Return a particular commit
+    :param commit_hash: commit hash
+    :return: commit
+    """
+
+    # simply return commit if it is already cached
     if commit_hash in commits:
         return commits[commit_hash]
 
-    # If it is not present, load it
+    # cache and return if it is not yet cached
     commits[commit_hash] = Commit(commit_hash)
     return commits[commit_hash]
 
 
-def cache_commit_hashes(commit_hashes, parallelise=True):
+def cache_commits(commit_hashes, parallelise=True):
+    """
+    Caches a list of commit hashes
+    :param commit_hashes: List of commit hashes
+    :param parallelise: parallelise
+    """
     sys.stdout.write('Caching %d commits. This may take a while...' % len(commit_hashes))
     sys.stdout.flush()
 

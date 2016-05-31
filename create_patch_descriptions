@@ -56,7 +56,7 @@ def main():
         all_commit_hashes += i
         if i.property:
             all_commit_hashes.append(i.property)
-    cache_commit_hashes(all_commit_hashes, parallelise=True)
+    cache_commits(all_commit_hashes, parallelise=True)
 
     sys.stdout.write('Getting descriptions...')
     pool = Pool(cpu_count())
