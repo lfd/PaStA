@@ -2,7 +2,6 @@ import re
 
 
 class Hunk:
-
     def __init__(self, insertions=None, deletions=None, invariant=None):
         self._insertions = insertions or []
         self._deletions = deletions or []

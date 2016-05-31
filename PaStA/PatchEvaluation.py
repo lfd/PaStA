@@ -90,7 +90,6 @@ class EvaluationResult(dict):
 
     def interactive_rating(self, equivalence_class, false_positive_list,
                            thresholds, respect_commitdate=False, upstream_rating=True):
-
         already_false_positive = 0
         already_detected = 0
         auto_accepted = 0
@@ -271,7 +270,6 @@ def preevaluate_single_patch(original_hash, candidate_hash):
 
 
 def rate_diffs(thresholds, ldiff, rdiff):
-
     levenshteins = []
 
     for file_identifier, lhunks in ldiff.patches.items():
@@ -323,7 +321,6 @@ def rate_diffs(thresholds, ldiff, rdiff):
 
 
 def evaluate_patch_pair(thresholds, lhs, rhs):
-
     left_message, left_diff = lhs
     right_message, right_diff = rhs
 
@@ -346,7 +343,6 @@ def evaluate_patch_pair(thresholds, lhs, rhs):
 
 
 def evaluate_commit_pair(thresholds, lhs_commit_hash, rhs_commit_hash):
-
     # Just in case.
     # Actually, patches with the same commit hashes should never be compared, as preevaluate_single_patch will evaluate
     # to False for equivalent commit hashes.

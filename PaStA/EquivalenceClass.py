@@ -16,7 +16,6 @@ class PropertyList(list):
 
 
 class EquivalenceClass:
-
     PROPERTY_SEPARATOR = ' => '
 
     def __init__(self):
@@ -69,7 +68,6 @@ class EquivalenceClass:
         self.optimize()
 
     def optimize(self):
-
         # Get optimized list by filtering orphaned elements
         self.transitive_list = list(filter(None, self.transitive_list))
 

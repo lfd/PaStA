@@ -2,7 +2,6 @@ import csv
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 import os
-import re
 import sys
 from termcolor import colored
 
@@ -49,7 +48,6 @@ def format_date_ymd(dt):
 
 class Commit:
     COMMIT_HASH_LOCATION = re.compile(r'(..)(..).*')
-
     SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:'
                                  r'|Reported-by:|Tested-by:|LKML-Reference:|Patch:)'),
                                 re.IGNORECASE)
@@ -336,9 +334,6 @@ class PatchStackDefinition:
         return retval
 
 
-patch_stack_definition = PatchStackDefinition.parse_definition_file(config.patch_stack_definition)
-
-
 def get_commit(commit_hash):
     # If commit is already present, return it
     if commit_hash in commits:
@@ -378,3 +373,6 @@ def get_date_selector(selector):
     else:
         raise NotImplementedError('Unknown date selector: ' % selector)
     return date_selector
+
+
+patch_stack_definition = PatchStackDefinition.parse_definition_file(config.patch_stack_definition)
