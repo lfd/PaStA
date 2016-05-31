@@ -9,7 +9,7 @@ def compare_patches(commits):
         commit_a = commits[i]
         commit_b = commits[i+1]
 
-        compare_hashes(commit_a, commit_b)
+        show_commits(commit_a, commit_b)
 
         rating = preevaluate_single_patch(commit_a, commit_b)
         if rating:

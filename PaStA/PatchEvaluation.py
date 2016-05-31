@@ -159,7 +159,7 @@ class EvaluationResult(dict):
                 # Nope? Then let's do an interactive rating by a human
                 else:
                     yns = ''
-                    compare_hashes(orig_commit_hash, cand_commit_hash)
+                    show_commits(orig_commit_hash, cand_commit_hash)
                     print('Length of list of candidates: %d' % len(candidates))
                     print('Rating: %3.2f (%3.2f message and %3.2f diff, diff length ratio: %3.2f)' %
                           (rating, sim_rating.msg, sim_rating.diff, sim_rating.diff_lines_ratio))
@@ -441,5 +441,5 @@ def getch():
     return ch
 
 
-def compare_hashes(orig_commit_hash, cand_commit_hash):
-    call(['./compare_hashes.sh', config.repo_location, orig_commit_hash, cand_commit_hash])
+def show_commits(orig_commit_hash, cand_commit_hash):
+    call(['./show_commits.sh', config.repo_location, orig_commit_hash, cand_commit_hash])
