@@ -322,34 +322,42 @@ def rate_diffs(thresholds, ldiff, rdiff):
     return diff_rating
 
 
-def evaluate_single_patch(thresholds, original_hash, candidate_hash):
+def evaluate_patch_pair(thresholds, lhs, rhs):
 
-    # Just in case.
-    # Actually, patches with the same commit hashes should never be compares, as preevaluate_single_patch will evaluate
-    # to False for equivalent commit hashes.
-    if original_hash == candidate_hash:
-        print('Autoreturning on %s' % original_hash)
-        return SimRating(1, 1, 1)
+    left_message, left_diff = lhs
+    right_message, right_diff = rhs
 
-    orig = get_commit(original_hash)
-    cand = get_commit(candidate_hash)
-
-    left_diff_lines = orig.diff.lines
-    right_diff_lines = cand.diff.lines
+    left_diff_lines = left_diff.lines
+    right_diff_lines = right_diff.lines
 
     diff_lines_ratio = min(left_diff_lines, right_diff_lines) / max(left_diff_lines, right_diff_lines)
 
     # get rating of message
-    msg_rating = fuzz.token_sort_ratio(orig.message, cand.message) / 100
+    msg_rating = fuzz.token_sort_ratio(left_message, right_message) / 100
 
     # Skip on diff_lines_ratio less than 1%
     if diff_lines_ratio < 0.01:
         return SimRating(msg_rating, 0, diff_lines_ratio)
 
     # get rating of diff
-    diff_rating = rate_diffs(thresholds, orig.diff, cand.diff)
+    diff_rating = rate_diffs(thresholds, left_diff, right_diff)
 
     return SimRating(msg_rating, diff_rating, diff_lines_ratio)
+
+
+def evaluate_commit_pair(thresholds, lhs_commit_hash, rhs_commit_hash):
+
+    # Just in case.
+    # Actually, patches with the same commit hashes should never be compared, as preevaluate_single_patch will evaluate
+    # to False for equivalent commit hashes.
+    if lhs_commit_hash == rhs_commit_hash:
+        print('Autoreturning on %s' % lhs_commit_hash)
+        return SimRating(1, 1, 1)
+
+    lhs_commit = get_commit(lhs_commit_hash)
+    rhs_commit = get_commit(rhs_commit_hash)
+
+    return evaluate_patch_pair(thresholds, (lhs_commit.message, lhs_commit.diff), (rhs_commit.message, rhs_commit.diff))
 
 
 def _preevaluation_helper(candidate_hashes, orig_hash):
@@ -362,7 +370,7 @@ def _evaluation_helper(thresholds, orig_cands, verbose=False):
     if verbose:
         print('Evaluating 1 commit hash against %d commit hashes' % len(cands))
 
-    f = functools.partial(evaluate_single_patch, thresholds, orig)
+    f = functools.partial(evaluate_commit_pair, thresholds, orig)
     results = list(map(f, cands))
     results = list(zip(cands, results))
 
