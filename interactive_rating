@@ -29,34 +29,36 @@ def main():
     parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
 
     parser.add_argument('-fp', dest='fp_filename', metavar='filename', default=config.false_positives,
-                        help='False Positive PKL filename')
+                        help='False positive PKL filename')
     parser.add_argument('-sp', dest='sp_filename', metavar='filename', default=config.similar_patches,
-                        help='Similar Patches filename')
+                        help='Similar patches filename')
     parser.add_argument('-su', dest='su_filename', metavar='filename', default=config.similar_upstream,
-                        help='Similar Upstream filename')
+                        help='Similar upstream filename')
     parser.add_argument('-er', dest='er_filename', metavar='filename', default=config.evaluation_result,
-                        help='Evaluation Result PKL filename')
+                        help='Evaluation result PKL filename')
 
     # Thresholds
     parser.add_argument('-ta', dest='thres_accept', metavar='threshold', type=float,
-                        default=config.thresholds.autoaccept, help='Autoaccept Threshold (default: %(default)s)')
+                        default=config.thresholds.autoaccept,
+                        help='Autoaccept threshold (default: %(default)s)')
     parser.add_argument('-ti', dest='thres_interactive', metavar='threshold', type=float,
-                        default=config.thresholds.interactive, help='Interactive Threshold (default: %(default)s)')
+                        default=config.thresholds.interactive,
+                        help='Interactive threshold (default: %(default)s)')
     parser.add_argument('-dlr', dest='thres_diff_lines', metavar='threshold',  type=float,
                         default=config.thresholds.diff_lines_ratio,
-                        help='Diff Lines Ratio Threshold (default: %(default)s)')
+                        help='Diff lines ratio threshold (default: %(default)s)')
     parser.add_argument('-weight', dest='weight', metavar='weight', type=float,
                         default=config.thresholds.message_diff_weight,
                         help='Heuristic factor for message to diff rating. (default: %(default)s)')
 
     parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', default=False,
-                        help='Respect order of commit date')
+                        help='Respect commit date')
     args = parser.parse_args()
 
     config.thresholds = Thresholds(args.thres_accept,
                                    args.thres_interactive,
                                    args.thres_diff_lines,
-                                   config.thresholds.heading, # does not matter for interactive rating
+                                   config.thresholds.heading,  # does not matter for interactive rating
                                    args.weight)
 
     # Load already known positives and false positives
