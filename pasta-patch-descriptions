@@ -40,7 +40,7 @@ def describe_commit(commit_hash):
     return commit_hash, (branch_name, author_date, commit_date, release_date)
 
 
-def main(prog, argv):
+def pasta_patch_descriptions(prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-cd', dest='cd_filename', metavar='filename',
                         default=config.commit_description, help='Output: Commit description file')
@@ -74,4 +74,4 @@ def main(prog, argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv[0], sys.argv[1:])
+    pasta_patch_descriptions(sys.argv[0], sys.argv[1:])

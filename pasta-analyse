@@ -183,7 +183,7 @@ def create_patch_groups(sp_filename, su_filename, pg_filename):
     print(colored(' [done]', 'green'))
 
 
-def main(prog, argv):
+def pasta_analyse(prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Analyse stack by stack')
     parser.add_argument('-er', dest='evaluation_result_filename', metavar='filename',
                         default=config.evaluation_result, help='Evaluation result filename')
@@ -234,4 +234,4 @@ def main(prog, argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv[0], sys.argv[1:])
+    pasta_analyse(sys.argv[0], sys.argv[1:])

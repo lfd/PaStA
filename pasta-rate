@@ -26,7 +26,7 @@ def upstream_rating(evaluation_result, similar_patches, similar_upstream,
                                          thresholds, resp_commit_date, upstream_rating=True)
 
 
-def main(prog, argv):
+def pasta_rate(prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
 
     parser.add_argument('-fp', dest='fp_filename', metavar='filename', default=config.false_positives,
@@ -90,4 +90,4 @@ def main(prog, argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv[0], sys.argv[1:])
+    pasta_rate(sys.argv[0], sys.argv[1:])

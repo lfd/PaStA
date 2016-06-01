@@ -4,7 +4,7 @@ import sys
 
 from PaStA import *
 
-def compare_patches(commits):
+def pasta_compare(commits):
     for i in range(len(commits)-1):
         commit_a = commits[i]
         commit_b = commits[i+1]
@@ -23,4 +23,4 @@ def compare_patches(commits):
         getch()
 
 if __name__ == '__main__':
-    compare_patches(sys.argv[1:])
+    pasta_compare(sys.argv[1:])
