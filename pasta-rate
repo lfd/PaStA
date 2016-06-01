@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import sys
 
 from PaStA import *
 
@@ -25,8 +26,8 @@ def upstream_rating(evaluation_result, similar_patches, similar_upstream,
                                          thresholds, resp_commit_date, upstream_rating=True)
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
+def main(prog, argv):
+    parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
 
     parser.add_argument('-fp', dest='fp_filename', metavar='filename', default=config.false_positives,
                         help='False positive PKL filename')
@@ -53,7 +54,7 @@ def main():
 
     parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', default=False,
                         help='Respect commit date')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     config.thresholds = Thresholds(args.thres_accept,
                                    args.thres_interactive,
@@ -89,4 +90,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[0], sys.argv[1:])

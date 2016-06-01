@@ -183,8 +183,8 @@ def create_patch_groups(sp_filename, su_filename, pg_filename):
     print(colored(' [done]', 'green'))
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Analyse stack by stack')
+def main(prog, argv):
+    parser = argparse.ArgumentParser(prog=prog, description='Analyse stack by stack')
     parser.add_argument('-er', dest='evaluation_result_filename', metavar='filename',
                         default=config.evaluation_result, help='Evaluation result filename')
     parser.add_argument('-sp', dest='sp_filename', metavar='filename',
@@ -208,7 +208,7 @@ def main():
                              'upstream: compare representatives against upstream - '
                              'finish: create patch-groups file'
                              '(default: %(default)s)' )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     config.thresholds.heading = args.thres_heading
 
@@ -234,4 +234,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[0], sys.argv[1:])

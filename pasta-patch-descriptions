@@ -40,13 +40,13 @@ def describe_commit(commit_hash):
     return commit_hash, (branch_name, author_date, commit_date, release_date)
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
+def main(prog, argv):
+    parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-cd', dest='cd_filename', metavar='filename',
                         default=config.commit_description, help='Output: Commit description file')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
                         default=config.patch_groups, help='Output: Patch groups')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # similar patch groups
     patch_groups = EquivalenceClass.from_file(args.pg_filename)
@@ -74,4 +74,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[0], sys.argv[1:])
