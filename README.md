@@ -9,9 +9,10 @@ $ git clone git@gitlab.lfd.sturhax.de:PaStA/PaStA.git
 
 **PaStA** runs on *Python3*.
 Dependencies:
-- git-python
+- git
 - pygit2
 - termcolor
+- R
 
 Running PaStA
 -------------
@@ -37,29 +38,29 @@ analysation and run `interactive-rating` for several times on the same data set.
 The detection phase is split in five steps:
 1. Initialisation of similar patches on the patch stacks
    ```
-   $ ./analyse -mode init
+   $ ./analyse init
    ```
 2. Comparing successive versions on the patch stacks
    ```
-   $ ./analyse -mode stack-succ
+   $ ./analyse stack-succ
    $ ./interactive-rating
    ```
 3. For more fine-granular classification, compare representants of existing
    equivalence classes
    ```
-   $ ./analyse -mode stack-rep
+   $ ./analyse stack-rep
    $ ./interactive-rating
    ```
 4. Once you think you have found all equivalence classes you can find to find
    representants of them upstream
    ```
-   $ ./analyse -mode upstream
+   $ ./analyse upstream
    $ ./interactive-rating
    ```
 5. Finally, merge the results of the equivalence classes of the stacks and their
    corresponding upstream candidates by running
    ```
-   $ ./analyse -mode finish
+   $ ./analyse finish
    ```
 
 By default, this will create a `patch-groups` file inside the resources of your
@@ -70,7 +71,7 @@ After **PaStA** created the `patch-groups` file, you can run some predefined
 statistics on your data by running
 
 ```
-./run_statistics
+$ ./run_statistics
 ```
 
 This will automatically create a new directory inside your resources and place
