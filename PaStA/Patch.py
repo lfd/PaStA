@@ -77,7 +77,7 @@ class Diff:
 
         # Check if we understand the diff format
         if diff and Diff.EXCLUDE_CC_REGEX.match(diff[0]):
-            return 0, {}
+            return Diff({}, 0)
 
         retval = {}
 

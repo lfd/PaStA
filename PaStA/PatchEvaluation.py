@@ -245,12 +245,12 @@ class DictList(dict):
 
 
 def preevaluate_single_patch(original_hash, candidate_hash):
-    orig = get_commit(original_hash)
-    cand = get_commit(candidate_hash)
-
     # We do not need to evaluate equivalent commit hashes, as they are already belong to the same equivalence class
     if original_hash == candidate_hash:
         return False
+
+    orig = get_commit(original_hash)
+    cand = get_commit(candidate_hash)
 
     # Don't rely on author dates!
     #delta = cand.author_date - orig.author_date
