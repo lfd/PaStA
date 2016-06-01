@@ -2,8 +2,10 @@
 
 import argparse
 from functools import partial
+import os
 import sys
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
 
@@ -47,7 +49,7 @@ def print_upstream(patch_groups, x, verbosity, indent=4):
     print_flow(x, [(x, [patch_groups.get_property(x)]) for x in x], verbosity=verbosity, indent=indent)
 
 
-def compare_stacks(patch_groups, date_selector, stack_from, stack_to, verbosity=0):
+def compare_stack_against_stack(patch_groups, date_selector, stack_from, stack_to, verbosity=0):
     my_print_upstream = partial(print_upstream,patch_groups, verbosity=verbosity)
 
     flow = PatchFlow.compare_stack_releases(patch_groups, stack_from, stack_to)
@@ -101,8 +103,8 @@ def compare_stack_against_upstream(patch_groups, date_selector, stack, verbosity
     print_flow(composition.none, verbosity=verbosity, indent=2)
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Interactive Rating: Rate evaluation results')
+def compare_stacks(prog, argv):
+    parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
                         default=config.patch_groups, help='Patch group file')
     parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['SRD', 'CD'],
@@ -111,7 +113,7 @@ def main():
     parser.add_argument('-v', nargs='?', metavar='level', action=VAction,
                         dest='verbose', default=0, help='Verbosity level -v -vv -v 2')
     parser.set_defaults(R=True)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
     date_selector = get_date_selector(args.date_selector)
@@ -124,7 +126,7 @@ def main():
     else:
         stack_to = patch_stack_definition.get_stack_by_name(args.versions[1])
         print('\nComparing %s -> %s' % (stack_from, stack_to))
-        compare_stacks(patch_groups, date_selector, stack_from, stack_to, verbosity=args.verbose)
+        compare_stack_against_stack(patch_groups, date_selector, stack_from, stack_to, verbosity=args.verbose)
 
 if __name__ == '__main__':
-    main()
+    compare_stacks(sys.argv[0], sys.argv[1:])

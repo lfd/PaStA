@@ -3,10 +3,12 @@
 import argparse
 import copy
 from multiprocessing import Pool, cpu_count
+import os
 import re
 import sys
 from termcolor import colored
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
 
@@ -183,7 +185,7 @@ def create_patch_groups(sp_filename, su_filename, pg_filename):
     print(colored(' [done]', 'green'))
 
 
-def pasta_analyse(prog, argv):
+def analyse(prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Analyse stack by stack')
     parser.add_argument('-er', dest='evaluation_result_filename', metavar='filename',
                         default=config.evaluation_result, help='Evaluation result filename')
@@ -234,4 +236,4 @@ def pasta_analyse(prog, argv):
 
 
 if __name__ == '__main__':
-    pasta_analyse(sys.argv[0], sys.argv[1:])
+    analyse(sys.argv[0], sys.argv[1:])

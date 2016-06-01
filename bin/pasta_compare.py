@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
-def pasta_compare(commits):
+
+def compare(commits):
     for i in range(len(commits)-1):
         commit_a = commits[i]
         commit_b = commits[i+1]
@@ -23,4 +26,4 @@ def pasta_compare(commits):
         getch()
 
 if __name__ == '__main__':
-    pasta_compare(sys.argv[1:])
+    compare(sys.argv[1:])

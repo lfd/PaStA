@@ -4,9 +4,11 @@ import argparse
 
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
+import os
 import sys
 from termcolor import colored
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
 # In this case, we have to use GitPython as pygit2 does not support describe --contains
@@ -40,7 +42,7 @@ def describe_commit(commit_hash):
     return commit_hash, (branch_name, author_date, commit_date, release_date)
 
 
-def pasta_patch_descriptions(prog, argv):
+def patch_descriptions(prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-cd', dest='cd_filename', metavar='filename',
                         default=config.commit_description, help='Output: Commit description file')
@@ -74,4 +76,4 @@ def pasta_patch_descriptions(prog, argv):
 
 
 if __name__ == '__main__':
-    pasta_patch_descriptions(sys.argv[0], sys.argv[1:])
+    patch_descriptions(sys.argv[0], sys.argv[1:])

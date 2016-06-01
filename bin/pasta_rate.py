@@ -4,6 +4,7 @@ import argparse
 import os
 import sys
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
 
@@ -26,7 +27,7 @@ def upstream_rating(evaluation_result, similar_patches, similar_upstream,
                                          thresholds, resp_commit_date, upstream_rating=True)
 
 
-def pasta_rate(prog, argv):
+def rate(prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
 
     parser.add_argument('-fp', dest='fp_filename', metavar='filename', default=config.false_positives,
@@ -90,4 +91,4 @@ def pasta_rate(prog, argv):
 
 
 if __name__ == '__main__':
-    pasta_rate(sys.argv[0], sys.argv[1:])
+    rate(sys.argv[0], sys.argv[1:])

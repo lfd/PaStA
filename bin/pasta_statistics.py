@@ -5,10 +5,11 @@ import os
 from subprocess import call
 import sys
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
 
-def pasta_statistics(prog, argv):
+def statistics(prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
                         default=config.patch_groups, help='Patch group file')
@@ -60,4 +61,4 @@ def pasta_statistics(prog, argv):
               occurrence_filename])
 
 if __name__ == '__main__':
-    pasta_statistics(sys.argv[0], sys.argv[1:])
+    statistics(sys.argv[0], sys.argv[1:])
