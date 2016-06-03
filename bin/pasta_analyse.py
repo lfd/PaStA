@@ -186,7 +186,7 @@ def create_patch_groups(sp_filename, su_filename, pg_filename):
 
 
 def analyse(prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='Analyse stack by stack')
+    parser = argparse.ArgumentParser(prog=prog, description='Analyse patch stacks')
     parser.add_argument('-er', dest='evaluation_result_filename', metavar='filename',
                         default=config.evaluation_result, help='Evaluation result filename')
     parser.add_argument('-sp', dest='sp_filename', metavar='filename',

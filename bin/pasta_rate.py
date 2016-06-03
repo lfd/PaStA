@@ -28,7 +28,7 @@ def upstream_rating(evaluation_result, similar_patches, similar_upstream,
 
 
 def rate(prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
+    parser = argparse.ArgumentParser(prog=prog, description='classify analysation results')
 
     parser.add_argument('-fp', dest='fp_filename', metavar='filename', default=config.false_positives,
                         help='False positive PKL filename')

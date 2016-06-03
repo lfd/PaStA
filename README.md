@@ -11,8 +11,14 @@ $ git clone git@gitlab.lfd.sturhax.de:PaStA/PaStA.git
 Dependencies:
 - git
 - pygit2
+- git-python (for PaStA-resources only)
 - termcolor
 - R
+
+TL;DR
+-----
+
+Run `./pasta -h`
 
 Running PaStA
 -------------
@@ -22,7 +28,7 @@ projects are stored in a separate repository `PaStA-resources`
 
 Running
 ```
-$ ./prepare_pasta
+$ ./pasta-prepare
 ```
 will initialize and clone PaStA-resources (all preconfigured projects for
 analysation) as git submodules. Inside PaStA-resources, the project code
@@ -30,71 +36,73 @@ repositories are submodules as well.
 
 ### Detecting and grouping similar patches
 Analysing patches on the stacks and eventually linking them into equivalence
-classes is split in two different command: `analyse` and `interactive-rating`.
+classes is split in two different command: `pasta analyse` and `pasta rate`.
 Reason for the split is the comparatively long duration of the analysation
-phase. After one analysation phase, you might want to reuse the results of the
-analysation and run `interactive-rating` for several times on the same data set.
+phase. After `pasta analyse`, you might want to reuse the results of the
+analysation and run `pasta rate` for several times on the same data set.
 
 The detection phase is split in five steps:
 1. Initialisation of similar patches on the patch stacks
    ```
-   $ ./analyse init
+   $ ./pasta analyse init
    ```
 2. Comparing successive versions on the patch stacks
    ```
-   $ ./analyse stack-succ
-   $ ./interactive-rating
+   $ ./pasta analyse stack-succ
+   $ ./pasta rate
    ```
 3. For more fine-granular classification, compare representants of existing
    equivalence classes
    ```
-   $ ./analyse stack-rep
-   $ ./interactive-rating
+   $ ./pasta analyse stack-rep
+   $ ./pasta rate
    ```
 4. Once you think you have found all equivalence classes you can find to find
    representants of them upstream
    ```
-   $ ./analyse upstream
-   $ ./interactive-rating
+   $ ./pasta analyse upstream
+   $ ./pasta rate
    ```
 5. Finally, merge the results of the equivalence classes of the stacks and their
    corresponding upstream candidates by running
    ```
-   $ ./analyse finish
+   $ ./pasta analyse finish
    ```
 
-By default, this will create a `patch-groups` file inside the resources of your
-project.
+This will create a `patch-groups` file inside the resources directory of your
+projecta. Each line represents a group of similar patches, commit hashes are
+separated by whitespaces. A line can optionally end with ' => ' and point to an
+upstream commit hash, if this group is connected to an upstream commit hash.
 
-### Run some statistics
+### Run statistics
 After **PaStA** created the `patch-groups` file, you can run some predefined
 statistics on your data by running
 
 ```
-$ ./run_statistics
+$ ./pasta statistics
 ```
 
 This will automatically create a new directory inside your resources and place
-some *csv* files that are suitable for **R** input.  Afterwards,
-`run-statistics` will automatically invoke R, plot some graphs and store the
-plots in the same directory as *png* and *tikz* files taht can be used for
-*LaTeX* input.
+*csv* files that serve as input for **R**.  Afterwards, `pasta statistics`
+automatically invokes **R**, plots some graphs and stores them in the same
+directory as *png* and *tikz* files.
 
-If you want **PaStA** only to create the *csv* files without running **R**, you
-can invoke it by using `./run-statistics -noR -R /tmp/foo/`.  This will not
-invoke **R** and place the *csv*s in `/tmp/foo`.
+If you want **PaStA** only to create the *csv* files only without running
+**R**, you can invoke it by using `./pasta statistics -noR -R /tmp/foo/`. This
+will not invoke **R** and place the *csv*s in `/tmp/foo`.
 
 PaStA commands in detail
 ------------------------
-### Main Components
-To see a list of available options, run main components with `-h`.
+### PaStA subcommands
+To get list of all available PaStA commands, run `./pasta -h`. `pasta sub -h`
+gives you further detailed information about subcommands.
 
 ### Tools
-#### compare-patches
-`compare-patches` evaluates a list of commit hashes and displays the evaluation
-result as well as the original commits.
+#### pasta compare
+`./pasta compare` analyses a list of commit hashes given as command line
+arguments and displays the evaluation result as well as the original commits.
 
-#### prepare_pasta
+#### pasta-prepare
 Initialises git submodules
 
 Creating a new PaStA project
@@ -107,13 +115,13 @@ Default locations inside that directory:
 - `repo/`: This is the default location of the repository of the project
 - `resources/patch-stack-definition.dat`: Definition of the patch stacks.
   Lines beginning with **#** are interpreted as comments, lines beginning with
-  **##** group major versions of projects. Have a look at existing patch stack
+  **##** group major versions of projects. Take a look at existing patch stack
   definitions.
 
 ### Rolling out history and identifying the commit hashes on patch stacks
-For reasons of performance, **PaStA** rolls out the complete git history.
-`log/` is the default location of the history of the project.
-After creating the patch stack definition configuration file and the project
+For performance reasons, **PaStA** stores the diffs of all commit hashes as
+single files. `diffs/` is the location of the patches of the project. After
+creating the patch stack definition configuration file and the project
 configuration file, add your project to the `PaStA-resources/prepare_projects`
 script. Invoking this script will create the patch stack commit hash list inside
 `PaStA-resources/PROJECT_NAME/resources/stack-hashes/` and roll out the git
