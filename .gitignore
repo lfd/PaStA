@@ -3,7 +3,6 @@ __pycache__/
 *.pkl
 config
 .Rhistory
-plots/commitcount-*
 .Rproj.user
 R/R.Rproj
 R/.RData
