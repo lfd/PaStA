@@ -7,6 +7,7 @@ from bin.pasta_rate import rate
 from bin.pasta_statistics import statistics
 from bin.pasta_compare_stacks import compare_stacks
 from bin.pasta_patch_descriptions import patch_descriptions
+from bin.pasta_upstream_history import pasta_upstream_history
 
 
 def usage(me):
@@ -17,7 +18,8 @@ def usage(me):
           '  rate\n'
           '  statistics\n'
           '  compare_stacks\n'
-          '  patch_descriptions' % me)
+          '  patch_descriptions\n'
+          '  upstream_history' % me)
     quit()
 
 
@@ -43,6 +45,8 @@ def main(argv):
         compare_stacks(sub, args)
     elif sub == 'patch_descriptions':
         patch_descriptions(sub, args)
+    elif sub == 'upstream_history':
+        pasta_upstream_history(sub, args)
     else:
         print('Unknown command: %s' % sub)
         usage(me)
