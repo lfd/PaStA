@@ -1,3 +1,5 @@
+import datetime
+import shutil
 from enum import Enum
 import functools
 from fuzzywuzzy import fuzz
@@ -9,8 +11,8 @@ import sys
 import termios
 import tty
 
-from PaStA.PatchStack import get_commit
-from PaStA import config
+from PaStA.PatchStack import Commit, get_commit
+from PaStA import config, repo
 
 
 class EvaluationType(Enum):
@@ -437,5 +439,45 @@ def getch():
     return ch
 
 
-def show_commits(orig_commit_hash, cand_commit_hash):
-    call(['./show_commits.sh', config.repo_location, orig_commit_hash, cand_commit_hash])
+def show_commits(left_hash, right_hash):
+    def fix_encoding(string):
+        return string.encode('utf-8').decode('ascii', 'ignore')
+
+    def format_message(hash):
+        commit = repo[hash]
+        message = ['Commit:     %s' % hash,
+                   'Author:     %s <%s>' % (fix_encoding(commit.author.name), commit.author.email),
+                   'AuthorDate: %s' % datetime.datetime.fromtimestamp(commit.author.time),
+                   'Commit:     %s <%s>' % (fix_encoding(commit.committer.name), commit.committer.email),
+                   'CommitDate: %s' % datetime.datetime.fromtimestamp(commit.committer.time),
+                   ''] + fix_encoding(commit.message).split('\n')
+        return message
+
+    def side_by_side(left, right, split_length):
+        while len(left) or len(right):
+            line = ''
+            if len(left):
+                line = left.pop(0).expandtabs(6)[0:split_length]
+            line = line.ljust(split_length)
+            line += ' | '
+            if len(right):
+                line += right.pop(0).expandtabs(6)[0:split_length]
+            print(line)
+
+    left_message = format_message(left_hash)
+    right_message = format_message(right_hash)
+
+    left_diff = Commit.get_diff(left_hash).split('\n')
+    right_diff = Commit.get_diff(right_hash).split('\n')
+
+    columns, _ = shutil.get_terminal_size()
+    maxlen = int((columns-3)/2)
+
+    split_length = max(map(len, left_diff + left_message))
+    if split_length > maxlen:
+        split_length = maxlen
+
+    sys.stdout.write('\x1b[2J\x1b[H')
+    side_by_side(left_message, right_message, split_length)
+    print('-' * (split_length+1) + '+' + '-' * (columns-split_length-2))
+    side_by_side(left_diff, right_diff, split_length)

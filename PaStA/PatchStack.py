@@ -73,11 +73,14 @@ class Commit:
         self._author = commit.author.name
         self._author_email = commit.author.email
 
+        diff = Commit.get_diff(commit_hash)
+        self._diff = Diff.parse_diff(diff)
+
+    @staticmethod
+    def get_diff(commit_hash):
         tmp = Commit.COMMIT_HASH_LOCATION.match(commit_hash)
         commit_hash_location = '%s/%s/%s' % (tmp.group(1), tmp.group(2), commit_hash)
-        diff = file_to_string(os.path.join(config.diffs_location, commit_hash_location))
-
-        self._diff = Diff.parse_diff(diff)
+        return file_to_string(os.path.join(config.diffs_location, commit_hash_location))
 
     @property
     def commit_hash(self):
