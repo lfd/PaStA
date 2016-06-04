@@ -153,6 +153,10 @@ class PatchStack:
         return self._base.release_date
 
     @property
+    def base_name(self):
+        return self._base.commit
+
+    @property
     def stack_name(self):
         return self._stack.commit
 
