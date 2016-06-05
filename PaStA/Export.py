@@ -10,13 +10,58 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+from multiprocessing import Pool, cpu_count
+
 from .Util import format_date_ymd
+
+
+# We need this global variable, as pygit2 Repository objects are not pickleable
+_tmp_repo = None
+
+
+def _diffstat_helper(args):
+    version_name, base_commit, stack_commit = args
+    diff = _tmp_repo.diff(base_commit, stack_commit)
+    deletions = diff.stats.deletions
+    insertions = diff.stats.insertions
+    return version_name, deletions, insertions
 
 
 class Export:
     def __init__(self, repo, patch_stack_definition):
         self.repo = repo
         self.psd = patch_stack_definition
+
+    def diffstat(self, diffstat_filename):
+        # Get raw pygit2 Repo and store it in temporary global variable
+        repo = self.repo.repo
+        global _tmp_repo
+        _tmp_repo = repo
+
+        worklist = []
+        for group_name, stacks_in_group in self.psd.iter_groups():
+            for stack in stacks_in_group:
+                base_version = stack.base_name
+                stack_branch = stack.stack_name
+
+                base_ref = 'refs/tags/' + base_version
+                stack_ref = 'refs/remotes/' + stack_branch
+
+                base_commit = str(repo[repo.lookup_reference(base_ref).target].target)
+                stack_commit = str(repo.lookup_reference(stack_ref).target)
+
+                worklist.append((stack.stack_version, base_commit, stack_commit))
+
+        p = Pool(cpu_count())
+        results = p.map(_diffstat_helper, worklist)
+        p.close()
+        p.join()
+        _tmp_repo = None
+
+        with open(diffstat_filename, 'w') as f:
+            f.write('Version Deletions Insertions\n')
+            for version_name, deletions, insertions in results:
+                    f.write('%s %d %d\n' % (version_name, deletions, insertions))
 
     def release_dates(self, mainline_release_dates_filename, stack_release_dates_filename):
         stacks = dict()

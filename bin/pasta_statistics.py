@@ -49,6 +49,7 @@ def statistics(config, prog, argv):
     patches_filename = os.path.join(r_resources, 'patches')
     upstream_filename = os.path.join(r_resources, 'upstream')
     occurrence_filename = os.path.join(r_resources, 'patch-occurrence')
+    diffstat_filename = os.path.join(r_resources, 'diffstat')
 
     date_selector = get_date_selector(repo, psd, args.date_selector)
 
@@ -70,6 +71,10 @@ def statistics(config, prog, argv):
                         occurrence_filename,
                         patch_groups, date_selector)
 
+    # Export diffstat (cloccount across patch stack releases)
+    print('Exporting diffstats...')
+    export.diffstat(diffstat_filename)
+
     if args.R:
         print('Invoke R')
         call(['./R/PaStA.R',
@@ -80,7 +85,8 @@ def statistics(config, prog, argv):
               stack_release_dates_filename,
               patches_filename,
               upstream_filename,
-              occurrence_filename])
+              occurrence_filename,
+              diffstat_filename])
 
 if __name__ == '__main__':
     config = Config(sys.argv[1])
