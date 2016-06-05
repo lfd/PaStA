@@ -114,6 +114,50 @@ num_commits <- function() {
   return(p)
 }
 
+# Diffstat analysis
+diffstat <- function() {
+  my_diffstats = diffstats
+
+  my_diffstats <- merge(x = my_diffstats,
+                        y =  stack_release_dates,
+                        by.x = "Version",
+                        by.y = "Version")
+
+  my_diffstats$Sum <- my_diffstats$Insertions + my_diffstats$Deletions
+
+  mindate <- min(my_diffstats$ReleaseDate)
+  maxdate <- max(my_diffstats$ReleaseDate)
+
+  vgs <- unique(my_diffstats$VersionGroup)
+  vgs <- sort(vgs)
+
+  xticks <- do.call("c", lapply(vgs, function(x)
+    c(min(subset(my_diffstats, VersionGroup == x)$ReleaseDate))
+  ))
+
+  p <- ggplot(my_diffstats) +
+    geom_line(size = 1.2,
+              aes(x = ReleaseDate,
+                  y = Sum,
+                  group = VersionGroup,
+                  colour = VersionGroup)) +
+    ylim(min(my_diffstats$Sum),
+         max(my_diffstats$Sum)) +
+    scale_x_date(date_labels = "%b %Y",
+                 limits = c(mindate, maxdate),
+                 breaks = xticks) +
+    theme_bw(base_size = 15) +
+    scale_color_manual(values = cols) +
+    xlab("Timeline") +
+    ylab("LOC deleted + inserted") +
+    theme(legend.position = "top",
+          legend.title = element_blank(),
+          axis.line = element_line(),
+          axis.text.x = element_text(angle = 65,
+                                     hjust = 1))
+  return(p)
+}
+
 # Upstream analysis
 upstream_analysis <- function(binwidth) {
   p <- ggplot(upstream, aes(upstream$DateDiff)) +
@@ -220,7 +264,7 @@ if (length(args) == 0) {
   patch_groups_filename <- '/home/ralf/workspace/PaStA/foo/patches'
   upstream_filename <- '/home/ralf/workspace/PaStA/foo/upstream'
   occurrence_filename <- '/home/ralf/workspace/PaStA/foo/patch-occurrence'
-
+  diffstat_filename <- '/home/ralf/workspace/PaStA/foo/diffstat'
   persistent = FALSE
 } else {
   project_name <- args[1]
@@ -232,6 +276,7 @@ if (length(args) == 0) {
   patch_groups_filename <- args[6]
   upstream_filename <- args[7]
   occurrence_filename <- args[8]
+  diffstat_filename <- args[9]
 
   persistent = TRUE
 }
@@ -242,7 +287,8 @@ stack_release_dates <- read_csv(stack_release_dates_filename)
 patch_groups <- read_csv(patch_groups_filename)
 upstream <- read_csv(upstream_filename)
 occurrence <- read_csv(occurrence_filename)
-release_sort = read_csv(release_sort_filename)
+release_sort <- read_csv(release_sort_filename)
+diffstats <- read_csv(diffstat_filename)
 
 # Convert columns containing dates
 mainline_release_dates <- convertDate(mainline_release_dates,
@@ -329,6 +375,7 @@ for (i in ord_version_grps) {
 binwidth <- 7
 
 commitcount_plot <- num_commits()
+diffstat_plot <- diffstat()
 upstream_analysis_plot <- upstream_analysis(binwidth)
 branch_observation_plots <- branch_observation()
 
@@ -336,9 +383,9 @@ fl_sf_plot <- stack_future(fl_stack_versions)
 f_sf_plot <- stack_future(f_stack_versions)
 l_sf_plot <- stack_future(l_stack_versions)
 
-
 if (persistent) {
   savePlot("commitcount", commitcount_plot)
+  savePlot("diffstat", diffstat_plot)
   savePlot("upstream-analysis", upstream_analysis_plot)
   for (i in branch_observation_plots) {
     savePlot(paste("branch-observation-",
@@ -350,6 +397,7 @@ if (persistent) {
   savePlot("l_sf_plot", l_sf_plot)
 } else {
   print(commitcount_plot)
+  print(diffstat_plot)
   print(upstream_analysis_plot)
   for(i in branch_observation_plots) {
     print(i[[2]])
