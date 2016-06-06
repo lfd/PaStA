@@ -79,9 +79,14 @@ class Diff:
 
     @staticmethod
     def parse_diff(diff):
-        # Split by linebreaks and filter empty lines
         # Only split at \n and not at \r
-        diff = list(filter(None, diff.split('\n')))
+        diff = diff.split('\n')
+        return Diff.parse_diff_nosplit(diff)
+
+    @staticmethod
+    def parse_diff_nosplit(diff):
+        # filter empty lines
+        diff = list(filter(None, diff))
 
         # diff length ratio
         # Filter parts of interest
