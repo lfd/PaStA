@@ -20,6 +20,7 @@ details.
 
 
 import sys
+
 from bin.pasta_analyse import analyse
 from bin.pasta_compare import compare
 from bin.pasta_rate import rate

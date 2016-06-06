@@ -14,10 +14,11 @@ the COPYING file in the top-level directory.
 
 import argparse
 import copy
-from multiprocessing import Pool, cpu_count
 import os
 import re
 import sys
+
+from multiprocessing import cpu_count, Pool
 from termcolor import colored
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

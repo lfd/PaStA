@@ -13,11 +13,11 @@ the COPYING file in the top-level directory.
 """
 
 import argparse
+import os
+import sys
 
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
-import os
-import sys
 from termcolor import colored
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

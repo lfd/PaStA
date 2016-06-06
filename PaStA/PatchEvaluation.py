@@ -12,16 +12,17 @@ the COPYING file in the top-level directory.
 
 
 import datetime
-import shutil
-from enum import Enum
 import functools
-from fuzzywuzzy import fuzz
-from multiprocessing import Pool, cpu_count
 import pickle
-from statistics import mean
+import shutil
 import sys
 import termios
 import tty
+
+from enum import Enum
+from fuzzywuzzy import fuzz
+from multiprocessing import Pool, cpu_count
+from statistics import mean
 
 from PaStA.PatchStack import Commit, get_commit
 from PaStA import repo
