@@ -441,6 +441,11 @@ def cache_commits(commit_hashes, parallelise=True):
     print(colored(' [done]', 'green'))
 
 
+def inject_commits(commit_dict):
+    for key, val in commit_dict.items():
+        commits[key] = val
+
+
 def get_date_selector(selector):
     # Date selector "Stack Release Date"
     if selector == 'SRD':
