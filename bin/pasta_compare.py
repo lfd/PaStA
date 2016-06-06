@@ -26,7 +26,7 @@ def compare(commits):
 
         show_commits(commit_a, commit_b)
 
-        rating = preevaluate_single_patch(commit_a, commit_b)
+        rating = preevaluate_two_commits(commit_a, commit_b)
         if rating:
             print('Preevaluation: Possible candidates')
             rating = evaluate_commit_pair(config.thresholds, commit_a, commit_b)

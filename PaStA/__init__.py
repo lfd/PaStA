@@ -22,8 +22,8 @@ from PaStA.PatchStack import patch_stack_definition
 
 # Internal import statements
 from PaStA.EquivalenceClass import EquivalenceClass
-from PaStA.PatchEvaluation import DictList, EvaluationResult, EvaluationType, evaluate_patch_list, SimRating,\
-    show_commits, preevaluate_single_patch, evaluate_commit_pair, getch
+from PaStA.PatchEvaluation import DictList, EvaluationResult, EvaluationType, evaluate_commit_list, SimRating,\
+    show_commits, preevaluate_two_commits, evaluate_commit_pair, getch
 
 from PaStA.Config import Thresholds
 

@@ -27,7 +27,7 @@ from PaStA import *
 
 def _evaluate_patch_list_wrapper(args):
     orig, cand, type = args
-    return evaluate_patch_list(orig, cand, type, config.thresholds)
+    return evaluate_commit_list(orig, cand, type, config.thresholds)
 
 
 def find_cherries(commit_hashes, dest_list, type):
@@ -127,12 +127,12 @@ def analyse_stack(similar_patches):
                              patch_stack_definition.commits_on_stacks,
                              EvaluationType.PatchStack)
 
-    evaluation_result = evaluate_patch_list(representatives,
-                                            representatives,
-                                            EvaluationType.PatchStack,
-                                            config.thresholds,
-                                            parallelise=True,
-                                            verbose=True)
+    evaluation_result = evaluate_commit_list(representatives,
+                                             representatives,
+                                             EvaluationType.PatchStack,
+                                             config.thresholds,
+                                             parallelise=True,
+                                             verbose=True)
     evaluation_result.merge(cherries)
     evaluation_result.set_universe(representatives)
 
@@ -158,10 +158,10 @@ def analyse_upstream(similar_patches):
                              EvaluationType.Upstream)
 
     print('Starting evaluation.')
-    evaluation_result = evaluate_patch_list(representatives, patch_stack_definition.upstream_hashes,
-                                            EvaluationType.Upstream, config.thresholds,
-                                            parallelise=True, verbose=True,
-                                            cpu_factor=0.5)
+    evaluation_result = evaluate_commit_list(representatives, patch_stack_definition.upstream_hashes,
+                                             EvaluationType.Upstream, config.thresholds,
+                                             parallelise=True, verbose=True,
+                                             cpu_factor=0.5)
     print('Evaluation completed.')
 
     evaluation_result.merge(cherries)

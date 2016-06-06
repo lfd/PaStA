@@ -259,13 +259,13 @@ class DictList(dict):
             return DictList()
 
 
-def preevaluate_single_patch(original_hash, candidate_hash):
+def preevaluate_two_commits(lhash, rhash):
     # We do not need to evaluate equivalent commit hashes, as they are already belong to the same equivalence class
-    if original_hash == candidate_hash:
+    if lhash == rhash:
         return False
 
-    orig = get_commit(original_hash)
-    cand = get_commit(candidate_hash)
+    orig = get_commit(lhash)
+    cand = get_commit(rhash)
 
     # Don't rely on author dates!
     #delta = cand.author_date - orig.author_date
@@ -276,12 +276,12 @@ def preevaluate_single_patch(original_hash, candidate_hash):
     if orig.is_revert != cand.is_revert:
         return False
 
-    # Filtert auch merge commits
-    common_changed_files = len(orig.diff.affected.intersection(cand.diff.affected))
-    if common_changed_files == 0:
-        return False
+    return preevaluate_two_diffs(orig.diff, cand.diff)
 
-    return True
+
+def preevaluate_two_diffs(ldiff, rdiff):
+    common_changed_files = len(ldiff.affected.intersection(rdiff.affected))
+    return common_changed_files != 0
 
 
 def rate_diffs(thresholds, ldiff, rdiff):
@@ -372,7 +372,7 @@ def evaluate_commit_pair(thresholds, lhs_commit_hash, rhs_commit_hash):
 
 
 def _preevaluation_helper(candidate_hashes, orig_hash):
-    f = functools.partial(preevaluate_single_patch, orig_hash)
+    f = functools.partial(preevaluate_two_commits, orig_hash)
     return orig_hash, list(filter(f, candidate_hashes))
 
 
@@ -391,9 +391,9 @@ def _evaluation_helper(thresholds, orig_cands, verbose=False):
     return orig, results
 
 
-def evaluate_patch_list(original_hashes, candidate_hashes, eval_type, thresholds,
-                        parallelise=False, verbose=False,
-                        cpu_factor=1.25):
+def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, thresholds,
+                         parallelise=False, verbose=False,
+                         cpu_factor=1.25):
     """
     Evaluates two list of original and candidate hashes against each other
 
