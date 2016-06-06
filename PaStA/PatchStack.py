@@ -65,29 +65,45 @@ class Commit:
                                 re.IGNORECASE)
     REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
 
-    def __init__(self, commit_hash):
+    def __init__(self, commit_hash, message, diff, author_date, commit_date, author, author_email, is_revert=False):
 
         self._commit_hash = commit_hash
+        self._message = message
+
+        self._author_date = datetime.fromtimestamp(author_date)
+        self._commit_date = datetime.fromtimestamp(commit_date)
+
+        self._author = author
+        self._author_email = author_email
+
+        self._diff = diff
+
+        self._is_revert = is_revert
+
+    @staticmethod
+    def from_commit_hash(commit_hash):
         commit = repo[commit_hash]
 
         message = commit.message
         # Is a revert message?
-        self._is_revert = bool(Commit.REVERT_REGEX.search(message))
+        is_revert = bool(Commit.REVERT_REGEX.search(message))
         # Split by linebreaks and filter empty lines
-        self._message = list(filter(None, message.splitlines()))
+        message = list(filter(None, message.splitlines()))
         # Filter signed-off-by lines
-        self._message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
-                                    self.message))
+        message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
+                              message))
+
+        diff = Diff.parse_diff(Commit.get_diff(commit_hash))
 
         # Respect timezone offsets?
-        self._author_date = datetime.fromtimestamp(commit.author.time)
-        self._commit_date = datetime.fromtimestamp(commit.commit_time)
-
-        self._author = commit.author.name
-        self._author_email = commit.author.email
-
-        diff = Commit.get_diff(commit_hash)
-        self._diff = Diff.parse_diff(diff)
+        return Commit(commit_hash,
+                      message,
+                      diff,
+                      commit.author.time,
+                      commit.commit_time,
+                      commit.author.name,
+                      commit.author.email,
+                      is_revert)
 
     @staticmethod
     def get_diff(commit_hash):
@@ -371,8 +387,12 @@ def get_commit(commit_hash):
         return commits[commit_hash]
 
     # cache and return if it is not yet cached
-    commits[commit_hash] = Commit(commit_hash)
+    commits[commit_hash] = Commit.from_commit_hash(commit_hash)
     return commits[commit_hash]
+
+
+def foo(commit_hash):
+    return Commit.from_commit_hash(commit_hash)
 
 
 def cache_commits(commit_hashes, parallelise=True):
@@ -386,11 +406,11 @@ def cache_commits(commit_hashes, parallelise=True):
 
     if parallelise:
         p = Pool(cpu_count())
-        result = p.map(Commit, commit_hashes)
+        result = p.map(foo, commit_hashes)
         p.close()
         p.join()
     else:
-        result = list(map(Commit, commit_hashes))
+        result = list(map(Commit.from_commit_hash, commit_hashes))
 
     # Fill cache
     for commit_hash, commit in zip(commit_hashes, result):
