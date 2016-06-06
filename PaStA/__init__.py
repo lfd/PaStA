@@ -8,7 +8,7 @@ repo = Repository(config.repo_location)
 
 from PaStA.PatchStack import patch_stack_definition
 
-# Import statements
+# Internal import statements
 from PaStA.EquivalenceClass import EquivalenceClass
 from PaStA.PatchEvaluation import DictList, EvaluationResult, EvaluationType, evaluate_patch_list, SimRating,\
     show_commits, preevaluate_single_patch, evaluate_commit_pair, getch
