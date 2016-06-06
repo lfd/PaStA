@@ -1,14 +1,13 @@
 PaStA - Patch Stack Analysis
 ============================
 
-Cloning
--------
+Getting PaStA
+-------------
 ```
 $ git clone git@gitlab.lfd.sturhax.de:PaStA/PaStA.git
 ```
 
-**PaStA** runs on *Python3*.
-Dependencies:
+**PaStA** runs on *Python3* and comes with the following dependencies:
 - git
 - pygit2
 - git-python (for PaStA-resources only)
@@ -18,7 +17,7 @@ Dependencies:
 TL;DR
 -----
 
-Run `./pasta -h`
+Run `./pasta-prepare && ./pasta -h`
 
 Running PaStA
 -------------
