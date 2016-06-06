@@ -6,13 +6,12 @@ from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
 import pickle
 from statistics import mean
-from subprocess import call
 import sys
 import termios
 import tty
 
 from PaStA.PatchStack import Commit, get_commit
-from PaStA import config, repo
+from PaStA import repo
 
 
 class EvaluationType(Enum):
