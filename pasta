@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+
+"""
+PaStA - Patch Stack Analysis
+A tool for tracking the evolution of patch stacks
+
+Copyright (c) OTH Regensburg, 2016
+
+Author:
+  Ralf Ramsauer <ralf.ramsauer@othr.de>
+
+This work is licensed under the terms of the GNU GPL, version 2.  See
+the COPYING file in the top-level directory.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+"""
+
+
+import sys
+
+from bin.pasta_analyse import analyse
+from bin.pasta_compare import compare
+from bin.pasta_rate import rate
+from bin.pasta_statistics import statistics
+from bin.pasta_compare_stacks import compare_stacks
+from bin.pasta_patch_descriptions import patch_descriptions
+from bin.pasta_upstream_history import pasta_upstream_history
+
+
+__author__ = 'Ralf Ramsauer'
+__copyright__ = 'Copyright (c) OTH Regensburg, 2016'
+__credits__ = ['Ralf Ramsauer']
+__license__ = 'GPLv2'
+__version__ = '0.1-rc1'
+__maintainer__ = 'Ralf Ramsauer'
+__email__ = 'ralf.ramsauer@othr.de'
+__status__ = 'Development'
+
+
+def usage(me):
+    print('PaStA - The Patch Stack Analysis (PaStA %s)\n'
+          '\n'
+          'usage: %s sub -h\n'
+          'where sub is one of:\n'
+          '  analyse\n'
+          '  compare\n'
+          '  rate\n'
+          '  statistics\n'
+          '  compare_stacks\n'
+          '  patch_descriptions\n'
+          '  upstream_history\n'
+          '\n'
+          '%s\n'
+          'License %s: See COPYING\n'
+          'This is free software: you are free to change and redistribute it.\n'
+          'There is NO WARRANTY, to the extent permitted by law.\n'
+          '\n'
+          'Written by %s.' %
+          (__version__, me, __copyright__, __license__, __author__))
+    quit()
+
+
+def main(argv):
+    me = argv[0]
+    if len(argv) < 2:
+        usage(me)
+
+    sub = argv[1]
+    args = argv[2:]
+
+    if sub == '-h':
+        usage(me)
+    elif sub == 'analyse':
+        analyse(sub, args)
+    elif sub == 'compare':
+        compare(args)
+    elif sub == 'rate':
+        rate(sub, args)
+    elif sub == 'statistics':
+        statistics(sub, args)
+    elif sub == 'compare_stacks':
+        compare_stacks(sub, args)
+    elif sub == 'patch_descriptions':
+        patch_descriptions(sub, args)
+    elif sub == 'upstream_history':
+        pasta_upstream_history(sub, args)
+    else:
+        print('Unknown command: %s' % sub)
+        usage(me)
+
+if __name__ == '__main__':
+    main(sys.argv)

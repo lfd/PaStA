@@ -1,7 +1,6 @@
 .idea/
 __pycache__/
 *.pkl
-config
 .Rhistory
 .Rproj.user
 R/R.Rproj
