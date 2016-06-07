@@ -351,7 +351,7 @@ class PatchStackDefinition:
                                     row['BaseVersion'],
                                     row['BaseReleaseDate'])
 
-                stack = VersionPoint(row['BranchName'],
+                stack = VersionPoint(row['Branch'],
                                      row['StackVersion'],
                                      row['StackReleaseDate'])
 
