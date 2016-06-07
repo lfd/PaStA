@@ -4,7 +4,7 @@ PaStA - Patch Stack Analysis
 Getting PaStA
 -------------
 ```
-$ git clone git@gitlab.lfd.sturhax.de:PaStA/PaStA.git
+$ git clone https://github.com/lfd/PaStA.git
 ```
 
 **PaStA** runs on *Python3* and comes with the following dependencies:
@@ -16,8 +16,9 @@ $ git clone git@gitlab.lfd.sturhax.de:PaStA/PaStA.git
 
 TL;DR
 -----
-
-Run `./pasta-prepare && ./pasta -h`
+- Run `./pasta-prepare`
+- Link config `ln -sf PaStA-resources/PreemptRT/PreemptRT.conf ./config`
+- Run PaStA `./pasta -h`
 
 Running PaStA
 -------------
