@@ -51,7 +51,7 @@ savePlot <- function(filename, plot) {
   TEXWIDTH <- 5.87614
   tex_filename <- file.path(output_dir, paste(project_name, "-", filename, ".tex", sep = ""))
   png_filename <- file.path(output_dir, paste(project_name, "-", filename, ".png", sep = ""))
-  
+
   tikz(tex_filename, standAlone = FALSE, width = 5, height = 5, sanitize = TRUE)
   print(plot)
   dev.off()
@@ -76,7 +76,7 @@ num_commits <- function() {
                        y =  stack_release_dates,
                        by.x = "Version",
                        by.y = "Version")
-  
+
   # some sugar
   commitcount <- commitcount[, c(3,1,4,2)]
 
@@ -91,7 +91,7 @@ num_commits <- function() {
       #max(subset(commitcount, VersionGroup == x)$ReleaseDate)
     )
   ))
-  
+
   p <- ggplot(commitcount,
               aes(x = ReleaseDate,
                   y = NumCommits,
@@ -104,7 +104,7 @@ num_commits <- function() {
                  breaks = xticks) +
     theme_bw(base_size = 15) +
     scale_color_manual(values = cols) +
-    xlab("Timeline") + 
+    xlab("Timeline") +
     ylab("Number of commits") +
     theme(legend.position = "top",
           legend.title = element_blank(),
