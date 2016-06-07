@@ -391,7 +391,7 @@ def get_commit(commit_hash):
     return commits[commit_hash]
 
 
-def foo(commit_hash):
+def commit_from_commit_hash(commit_hash):
     return Commit.from_commit_hash(commit_hash)
 
 
@@ -406,11 +406,11 @@ def cache_commits(commit_hashes, parallelise=True):
 
     if parallelise:
         p = Pool(cpu_count())
-        result = p.map(foo, commit_hashes)
+        result = p.map(commit_from_commit_hash, commit_hashes)
         p.close()
         p.join()
     else:
-        result = list(map(Commit.from_commit_hash, commit_hashes))
+        result = list(map(commit_from_commit_hash, commit_hashes))
 
     # Fill cache
     for commit_hash, commit in zip(commit_hashes, result):
