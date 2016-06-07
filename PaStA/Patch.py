@@ -43,8 +43,8 @@ class Diff:
     DIFF_SELECTOR_REGEX = re.compile(r'^[-\+@]')
 
     # The two-line unified diff headers
-    FILE_SEPARATOR_MINUS_REGEX = re.compile(r'^--- (.+)$')
-    FILE_SEPARATOR_PLUS_REGEX = re.compile(r'^\+\+\+ (.+)$')
+    FILE_SEPARATOR_MINUS_REGEX = re.compile(r'^--- ([^\s]*).*$')
+    FILE_SEPARATOR_PLUS_REGEX = re.compile(r'^\+\+\+ ([^\s]*).*$')
 
     # Exclude '--cc' diffs
     EXCLUDE_CC_REGEX = re.compile(r'^diff --cc (.+)$')
