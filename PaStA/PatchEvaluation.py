@@ -29,6 +29,7 @@ from PaStA.PatchStack import get_commit
 class EvaluationType(Enum):
     PatchStack = 1
     Upstream = 2
+    Mailinglist = 3
 
 
 class SimRating:
