@@ -376,19 +376,19 @@ def _preevaluation_helper(candidate_hashes, orig_hash):
     return orig_hash, list(filter(f, candidate_hashes))
 
 
-def _evaluation_helper(thresholds, orig_cands, verbose=False):
-    orig, cands = orig_cands
+def _evaluation_helper(thresholds, l_r, verbose=False):
+    left, right = l_r
     if verbose:
-        print('Evaluating 1 commit hash against %d commit hashes' % len(cands))
+        print('Evaluating 1 commit hash against %d commit hashes' % len(right))
 
-    f = functools.partial(evaluate_commit_pair, thresholds, orig)
-    results = list(map(f, cands))
-    results = list(zip(cands, results))
+    f = functools.partial(evaluate_commit_pair, thresholds, left)
+    results = list(map(f, right))
+    results = list(zip(right, results))
 
     # sort SimRating
     results.sort(key=lambda x: x[1], reverse=True)
 
-    return orig, results
+    return left, results
 
 
 def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, thresholds,
