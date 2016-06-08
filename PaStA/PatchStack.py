@@ -65,45 +65,50 @@ class Commit:
                                 re.IGNORECASE)
     REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
 
-    def __init__(self, commit_hash, message, diff, author_date, commit_date, author, author_email, is_revert=False):
+    def __init__(self, commit_hash, message, diff,
+                 author, author_email, author_date,
+                 committer, committer_email, commit_date):
 
         self._commit_hash = commit_hash
-        self._message = message
 
-        self._author_date = datetime.fromtimestamp(author_date)
+        if isinstance(message, list):
+            self._raw_message = '\n'.join(message)
+        else:
+            self._raw_message = message
+
+        # Split by linebreaks and filter empty lines
+        self._message = list(filter(None, self._raw_message.splitlines()))
+        # Filter signed-off-by lines
+        self._message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x), self._message))
+
+        self._committer = committer
+        self._committer_email = committer_email
         self._commit_date = datetime.fromtimestamp(commit_date)
 
         self._author = author
         self._author_email = author_email
+        self._author_date = datetime.fromtimestamp(author_date)
 
-        self._diff = diff
+        # Is a revert message?
+        self._is_revert = bool(Commit.REVERT_REGEX.search(self._raw_message))
 
-        self._is_revert = is_revert
+        if isinstance(diff, list):
+            self._raw_diff = '\n'.join(diff)
+            self._diff = Diff.parse_diff_nosplit(diff)
+        else:
+            self._raw_diff = diff
+            self._diff = Diff.parse_diff(diff)
 
     @staticmethod
     def from_commit_hash(commit_hash):
         commit = repo[commit_hash]
 
-        message = commit.message
-        # Is a revert message?
-        is_revert = bool(Commit.REVERT_REGEX.search(message))
-        # Split by linebreaks and filter empty lines
-        message = list(filter(None, message.splitlines()))
-        # Filter signed-off-by lines
-        message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x),
-                              message))
-
-        diff = Diff.parse_diff(Commit.get_diff(commit_hash))
-
         # Respect timezone offsets?
         return Commit(commit_hash,
-                      message,
-                      diff,
-                      commit.author.time,
-                      commit.commit_time,
-                      commit.author.name,
-                      commit.author.email,
-                      is_revert)
+                      commit.message,
+                      Commit.get_diff(commit_hash),
+                      commit.author.name, commit.author.email, commit.author.time,
+                      commit.committer.name, commit.committer.email, commit.commit_time)
 
     @staticmethod
     def get_diff(commit_hash):
@@ -120,8 +125,16 @@ class Commit:
         return self._is_revert
 
     @property
+    def raw_diff(self):
+        return self._raw_diff
+
+    @property
     def diff(self):
         return self._diff
+
+    @property
+    def raw_message(self):
+        return self._raw_message
 
     @property
     def message(self):
@@ -132,20 +145,28 @@ class Commit:
         return self._message[0]
 
     @property
-    def author_date(self):
-        return self._author_date
-
-    @property
-    def commit_date(self):
-        return self._commit_date
-
-    @property
     def author(self):
         return self._author
 
     @property
     def author_email(self):
         return self._author_email
+
+    @property
+    def author_date(self):
+        return self._author_date
+
+    @property
+    def committer(self):
+        return self._committer
+
+    @property
+    def committer_email(self):
+        return self._committer_email
+
+    @property
+    def commit_date(self):
+        return self._commit_date
 
 
 class VersionPoint:

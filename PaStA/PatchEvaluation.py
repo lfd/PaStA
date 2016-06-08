@@ -11,7 +11,6 @@ the COPYING file in the top-level directory.
 """
 
 
-import datetime
 import functools
 import pickle
 import shutil
@@ -24,8 +23,7 @@ from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
 from statistics import mean
 
-from PaStA.PatchStack import Commit, get_commit
-from PaStA import repo
+from PaStA.PatchStack import get_commit
 
 
 class EvaluationType(Enum):
@@ -456,14 +454,13 @@ def show_commits(left_hash, right_hash):
     def fix_encoding(string):
         return string.encode('utf-8').decode('ascii', 'ignore')
 
-    def format_message(hash):
-        commit = repo[hash]
-        message = ['Commit:     %s' % hash,
-                   'Author:     %s <%s>' % (fix_encoding(commit.author.name), commit.author.email),
-                   'AuthorDate: %s' % datetime.datetime.fromtimestamp(commit.author.time),
-                   'Commit:     %s <%s>' % (fix_encoding(commit.committer.name), commit.committer.email),
-                   'CommitDate: %s' % datetime.datetime.fromtimestamp(commit.committer.time),
-                   ''] + fix_encoding(commit.message).split('\n')
+    def format_message(commit):
+        message = ['Commit:     %s' % commit.commit_hash,
+                   'Author:     %s <%s>' % (fix_encoding(commit.author), commit.author_email),
+                   'AuthorDate: %s' % commit.author_date,
+                   'Committer   %s <%s>' % (fix_encoding(commit.committer), commit.committer_email),
+                   'CommitDate: %s' % commit.commit_date,
+                   ''] + fix_encoding(commit.raw_message).split('\n')
         return message
 
     def side_by_side(left, right, split_length):
@@ -477,11 +474,14 @@ def show_commits(left_hash, right_hash):
                 line += right.pop(0).expandtabs(6)[0:split_length]
             print(line)
 
-    left_message = format_message(left_hash)
-    right_message = format_message(right_hash)
+    left_commit = get_commit(left_hash)
+    right_commit = get_commit(right_hash)
 
-    left_diff = Commit.get_diff(left_hash).split('\n')
-    right_diff = Commit.get_diff(right_hash).split('\n')
+    left_message = format_message(left_commit)
+    right_message = format_message(right_commit)
+
+    left_diff = left_commit.raw_diff.split('\n')
+    right_diff = right_commit.raw_diff.split('\n')
 
     columns, _ = shutil.get_terminal_size()
     maxlen = int((columns-3)/2)
