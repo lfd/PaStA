@@ -104,7 +104,7 @@ class EvaluationResult(dict):
             return pickle.load(f)
 
     def interactive_rating(self, equivalence_class, false_positive_list,
-                           thresholds, respect_commitdate=False, upstream_rating=True):
+                           thresholds, respect_commitdate=False):
         already_false_positive = 0
         already_detected = 0
         auto_accepted = 0
@@ -195,7 +195,7 @@ class EvaluationResult(dict):
                             break
 
                 if yns == 'y':
-                    if upstream_rating:
+                    if self.eval_type == EvaluationType.Upstream:
                         equivalence_class.set_property(orig_commit_hash, cand_commit_hash)
                         # Upstream rating can not have multiple candidates. So break after the first match
                         break
