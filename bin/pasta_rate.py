@@ -23,7 +23,7 @@ from PaStA import *
 def patch_stack_rating(evaluation_result, similar_patches, false_positives,
                        thresholds, resp_commit_date):
     evaluation_result.interactive_rating(similar_patches, false_positives,
-                                         thresholds, resp_commit_date, upstream_rating=False)
+                                         thresholds, resp_commit_date)
 
 
 def upstream_rating(evaluation_result, similar_patches, similar_upstream,
@@ -36,7 +36,7 @@ def upstream_rating(evaluation_result, similar_patches, similar_upstream,
             del evaluation_result[key]
 
     evaluation_result.interactive_rating(similar_upstream, false_positives,
-                                         thresholds, resp_commit_date, upstream_rating=True)
+                                         thresholds, resp_commit_date)
 
 
 def rate(prog, argv):
