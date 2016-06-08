@@ -92,7 +92,7 @@ def rate(prog, argv):
         upstream_rating(evaluation_result, similar_patches, similar_upstream,
                         false_positives, config.thresholds, args.resp_commit_date)
     else:
-        pass
+        raise NotImplementedError('rating for evaluation type is not implemented')
 
     similar_upstream.to_file(args.su_filename)
     similar_patches.to_file(args.sp_filename)
