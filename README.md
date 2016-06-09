@@ -34,6 +34,17 @@ will initialize and clone PaStA-resources (all preconfigured projects for
 analysation) as git submodules. Inside PaStA-resources, the project code
 repositories are submodules as well.
 
+### Create commit cache
+For some projects and repositories, PaStA has to compare tenthousands of
+diffs. Creating those diffs on-the-fly is possible but very slow. Because of
+this, PaStA is able to use a fast commit that can be reused.
+
+```
+$ ./pasta cache -stack # Creates cache file for commits on the patch stacks
+$ ./pasta cache -upstream # Create cache file for upstream commits
+$ ./pasta cache -all # same as --stack --upstream
+```
+
 ### Detecting and grouping similar patches
 Analysing patches on the stacks and eventually linking them into equivalence
 classes is split in two different command: `pasta analyse` and `pasta rate`.
