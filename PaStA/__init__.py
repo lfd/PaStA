@@ -27,7 +27,7 @@ from PaStA.PatchEvaluation import DictList, EvaluationResult, EvaluationType, ev
 
 from PaStA.Config import Thresholds
 
-from PaStA.PatchStack import cache_commits, get_commit, get_date_selector, format_date_ymd
+from PaStA.PatchStack import cache_commits, format_date_ymd, get_commit, get_date_selector, load_commit_cache
 
 from PaStA.Export import export_release_dates, export_sorted_release_names, export_patch_groups
 

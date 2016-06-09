@@ -75,7 +75,9 @@ def find_cherries(commit_hashes, dest_list, type):
 
 
 def analyse_succ():
-    # Check stacks against successive stacks
+    # analyse_succ: compare successive stacks
+    load_commit_cache(config.commit_cache_stack_filename)
+
     evaluation_list = []
     for patch_stack in patch_stack_definition:
         successor = patch_stack_definition.get_successor(patch_stack)
@@ -85,6 +87,7 @@ def analyse_succ():
         print('Queueing %s <-> %s' % (patch_stack.stack_version, successor.stack_version))
         evaluation_list.append((patch_stack.commit_hashes, successor.commit_hashes, EvaluationType.PatchStack))
 
+    # cache missing commits
     cache_commits(patch_stack_definition.commits_on_stacks)
 
     cherries = find_cherries(patch_stack_definition.commits_on_stacks,
@@ -120,7 +123,7 @@ def analyse_stack(similar_patches):
                                                                      patch_stack_definition.get_stack_of_commit(y)))
     print(colored(' [done]', 'green'))
 
-    # Cache commits
+    # cache commits
     cache_commits(representatives)
 
     cherries = find_cherries(representatives,
@@ -140,6 +143,8 @@ def analyse_stack(similar_patches):
 
 
 def analyse_upstream(similar_patches):
+    load_commit_cache(config.commit_cache_upstream_filename)
+
     sys.stdout.write('Determining patch stack representative system...')
     sys.stdout.flush()
     # Get the complete representative system
@@ -150,6 +155,7 @@ def analyse_upstream(similar_patches):
                                                                      patch_stack_definition.get_stack_of_commit(y)))
     print(colored(' [done]', 'green'))
 
+    # cache missing commits
     cache_commits(patch_stack_definition.upstream_hashes)
     cache_commits(representatives)
 

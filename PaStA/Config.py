@@ -84,6 +84,8 @@ class Config:
         self.diffs_location = os.path.join(self._project_root, pasta.get('DIFFS'))
         self.R_resources = os.path.join(self._project_root, pasta.get('R_RESOURCES'))
         self.upstream_blacklist = pasta.get('UPSTREAM_BLACKLIST')
+        self.commit_cache_stack_filename = os.path.join(self._project_root, pasta.get('COMMIT_CACHE_STACK'))
+        self.commit_cache_upstream_filename = os.path.join(self._project_root, pasta.get('COMMIT_CACHE_UPSTREAM'))
         if self.upstream_blacklist:
             self.upstream_blacklist = os.path.join(Config.BLACKLIST_LOCATION, self.upstream_blacklist)
 
