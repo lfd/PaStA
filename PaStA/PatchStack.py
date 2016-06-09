@@ -385,7 +385,7 @@ class PatchStackDefinition:
             patch_stack_groups.append((group_name, this_group))
 
         # get upstream commit hashes
-        upstream = get_commits_from_file(os.path.join(config.stack_hashes, 'upstream'))
+        upstream = get_commits_from_file(config.upstream_hashes_filename)
         blacklist = get_commits_from_file(config.upstream_blacklist, ordered=False)
         # filter blacklistes commit hashes
         upstream = [x for x in upstream if x not in blacklist]

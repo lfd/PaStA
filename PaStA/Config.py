@@ -74,6 +74,7 @@ class Config:
         # Parse locations, those will fallback to default values
         self.patch_stack_definition = os.path.join(self._project_root, pasta.get('PATCH_STACK_DEFINITION'))
         self.stack_hashes = os.path.join(self._project_root, pasta.get('STACK_HASHES'))
+        self.upstream_hashes_filename = os.path.join(self.stack_hashes, 'upstream')
         self.similar_patches = os.path.join(self._project_root, pasta.get('SIMILAR_PATCHES'))
         self.similar_upstream = os.path.join(self._project_root, pasta.get('SIMILAR_UPSTREAM'))
         self.false_positives = os.path.join(self._project_root, pasta.get('FALSE_POSTITIVES'))
