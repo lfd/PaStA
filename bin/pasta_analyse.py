@@ -206,7 +206,7 @@ def analyse(prog, argv):
                         default=config.similar_patches, help='Similar Patches filename')
     parser.add_argument('-su', dest='su_filename', metavar='filename',
                         default=config.similar_upstream,
-                        help='Similar Upstream filename. Only required together with -mode finish')
+                        help='Similar Upstream filename. Only required together with mode finish')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
                         default=config.patch_groups,
                         help='Patch groups filename. Only required with -mode finish')
