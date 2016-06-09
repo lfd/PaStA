@@ -12,10 +12,11 @@ the COPYING file in the top-level directory.
 
 
 import csv
-from datetime import datetime
-from multiprocessing import Pool, cpu_count
 import os
 import sys
+
+from datetime import datetime
+from multiprocessing import Pool, cpu_count
 from termcolor import colored
 
 from PaStA import config, repo
