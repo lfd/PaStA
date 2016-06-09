@@ -22,6 +22,7 @@ details.
 import sys
 
 from bin.pasta_analyse import analyse
+from bin.pasta_cache import cache
 from bin.pasta_compare import compare
 from bin.pasta_rate import rate
 from bin.pasta_statistics import statistics
@@ -46,6 +47,7 @@ def usage(me):
           'usage: %s sub -h\n'
           'where sub is one of:\n'
           '  analyse\n'
+          '  cache\n'
           '  compare\n'
           '  rate\n'
           '  statistics\n'
@@ -75,6 +77,8 @@ def main(argv):
         usage(me)
     elif sub == 'analyse':
         analyse(sub, args)
+    elif sub == 'cache':
+        cache(sub, args)
     elif sub == 'compare':
         compare(args)
     elif sub == 'rate':
