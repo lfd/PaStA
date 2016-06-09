@@ -414,7 +414,12 @@ def get_commit(commit_hash):
 
 
 def commit_from_commit_hash(commit_hash):
-    return Commit.from_commit_hash(commit_hash)
+    return commit_hash, Commit.from_commit_hash(commit_hash)
+
+
+def chunks(l, n):
+    for i in range(0, len(l), n):
+        yield l[i:i+n]
 
 
 def cache_commits(commit_hashes, parallelise=True):
@@ -423,21 +428,29 @@ def cache_commits(commit_hashes, parallelise=True):
     :param commit_hashes: List of commit hashes
     :param parallelise: parallelise
     """
-    sys.stdout.write('Caching %d commits. This may take a while...' % len(commit_hashes))
+    already_cached = set(commits.keys())
+    worklist = set(commit_hashes) - already_cached
+
+    if len(worklist) == 0:
+        return
+
+    print('Caching %d/%d commits. This may take a while...' % (len(worklist), len(commit_hashes)))
     sys.stdout.flush()
 
-    if parallelise:
-        p = Pool(cpu_count())
-        result = p.map(commit_from_commit_hash, commit_hashes)
-        p.close()
-        p.join()
-    else:
-        result = list(map(commit_from_commit_hash, commit_hashes))
-
-    # Fill cache
-    for commit_hash, commit in zip(commit_hashes, result):
-        commits[commit_hash] = commit
-
+    done = 0
+    for chunk in chunks(list(worklist), 1000):
+        sys.stdout.write('\r  %d/%d commits' % (done, len(worklist)))
+        sys.stdout.flush()
+        if parallelise:
+            p = Pool(cpu_count())
+            result = p.map(commit_from_commit_hash, chunk)
+            p.close()
+            p.join()
+        else:
+            result = map(commit_from_commit_hash, chunk)
+        done += len(chunk)
+        result = dict(result)
+        inject_commits(result)
     print(colored(' [done]', 'green'))
 
 
