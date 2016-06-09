@@ -27,8 +27,12 @@ from PaStA.Patch import *
 commits = {}
 
 
-def get_commits_from_file(filename, ordered=True):
-    content = file_to_string(filename, must_exist=True).splitlines()
+def get_commits_from_file(filename, ordered=True, must_exist=True):
+    content = file_to_string(filename, must_exist=must_exist)
+    if content is None:
+        content = ''
+    content = content.splitlines()
+
     # Filter empty lines
     content = filter(None, content)
     # Filter comment lines
