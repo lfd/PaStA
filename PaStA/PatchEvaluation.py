@@ -391,7 +391,7 @@ def _evaluation_helper(thresholds, l_r, verbose=False):
 
 def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, thresholds,
                          parallelise=False, verbose=False,
-                         cpu_factor=1.25):
+                         cpu_factor=1):
     """
     Evaluates two list of original and candidate hashes against each other
 
