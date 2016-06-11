@@ -257,31 +257,6 @@ class DictList(dict):
             return DictList()
 
 
-def preevaluate_two_commits(lhash, rhash):
-    # We do not need to evaluate equivalent commit hashes, as they are already belong to the same equivalence class
-    if lhash == rhash:
-        return False
-
-    orig = get_commit(lhash)
-    cand = get_commit(rhash)
-
-    # Don't rely on author dates!
-    #delta = cand.author_date - orig.author_date
-    #if delta.days < 0:
-    #    return False
-
-    # Check if patch is a revertion
-    if orig.is_revert != cand.is_revert:
-        return False
-
-    return preevaluate_two_diffs(orig.diff, cand.diff)
-
-
-def preevaluate_two_diffs(ldiff, rdiff):
-    common_changed_files = len(ldiff.affected.intersection(rdiff.affected))
-    return common_changed_files != 0
-
-
 def rate_diffs(thresholds, ldiff, rdiff):
     levenshteins = []
 
@@ -369,11 +344,6 @@ def evaluate_commit_pair(thresholds, lhs_commit_hash, rhs_commit_hash):
     return evaluate_patch_pair(thresholds, (lhs_commit.message, lhs_commit.diff), (rhs_commit.message, rhs_commit.diff))
 
 
-def _preevaluation_helper(candidate_hashes, orig_hash):
-    f = functools.partial(preevaluate_two_commits, orig_hash)
-    return orig_hash, list(filter(f, candidate_hashes))
-
-
 def _evaluation_helper(thresholds, l_r, verbose=False):
     left, right = l_r
     if verbose:
@@ -387,6 +357,61 @@ def _evaluation_helper(thresholds, l_r, verbose=False):
     results.sort(key=lambda x: x[1], reverse=True)
 
     return left, results
+
+
+def preevaluate_two_commits(lhash, rhash):
+    # We do not need to evaluate equivalent commit hashes, as they are already belong to the same equivalence class
+    if lhash == rhash:
+        return False
+
+    orig = get_commit(lhash)
+    cand = get_commit(rhash)
+
+    # Check if patch is a revertion
+    if orig.is_revert != cand.is_revert:
+        return False
+
+    return preevaluate_two_diffs(orig.diff, cand.diff)
+
+
+def preevaluate_two_diffs(ldiff, rdiff):
+    common_changed_files = len(ldiff.affected.intersection(rdiff.affected))
+    return common_changed_files != 0
+
+
+def preevaluate_commit_list(left_hashes, right_hashes):
+    # Create two dictionaries - one for mails, one for commits that map
+    # affected files to commit hashes resp. mailing list Message-IDs
+    def file_commit_map(hashes):
+        r = {}
+        for hash in hashes:
+            files = get_commit(hash).diff.affected
+            for file in files:
+                if file not in r:
+                    r[file] = set()
+                r[file] |= set([hash])
+        return r
+
+    left_files = file_commit_map(left_hashes)
+    right_files = file_commit_map(right_hashes)
+    preeval_result = {}
+
+    for file in left_files:
+        if file in right_files:
+            srcs = left_files[file]
+            dsts = right_files[file]
+            for src in srcs:
+                left = get_commit(src)
+                for dst in dsts:
+                    right = get_commit(dst)
+                    if left.is_revert != right.is_revert:
+                        continue
+                    if src == dst:
+                        continue
+                    if src not in preeval_result:
+                        preeval_result[src] = set()
+                    preeval_result[src] |= set([dst])
+    return preeval_result
 
 
 def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, thresholds,
@@ -407,25 +432,17 @@ def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, threshold
 
     print('Evaluating %d commit hashes against %d commit hashes' % (len(original_hashes), len(candidate_hashes)))
 
-    # Bind candidate hashes to preevaluation
-    f_preeval = functools.partial(_preevaluation_helper, candidate_hashes)
     # Bind thresholds to evaluation
     f_eval = functools.partial(_evaluation_helper, thresholds, verbose=True)
 
     if verbose:
         print('Running preevaluation.')
-    if parallelise:
-        p = Pool(poolsize)
-        preeval_result = p.map(f_preeval, original_hashes)
-    else:
-        preeval_result = list(map(f_preeval, original_hashes))
-
-    # Filter empty candidates
-    preeval_result = dict(filter(lambda x: not not x[1], preeval_result))
+    preeval_result = preevaluate_commit_list(original_hashes, candidate_hashes)
     if verbose:
         print('Preevaluation finished.')
 
     if parallelise:
+        p = Pool(poolsize)
         result = p.map(f_eval, preeval_result.items())
         p.close()
         p.join()
