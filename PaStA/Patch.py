@@ -85,11 +85,7 @@ class Diff:
 
     @staticmethod
     def parse_diff_nosplit(diff):
-        # filter empty lines
-        diff = list(filter(None, diff))
-
-        # diff length ratio
-        # Filter parts of interest
+        # Calculate diff_lines
         lines_of_interest = list(filter(lambda x: Diff.DIFF_SELECTOR_REGEX.match(x), diff))
         diff_lines = sum(map(len, lines_of_interest))
 
@@ -137,8 +133,14 @@ class Diff:
                 while not (del_cntr == l_lines and add_cntr == r_lines):
                     line = diff.pop(0)
 
-                    identifier = line[0]
-                    payload = line[1:]
+                    # Assume an empty string to be an invariant newline
+                    # (this happens quite often when parsing mails)
+                    if line == '':
+                        identifier = ' '
+                        payload = ''
+                    else:
+                        identifier = line[0]
+                        payload = line[1:]
 
                     if identifier == '+':
                         insertions.append(payload)
