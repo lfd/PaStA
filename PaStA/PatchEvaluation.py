@@ -428,12 +428,12 @@ def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, threshold
     :return: a dictionary with originals as keys and a list of potential candidates as value
     """
 
-    poolsize = int(cpu_count() * cpu_factor)
+    processes = int(cpu_count() * cpu_factor)
 
     print('Evaluating %d commit hashes against %d commit hashes' % (len(original_hashes), len(candidate_hashes)))
 
     # Bind thresholds to evaluation
-    f_eval = functools.partial(_evaluation_helper, thresholds, verbose=True)
+    f_eval = functools.partial(_evaluation_helper, thresholds, verbose=verbose)
 
     if verbose:
         print('Running preevaluation.')
@@ -441,15 +441,15 @@ def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, threshold
     if verbose:
         print('Preevaluation finished.')
 
+    retval = EvaluationResult(eval_type=eval_type)
     if parallelise:
-        p = Pool(poolsize)
-        result = p.map(f_eval, preeval_result.items())
+        p = Pool(processes=processes, maxtasksperchild=1)
+        result = p.map(f_eval, preeval_result.items(), chunksize=50)
         p.close()
         p.join()
     else:
         result = list(map(f_eval, preeval_result.items()))
 
-    retval = EvaluationResult(eval_type=eval_type)
     for orig, evaluation in result:
         retval[orig] = evaluation
 
