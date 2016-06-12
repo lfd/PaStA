@@ -111,8 +111,6 @@ class Diff:
             plus = Diff.FILE_SEPARATOR_PLUS_REGEX.match(diff.pop(0)).group(1)
 
             diff_index = minus, plus
-            if diff_index not in retval:
-                retval[diff_index] = {}
 
             while len(diff) and Diff.HUNK_REGEX.match(diff[0]):
                 hunk = Diff.HUNK_REGEX.match(diff.pop(0))
@@ -163,6 +161,8 @@ class Diff:
 
                 h = Hunk(insertions, deletions, invariant)
 
+                if diff_index not in retval:
+                    retval[diff_index] = {}
                 if hunktitle not in retval[diff_index]:
                     retval[diff_index][hunktitle] = Hunk()
 
