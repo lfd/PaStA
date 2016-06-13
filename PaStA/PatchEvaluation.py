@@ -467,11 +467,11 @@ def show_commits(left_hash, right_hash):
         while len(left) or len(right):
             line = ''
             if len(left):
-                line = left.pop(0).expandtabs(6)[0:split_length]
+                line = fix_encoding(left.pop(0)).expandtabs(6)[0:split_length]
             line = line.ljust(split_length)
             line += ' | '
             if len(right):
-                line += right.pop(0).expandtabs(6)[0:split_length]
+                line += fix_encoding(right.pop(0)).expandtabs(6)[0:split_length]
             print(line)
 
     left_commit = get_commit(left_hash)
