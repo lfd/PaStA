@@ -85,11 +85,11 @@ class Commit:
 
         self._committer = committer
         self._committer_email = committer_email
-        self._commit_date = datetime.fromtimestamp(commit_date)
+        self._commit_date = commit_date
 
         self._author = author
         self._author_email = author_email
-        self._author_date = datetime.fromtimestamp(author_date)
+        self._author_date = author_date
 
         # Is a revert message?
         self._is_revert = bool(Commit.REVERT_REGEX.search(self._raw_message))
@@ -105,12 +105,15 @@ class Commit:
     def from_commit_hash(commit_hash):
         commit = repo[commit_hash]
 
+        author_date = datetime.fromtimestamp(commit.author.time)
+        commit_date = datetime.fromtimestamp(commit.commit_time)
+
         # Respect timezone offsets?
         return Commit(commit_hash,
                       commit.message,
                       Commit.get_diff(commit_hash),
-                      commit.author.name, commit.author.email, commit.author.time,
-                      commit.committer.name, commit.committer.email, commit.commit_time)
+                      commit.author.name, commit.author.email, author_date,
+                      commit.committer.name, commit.committer.email, commit_date)
 
     @staticmethod
     def get_diff(commit_hash):
