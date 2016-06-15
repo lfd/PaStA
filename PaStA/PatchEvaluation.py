@@ -477,6 +477,7 @@ def show_commits(left_hash, right_hash):
                    'AuthorDate: %s' % commit.author_date,
                    'Committer   %s <%s>' % (fix_encoding(commit.committer), commit.committer_email),
                    'CommitDate: %s' % commit.commit_date,
+                   'Note: %s' % commit.note,
                    ''] + fix_encoding(commit.raw_message).split('\n')
         return message
 
