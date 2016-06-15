@@ -73,7 +73,8 @@ class Commit:
 
     def __init__(self, commit_hash, message, diff,
                  author, author_email, author_date,
-                 committer, committer_email, commit_date):
+                 committer, committer_email, commit_date,
+                 note=None):
 
         self._commit_hash = commit_hash
 
@@ -104,6 +105,8 @@ class Commit:
         else:
             self._raw_diff = diff
             self._diff = Diff.parse_diff(diff)
+
+        self._note = note
 
     @staticmethod
     def from_commit_hash(commit_hash):
@@ -176,6 +179,10 @@ class Commit:
     @property
     def commit_date(self):
         return self._commit_date
+
+    @property
+    def note(self):
+        return self._note
 
 
 class VersionPoint:
