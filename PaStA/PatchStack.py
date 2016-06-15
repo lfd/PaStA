@@ -362,7 +362,8 @@ class PatchStackDefinition:
                 content.append(line)
 
         # Add last group
-        csv_groups.append((header, content))
+        if header is not None:
+            csv_groups.append((header, content))
 
         patch_stack_groups = []
         for group_name, csv_list in csv_groups:
