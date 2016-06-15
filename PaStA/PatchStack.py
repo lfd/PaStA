@@ -435,23 +435,19 @@ def cache_commits(commit_hashes, parallelise=True):
     if len(worklist) == 0:
         return
 
-    print('Caching %d/%d commits. This may take a while...' % (len(worklist), len(commit_hashes)))
+    sys.stdout.write('Caching %d/%d commits. This may take a while...' % (len(worklist), len(commit_hashes)))
     sys.stdout.flush()
 
-    done = 0
-    for chunk in chunks(list(worklist), 1000):
-        sys.stdout.write('\r  %d/%d commits' % (done, len(worklist)))
-        sys.stdout.flush()
-        if parallelise:
-            p = Pool(cpu_count())
-            result = p.map(commit_from_commit_hash, chunk)
-            p.close()
-            p.join()
-        else:
-            result = map(commit_from_commit_hash, chunk)
-        done += len(chunk)
-        result = dict(result)
-        inject_commits(result)
+    if parallelise:
+        p = Pool(cpu_count(), maxtasksperchild=10)
+        result = p.map(commit_from_commit_hash, worklist, chunksize=100)
+        p.close()
+        p.join()
+    else:
+        result = map(commit_from_commit_hash, worklist)
+
+    result = dict(result)
+    inject_commits(result)
     print(colored(' [done]', 'green'))
 
 
