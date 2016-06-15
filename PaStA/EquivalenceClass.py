@@ -101,6 +101,10 @@ class EquivalenceClass:
     def is_related(self, key1, key2):
         if key1 in self.forward_lookup and key2 in self.forward_lookup:
             return self.forward_lookup[key1] == self.forward_lookup[key2]
+        if key1 in self.forward_lookup:
+            return self.get_property(key1) == key2
+        if key2 in self.forward_lookup:
+            return self.get_property(key2) == key1
         return False
 
     def set_property(self, key, property):
