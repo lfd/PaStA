@@ -95,8 +95,8 @@ def analyse_succ():
                              EvaluationType.PatchStack)
 
     print('Starting evaluation.')
-    pool = Pool(cpu_count())
-    results = pool.map(_evaluate_patch_list_wrapper, evaluation_list, chunksize=1)
+    pool = Pool(cpu_count(), maxtasksperchild=1)
+    results = pool.map(_evaluate_patch_list_wrapper, evaluation_list, chunksize=5)
     pool.close()
     pool.join()
     print('Evaluation completed.')
