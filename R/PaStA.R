@@ -105,7 +105,7 @@ num_commits <- function() {
     theme_bw(base_size = 15) +
     scale_color_manual(values = cols) +
     xlab("Timeline") +
-    ylab("Number of commits") +
+    ylab("Number of Patches") +
     theme(legend.position = "top",
           legend.title = element_blank(),
           axis.line = element_line(),
