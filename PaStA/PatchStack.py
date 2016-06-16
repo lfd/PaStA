@@ -80,13 +80,21 @@ class Commit:
 
         if isinstance(message, list):
             self._raw_message = '\n'.join(message)
+            self._message = message
         else:
             self._raw_message = message
+            self._message = message.split('\n')
 
         # Split by linebreaks and filter empty lines
-        self._message = list(filter(None, self._raw_message.splitlines()))
+        self._message = list(filter(None, self._message))
         # Filter signed-off-by lines
-        self._message = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x), self._message))
+        filtered = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x), self._message))
+
+        # if the filtered result is empty, then leave at least one line
+        if not filtered:
+            self._message = [self._message[0]]
+        else:
+            self._message = filtered
 
         self._committer = committer
         self._committer_email = committer_email
