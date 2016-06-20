@@ -413,9 +413,10 @@ class PatchStackDefinition:
 
         # get upstream commit hashes
         upstream = get_commits_from_file(config.upstream_hashes_filename)
-        blacklist = get_commits_from_file(config.upstream_blacklist, ordered=False)
-        # filter blacklistes commit hashes
-        upstream = [x for x in upstream if x not in blacklist]
+        if config.upstream_blacklist:
+            blacklist = get_commits_from_file(config.upstream_blacklist, ordered=False)
+            # filter blacklistes commit hashes
+            upstream = [x for x in upstream if x not in blacklist]
 
         # Create patch stack list
         retval = PatchStackDefinition(patch_stack_groups, upstream)
