@@ -488,15 +488,19 @@ def export_commit_cache(commit_cache_filename):
         pickle.dump(commits, f, pickle.HIGHEST_PROTOCOL)
 
 
-def load_commit_cache(commit_cache_filename):
+def load_commit_cache(commit_cache_filename, must_exist=True):
     print('Loading commit cache file %s...' % commit_cache_filename)
     try:
         with open(commit_cache_filename, 'rb') as f:
             this_commits = pickle.load(f)
         print('Loaded %d commits from cache file' % len(this_commits))
         inject_commits(this_commits)
+        return set(this_commits.keys())
     except FileNotFoundError:
+        if must_exist:
+            raise
         print('Warning, commit cache file %s not found!' % commit_cache_filename)
+        return set()
 
 
 def clear_commit_cache():

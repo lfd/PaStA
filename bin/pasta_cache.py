@@ -38,12 +38,12 @@ def cache(prog, argv):
         args.upstream = True
 
     if args.stack:
-        load_commit_cache(config.commit_cache_stack_filename)
+        load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
         cache_commits(patch_stack_definition.commits_on_stacks)
         export_commit_cache(config.commit_cache_stack_filename)
         clear_commit_cache()
     if args.upstream:
-        load_commit_cache(config.commit_cache_upstream_filename)
+        load_commit_cache(config.commit_cache_upstream_filename, must_exist=False)
         cache_commits(patch_stack_definition.upstream_hashes)
         export_commit_cache(config.commit_cache_upstream_filename)
         clear_commit_cache()
