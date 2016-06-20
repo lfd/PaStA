@@ -76,7 +76,7 @@ def find_cherries(commit_hashes, dest_list, type):
 
 def analyse_succ():
     # analyse_succ: compare successive stacks
-    load_commit_cache(config.commit_cache_stack_filename)
+    load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
 
     evaluation_list = []
     for patch_stack in patch_stack_definition:
@@ -143,7 +143,7 @@ def analyse_stack(similar_patches):
 
 
 def analyse_upstream(similar_patches):
-    load_commit_cache(config.commit_cache_upstream_filename)
+    load_commit_cache(config.commit_cache_upstream_filename, must_exist=False)
 
     sys.stdout.write('Determining patch stack representative system...')
     sys.stdout.flush()
