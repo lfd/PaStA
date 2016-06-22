@@ -194,7 +194,7 @@ class EvaluationResult(dict):
                             break
 
                 if yns == 'y':
-                    if self.eval_type == EvaluationType.Upstream:
+                    if self.eval_type == EvaluationType.Upstream or self.eval_type == EvaluationType.Mailinglist:
                         equivalence_class.set_property(orig_commit_hash, cand_commit_hash)
                         # Upstream rating can not have multiple candidates. So break after the first match
                         break
