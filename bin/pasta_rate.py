@@ -13,6 +13,7 @@ the COPYING file in the top-level directory.
 """
 
 import argparse
+import datetime
 import os
 import sys
 
@@ -39,6 +40,11 @@ def upstream_rating(evaluation_result, similar_patches, similar_upstream,
                                          thresholds, resp_commit_date)
 
 
+def mailinglist_rating(evaluation_result, similar_patches, false_positives, thresholds):
+    evaluation_result.interactive_rating(similar_patches, false_positives,
+                                         thresholds)
+
+
 def rate(prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='classify analysation results')
 
@@ -48,8 +54,14 @@ def rate(prog, argv):
                         help='Similar patches filename')
     parser.add_argument('-su', dest='su_filename', metavar='filename', default=config.similar_upstream,
                         help='Similar upstream filename')
+    parser.add_argument('-sm', dest='sm_filename', metavar='filename', default=config.similar_mailbox,
+                        help='Similar mailbox filename')
     parser.add_argument('-er', dest='er_filename', metavar='filename', default=config.evaluation_result,
                         help='Evaluation result PKL filename')
+
+    parser.add_argument('-mbox-mail-cache', dest='mbc_filename', metavar='filename',
+                        default=config.commit_cache_mbox_filename,
+                        help='Mailbox Cache file. Only required together with mbox mode.')
 
     # Thresholds
     parser.add_argument('-ta', dest='thres_accept', metavar='threshold', type=float,
@@ -78,6 +90,7 @@ def rate(prog, argv):
     # Load already known positives and false positives
     similar_patches = EquivalenceClass.from_file(args.sp_filename)
     similar_upstream = EquivalenceClass.from_file(args.su_filename)
+    similar_mailbox = EquivalenceClass.from_file(args.sm_filename)
     human_readable = not args.fp_filename.endswith('.pkl')
     false_positives = DictList.from_file(args.fp_filename, human_readable=human_readable)
 
@@ -91,11 +104,19 @@ def rate(prog, argv):
         print('Running upstream rating...')
         upstream_rating(evaluation_result, similar_patches, similar_upstream,
                         false_positives, config.thresholds, args.resp_commit_date)
+    elif evaluation_result.eval_type == EvaluationType.Mailinglist:
+        print('Running mailing list rating...')
+
+        # Mails are only available in the cache.
+        load_commit_cache(args.mbc_filename)
+        mailinglist_rating(evaluation_result, similar_mailbox, false_positives,
+                           config.thresholds)
     else:
         raise NotImplementedError('rating for evaluation type is not implemented')
 
     similar_upstream.to_file(args.su_filename)
     similar_patches.to_file(args.sp_filename)
+    similar_mailbox.to_file(args.sm_filename)
     fp_filename = args.fp_filename
     if not human_readable:
         fp_filename = os.path.splitext(fp_filename)[0]

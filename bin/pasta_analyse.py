@@ -14,6 +14,7 @@ the COPYING file in the top-level directory.
 
 import argparse
 import copy
+import functools
 import os
 import re
 import sys
@@ -178,6 +179,15 @@ def analyse_upstream(similar_patches):
     return evaluation_result
 
 
+def analyse_mbox(hashes, mail_ids):
+    print('Starting evaluation.')
+    evaluation_result = evaluate_commit_list(mail_ids, hashes,
+                                             EvaluationType.Mailinglist, config.thresholds,
+                                             parallelise=True, verbose=True)
+    print('Evaluation completed.')
+    return evaluation_result
+
+
 def create_patch_groups(sp_filename, su_filename, pg_filename):
     # similar patch groups
     similar_patches = EquivalenceClass.from_file(sp_filename, must_exist=True)
@@ -212,29 +222,39 @@ def analyse(prog, argv):
                         default=config.similar_patches, help='Similar Patches filename')
     parser.add_argument('-su', dest='su_filename', metavar='filename',
                         default=config.similar_upstream,
-                        help='Similar Upstream filename. Only required together with mode finish')
+                        help='Similar Upstream filename. Only required together with mode finish.')
+    parser.add_argument('-sm', dest='sm_filename', metavar='filename', default=config.similar_mailbox,
+                        help='Similar mailbox filename. Only required together with mbox mode.')
+    parser.add_argument('-mbox-mail-cache', dest='mbc_filename', metavar='filename', default=config.commit_cache_mbox_filename,
+                        help='Mailbox Cache file. Only required together with mbox mode.')
+    parser.add_argument('-mbox-commit-cache', dest='mbcc_filename', metavar='filename',
+                        default=config.commit_cache_upstream_filename,
+                        help='Commit Cache file. Only required together with mbox mode. '
+                             'Mailbox analysis will compare the mailbox against commithashes in this cache file. '
+                             'Defaults to upstream commit cache.')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
                         default=config.patch_groups,
-                        help='Patch groups filename. Only required with -mode finish')
+                        help='Patch groups filename. Only required with -mode finish.')
 
     # Thresholds
     parser.add_argument('-th', dest='thres_heading', metavar='threshold', default=config.thresholds.heading, type=float,
                         help='Minimum diff hunk section heading similarity (default: %(default)s)')
 
     parser.add_argument('mode', default='stack-succ',
-                        choices=['init', 'stack-succ', 'stack-rep', 'upstream', 'finish'],
+                        choices=['init', 'stack-succ', 'stack-rep', 'upstream', 'finish', 'mbox'],
                         help='init: initialise\n'
                              'stack-rep: compare representatives of the stack - '
                              'stack-succ: compare successive versions of the stacks - '
                              'upstream: compare representatives against upstream - '
-                             'finish: create patch-groups file'
+                             'finish: create patch-groups file - '
+                             'mbox: do mailbox analysis against upstream '
                              '(default: %(default)s)' )
     args = parser.parse_args(argv)
 
     config.thresholds.heading = args.thres_heading
 
-    # Load similar patches file. If args.mode is 'init', it does not necessarily have to exist.
-    sp_must_exist = args.mode != 'init'
+    # Load similar patches file. If args.mode is 'init' or 'mbox', it does not necessarily have to exist.
+    sp_must_exist = args.mode not in ['init', 'mbox']
     similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=sp_must_exist)
 
     if args.mode == 'init':
@@ -250,6 +270,10 @@ def analyse(prog, argv):
             result = analyse_stack(similar_patches)
         elif args.mode == 'upstream':
             result = analyse_upstream(similar_patches)
+        elif args.mode == 'mbox':
+            mail_ids = load_commit_cache(args.mbc_filename)
+            hashes = load_commit_cache(args.mbcc_filename)
+            result = analyse_mbox(hashes, mail_ids)
 
         result.to_file(args.evaluation_result_filename)
 
