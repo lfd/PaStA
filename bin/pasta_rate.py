@@ -13,7 +13,6 @@ the COPYING file in the top-level directory.
 """
 
 import argparse
-import datetime
 import os
 import sys
 

@@ -14,7 +14,6 @@ the COPYING file in the top-level directory.
 
 import argparse
 import copy
-import functools
 import os
 import re
 import sys
