@@ -10,9 +10,9 @@ $ git clone https://github.com/lfd/PaStA.git
 **PaStA** runs on *Python3* and comes with the following dependencies:
 - git
 - pygit2
-- git-python (for PaStA-resources only)
+- git-python (for PaStA-resources and patch_descriptions only)
 - termcolor
-- R
+- R (tikzDevice, ggplot2)
 
 TL;DR
 -----
