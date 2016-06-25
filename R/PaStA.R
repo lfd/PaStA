@@ -56,7 +56,7 @@ savePlot <- function(filename, plot) {
   print(plot)
   dev.off()
 
-  png(png_filename)
+  png(png_filename, width = 800, height = 640)
   print(plot)
   dev.off()
 }
