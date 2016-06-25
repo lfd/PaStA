@@ -33,6 +33,7 @@ class EquivalenceClass:
 
     def __init__(self):
         self.forward_lookup = {}
+        self.property_lookup = {}
         self.transitive_list = []
 
     def insert_single(self, key):
@@ -57,8 +58,27 @@ class EquivalenceClass:
 
             # if indices equal, then we have nothing to do
             if id1 != id2:
+                prop1 = self.transitive_list[id1].property
+                prop2 = self.transitive_list[id2].property
+
+                if prop1:
+                    del self.property_lookup[prop1]
+                if prop2:
+                    del self.property_lookup[prop2]
+
+                if prop1 is None or prop2 is None:
+                    result_property = prop1 or prop2
+                else:
+                    if prop1 == prop2:
+                        print('Warning: Merging to equivalence classes with different properties!')
+                    # On collission, choose the first property
+                    result_property = prop1
+
                 # Merge lists
                 self.transitive_list[id1] += self.transitive_list[id2]
+                self.transitive_list[id1].property = result_property
+                self.property_lookup[property] = id1
+
                 # Remove orphaned list
                 self.transitive_list[id2] = PropertyList()
 
@@ -86,6 +106,7 @@ class EquivalenceClass:
 
         # Reset lookup table
         self.forward_lookup = {}
+        self.property_lookup = {}
 
         # Sort inner lists
         for i in self.transitive_list:
@@ -95,6 +116,8 @@ class EquivalenceClass:
 
         # Recreate the forward lookup dictionary
         for i, keylist in enumerate(self.transitive_list):
+            if keylist.property:
+                self.property_lookup[property] = i
             for key in keylist:
                 self.forward_lookup[key] = i
 
@@ -117,6 +140,7 @@ class EquivalenceClass:
         if id < 0:
             raise IndexError('Out of bounds')
         self.transitive_list[id].property = property
+        self.property_lookup[property] = id
 
     def get_property(self, key):
         id = self.forward_lookup[key]
