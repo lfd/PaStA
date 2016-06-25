@@ -131,10 +131,21 @@ class EquivalenceClass:
         return False
 
     def set_property(self, key, property):
+        # insert the key, if it is not existent
         if key not in self.forward_lookup:
             self.insert_single(key)
-        id = self.forward_lookup[key]
-        self.set_property_by_id(id, property)
+
+        # maybe another equiv class already has that property.
+        # search for property and merge them, if possible.
+        if property in self.property_lookup:
+            id = self.property_lookup[property]
+            # Get the key of the other one
+            key_other = self.transitive_list[id][0]
+            # Combine both keys
+            self.insert(key, key_other)
+        else:
+            id = self.forward_lookup[key]
+            self.set_property_by_id(id, property)
 
     def set_property_by_id(self, id, property):
         if id < 0:
