@@ -21,6 +21,8 @@ details.
 
 import sys
 
+from PaStA import Config
+
 from bin.pasta_analyse import analyse
 from bin.pasta_cache import cache
 from bin.pasta_compare import compare
@@ -44,7 +46,7 @@ __status__ = 'Development'
 def usage(me):
     print('PaStA - The Patch Stack Analysis (PaStA %s)\n'
           '\n'
-          'usage: %s sub -h\n'
+          'usage: %s [-c config] sub -h\n'
           'where sub is one of:\n'
           '  analyse\n'
           '  cache\n'
@@ -54,6 +56,8 @@ def usage(me):
           '  compare_stacks\n'
           '  patch_descriptions\n'
           '  upstream_history\n'
+          '\n'
+          'If -c is not provided, PaStA will choose ./config as config file\n'
           '\n'
           '%s\n'
           'License %s: See COPYING\n'
@@ -66,31 +70,43 @@ def usage(me):
 
 
 def main(argv):
-    me = argv[0]
-    if len(argv) < 2:
+    me = argv.pop(0)
+    if not argv:
         usage(me)
 
-    sub = argv[1]
-    args = argv[2:]
+    config = './config'
+    # check if -c is provided
+    if argv[0] == '-c':
+        if len(argv) < 2:
+            usage(me)
+        argv.pop(0)
+        config = argv.pop(0)
+    config = Config(config)
+    print('Project: %s' % config.project_name)
+
+    if len(argv) < 1:
+        usage(me)
+
+    sub = argv.pop(0)
 
     if sub == '-h':
         usage(me)
     elif sub == 'analyse':
-        analyse(sub, args)
+        analyse(config, sub, argv)
     elif sub == 'cache':
-        cache(sub, args)
+        cache(config, sub, argv)
     elif sub == 'compare':
-        compare(args)
+        compare(config, argv)
     elif sub == 'rate':
-        rate(sub, args)
+        rate(config, sub, argv)
     elif sub == 'statistics':
-        statistics(sub, args)
+        statistics(config, sub, argv)
     elif sub == 'compare_stacks':
-        compare_stacks(sub, args)
+        compare_stacks(config, sub, argv)
     elif sub == 'patch_descriptions':
-        patch_descriptions(sub, args)
+        patch_descriptions(config, sub, argv)
     elif sub == 'upstream_history':
-        pasta_upstream_history(sub, args)
+        pasta_upstream_history(config, sub, argv)
     else:
         print('Unknown command: %s' % sub)
         usage(me)

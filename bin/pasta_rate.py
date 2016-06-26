@@ -20,13 +20,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from PaStA import *
 
 
-def patch_stack_rating(evaluation_result, similar_patches, false_positives,
+def patch_stack_rating(repo, evaluation_result, similar_patches, false_positives,
                        thresholds, resp_commit_date):
-    evaluation_result.interactive_rating(similar_patches, false_positives,
+    evaluation_result.interactive_rating(repo, similar_patches, false_positives,
                                          thresholds, resp_commit_date)
 
 
-def upstream_rating(evaluation_result, similar_patches, similar_upstream,
+def upstream_rating(repo, evaluation_result, similar_patches, similar_upstream,
                     false_positives, thresholds, resp_commit_date):
     have_upstreams = set(map(lambda x: similar_patches.get_equivalence_id(x[0]), similar_upstream))
 
@@ -35,16 +35,16 @@ def upstream_rating(evaluation_result, similar_patches, similar_upstream,
         if similar_patches.get_equivalence_id(key) in have_upstreams:
             del evaluation_result[key]
 
-    evaluation_result.interactive_rating(similar_upstream, false_positives,
+    evaluation_result.interactive_rating(repo, similar_upstream, false_positives,
                                          thresholds, resp_commit_date)
 
 
-def mailinglist_rating(evaluation_result, similar_patches, false_positives, thresholds):
-    evaluation_result.interactive_rating(similar_patches, false_positives,
+def mailinglist_rating(repo, evaluation_result, similar_patches, false_positives, thresholds):
+    evaluation_result.interactive_rating(repo, similar_patches, false_positives,
                                          thresholds)
 
 
-def rate(prog, argv):
+def rate(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='classify analysation results')
 
     parser.add_argument('-fp', dest='fp_filename', metavar='filename', default=config.false_positives,
@@ -86,6 +86,8 @@ def rate(prog, argv):
                                    config.thresholds.heading,  # does not matter for interactive rating
                                    args.weight)
 
+    repo = config.repo
+
     # Load already known positives and false positives
     similar_patches = EquivalenceClass.from_file(args.sp_filename)
     similar_upstream = EquivalenceClass.from_file(args.su_filename)
@@ -97,18 +99,17 @@ def rate(prog, argv):
 
     if evaluation_result.eval_type == EvaluationType.PatchStack:
         print('Running patch stack rating...')
-        patch_stack_rating(evaluation_result, similar_patches, false_positives,
+        patch_stack_rating(repo, evaluation_result, similar_patches, false_positives,
                            config.thresholds, args.resp_commit_date)
     elif evaluation_result.eval_type == EvaluationType.Upstream:
         print('Running upstream rating...')
-        upstream_rating(evaluation_result, similar_patches, similar_upstream,
+        upstream_rating(repo, evaluation_result, similar_patches, similar_upstream,
                         false_positives, config.thresholds, args.resp_commit_date)
     elif evaluation_result.eval_type == EvaluationType.Mailinglist:
         print('Running mailing list rating...')
-
         # Mails are only available in the cache.
-        load_commit_cache(args.mbc_filename)
-        mailinglist_rating(evaluation_result, similar_mailbox, false_positives,
+        config.repo.load_commit_cache(args.mbc_filename)
+        mailinglist_rating(repo, evaluation_result, similar_mailbox, false_positives,
                            config.thresholds)
     else:
         raise NotImplementedError('rating for evaluation type is not implemented')
@@ -123,4 +124,5 @@ def rate(prog, argv):
 
 
 if __name__ == '__main__':
-    rate(sys.argv[0], sys.argv[1:])
+    config = Config(sys.argv[1])
+    rate(config, sys.argv[0], sys.argv[2:])

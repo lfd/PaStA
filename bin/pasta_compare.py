@@ -19,14 +19,16 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from PaStA import *
 
 
-def compare(commits):
+def compare(config, commits):
+    repo = config.repo
+
     for i in range(len(commits)-1):
         commit_a = commits[i]
         commit_b = commits[i+1]
 
-        show_commits(commit_a, commit_b)
+        show_commits(repo, commit_a, commit_b)
 
-        rating = preevaluate_two_commits(commit_a, commit_b)
+        rating = preevaluate_two_commits(repo, commit_a, commit_b)
         if rating:
             print('Preevaluation: Possible candidates')
             rating = evaluate_commit_pair(config.thresholds, commit_a, commit_b)
@@ -38,4 +40,5 @@ def compare(commits):
         getch()
 
 if __name__ == '__main__':
-    compare(sys.argv[1:])
+    config = Config(sys.argv[1])
+    compare(config, sys.argv[2:])

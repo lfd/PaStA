@@ -19,10 +19,9 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
-from PaStA.PatchStack import export_commit_cache, clear_commit_cache
 
 
-def cache(prog, argv):
+def cache(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='create commit cache')
 
     parser.add_argument('-stack', action='store_true', default=False,
@@ -40,29 +39,33 @@ def cache(prog, argv):
 
     args = parser.parse_args(argv)
 
+    psd = config.psd
+    repo = config.repo
+
     if args.all:
         args.stack = True
         args.upstream = True
 
     if args.stack:
-        load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
-        cache_commits(patch_stack_definition.commits_on_stacks)
-        export_commit_cache(config.commit_cache_stack_filename)
-        clear_commit_cache()
+        repo.load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
+        repo.cache_commits(psd.commits_on_stacks)
+        repo.export_commit_cache(config.commit_cache_stack_filename)
+        repo.clear_commit_cache()
     if args.upstream:
-        load_commit_cache(config.commit_cache_upstream_filename, must_exist=False)
-        cache_commits(patch_stack_definition.upstream_hashes)
-        export_commit_cache(config.commit_cache_upstream_filename)
-        clear_commit_cache()
+        repo.load_commit_cache(config.commit_cache_upstream_filename, must_exist=False)
+        repo.cache_commits(psd.upstream_hashes)
+        repo.export_commit_cache(config.commit_cache_upstream_filename)
+        repo.clear_commit_cache()
     if args.mbox:
         ids = get_commits_from_file(config.mailbox_id_filename, ordered=False, must_exist=False)
         mindate = datetime.datetime.strptime(args.mindate, "%Y-%m-%d")
         maxdate = datetime.datetime.strptime(args.maxdate, "%Y-%m-%d")
-        ids |= load_and_cache_mbox(args.mbox, mindate, maxdate)
+        ids |= load_and_cache_mbox(repo, args.mbox, mindate, maxdate)
         with open(config.mailbox_id_filename, 'w') as f:
             f.write('\n'.join(ids) + '\n')
-        export_commit_cache(config.commit_cache_mbox_filename)
+        repo.export_commit_cache(config.commit_cache_mbox_filename)
 
 
 if __name__ == '__main__':
-    cache(sys.argv[0], sys.argv[1:])
+    config = Config(sys.argv[1])
+    cache(config, sys.argv[0], sys.argv[2:])
