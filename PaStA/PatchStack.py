@@ -13,187 +13,13 @@ the COPYING file in the top-level directory.
 
 import csv
 import os
-import pickle
+import re
 import sys
 
 from datetime import datetime
-from multiprocessing import Pool, cpu_count
 from termcolor import colored
 
-from PaStA import config, repo
-from PaStA.Patch import *
-
-# dictionary for globally cached commits
-commits = {}
-
-
-def get_commits_from_file(filename, ordered=True, must_exist=True):
-    content = file_to_string(filename, must_exist=must_exist)
-    if content is None:
-        content = ''
-    content = content.splitlines()
-
-    # Filter empty lines
-    content = filter(None, content)
-    # Filter comment lines
-    content = filter(lambda x: not x.startswith('#'), content)
-    # return filtered list or set
-    if ordered == True:
-        return list(content)
-    else:
-        return set(content)
-
-
-def file_to_string(filename, must_exist=True):
-    try:
-        # I HATE ENCONDING!
-        # Anyway, opening a file as binary and decoding it to iso8859 solves the problem :-)
-        with open(filename, 'rb') as f:
-            retval = str(f.read().decode('iso8859'))
-            f.close()
-    except FileNotFoundError:
-        print('Warning, file ' + filename + ' not found!')
-        if must_exist:
-            raise
-        return None
-
-    return retval
-
-
-def format_date_ymd(dt):
-    return dt.strftime('%Y-%m-%d')
-
-
-class Commit:
-    SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:'
-                                 r'|Reported-by:|Tested-by:|LKML-Reference:|Patch:)'),
-                                re.IGNORECASE)
-    REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
-
-    def __init__(self, commit_hash, message, diff,
-                 author, author_email, author_date,
-                 committer, committer_email, commit_date,
-                 note=None):
-
-        self._commit_hash = commit_hash
-
-        if isinstance(message, list):
-            self._raw_message = '\n'.join(message)
-            self._message = message
-        else:
-            self._raw_message = message
-            self._message = message.split('\n')
-
-        # Split by linebreaks and filter empty lines
-        self._message = list(filter(None, self._message))
-        # Filter signed-off-by lines
-        filtered = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x), self._message))
-
-        # if the filtered result is empty, then leave at least one line
-        if not filtered:
-            self._message = [self._message[0]]
-        else:
-            self._message = filtered
-
-        self._committer = committer
-        self._committer_email = committer_email
-        self._commit_date = commit_date
-
-        self._author = author
-        self._author_email = author_email
-        self._author_date = author_date
-
-        # Is a revert message?
-        self._is_revert = bool(Commit.REVERT_REGEX.search(self._raw_message))
-
-        if isinstance(diff, list):
-            self._raw_diff = '\n'.join(diff)
-            self._diff = Diff.parse_diff_nosplit(diff)
-        else:
-            self._raw_diff = diff
-            self._diff = Diff.parse_diff(diff)
-
-        self._note = note
-
-    @staticmethod
-    def from_commit_hash(commit_hash):
-        commit = repo[commit_hash]
-
-        author_date = datetime.fromtimestamp(commit.author.time)
-        commit_date = datetime.fromtimestamp(commit.commit_time)
-
-        # Respect timezone offsets?
-        return Commit(commit_hash,
-                      commit.message,
-                      Commit.get_diff(commit_hash),
-                      commit.author.name, commit.author.email, author_date,
-                      commit.committer.name, commit.committer.email, commit_date)
-
-    @staticmethod
-    def get_diff(commit_hash):
-        commit = repo[commit_hash]
-        if len(commit.parents) == 1:
-            diff = repo.diff(commit.parents[0], commit).patch
-        else:
-            # Filter merge commits and commits with no parents
-            diff = None
-        return diff or ''
-
-    @property
-    def commit_hash(self):
-        return self._commit_hash
-
-    @property
-    def is_revert(self):
-        return self._is_revert
-
-    @property
-    def raw_diff(self):
-        return self._raw_diff
-
-    @property
-    def diff(self):
-        return self._diff
-
-    @property
-    def raw_message(self):
-        return self._raw_message
-
-    @property
-    def message(self):
-        return self._message
-
-    @property
-    def subject(self):
-        return self._message[0]
-
-    @property
-    def author(self):
-        return self._author
-
-    @property
-    def author_email(self):
-        return self._author_email
-
-    @property
-    def author_date(self):
-        return self._author_date
-
-    @property
-    def committer(self):
-        return self._committer
-
-    @property
-    def committer_email(self):
-        return self._committer_email
-
-    @property
-    def commit_date(self):
-        return self._commit_date
-
-    @property
-    def note(self):
-        return self._note
+from .Util import *
 
 
 class VersionPoint:
@@ -355,17 +181,17 @@ class PatchStackDefinition:
                 yield patch_stack
 
     @staticmethod
-    def parse_definition_file(definition_filename):
+    def parse_definition_file(config):
         """
-        Parses a patch stack definition file
-        :param definition_filename: filename of patch stack definition
+        Parses the patch stack definition file
+        :param config: PaStA configuration
         :return: PatchStackDefinition
         """
         csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
 
         sys.stdout.write('Parsing patch stack definition...')
 
-        with open(definition_filename) as f:
+        with open(config.patch_stack_definition_filename) as f:
             line_list = f.readlines()
 
         # Get the global CSV header which is the same for all groups
@@ -423,101 +249,3 @@ class PatchStackDefinition:
         print(colored(' [done]', 'green'))
 
         return retval
-
-
-def get_commit(commit_hash):
-    """
-    Return a particular commit
-    :param commit_hash: commit hash
-    :return: commit
-    """
-
-    # simply return commit if it is already cached
-    if commit_hash in commits:
-        return commits[commit_hash]
-
-    # cache and return if it is not yet cached
-    commits[commit_hash] = Commit.from_commit_hash(commit_hash)
-    return commits[commit_hash]
-
-
-def commit_from_commit_hash(commit_hash):
-    return commit_hash, Commit.from_commit_hash(commit_hash)
-
-
-def chunks(l, n):
-    for i in range(0, len(l), n):
-        yield l[i:i+n]
-
-
-def cache_commits(commit_hashes, parallelise=True):
-    """
-    Caches a list of commit hashes
-    :param commit_hashes: List of commit hashes
-    :param parallelise: parallelise
-    """
-    already_cached = set(commits.keys())
-    worklist = set(commit_hashes) - already_cached
-
-    if len(worklist) == 0:
-        return
-
-    sys.stdout.write('Caching %d/%d commits. This may take a while...' % (len(worklist), len(commit_hashes)))
-    sys.stdout.flush()
-
-    if parallelise:
-        p = Pool(cpu_count(), maxtasksperchild=10)
-        result = p.map(commit_from_commit_hash, worklist, chunksize=100)
-        p.close()
-        p.join()
-    else:
-        result = map(commit_from_commit_hash, worklist)
-
-    result = dict(result)
-    inject_commits(result)
-    print(colored(' [done]', 'green'))
-
-
-def inject_commits(commit_dict):
-    for key, val in commit_dict.items():
-        commits[key] = val
-
-
-def export_commit_cache(commit_cache_filename):
-    print('Writing %d commits to cache file' % len(commits))
-    with open(commit_cache_filename, 'wb') as f:
-        pickle.dump(commits, f, pickle.HIGHEST_PROTOCOL)
-
-
-def load_commit_cache(commit_cache_filename, must_exist=True):
-    print('Loading commit cache file %s...' % commit_cache_filename)
-    try:
-        with open(commit_cache_filename, 'rb') as f:
-            this_commits = pickle.load(f)
-        print('Loaded %d commits from cache file' % len(this_commits))
-        inject_commits(this_commits)
-        return set(this_commits.keys())
-    except FileNotFoundError:
-        if must_exist:
-            raise
-        print('Warning, commit cache file %s not found!' % commit_cache_filename)
-        return set()
-
-
-def clear_commit_cache():
-    commits.clear()
-
-
-def get_date_selector(selector):
-    # Date selector "Stack Release Date"
-    if selector == 'SRD':
-        date_selector = lambda x: patch_stack_definition.get_stack_of_commit(x).stack_release_date
-    # Date selector "Commit Date"
-    elif selector == 'CD':
-        date_selector = lambda x: get_commit(x).commit_date
-    else:
-        raise NotImplementedError('Unknown date selector: ' % selector)
-    return date_selector
-
-
-patch_stack_definition = PatchStackDefinition.parse_definition_file(config.patch_stack_definition)

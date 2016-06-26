@@ -13,6 +13,9 @@ the COPYING file in the top-level directory.
 import configparser
 import os
 
+from .Repository import Repository
+from .PatchStack import PatchStackDefinition
+
 
 class Thresholds:
     def __init__(self, autoaccept, interactive, diff_lines_ratio,
@@ -36,6 +39,7 @@ class Thresholds:
         self.message_diff_weight = message_diff_weight
 
         self.diff_lines_ratio = diff_lines_ratio
+
 
 class Config:
 
@@ -66,13 +70,14 @@ class Config:
         if not self.repo_location:
             raise RuntimeError('Location of repository not found')
         self.repo_location = os.path.join(self._project_root, self.repo_location)
+        self.repo = Repository(self.repo_location)
 
         self.upstream_range = pasta.get('UPSTREAM_MIN'), pasta.get('UPSTREAM_MAX')
         if not all(self.upstream_range):
             raise RuntimeError('Please provide a valid upstream range in your config')
 
         # Parse locations, those will fallback to default values
-        self.patch_stack_definition = os.path.join(self._project_root, pasta.get('PATCH_STACK_DEFINITION'))
+        self.patch_stack_definition_filename = os.path.join(self._project_root, pasta.get('PATCH_STACK_DEFINITION'))
         self.stack_hashes = os.path.join(self._project_root, pasta.get('STACK_HASHES'))
         self.upstream_hashes_filename = os.path.join(self.stack_hashes, 'upstream')
         self.mailbox_id_filename = os.path.join(self.stack_hashes, 'mailbox')
@@ -99,3 +104,9 @@ class Config:
                                      float(pasta.get('DIFF_LINES_RATIO')),
                                      float(pasta.get('HEADING_THRESHOLD')),
                                      float(pasta.get('MESSAGE_DIFF_WEIGHT')))
+
+        self.patch_stack_definition = PatchStackDefinition.parse_definition_file(self)
+
+    @property
+    def psd(self):
+        return self.patch_stack_definition

@@ -23,7 +23,8 @@ from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
 from statistics import mean
 
-from PaStA.PatchStack import get_commit
+# We need this global variable, as pygit2 Repository objects are not pickleable
+_tmp_repo = None
 
 
 class EvaluationType(Enum):
@@ -102,7 +103,7 @@ class EvaluationResult(dict):
         with open(filename, 'rb') as f:
             return pickle.load(f)
 
-    def interactive_rating(self, equivalence_class, false_positive_list,
+    def interactive_rating(self, repo, equivalence_class, false_positive_list,
                            thresholds, respect_commitdate=False):
         already_false_positive = 0
         already_detected = 0
@@ -150,8 +151,8 @@ class EvaluationResult(dict):
                     continue
 
                 if respect_commitdate:
-                    l = get_commit(orig_commit_hash)
-                    r = get_commit(cand_commit_hash)
+                    l = repo[orig_commit_hash]
+                    r = repo[cand_commit_hash]
                     if l.commit_date > r.commit_date:
                         skipped_by_commit_date += 1
                         continue
@@ -172,7 +173,7 @@ class EvaluationResult(dict):
                 # Nope? Then let's do an interactive rating by a human
                 else:
                     yns = ''
-                    show_commits(orig_commit_hash, cand_commit_hash)
+                    show_commits(repo, orig_commit_hash, cand_commit_hash)
                     print('Length of list of candidates: %d' % len(candidates))
                     print('Rating: %3.2f (%3.2f message and %3.2f diff, diff length ratio: %3.2f)' %
                           (rating, sim_rating.msg, sim_rating.diff, sim_rating.diff_lines_ratio))
@@ -339,8 +340,8 @@ def evaluate_commit_pair(thresholds, lhs_commit_hash, rhs_commit_hash):
         print('Autoreturning on %s' % lhs_commit_hash)
         return SimRating(1, 1, 1)
 
-    lhs_commit = get_commit(lhs_commit_hash)
-    rhs_commit = get_commit(rhs_commit_hash)
+    lhs_commit = _tmp_repo[lhs_commit_hash]
+    rhs_commit = _tmp_repo[rhs_commit_hash]
 
     return evaluate_patch_pair(thresholds, (lhs_commit.message, lhs_commit.diff), (rhs_commit.message, rhs_commit.diff))
 
@@ -360,13 +361,13 @@ def _evaluation_helper(thresholds, l_r, verbose=False):
     return left, results
 
 
-def preevaluate_two_commits(lhash, rhash):
+def preevaluate_two_commits(repo, lhash, rhash):
     # We do not need to evaluate equivalent commit hashes, as they are already belong to the same equivalence class
     if lhash == rhash:
         return False
 
-    orig = get_commit(lhash)
-    cand = get_commit(rhash)
+    orig = repo[lhash]
+    cand = repo[rhash]
 
     # Check if patch is a revertion
     if orig.is_revert != cand.is_revert:
@@ -380,13 +381,13 @@ def preevaluate_two_diffs(ldiff, rdiff):
     return common_changed_files != 0
 
 
-def preevaluate_commit_list(left_hashes, right_hashes):
+def preevaluate_commit_list(repo, left_hashes, right_hashes):
     # Create two dictionaries - one for mails, one for commits that map
     # affected files to commit hashes resp. mailing list Message-IDs
     def file_commit_map(hashes):
         r = {}
         for hash in hashes:
-            files = get_commit(hash).diff.affected
+            files = repo[hash].diff.affected
             for file in files:
                 if file not in r:
                     r[file] = set()
@@ -402,9 +403,9 @@ def preevaluate_commit_list(left_hashes, right_hashes):
             srcs = left_files[file]
             dsts = right_files[file]
             for src in srcs:
-                left = get_commit(src)
+                left = repo[src]
                 for dst in dsts:
-                    right = get_commit(dst)
+                    right = repo[dst]
                     if left.is_revert != right.is_revert:
                         continue
                     if src == dst:
@@ -415,12 +416,13 @@ def preevaluate_commit_list(left_hashes, right_hashes):
     return preeval_result
 
 
-def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, thresholds,
+def evaluate_commit_list(repo,
+                         original_hashes, candidate_hashes, eval_type, thresholds,
                          parallelise=False, verbose=False,
                          cpu_factor=1):
     """
     Evaluates two list of original and candidate hashes against each other
-
+    :param repo: repository
     :param original_hashes: list of commit hashes
     :param candidate_hashes: list of commit hashes to compare against
     :param parallelise: Parallelise evaluation
@@ -438,9 +440,12 @@ def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, threshold
 
     if verbose:
         print('Running preevaluation.')
-    preeval_result = preevaluate_commit_list(original_hashes, candidate_hashes)
+    preeval_result = preevaluate_commit_list(repo, original_hashes, candidate_hashes)
     if verbose:
         print('Preevaluation finished.')
+
+    global _tmp_repo
+    _tmp_repo = repo
 
     retval = EvaluationResult(eval_type=eval_type)
     if parallelise:
@@ -450,6 +455,8 @@ def evaluate_commit_list(original_hashes, candidate_hashes, eval_type, threshold
         p.join()
     else:
         result = list(map(f_eval, preeval_result.items()))
+
+    _tmp_repo = None
 
     for orig, evaluation in result:
         retval[orig] = evaluation
@@ -468,7 +475,7 @@ def getch():
     return ch
 
 
-def show_commits(left_hash, right_hash):
+def show_commits(repo, left_hash, right_hash):
     def fix_encoding(string):
         return string.encode('utf-8').decode('ascii', 'ignore')
 
@@ -493,8 +500,8 @@ def show_commits(left_hash, right_hash):
                 line += fix_encoding(right.pop(0)).expandtabs(6)[0:split_length]
             print(line)
 
-    left_commit = get_commit(left_hash)
-    right_commit = get_commit(right_hash)
+    left_commit = repo[left_hash]
+    right_commit = repo[right_hash]
 
     left_message = format_message(left_commit)
     right_message = format_message(right_commit)

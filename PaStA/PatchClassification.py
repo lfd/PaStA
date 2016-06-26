@@ -13,8 +13,6 @@ the COPYING file in the top-level directory.
 
 from functools import partial
 
-from PaStA import get_commit
-
 
 class PatchFlow:
     def __init__(self, invariant, dropped, new):
@@ -85,27 +83,28 @@ class PatchComposition:
         self.none = none
 
     @staticmethod
-    def is_forwardport(patch_groups, date_selector, commit):
+    def is_forwardport(repo, patch_groups, date_selector, commit):
         """
         Given a commit hash on the patch stack, is_forwardport returns True, if the commit is a forward port,
         False, if it is a backport and None if it has no upstream candidate
+        :param repo: Repository
         :param patch_groups: patch groups
         :param date_selector: date_selector
         :param commit: commit on the patch stack
         :return:
         """
         id = patch_groups.get_equivalence_id(commit)
-        return PatchComposition.is_forwardport_by_id(patch_groups, date_selector, id)
+        return PatchComposition.is_forwardport_by_id(repo, patch_groups, date_selector, id)
 
     @staticmethod
-    def is_forwardport_by_id(patch_groups, date_selector, id):
+    def is_forwardport_by_id(repo, patch_groups, date_selector, id):
         if patch_groups.get_property_by_id(id) is None:
             return None
 
         upstream = patch_groups.get_property_by_id(id)
 
         first_stack_occurence = min(map(date_selector, patch_groups.get_commit_hashes_by_id(id)))
-        upstream_commit_date = get_commit(upstream).commit_date
+        upstream_commit_date = repo[upstream].commit_date
 
         delta = upstream_commit_date - first_stack_occurence
 
@@ -115,9 +114,9 @@ class PatchComposition:
             return True
 
     @staticmethod
-    def from_commits(patch_groups, date_selector, commits):
+    def from_commits(repo, patch_groups, date_selector, commits):
         # Bind parameters to function
-        classifier = partial(PatchComposition.is_forwardport, patch_groups, date_selector)
+        classifier = partial(PatchComposition.is_forwardport, repo, patch_groups, date_selector)
         description = [(lambda x: (x, classifier(x)))(x) for x in commits]
 
         forwardports = [x[0] for x in description if x[1] is True]

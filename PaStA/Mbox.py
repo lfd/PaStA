@@ -24,7 +24,7 @@ from email.charset import CHARSETS
 from multiprocessing import cpu_count, Pool
 from termcolor import colored
 
-from PaStA.PatchStack import Commit, inject_commits
+from .Repository import Commit
 
 
 MAIL_FROM_REGEX = re.compile(r'(.*) <(.*)>')
@@ -175,7 +175,7 @@ def fix_encoding(string):
     return string.encode('utf-8').decode('ascii', 'ignore')
 
 
-def load_and_cache_mbox(mbox_filename, mindate, maxdate, parallelise=True):
+def load_and_cache_mbox(repo, mbox_filename, mindate, maxdate, parallelise=True):
     print('Notice: Skipping mails until %s' % mindate)
     sys.stdout.write('Loading mbox %s...' % mbox_filename)
     mbox = mailbox.mbox(mbox_filename, create=False)
@@ -201,5 +201,5 @@ def load_and_cache_mbox(mbox_filename, mindate, maxdate, parallelise=True):
 
     print('Found %d patches on mailing list' % len(result))
 
-    inject_commits(result)
+    repo.inject_commits(result)
     return set(result.keys())

@@ -18,25 +18,33 @@ import os
 import re
 import sys
 
+from functools import partial
 from multiprocessing import cpu_count, Pool
 from termcolor import colored
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
-
-def _evaluate_patch_list_wrapper(args):
-    orig, cand, type = args
-    return evaluate_commit_list(orig, cand, type, config.thresholds)
+_repo = None
 
 
-def find_cherries(commit_hashes, dest_list, type):
+def _evaluate_patch_list_wrapper(type, thresholds, args):
+    global _repo
+    orig, cand = args
+    return evaluate_commit_list(_repo,
+                                orig, cand,
+                                type, thresholds,
+                                parallelise=False)
+
+
+def find_cherries(repo, commit_hashes, dest_list, type):
     """
     find_cherries() takes a list of commit hashes, a list of potential candidates and
     the type of the evaluation (PatchStack / Upstream).
 
     A cherry pick can happen on both sides: Pick from one patch stacks to another one or
     a pick from upstream. We have to distinguish between those types.
+    :param repo: Repository
     :param commit_hashes: list of commit-hashes
     :param dest_list: list of potential cherry-pick hashes
     :param type: PatchStack or Upstream
@@ -53,7 +61,7 @@ def find_cherries(commit_hashes, dest_list, type):
     sha1_regex = re.compile(r'\b([0-9a-fA-F]{5,40})\b')
 
     for commit_hash in commit_hashes:
-        commit = get_commit(commit_hash)
+        commit = repo[commit_hash]
         for line in commit.message:
             if cherry_rgxs.match(line):
                 sha_found = sha1_regex.search(line)
@@ -74,35 +82,42 @@ def find_cherries(commit_hashes, dest_list, type):
     return cherries
 
 
-def analyse_succ():
+def analyse_succ(config):
     # analyse_succ: compare successive stacks
-    load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
+    psd = config.psd
+    global _repo
+    repo = config.repo
+    _repo = repo
+    repo.load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
 
     evaluation_list = []
-    for patch_stack in patch_stack_definition:
-        successor = patch_stack_definition.get_successor(patch_stack)
+    for patch_stack in psd:
+        successor = psd.get_successor(patch_stack)
         if successor == None:
             break
 
         print('Queueing %s <-> %s' % (patch_stack.stack_version, successor.stack_version))
-        evaluation_list.append((patch_stack.commit_hashes, successor.commit_hashes, EvaluationType.PatchStack))
+        evaluation_list.append((patch_stack.commit_hashes, successor.commit_hashes))
 
     # cache missing commits
-    cache_commits(patch_stack_definition.commits_on_stacks)
+    repo.cache_commits(psd.commits_on_stacks)
 
-    cherries = find_cherries(patch_stack_definition.commits_on_stacks,
-                             patch_stack_definition.commits_on_stacks,
+    cherries = find_cherries(repo,
+                             psd.commits_on_stacks,
+                             psd.commits_on_stacks,
                              EvaluationType.PatchStack)
 
+    f = partial(_evaluate_patch_list_wrapper, EvaluationType.PatchStack, config.thresholds)
     print('Starting evaluation.')
     pool = Pool(cpu_count(), maxtasksperchild=1)
-    results = pool.map(_evaluate_patch_list_wrapper, evaluation_list, chunksize=5)
+    results = pool.map(f, evaluation_list, chunksize=5)
     pool.close()
     pool.join()
     print('Evaluation completed.')
+    _repo = None
 
     evaluation_result = EvaluationResult(EvaluationType.PatchStack)
-    evaluation_result.set_universe(patch_stack_definition.commits_on_stacks)
+    evaluation_result.set_universe(psd.commits_on_stacks)
     for result in results:
         evaluation_result.merge(result)
     evaluation_result.merge(cherries)
@@ -110,7 +125,9 @@ def analyse_succ():
     return evaluation_result
 
 
-def analyse_stack(similar_patches):
+def analyse_stack(config, similar_patches):
+    psd = config.psd
+    repo = config.repo
 
     # Iterate over similar patch list and get latest commit of patches
     sys.stdout.write('Determining patch stack representative system...')
@@ -119,31 +136,38 @@ def analyse_stack(similar_patches):
     # The lambda compares two patches of an equivalence class and chooses the one with
     # the later release version
     representatives = similar_patches.get_representative_system(
-        lambda x, y: patch_stack_definition.is_stack_version_greater(patch_stack_definition.get_stack_of_commit(x),
-                                                                     patch_stack_definition.get_stack_of_commit(y)))
+        lambda x, y: psd.is_stack_version_greater(psd.get_stack_of_commit(x),
+                                                  psd.get_stack_of_commit(y)))
     print(colored(' [done]', 'green'))
 
     # cache commits
-    cache_commits(representatives)
+    repo.cache_commits(representatives)
 
-    cherries = find_cherries(representatives,
-                             patch_stack_definition.commits_on_stacks,
+    cherries = find_cherries(repo,
+                             representatives,
+                             psd.commits_on_stacks,
                              EvaluationType.PatchStack)
 
-    evaluation_result = evaluate_commit_list(representatives,
+    print('Starting evaluation.')
+    evaluation_result = evaluate_commit_list(repo,
+                                             representatives,
                                              representatives,
                                              EvaluationType.PatchStack,
                                              config.thresholds,
                                              parallelise=True,
                                              verbose=True)
+    print('Evaluation completed.')
     evaluation_result.merge(cherries)
     evaluation_result.set_universe(representatives)
 
     return evaluation_result
 
 
-def analyse_upstream(similar_patches):
-    load_commit_cache(config.commit_cache_upstream_filename, must_exist=False)
+def analyse_upstream(config, similar_patches):
+    repo = config.repo
+    psd = config.psd
+
+    repo.load_commit_cache(config.commit_cache_upstream_filename, must_exist=False)
 
     sys.stdout.write('Determining patch stack representative system...')
     sys.stdout.flush()
@@ -151,20 +175,22 @@ def analyse_upstream(similar_patches):
     # The lambda compares two patches of an equivalence class and chooses the one with
     # the later release version
     representatives = similar_patches.get_representative_system(
-        lambda x, y: patch_stack_definition.is_stack_version_greater(patch_stack_definition.get_stack_of_commit(x),
-                                                                     patch_stack_definition.get_stack_of_commit(y)))
+        lambda x, y: psd.is_stack_version_greater(psd.get_stack_of_commit(x),
+                                                  psd.get_stack_of_commit(y)))
     print(colored(' [done]', 'green'))
 
     # cache missing commits
-    cache_commits(patch_stack_definition.upstream_hashes)
-    cache_commits(representatives)
+    repo.cache_commits(psd.upstream_hashes)
+    repo.cache_commits(representatives)
 
-    cherries = find_cherries(representatives,
-                             patch_stack_definition.upstream_hashes,
+    cherries = find_cherries(repo,
+                             representatives,
+                             psd.upstream_hashes,
                              EvaluationType.Upstream)
 
     print('Starting evaluation.')
-    evaluation_result = evaluate_commit_list(representatives, patch_stack_definition.upstream_hashes,
+    evaluation_result = evaluate_commit_list(repo,
+                                             representatives, psd.upstream_hashes,
                                              EvaluationType.Upstream, config.thresholds,
                                              parallelise=True, verbose=True,
                                              cpu_factor=0.5)
@@ -178,16 +204,17 @@ def analyse_upstream(similar_patches):
     return evaluation_result
 
 
-def analyse_mbox(hashes, mail_ids):
+def analyse_mbox(config, hashes, mail_ids):
     print('Starting evaluation.')
-    evaluation_result = evaluate_commit_list(mail_ids, hashes,
+    evaluation_result = evaluate_commit_list(config.repo,
+                                             mail_ids, hashes,
                                              EvaluationType.Mailinglist, config.thresholds,
                                              parallelise=True, verbose=True)
     print('Evaluation completed.')
     return evaluation_result
 
 
-def create_patch_groups(sp_filename, su_filename, pg_filename):
+def create_patch_groups(config, sp_filename, su_filename, pg_filename):
     # similar patch groups
     similar_patches = EquivalenceClass.from_file(sp_filename, must_exist=True)
 
@@ -199,7 +226,7 @@ def create_patch_groups(sp_filename, su_filename, pg_filename):
 
     # Insert every single key of the patch stack into the transitive list. Already existing keys will be skipped.
     # This results in a list with at least one key for each patch set
-    stack_commit_hashes = patch_stack_definition.commits_on_stacks
+    stack_commit_hashes = config.psd.commits_on_stacks
     for i in stack_commit_hashes:
         patch_groups.insert_single(i)
     patch_groups.optimize()
@@ -213,7 +240,7 @@ def create_patch_groups(sp_filename, su_filename, pg_filename):
     print(colored(' [done]', 'green'))
 
 
-def analyse(prog, argv):
+def analyse(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Analyse patch stacks')
     parser.add_argument('-er', dest='evaluation_result_filename', metavar='filename',
                         default=config.evaluation_result, help='Evaluation result filename')
@@ -224,7 +251,8 @@ def analyse(prog, argv):
                         help='Similar Upstream filename. Only required together with mode finish.')
     parser.add_argument('-sm', dest='sm_filename', metavar='filename', default=config.similar_mailbox,
                         help='Similar mailbox filename. Only required together with mbox mode.')
-    parser.add_argument('-mbox-mail-cache', dest='mbc_filename', metavar='filename', default=config.commit_cache_mbox_filename,
+    parser.add_argument('-mbox-mail-cache', dest='mbc_filename', metavar='filename',
+                        default=config.commit_cache_mbox_filename,
                         help='Mailbox Cache file. Only required together with mbox mode.')
     parser.add_argument('-mbox-commit-cache', dest='mbcc_filename', metavar='filename',
                         default=config.commit_cache_upstream_filename,
@@ -247,7 +275,7 @@ def analyse(prog, argv):
                              'upstream: compare representatives against upstream - '
                              'finish: create patch-groups file - '
                              'mbox: do mailbox analysis against upstream '
-                             '(default: %(default)s)' )
+                             '(default: %(default)s)')
     args = parser.parse_args(argv)
 
     config.thresholds.heading = args.thres_heading
@@ -257,25 +285,29 @@ def analyse(prog, argv):
     similar_patches = EquivalenceClass.from_file(args.sp_filename, must_exist=sp_must_exist)
 
     if args.mode == 'init':
-        for commit_hash in patch_stack_definition.commits_on_stacks:
+        for commit_hash in config.psd.commits_on_stacks:
             similar_patches.insert_single(commit_hash)
         similar_patches.to_file(args.sp_filename)
     elif args.mode == 'finish':
-        create_patch_groups(args.sp_filename, args.su_filename, args.pg_filename)
+        create_patch_groups(config,
+                            args.sp_filename,
+                            args.su_filename,
+                            args.pg_filename)
     else:
         if args.mode == 'stack-succ':
-            result = analyse_succ()
+            result = analyse_succ(config)
         elif args.mode == 'stack-rep':
-            result = analyse_stack(similar_patches)
+            result = analyse_stack(config, similar_patches)
         elif args.mode == 'upstream':
-            result = analyse_upstream(similar_patches)
+            result = analyse_upstream(config, similar_patches)
         elif args.mode == 'mbox':
-            mail_ids = load_commit_cache(args.mbc_filename)
-            hashes = load_commit_cache(args.mbcc_filename)
-            result = analyse_mbox(hashes, mail_ids)
+            mail_ids = config.repo.load_commit_cache(args.mbc_filename)
+            hashes = config.repo.load_commit_cache(args.mbcc_filename)
+            result = analyse_mbox(config, hashes, mail_ids)
 
         result.to_file(args.evaluation_result_filename)
 
 
 if __name__ == '__main__':
-    analyse(sys.argv[0], sys.argv[1:])
+    config = Config(sys.argv[1])
+    analyse(config, sys.argv[0], sys.argv[2:])

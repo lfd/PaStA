@@ -14,14 +14,15 @@ the COPYING file in the top-level directory.
 
 import argparse
 import os
-from subprocess import call
 import sys
+
+from subprocess import call
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
 
-def statistics(prog, argv):
+def statistics(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
                         default=config.patch_groups, help='Patch group file')
@@ -32,6 +33,9 @@ def statistics(prog, argv):
     parser.add_argument('-noR', dest='R', action='store_false', help='Don\'t invoke R')
     parser.set_defaults(R=True)
     args = parser.parse_args(argv)
+
+    psd = config.psd
+    repo = config.repo
 
     patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
 
@@ -46,17 +50,19 @@ def statistics(prog, argv):
     upstream_filename = os.path.join(r_resources, 'upstream')
     occurrence_filename = os.path.join(r_resources, 'patch-occurrence')
 
-    date_selector = get_date_selector(args.date_selector)
+    date_selector = get_date_selector(repo, psd, args.date_selector)
+
+    export = Export(repo, psd)
 
     # Export sorted list of release names
-    export_sorted_release_names(release_sort_filename)
+    export.sorted_release_names(release_sort_filename)
 
     # Export release dates
-    export_release_dates(mainline_release_dates_filename,
+    export.release_dates(mainline_release_dates_filename,
                          stack_release_dates_filename)
 
     # Export information of patch groups
-    export_patch_groups(upstream_filename,
+    export.patch_groups(upstream_filename,
                         patches_filename,
                         occurrence_filename,
                         patch_groups, date_selector)
@@ -73,4 +79,5 @@ def statistics(prog, argv):
               occurrence_filename])
 
 if __name__ == '__main__':
-    statistics(sys.argv[0], sys.argv[1:])
+    config = Config(sys.argv[1])
+    statistics(config, sys.argv[0], sys.argv[2:])

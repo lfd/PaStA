@@ -27,59 +27,78 @@ from PaStA import *
 import git as gitpython
 
 
-my_repo = gitpython.Repo(config.repo_location)
+_config = None
+_tmp_repo = None
 
 
-def get_next_release_date(commit_hash):
-    description = my_repo.git.describe('--contains', commit_hash)
+def get_next_release_date(repo, gitpython_repo, commit_hash):
+    description = gitpython_repo.git.describe('--contains', commit_hash)
     description = description.split('~')[0]
 
-    timestamp = repo.lookup_reference('refs/tags/' + description).get_object().commit_time
+    timestamp = repo.repo.lookup_reference('refs/tags/' + description).get_object().commit_time
     return datetime.fromtimestamp(int(timestamp))
 
 
-def describe_commit(commit_hash):
-    if commit_hash in patch_stack_definition:
-        stack = patch_stack_definition.get_stack_of_commit(commit_hash)
+def describe_commit(commit):
+    psd = _config.psd
+    repo = _config.repo
+    gitpython_repo = _tmp_repo
+
+    commit_hash = commit.commit_hash
+
+    if commit_hash in psd:
+        stack = psd.get_stack_of_commit(commit_hash)
         branch_name = stack.stack_name
         release_date = stack.stack_release_date
     else:
         branch_name = 'master'
-        release_date = get_next_release_date(commit_hash)
+        release_date = get_next_release_date(repo, gitpython_repo, commit_hash)
 
-    commit = get_commit(commit_hash)
     release_date = format_date_ymd(release_date)
     author_date = format_date_ymd(commit.author_date)
     commit_date = format_date_ymd(commit.commit_date)
     return commit_hash, (branch_name, author_date, commit_date, release_date)
 
 
-def patch_descriptions(prog, argv):
+def patch_descriptions(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-cd', dest='cd_filename', metavar='filename',
                         default=config.commit_description, help='Output: Commit description file')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
-                        default=config.patch_groups, help='Output: Patch groups')
+                        default=config.patch_groups, help='Patch groups filename (optional)')
     args = parser.parse_args(argv)
 
-    # similar patch groups
-    patch_groups = EquivalenceClass.from_file(args.pg_filename)
+    repo = config.repo
+    global _tmp_repo
+    _tmp_repo = gitpython.Repo(config.repo_location)
+    global _config
+    _config = config
 
+    # similar patch groups
+    patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
+
+    # We can at least cache all commits on the patch stacks
+    repo.load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
     all_commit_hashes = []
     for i in patch_groups:
         all_commit_hashes += i
         if i.property:
             all_commit_hashes.append(i.property)
-    cache_commits(all_commit_hashes, parallelise=True)
+    repo.cache_commits(all_commit_hashes, parallelise=True)
+
+    all_commits = [repo[x] for x in all_commit_hashes]
 
     sys.stdout.write('Getting descriptions...')
-    pool = Pool(cpu_count())
-    all_description = dict(pool.map(describe_commit, all_commit_hashes))
+    pool = Pool(cpu_count(), maxtasksperchild=1)
+    all_description = dict(pool.map(describe_commit, all_commits, chunksize=1000))
     pool.close()
     pool.join()
     print(colored(' [done]', 'green'))
 
-    sys.stdout.write('Writing commit descriptions file... ')
+    _tmp_repo = None
+    _config = None
+
+    sys.stdout.write('Writing commit descriptions file...')
     with open(args.cd_filename, 'w') as f:
         f.write('commit_hash branch_name author_date commit_date release_date\n')
         for commit_hash, info in all_description.items():
@@ -88,4 +107,5 @@ def patch_descriptions(prog, argv):
 
 
 if __name__ == '__main__':
-    patch_descriptions(sys.argv[0], sys.argv[1:])
+    config = Config(sys.argv[1])
+    patch_descriptions(config, sys.argv[0], sys.argv[2:])
