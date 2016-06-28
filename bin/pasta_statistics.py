@@ -55,19 +55,23 @@ def statistics(config, prog, argv):
     export = Export(repo, psd)
 
     # Export sorted list of release names
+    print('Exporting sorted release names...')
     export.sorted_release_names(release_sort_filename)
 
     # Export release dates
+    print('Exporting release dates...')
     export.release_dates(mainline_release_dates_filename,
                          stack_release_dates_filename)
 
     # Export information of patch groups
+    print('Exporting patch groups...')
     export.patch_groups(upstream_filename,
                         patches_filename,
                         occurrence_filename,
                         patch_groups, date_selector)
 
     if args.R:
+        print('Invoke R')
         call(['./R/PaStA.R',
               config.project_name,
               r_resources,
