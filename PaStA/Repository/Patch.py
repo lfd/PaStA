@@ -19,9 +19,9 @@ class Hunk:
         self._invariant = invariant or []
 
     def merge(self, other):
-        self._insertions += other._insertions
-        self._deletions += other._deletions
-        self._invariant += other._invariant
+        self._insertions += other.insertions
+        self._deletions += other.deletions
+        self._invariant += other.invariant
         pass
 
     @property

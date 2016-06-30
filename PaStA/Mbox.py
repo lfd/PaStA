@@ -191,7 +191,7 @@ def load_and_cache_mbox(repo, mbox_filename, mindate, maxdate, parallelise=True)
         p.close()
         p.join()
     else:
-        result = list(map(parse_mail_partial , mbox))
+        result = list(map(parse_mail_partial, mbox))
 
     # Save memory
     del mbox

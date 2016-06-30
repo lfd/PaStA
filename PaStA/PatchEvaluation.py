@@ -38,7 +38,7 @@ class SimRating:
         """
         :param msg: Message rating
         :param diff: Diff rating
-        :param diff_lines_ration: Ratio of number of lines shorter diff to longer diff
+        :param diff_lines_ratio: Ratio of number of lines shorter diff to longer diff
         """
         self._msg = msg
         self._diff = diff
@@ -156,7 +156,6 @@ class EvaluationResult(dict):
                     if l.commit_date > r.commit_date:
                         skipped_by_commit_date += 1
                         continue
-
 
                 # Weight by message_diff_weight
                 rating = thresholds.message_diff_weight * sim_rating.msg +\
