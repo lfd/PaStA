@@ -48,7 +48,7 @@ class Diff:
     EXCLUDE_CC_REGEX = re.compile(r'^diff --cc (.+)$')
 
     # Hunks inside a file
-    HUNK_REGEX = re.compile(r'^@@ -([0-9]+),?([0-9]+)? \+([0-9]+),?([0-9]+)? @@ ?(.*)$')
+    HUNK_REGEX = re.compile(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?\ @@[ ]?(.*)')
 
     def __init__(self, patches, lines):
         self._patches = patches
