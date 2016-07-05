@@ -13,15 +13,15 @@ import re
 
 
 class Hunk:
-    def __init__(self, insertions=None, deletions=None, invariant=None):
+    def __init__(self, insertions=None, deletions=None, context=None):
         self._insertions = insertions or []
         self._deletions = deletions or []
-        self._invariant = invariant or []
+        self._context = context or []
 
     def merge(self, other):
         self._insertions += other.insertions
         self._deletions += other.deletions
-        self._invariant += other.invariant
+        self._context += other.context
         pass
 
     @property
@@ -33,8 +33,8 @@ class Hunk:
         return self._insertions
 
     @property
-    def invariant(self):
-        return self._invariant
+    def context(self):
+        return self._context
 
 
 class Diff:
@@ -42,6 +42,7 @@ class Diff:
 
     # The two-line unified diff headers
     FILE_SEPARATOR_MINUS_REGEX = re.compile(r'^--- ([^\s]*).*$')
+    #r'^--- (?P<filename>[^\t\n]+)(?:\t(?P<timestamp>[^\n]+))?')
     FILE_SEPARATOR_PLUS_REGEX = re.compile(r'^\+\+\+ ([^\s]*).*$')
 
     # Exclude '--cc' diffs
@@ -49,6 +50,11 @@ class Diff:
 
     # Hunks inside a file
     HUNK_REGEX = re.compile(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?\ @@[ ]?(.*)')
+
+    LINE_IDENTIFIER_INSERTION = '+'
+    LINE_IDENTIFIER_DELETION = '-'
+    LINE_IDENTIFIER_CONTEXT = ' '
+    LINE_IDENTIFIER_NEWLINE = '\\'
 
     def __init__(self, patches, lines):
         self._patches = patches
@@ -90,7 +96,7 @@ class Diff:
         if diff and Diff.EXCLUDE_CC_REGEX.match(diff[0]):
             return Diff({}, 0)
 
-        retval = {}
+        patches = {}
 
         while len(diff):
             # Consume till the first occurence of '--- '
@@ -118,14 +124,14 @@ class Diff:
                 if hunk.group(4):
                     r_lines = int(hunk.group(4))
 
-                hunktitle = hunk.group(5)
+                hunk_heading = hunk.group(5)
 
                 del_cntr = 0
                 add_cntr = 0
 
                 insertions = []
                 deletions = []
-                invariant = []
+                context = []
 
                 while not (del_cntr == l_lines and add_cntr == r_lines):
                     line = diff.pop(0)
@@ -139,32 +145,33 @@ class Diff:
                         identifier = line[0]
                         payload = line[1:]
 
-                    if identifier == '+':
+                    if identifier == Diff.LINE_IDENTIFIER_INSERTION:
                         insertions.append(payload)
                         add_cntr += 1
-                    elif identifier == '-':
+                    elif identifier == Diff.LINE_IDENTIFIER_DELETION:
                         deletions.append(payload)
                         del_cntr += 1
-                    elif identifier == ' ':  # invariant
-                        invariant.append(payload)
+                    elif identifier == Diff.LINE_IDENTIFIER_CONTEXT:
+                        context.append(payload)
                         add_cntr += 1
                         del_cntr += 1
-                    elif identifier != '\\':  # '\\ No new line... statements
+                    elif identifier != Diff.LINE_IDENTIFIER_NEWLINE:  # '\ No new line' statements
                         add_cntr += 1
                         del_cntr += 1
 
                 # remove empty lines
                 insertions = list(filter(None, insertions))
                 deletions = list(filter(None, deletions))
-                invariant = list(filter(None, invariant))
+                context = list(filter(None, context))
 
-                h = Hunk(insertions, deletions, invariant)
+                h = Hunk(insertions, deletions, context)
 
-                if diff_index not in retval:
-                    retval[diff_index] = {}
-                if hunktitle not in retval[diff_index]:
-                    retval[diff_index][hunktitle] = Hunk()
+                if diff_index not in patches:
+                    patches[diff_index] = {}
+                if hunk_heading not in patches[diff_index]:
+                    patches[diff_index][hunk_heading] = Hunk()
 
-                retval[diff_index][hunktitle].merge(h)
+                # hunks may occur twice or more often
+                patches[diff_index][hunk_heading].merge(h)
 
-        return Diff(retval, diff_lines)
+        return Diff(patches, diff_lines)
