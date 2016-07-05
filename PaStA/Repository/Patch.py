@@ -49,7 +49,6 @@ class Diff:
 
     # Hunks inside a file
     HUNK_REGEX = re.compile(r'^@@ -([0-9]+),?([0-9]+)? \+([0-9]+),?([0-9]+)? @@ ?(.*)$')
-    DIFF_REGEX = re.compile(r'^[\+-](.*)$')
 
     def __init__(self, patches, lines):
         self._patches = patches
