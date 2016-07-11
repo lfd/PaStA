@@ -75,36 +75,38 @@ def getch():
     return ch
 
 
+def _fix_encoding(string):
+    return string.encode('utf-8').decode('ascii', 'ignore')
+
+
+def _format_message(commit):
+    message = ['Commit:     %s' % commit.commit_hash,
+               'Author:     %s <%s>' % (_fix_encoding(commit.author), commit.author_email),
+               'AuthorDate: %s' % commit.author_date,
+               'Committer   %s <%s>' % (_fix_encoding(commit.committer), commit.committer_email),
+               'CommitDate: %s' % commit.commit_date,
+               'Note: %s' % commit.note,
+               ''] + _fix_encoding(commit.raw_message).split('\n')
+    return message
+
+
 def show_commits(repo, left_hash, right_hash):
-    def fix_encoding(string):
-        return string.encode('utf-8').decode('ascii', 'ignore')
-
-    def format_message(commit):
-        message = ['Commit:     %s' % commit.commit_hash,
-                   'Author:     %s <%s>' % (fix_encoding(commit.author), commit.author_email),
-                   'AuthorDate: %s' % commit.author_date,
-                   'Committer   %s <%s>' % (fix_encoding(commit.committer), commit.committer_email),
-                   'CommitDate: %s' % commit.commit_date,
-                   'Note: %s' % commit.note,
-                   ''] + fix_encoding(commit.raw_message).split('\n')
-        return message
-
     def side_by_side(left, right, split_length):
         while len(left) or len(right):
             line = ''
             if len(left):
-                line = fix_encoding(left.pop(0)).expandtabs(6)[0:split_length]
+                line = _fix_encoding(left.pop(0)).expandtabs(6)[0:split_length]
             line = line.ljust(split_length)
             line += ' | '
             if len(right):
-                line += fix_encoding(right.pop(0)).expandtabs(6)[0:split_length]
+                line += _fix_encoding(right.pop(0)).expandtabs(6)[0:split_length]
             print(line)
 
     left_commit = repo[left_hash]
     right_commit = repo[right_hash]
 
-    left_message = format_message(left_commit)
-    right_message = format_message(right_commit)
+    left_message = _format_message(left_commit)
+    right_message = _format_message(right_commit)
 
     left_diff = left_commit.raw_diff.split('\n')
     right_diff = right_commit.raw_diff.split('\n')
