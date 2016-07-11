@@ -75,6 +75,10 @@ def getch():
     return ch
 
 
+def _ansi_clrscr():
+    sys.stdout.write('\x1b[2J\x1b[H')
+
+
 def _fix_encoding(string):
     return string.encode('utf-8').decode('ascii', 'ignore')
 
@@ -118,7 +122,7 @@ def show_commits(repo, left_hash, right_hash):
     if split_length > maxlen:
         split_length = maxlen
 
-    sys.stdout.write('\x1b[2J\x1b[H')
+    _ansi_clrscr()
     side_by_side(left_message, right_message, split_length)
     print('-' * (split_length+1) + '+' + '-' * (columns-split_length-2))
     side_by_side(left_diff, right_diff, split_length)
