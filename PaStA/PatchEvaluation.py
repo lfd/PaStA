@@ -15,13 +15,13 @@ import functools
 import pickle
 import shutil
 import sys
-import termios
-import tty
 
 from enum import Enum
 from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
 from statistics import mean
+
+from .Util import getch
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
@@ -461,17 +461,6 @@ def evaluate_commit_list(repo,
         retval[orig] = evaluation
 
     return retval
-
-
-def getch():
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    try:
-        tty.setraw(sys.stdin.fileno())
-        ch = sys.stdin.read(1)
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    return ch
 
 
 def show_commits(repo, left_hash, right_hash):
