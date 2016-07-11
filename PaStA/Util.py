@@ -94,6 +94,13 @@ def _format_message(commit):
     return message
 
 
+def show_commit(repo, hash):
+    commit = repo[hash]
+    message = _format_message(commit) + commit.raw_diff.split('\n')
+    _ansi_clrscr()
+    print('\n'.join(message))
+
+
 def show_commits(repo, left_hash, right_hash):
     def side_by_side(left, right, split_length):
         while len(left) or len(right):
