@@ -13,15 +13,13 @@ the COPYING file in the top-level directory.
 
 import functools
 import pickle
-import shutil
-import sys
 
 from enum import Enum
 from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
 from statistics import mean
 
-from .Util import getch
+from .Util import getch, show_commits
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
@@ -461,50 +459,3 @@ def evaluate_commit_list(repo,
         retval[orig] = evaluation
 
     return retval
-
-
-def show_commits(repo, left_hash, right_hash):
-    def fix_encoding(string):
-        return string.encode('utf-8').decode('ascii', 'ignore')
-
-    def format_message(commit):
-        message = ['Commit:     %s' % commit.commit_hash,
-                   'Author:     %s <%s>' % (fix_encoding(commit.author), commit.author_email),
-                   'AuthorDate: %s' % commit.author_date,
-                   'Committer   %s <%s>' % (fix_encoding(commit.committer), commit.committer_email),
-                   'CommitDate: %s' % commit.commit_date,
-                   'Note: %s' % commit.note,
-                   ''] + fix_encoding(commit.raw_message).split('\n')
-        return message
-
-    def side_by_side(left, right, split_length):
-        while len(left) or len(right):
-            line = ''
-            if len(left):
-                line = fix_encoding(left.pop(0)).expandtabs(6)[0:split_length]
-            line = line.ljust(split_length)
-            line += ' | '
-            if len(right):
-                line += fix_encoding(right.pop(0)).expandtabs(6)[0:split_length]
-            print(line)
-
-    left_commit = repo[left_hash]
-    right_commit = repo[right_hash]
-
-    left_message = format_message(left_commit)
-    right_message = format_message(right_commit)
-
-    left_diff = left_commit.raw_diff.split('\n')
-    right_diff = right_commit.raw_diff.split('\n')
-
-    columns, _ = shutil.get_terminal_size()
-    maxlen = int((columns-3)/2)
-
-    split_length = max(map(len, left_diff + left_message))
-    if split_length > maxlen:
-        split_length = maxlen
-
-    sys.stdout.write('\x1b[2J\x1b[H')
-    side_by_side(left_message, right_message, split_length)
-    print('-' * (split_length+1) + '+' + '-' * (columns-split_length-2))
-    side_by_side(left_diff, right_diff, split_length)
