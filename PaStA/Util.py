@@ -9,6 +9,9 @@ Author:
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+import termios
+import tty
+import sys
 
 
 def get_date_selector(repo, patch_stack_definition, selector):
@@ -58,3 +61,14 @@ def file_to_string(filename, must_exist=True):
 
 def format_date_ymd(dt):
     return dt.strftime('%Y-%m-%d')
+
+
+def getch():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
