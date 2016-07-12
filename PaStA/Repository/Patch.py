@@ -22,7 +22,6 @@ class Hunk:
         self._insertions += other.insertions
         self._deletions += other.deletions
         self._context += other.context
-        pass
 
     @property
     def deletions(self):
