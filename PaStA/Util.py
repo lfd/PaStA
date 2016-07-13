@@ -12,6 +12,7 @@ the COPYING file in the top-level directory.
 import termios
 import tty
 import shutil
+import subprocess
 import sys
 
 
@@ -92,6 +93,18 @@ def _format_message(commit):
                'Note: %s' % commit.note,
                ''] + _fix_encoding(commit.raw_message).split('\n')
     return message
+
+
+def pager(text, enable_pager=True):
+    _, lines = shutil.get_terminal_size()
+    if text.count('\n') > lines and enable_pager:
+        p = subprocess.Popen(['less', '-eFX'], stdin=subprocess.PIPE)
+        p.stdin.write(bytes(text, 'utf-8'))
+        p.stdin.close()
+        p.wait()
+    else:
+        _ansi_clrscr()
+        print(text)
 
 
 def show_commit(repo, hash):
