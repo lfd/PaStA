@@ -107,14 +107,13 @@ def pager(text, enable_pager=True):
         print(text)
 
 
-def show_commit(repo, hash):
+def show_commit(repo, hash, enable_pager=True):
     commit = repo[hash]
     message = _format_message(commit) + commit.raw_diff.split('\n')
-    _ansi_clrscr()
-    print('\n'.join(message))
+    pager('\n'.join(message), enable_pager)
 
 
-def show_commits(repo, left_hash, right_hash):
+def show_commits(repo, left_hash, right_hash, enable_pager=True):
     def side_by_side(left, right, split_length):
         ret = []
         while len(left) or len(right):
@@ -148,5 +147,4 @@ def show_commits(repo, left_hash, right_hash):
     text += side_by_side(left_message, right_message, split_length)
     text += ['-' * (split_length+1) + '+' + '-' * (columns-split_length-2)]
     text += side_by_side(left_diff, right_diff, split_length)
-    _ansi_clrscr()
-    print('\n'.join(text))
+    pager('\n'.join(text), enable_pager)
