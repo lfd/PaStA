@@ -103,6 +103,7 @@ def show_commit(repo, hash):
 
 def show_commits(repo, left_hash, right_hash):
     def side_by_side(left, right, split_length):
+        ret = []
         while len(left) or len(right):
             line = ''
             if len(left):
@@ -111,7 +112,8 @@ def show_commits(repo, left_hash, right_hash):
             line += ' | '
             if len(right):
                 line += _fix_encoding(right.pop(0)).expandtabs(6)[0:split_length]
-            print(line)
+            ret.append(line)
+        return ret
 
     left_commit = repo[left_hash]
     right_commit = repo[right_hash]
@@ -129,7 +131,9 @@ def show_commits(repo, left_hash, right_hash):
     if split_length > maxlen:
         split_length = maxlen
 
+    text = []
+    text += side_by_side(left_message, right_message, split_length)
+    text += ['-' * (split_length+1) + '+' + '-' * (columns-split_length-2)]
+    text += side_by_side(left_diff, right_diff, split_length)
     _ansi_clrscr()
-    side_by_side(left_message, right_message, split_length)
-    print('-' * (split_length+1) + '+' + '-' * (columns-split_length-2))
-    side_by_side(left_diff, right_diff, split_length)
+    print('\n'.join(text))
