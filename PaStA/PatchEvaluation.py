@@ -100,7 +100,7 @@ class EvaluationResult(dict):
             return pickle.load(f)
 
     def interactive_rating(self, repo, equivalence_class, false_positive_list,
-                           thresholds, respect_commitdate=False):
+                           thresholds, respect_commitdate=False, enable_pager=False):
         already_false_positive = 0
         already_detected = 0
         auto_accepted = 0
@@ -168,7 +168,7 @@ class EvaluationResult(dict):
                 # Nope? Then let's do an interactive rating by a human
                 else:
                     yns = ''
-                    show_commits(repo, orig_commit_hash, cand_commit_hash)
+                    show_commits(repo, orig_commit_hash, cand_commit_hash, enable_pager)
                     print('Length of list of candidates: %d' % len(candidates))
                     print('Rating: %3.2f (%3.2f message and %3.2f diff, diff length ratio: %3.2f)' %
                           (rating, sim_rating.msg, sim_rating.diff, sim_rating.diff_lines_ratio))

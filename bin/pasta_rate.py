@@ -21,13 +21,13 @@ from PaStA import *
 
 
 def patch_stack_rating(repo, evaluation_result, similar_patches, false_positives,
-                       thresholds, resp_commit_date):
+                       thresholds, resp_commit_date, enable_pager):
     evaluation_result.interactive_rating(repo, similar_patches, false_positives,
-                                         thresholds, resp_commit_date)
+                                         thresholds, resp_commit_date, enable_pager)
 
 
 def upstream_rating(repo, evaluation_result, similar_patches, similar_upstream,
-                    false_positives, thresholds, resp_commit_date):
+                    false_positives, thresholds, resp_commit_date, enable_pager):
     have_upstreams = set(map(lambda x: similar_patches.get_equivalence_id(x[0]), similar_upstream))
 
     # Prefilter Evaluation Result: Equivalence classes, that already have upstream candidates must be dropped.
@@ -36,12 +36,12 @@ def upstream_rating(repo, evaluation_result, similar_patches, similar_upstream,
             del evaluation_result[key]
 
     evaluation_result.interactive_rating(repo, similar_upstream, false_positives,
-                                         thresholds, resp_commit_date)
+                                         thresholds, resp_commit_date, enable_pager)
 
 
-def mailinglist_rating(repo, evaluation_result, similar_patches, false_positives, thresholds):
+def mailinglist_rating(repo, evaluation_result, similar_patches, false_positives, thresholds, enable_pager):
     evaluation_result.interactive_rating(repo, similar_patches, false_positives,
-                                         thresholds)
+                                         thresholds, enable_pager)
 
 
 def rate(config, prog, argv):
@@ -78,6 +78,8 @@ def rate(config, prog, argv):
 
     parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', default=False,
                         help='Respect commit date')
+    parser.add_argument('-p', dest='enable_pager', action='store_true', default=False,
+                        help='Enable pager')
     args = parser.parse_args(argv)
 
     config.thresholds = Thresholds(args.thres_accept,
@@ -100,17 +102,17 @@ def rate(config, prog, argv):
     if evaluation_result.eval_type == EvaluationType.PatchStack:
         print('Running patch stack rating...')
         patch_stack_rating(repo, evaluation_result, similar_patches, false_positives,
-                           config.thresholds, args.resp_commit_date)
+                           config.thresholds, args.resp_commit_date, args.enable_pager)
     elif evaluation_result.eval_type == EvaluationType.Upstream:
         print('Running upstream rating...')
         upstream_rating(repo, evaluation_result, similar_patches, similar_upstream,
-                        false_positives, config.thresholds, args.resp_commit_date)
+                        false_positives, config.thresholds, args.resp_commit_date, args.enable_pager)
     elif evaluation_result.eval_type == EvaluationType.Mailinglist:
         print('Running mailing list rating...')
         # Mails are only available in the cache.
         config.repo.load_commit_cache(args.mbc_filename)
         mailinglist_rating(repo, evaluation_result, similar_mailbox, false_positives,
-                           config.thresholds)
+                           config.thresholds, args.enable_pager)
     else:
         raise NotImplementedError('rating for evaluation type is not implemented')
 
