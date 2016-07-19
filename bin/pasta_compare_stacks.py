@@ -11,7 +11,6 @@ Author:
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
-import argparse
 import os
 import sys
 

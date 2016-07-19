@@ -10,6 +10,9 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+# We need this stuff all over the time. Import it globally.
+import argparse
+
 # Submodule import statements
 from .Repository import *
 
