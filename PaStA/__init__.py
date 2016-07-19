@@ -20,6 +20,6 @@ from .PatchEvaluation import DictList, EvaluationResult, EvaluationType, evaluat
     preevaluate_two_commits, evaluate_commit_pair
 from .Config import Thresholds
 from .Util import format_date_ymd, get_commits_from_file, get_date_selector, getch, show_commit, show_commits
-from .PatchClassification import PatchFlow, PatchComposition
+from .PatchDynamics import PatchFlow, PatchComposition
 from .Mbox import load_and_cache_mbox
 from .Export import Export
