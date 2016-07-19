@@ -20,6 +20,10 @@ Requirements
 - git
 - pygit2
 - git-python (for patch_descriptions only)
+- numpy
+- scikits_learn
+- unidiff
+- termcolor
 - R (tikzDevice, ggplot2)
 - fuzzywuzzy + python-levenshtein
 - procmail

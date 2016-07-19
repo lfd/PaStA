@@ -29,6 +29,7 @@ from pypasta import Config
 from bin.pasta_analyse import analyse
 from bin.pasta_cache import cache
 from bin.pasta_check_connectivity import check_connectivity
+from bin.pasta_classify import classify
 from bin.pasta_compare import compare
 from bin.pasta_compare_clusters import compare_clusters
 from bin.pasta_mbox_add import mbox_add
@@ -68,6 +69,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  analyse\n'
           '  cache\n'
           '  check_connectivity\n'
+          '  classify\n'
           '  compare\n'
           '  mbox_add\n'
           '  optimise_cluster\n'
@@ -126,6 +128,8 @@ def main(argv):
         return cache(config, sub, argv)
     elif sub == 'check_connectivity':
         return check_connectivity(config, sub, argv)
+    elif sub == 'classify':
+        return classify(config, sub, argv)
     elif sub == 'compare':
         return compare(config, sub, argv)
     elif sub == 'mbox_add':
