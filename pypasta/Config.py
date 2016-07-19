@@ -145,6 +145,7 @@ class Config:
 
         # pkl commit cache (ccache) and result files
         self.f_evaluation_result = path('EVALUATION_RESULT')
+        self.f_ccache_classify = path('COMMIT_CACHE_CLASSIFY')
         self.f_ccache_stack = path('COMMIT_CACHE_STACK')
         self.f_ccache_upstream = path('COMMIT_CACHE_UPSTREAM')
         self.f_ccache_mbox = path('COMMIT_CACHE_MBOX')
