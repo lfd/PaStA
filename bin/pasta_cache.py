@@ -45,12 +45,12 @@ def cache(config, prog, argv):
         args.upstream = True
 
     if args.stack:
-        repo.load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
+        repo.load_commit_cache(config.commit_cache_stack_filename)
         repo.cache_commits(psd.commits_on_stacks)
         repo.export_commit_cache(config.commit_cache_stack_filename)
         repo.clear_commit_cache()
     if args.upstream:
-        repo.load_commit_cache(config.commit_cache_upstream_filename, must_exist=False)
+        repo.load_commit_cache(config.commit_cache_upstream_filename)
         repo.cache_commits(psd.upstream_hashes)
         repo.export_commit_cache(config.commit_cache_upstream_filename)
         repo.clear_commit_cache()

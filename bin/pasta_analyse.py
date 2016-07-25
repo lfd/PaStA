@@ -86,7 +86,7 @@ def analyse_succ(config):
     global _repo
     repo = config.repo
     _repo = repo
-    repo.load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
+    repo.load_commit_cache(config.commit_cache_stack_filename)
 
     evaluation_list = []
     for patch_stack in psd:
@@ -299,7 +299,7 @@ def analyse(config, prog, argv):
         elif args.mode == 'upstream':
             result = analyse_upstream(config, similar_patches)
         elif args.mode == 'mbox':
-            mail_ids = config.repo.load_commit_cache(args.mbc_filename)
+            mail_ids = config.repo.load_commit_cache(args.mbc_filename, must_exist=True)
             hashes = config.repo.load_commit_cache(args.mbcc_filename)
             result = analyse_mbox(config, hashes, mail_ids)
 
