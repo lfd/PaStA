@@ -76,7 +76,7 @@ def patch_descriptions(config, prog, argv):
     patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
 
     # We can at least cache all commits on the patch stacks
-    repo.load_commit_cache(config.commit_cache_stack_filename, must_exist=False)
+    repo.load_commit_cache(config.commit_cache_stack_filename)
     all_commit_hashes = []
     for i in patch_groups:
         all_commit_hashes += i

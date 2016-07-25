@@ -79,7 +79,7 @@ class Repository:
         self.commit_cache[commit_hash] = _retrieve_commit(self.repo, commit_hash)
         return self.commit_cache[commit_hash]
 
-    def load_commit_cache(self, commit_cache_filename, must_exist=True):
+    def load_commit_cache(self, commit_cache_filename, must_exist=False):
         print('Loading commit cache file %s...' % commit_cache_filename)
         try:
             with open(commit_cache_filename, 'rb') as f:
