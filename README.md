@@ -150,6 +150,11 @@ $ ln -sf PaStA-resources/PreemptRT/PreemptRT.cfg ./config
 ```
 
 All further calls on **PaStA** tools will use this configuration file.
+Other than that, the active configuration can also be chosen by invoking
+**PaStA** with the `-c` option:
+```
+$ ./pasta -c PastA-resources/project/project.cfg subcommand ...
+```
 
 PaStA Mailbox Analysis
 ----------------------
