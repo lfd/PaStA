@@ -159,7 +159,7 @@ $ ./pasta -c PastA-resources/project/project.cfg subcommand ...
 PaStA Mailbox Analysis
 ----------------------
 
-PaStA is able to map mails from mailboxes (e.g. dumps of mailing lists) to
+**PaStA** is able to map mails from mailboxes (e.g. dumps of mailing lists) to
 commit hashes of repositories. PaStA searches for mails in the mailbox that
 contain patches. Yet, PaStA does not entirely understand all different mail
 formats. After all potential patches have been detected, PaStA will save those
