@@ -64,6 +64,13 @@ def statistics(config, prog, argv):
         export.release_dates(mainline_release_dates_filename,
                              stack_release_dates_filename)
 
+        # If the date_selector is not Stack Release Date (SRD), cache all
+        # commits of the patch stacks, as we need date information of each
+        # of them
+        if args.date_selector != 'SRD':
+            repo.load_commit_cache(config.commit_cache_stack_filename)
+            repo.cache_commits(psd.commits_on_stacks)
+
         # Export information of patch groups
         print('Exporting patch groups...')
         export.patch_groups(upstream_filename,
