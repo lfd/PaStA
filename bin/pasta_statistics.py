@@ -29,6 +29,7 @@ def statistics(config, prog, argv):
     parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['SRD', 'CD'],
                         help='Date selector: Either Commit Date or Stack Release Date (default: %(default)s)')
     parser.add_argument('-noR', dest='R', action='store_false', help='Don\'t invoke R')
+    parser.add_argument('-noEx', dest='Ex', action='store_false', help='Don\'t export data')
     parser.set_defaults(R=True)
     args = parser.parse_args(argv)
 
@@ -53,25 +54,26 @@ def statistics(config, prog, argv):
 
     export = Export(repo, psd)
 
-    # Export sorted list of release names
-    print('Exporting sorted release names...')
-    export.sorted_release_names(release_sort_filename)
+    if args.Ex:
+        # Export sorted list of release names
+        print('Exporting sorted release names...')
+        export.sorted_release_names(release_sort_filename)
 
-    # Export release dates
-    print('Exporting release dates...')
-    export.release_dates(mainline_release_dates_filename,
-                         stack_release_dates_filename)
+        # Export release dates
+        print('Exporting release dates...')
+        export.release_dates(mainline_release_dates_filename,
+                             stack_release_dates_filename)
 
-    # Export information of patch groups
-    print('Exporting patch groups...')
-    export.patch_groups(upstream_filename,
-                        patches_filename,
-                        occurrence_filename,
-                        patch_groups, date_selector)
+        # Export information of patch groups
+        print('Exporting patch groups...')
+        export.patch_groups(upstream_filename,
+                            patches_filename,
+                            occurrence_filename,
+                            patch_groups, date_selector)
 
-    # Export diffstat (cloccount across patch stack releases)
-    print('Exporting diffstats...')
-    export.diffstat(diffstat_filename)
+        # Export diffstat (cloccount across patch stack releases)
+        print('Exporting diffstats...')
+        export.diffstat(diffstat_filename)
 
     if args.R:
         print('Invoke R')
