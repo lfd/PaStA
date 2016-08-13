@@ -327,7 +327,7 @@ def evaluate_patch_pair(thresholds, lhs, rhs):
     return SimRating(msg_rating, diff_rating, diff_lines_ratio)
 
 
-def evaluate_commit_pair(thresholds, lhs_commit_hash, rhs_commit_hash):
+def evaluate_commit_pair(repo, thresholds, lhs_commit_hash, rhs_commit_hash):
     # Just in case.
     # Actually, patches with the same commit hashes should never be compared, as preevaluate_single_patch will evaluate
     # to False for equivalent commit hashes.
@@ -335,10 +335,14 @@ def evaluate_commit_pair(thresholds, lhs_commit_hash, rhs_commit_hash):
         print('Autoreturning on %s' % lhs_commit_hash)
         return SimRating(1, 1, 1)
 
-    lhs_commit = _tmp_repo[lhs_commit_hash]
-    rhs_commit = _tmp_repo[rhs_commit_hash]
+    lhs_commit = repo[lhs_commit_hash]
+    rhs_commit = repo[rhs_commit_hash]
 
     return evaluate_patch_pair(thresholds, (lhs_commit.message, lhs_commit.diff), (rhs_commit.message, rhs_commit.diff))
+
+
+def _evaluate_commit_pair_helper(thresholds, lhs_commit_hash, rhs_commit_hash):
+    return evaluate_commit_pair(_tmp_repo, thresholds, lhs_commit_hash, rhs_commit_hash)
 
 
 def _evaluation_helper(thresholds, l_r, verbose=False):
@@ -346,7 +350,7 @@ def _evaluation_helper(thresholds, l_r, verbose=False):
     if verbose:
         print('Evaluating 1 commit hash against %d commit hashes' % len(right))
 
-    f = functools.partial(evaluate_commit_pair, thresholds, left)
+    f = functools.partial(_evaluate_commit_pair_helper, thresholds, left)
     results = list(map(f, right))
     results = list(zip(right, results))
 

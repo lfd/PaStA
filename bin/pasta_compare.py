@@ -30,7 +30,8 @@ def compare(config, commits):
         rating = preevaluate_two_commits(repo, commit_a, commit_b)
         if rating:
             print('Preevaluation: Possible candidates')
-            rating = evaluate_commit_pair(config.thresholds, commit_a, commit_b)
+            rating = evaluate_commit_pair(repo, config.thresholds,
+                                          commit_a, commit_b)
             print(str(rating.msg) + ' message and ' +
                   str(rating.diff) + ' diff, diff length ratio: ' +
                   str(rating.diff_lines_ratio))
