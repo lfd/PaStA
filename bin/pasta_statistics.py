@@ -26,8 +26,8 @@ def statistics(config, prog, argv):
                         default=config.patch_groups, help='Patch group file')
     parser.add_argument('-R', dest='r_resources', metavar='directory',
                         default=config.R_resources, help='Output directory for R resources')
-    parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['SRD', 'CD'],
-                        help='Date selector: Either Commit Date or Stack Release Date (default: %(default)s)')
+    parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['AD', 'CD', 'SRD'],
+                        help='Date selector: Either Author Date, Commit Date or Stack Release Date (default: %(default)s)')
     parser.add_argument('-noR', dest='R', action='store_false', help='Don\'t invoke R')
     parser.add_argument('-noEx', dest='Ex', action='store_false', help='Don\'t export data')
     parser.set_defaults(R=True)

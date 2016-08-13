@@ -23,6 +23,8 @@ def get_date_selector(repo, patch_stack_definition, selector):
     # Date selector "Commit Date"
     elif selector == 'CD':
         date_selector = lambda x: repo[x].commit_date
+    elif selector == 'AD':
+        date_selector = lambda x: repo[x].author_date
     else:
         raise NotImplementedError('Unknown date selector: ' % selector)
     return date_selector
