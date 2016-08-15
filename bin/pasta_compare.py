@@ -21,6 +21,10 @@ from PaStA import *
 def compare(config, commits):
     repo = config.repo
 
+    if len(commits) == 1:
+        show_commit(repo, commits[0])
+        return
+
     for i in range(len(commits)-1):
         commit_a = commits[i]
         commit_b = commits[i+1]
