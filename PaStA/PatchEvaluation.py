@@ -360,7 +360,7 @@ def _evaluation_helper(thresholds, l_r, verbose=False):
     return left, results
 
 
-def preevaluate_two_commits(repo, lhash, rhash):
+def preevaluate_commit_pair(repo, lhash, rhash):
     # We do not need to evaluate equivalent commit hashes, as they are already belong to the same equivalence class
     if lhash == rhash:
         return False
@@ -372,10 +372,10 @@ def preevaluate_two_commits(repo, lhash, rhash):
     if orig.is_revert != cand.is_revert:
         return False
 
-    return preevaluate_two_diffs(orig.diff, cand.diff)
+    return preevaluate_diff_pair(orig.diff, cand.diff)
 
 
-def preevaluate_two_diffs(ldiff, rdiff):
+def preevaluate_diff_pair(ldiff, rdiff):
     common_changed_files = len(ldiff.affected.intersection(rdiff.affected))
     return common_changed_files != 0
 

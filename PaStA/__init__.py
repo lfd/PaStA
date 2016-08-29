@@ -20,7 +20,7 @@ from .Repository import *
 from .Config import Config
 from .EquivalenceClass import EquivalenceClass
 from .PatchEvaluation import DictList, EvaluationResult, EvaluationType, evaluate_commit_list, SimRating,\
-    preevaluate_two_commits, evaluate_commit_pair
+    preevaluate_commit_pair, evaluate_commit_pair
 from .Config import Thresholds
 from .Util import format_date_ymd, get_commits_from_file, get_date_selector, getch, show_commit, show_commits
 from .PatchDynamics import PatchFlow, PatchComposition

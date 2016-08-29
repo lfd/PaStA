@@ -31,7 +31,7 @@ def compare(config, commits):
 
         show_commits(repo, commit_a, commit_b)
 
-        rating = preevaluate_two_commits(repo, commit_a, commit_b)
+        rating = preevaluate_commit_pair(repo, commit_a, commit_b)
         if rating:
             print('Preevaluation: Possible candidates')
             rating = evaluate_commit_pair(repo, config.thresholds,
