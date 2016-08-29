@@ -278,7 +278,7 @@ def rate_diffs(thresholds, ldiff, rdiff):
                     if '' in rhunks:
                         r_hunk_heading = ''
                 else:
-                    # This gets the closed levenshtein rating from key against a list of candidate keys
+                    # This gets the closest levenshtein rating from key against a list of candidate keys
                     closest_match, rating = sorted(
                             map(lambda x: (x, fuzz.token_sort_ratio(l_hunk_heading, x)),
                                 rhunks.keys()),
