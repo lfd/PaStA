@@ -328,11 +328,8 @@ def evaluate_patch_pair(thresholds, lhs, rhs):
 
 
 def evaluate_commit_pair(repo, thresholds, lhs_commit_hash, rhs_commit_hash):
-    # Just in case.
-    # Actually, patches with the same commit hashes should never be compared, as preevaluate_single_patch will evaluate
-    # to False for equivalent commit hashes.
+    # Return identical similarity for equivalent commits
     if lhs_commit_hash == rhs_commit_hash:
-        print('Autoreturning on %s' % lhs_commit_hash)
         return SimRating(1, 1, 1)
 
     lhs_commit = repo[lhs_commit_hash]
