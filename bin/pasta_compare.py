@@ -18,8 +18,20 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from PaStA import *
 
 
-def compare(config, commits):
+def compare(config, prog, argv):
+    parser = argparse.ArgumentParser(prog=prog, description='create commit cache')
+
+    parser.add_argument('-mbox', action='store_true', default=False,
+                        help='Also load mbox cache')
+    parser.add_argument('commits', metavar='commit', type=str, nargs='+',
+                        help='Commit hashes / Mail IDs')
+    args = parser.parse_args(argv)
+
+    commits = args.commits
+
     repo = config.repo
+    if args.mbox:
+        repo.load_commit_cache(config.commit_cache_mbox_filename, must_exist=True)
 
     if len(commits) == 1:
         show_commit(repo, commits[0])
@@ -45,4 +57,4 @@ def compare(config, commits):
 
 if __name__ == '__main__':
     config = Config(sys.argv[1])
-    compare(config, sys.argv[2:])
+    compare(config, sys.argv[0], sys.argv[2:])

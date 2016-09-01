@@ -94,7 +94,7 @@ def main(argv):
     elif sub == 'cache':
         cache(config, sub, argv)
     elif sub == 'compare':
-        compare(config, argv)
+        compare(config, sub, argv)
     elif sub == 'rate':
         rate(config, sub, argv)
     elif sub == 'statistics':
