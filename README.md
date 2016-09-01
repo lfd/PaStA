@@ -13,6 +13,7 @@ $ git clone https://github.com/lfd/PaStA.git
 - git-python (for PaStA-resources and patch_descriptions only)
 - termcolor
 - R (tikzDevice, ggplot2)
+- fuzzywuzzy + python-levenshtein
 
 TL;DR
 -----
