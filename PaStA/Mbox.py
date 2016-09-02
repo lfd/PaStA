@@ -108,6 +108,10 @@ def parse_payload(payload):
 def parse_mail(mindate, maxdate, mail):
     message_id = mail['Message-ID']
 
+    if message_id is None:
+        print('Message without message ID: "%s"' % mail['Subject'])
+        return None
+
     try:
         date = time.mktime(email.utils.parsedate(mail['Date']))
     except:
