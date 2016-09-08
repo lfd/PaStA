@@ -24,6 +24,7 @@ from PaStA import Config
 from bin.pasta_analyse import analyse
 from bin.pasta_cache import cache
 from bin.pasta_compare import compare
+from bin.pasta_compare_eqclasses import compare_eqclasses
 from bin.pasta_rate import rate
 from bin.pasta_statistics import statistics
 from bin.pasta_compare_stacks import compare_stacks
@@ -52,6 +53,7 @@ def usage(me):
           '  rate\n'
           '  statistics\n'
           '  compare_stacks\n'
+          '  compare_eqclasses\n'
           '  patch_descriptions\n'
           '  upstream_history\n'
           '\n'
@@ -95,6 +97,8 @@ def main(argv):
         cache(config, sub, argv)
     elif sub == 'compare':
         compare(config, sub, argv)
+    elif sub == 'compare_eqclasses':
+        compare_eqclasses(config, sub, argv)
     elif sub == 'rate':
         rate(config, sub, argv)
     elif sub == 'statistics':
