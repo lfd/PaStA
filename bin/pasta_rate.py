@@ -84,6 +84,7 @@ def rate(config, prog, argv):
                                    args.thres_interactive,
                                    args.thres_diff_lines,
                                    config.thresholds.heading,  # does not matter for interactive rating
+                                   config.thresholds.filename,  # does not matter for interactive rating
                                    args.weight)
 
     repo = config.repo

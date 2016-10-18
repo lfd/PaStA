@@ -18,13 +18,14 @@ from .PatchStack import PatchStackDefinition
 
 class Thresholds:
     def __init__(self, autoaccept, interactive, diff_lines_ratio,
-                 heading, message_diff_weight):
+                 heading, filename, message_diff_weight):
         """
         :param autoaccept: Auto accept threshold. Ratings with at least this threshold will automatically be accepted.
         :param interactive: Ratings with at least this threshold are presented to the user for interactive rating.
                Ratings below this threshold will automatically be discarded.
         :param diff_lines_ratio: Minimum ratio of shorter diff / longer diff
         :param heading: Minimum similarity rating of the section heading of a diff
+        :param filename: Minimum similarity of two filenames for being evaluated (files in a repo may move).
         :param message_diff_weight: heuristic factor of message rating to diff rating
         """
 
@@ -34,6 +35,8 @@ class Thresholds:
         self.interactive = interactive
         # t_h
         self.heading = heading
+        # t_f
+        self.filename = filename
         # w
         self.message_diff_weight = message_diff_weight
 
@@ -102,6 +105,7 @@ class Config:
                                      float(pasta.get('INTERACTIVE_THRESHOLD')),
                                      float(pasta.get('DIFF_LINES_RATIO')),
                                      float(pasta.get('HEADING_THRESHOLD')),
+                                     float(pasta.get('FILENAME_THRESHOLD')),
                                      float(pasta.get('MESSAGE_DIFF_WEIGHT')))
 
         self.patch_stack_definition = PatchStackDefinition.parse_definition_file(self)
