@@ -24,7 +24,7 @@ class Thresholds:
         :param interactive: Ratings with at least this threshold are presented to the user for interactive rating.
                Ratings below this threshold will automatically be discarded.
         :param diff_lines_ratio: Minimum ratio of shorter diff / longer diff
-        :param heading: Minimung similarity rating of the section heading of a diff
+        :param heading: Minimum similarity rating of the section heading of a diff
         :param message_diff_weight: heuristic factor of message rating to diff rating
         """
 
