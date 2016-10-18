@@ -377,7 +377,7 @@ def preevaluate_diff_pair(ldiff, rdiff):
     return common_changed_files != 0
 
 
-def preevaluate_commit_list(repo, left_hashes, right_hashes):
+def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes):
     # Create two dictionaries - one for mails, one for commits that map
     # affected files to commit hashes resp. mailing list Message-IDs
     def file_commit_map(hashes):
@@ -438,7 +438,7 @@ def evaluate_commit_list(repo,
 
     if verbose:
         print('Running preevaluation.')
-    preeval_result = preevaluate_commit_list(repo, original_hashes, candidate_hashes)
+    preeval_result = preevaluate_commit_list(repo, thresholds, original_hashes, candidate_hashes)
     if verbose:
         print('Preevaluation finished.')
 
