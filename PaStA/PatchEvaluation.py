@@ -257,12 +257,12 @@ class DictList(dict):
 def rate_diffs(thresholds, ldiff, rdiff):
     levenshteins = []
 
-    for file_tuple, lhunks in ldiff.patches.items():
-        if file_tuple in rdiff.patches:
+    for file_tuple, l_hunks in l_diff.patches.items():
+        if file_tuple in r_diff.patches:
             levenshtein = []
-            rhunks = rdiff.patches[file_tuple]
+            r_hunks = r_diff.patches[file_tuple]
 
-            for l_hunk_heading, lhunk in lhunks.items():
+            for l_hunk_heading, lhunk in l_hunks.items():
                 """
                  When comparing hunks, it is important to use the 'closest hunk' of the right side.
                  The left hunk does not necessarily have to be absolutely similar to the name of the right hunk.
@@ -275,20 +275,20 @@ def rate_diffs(thresholds, ldiff, rdiff):
                 # Is the left hunk heading empty?
                 if l_hunk_heading == '':
                     # Then search for an empty hunk heading on the right side
-                    if '' in rhunks:
+                    if '' in r_hunks:
                         r_hunk_heading = ''
                 else:
                     # This gets the closest levenshtein rating from key against a list of candidate keys
                     closest_match, rating = sorted(
                             map(lambda x: (x, fuzz.token_sort_ratio(l_hunk_heading, x)),
-                                rhunks.keys()),
+                                r_hunks.keys()),
                             key=lambda x: x[1])[-1]
                     if rating >= thresholds.heading * 100:
                         r_hunk_heading = closest_match
 
                 # Only do comparison if we found an corresponding hunk on the right side
                 if r_hunk_heading is not None:
-                    rhunk = rhunks[r_hunk_heading]
+                    rhunk = r_hunks[r_hunk_heading]
                     if lhunk.deletions and rhunk.deletions:
                         levenshtein.append(fuzz.token_sort_ratio(lhunk.deletions, rhunk.deletions))
                     if lhunk.insertions and rhunk.insertions:
@@ -381,14 +381,14 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes):
     # Create two dictionaries - one for mails, one for commits that map
     # affected files to commit hashes resp. mailing list Message-IDs
     def file_commit_map(hashes):
-        r = {}
+        ret = {}
         for hash in hashes:
             files = repo[hash].diff.affected
             for file in files:
-                if file not in r:
-                    r[file] = set()
-                r[file] |= set([hash])
-        return r
+                if file not in ret:
+                    ret[file] = set()
+                ret[file] |= set([hash])
+        return ret
 
     left_files = file_commit_map(left_hashes)
     right_files = file_commit_map(right_hashes)
