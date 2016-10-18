@@ -258,7 +258,15 @@ def rate_diffs(thresholds, ldiff, rdiff):
     levenshteins = []
 
     for file_tuple, l_hunks in l_diff.patches.items():
-        if file_tuple in r_diff.patches:
+        l_filename = get_filename(file_tuple)
+
+        for file_tuple, r_hunks in r_diff.patches.items():
+            r_filename = get_filename(file_tuple)
+
+            sim = fuzz.token_sort_ratio(l_filename, r_filename) / 100
+            if sim < thresholds.filename:
+                continue
+
             levenshtein = []
             r_hunks = r_diff.patches[file_tuple]
 
@@ -394,10 +402,14 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes):
     right_files = file_commit_map(right_hashes)
     preeval_result = {}
 
-    for file in left_files:
-        if file in right_files:
-            srcs = left_files[file]
-            dsts = right_files[file]
+    for l_file in left_files:
+        for r_file in right_files:
+            sim = fuzz.token_sort_ratio(l_file, r_file) / 100
+            if sim < thresholds.filename:
+                continue
+
+            srcs = left_files[l_file]
+            dsts = right_files[r_file]
             for src in srcs:
                 left = repo[src]
                 for dst in dsts:
