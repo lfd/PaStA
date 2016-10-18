@@ -257,10 +257,10 @@ class DictList(dict):
 def rate_diffs(thresholds, ldiff, rdiff):
     levenshteins = []
 
-    for file_identifier, lhunks in ldiff.patches.items():
-        if file_identifier in rdiff.patches:
+    for file_tuple, lhunks in ldiff.patches.items():
+        if file_tuple in rdiff.patches:
             levenshtein = []
-            rhunks = rdiff.patches[file_identifier]
+            rhunks = rdiff.patches[file_tuple]
 
             for l_hunk_heading, lhunk in lhunks.items():
                 """
