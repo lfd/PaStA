@@ -58,14 +58,7 @@ class Diff:
     def __init__(self, patches, lines):
         self._patches = patches
         self._lines = lines
-
-        self._affected = set()
-        for i, j in self.patches.keys():
-            # The [2:] will strip a/ and b/
-            if '/dev/null' not in i:
-                self._affected.add(i[2:])
-            if '/dev/null' not in j:
-                self._affected.add(j[2:])
+        self._affected = set(self.patches.keys())
 
     @property
     def lines(self):
@@ -78,6 +71,56 @@ class Diff:
     @property
     def affected(self):
         return self._affected
+
+    @staticmethod
+    def get_filename(a, b):
+        """
+        get_filename: Determine the filename of a diff of a file
+        """
+        # chomp preceeding a/'s and b/'s
+        if a.startswith('a/'):
+            a = a[2:]
+        if b.startswith('b/'):
+            b = b[2:]
+
+        if a == b:
+            return a
+        elif a == '/dev/null' and b != '/dev/null':
+            return b
+        elif b == '/dev/null' and a != '/dev/null':
+            return a
+
+        # If everything else fails, try to drop everything before the first '/'
+        a = a.split('/', 1)[1]
+        b = b.split('/', 1)[1]
+        if a == b:
+            return a
+
+        # If it still fails, return the longest common suffix
+        a_sfx = a[-len(b):]
+        b_sfx = b[-len(a):]
+        while a_sfx != b_sfx:
+            a_sfx = a_sfx[1:]
+            b_sfx = b_sfx[1:]
+
+        # This makes only sense, if we have a few characters left
+        if len(a_sfx) > 3:
+            return a_sfx
+
+        # Still not working? Ok, take the longest common prefix
+        min_len = min(len(a), len(b))
+        a_pfx = a[0:min_len]
+        b_pfx = b[0:min_len]
+        while a_pfx != b_pfx:
+            a_pfx = a_pfx[0:-1]
+            b_pfx = b_pfx[0:-1]
+
+        # This makes only sense, if we have a few characters left
+        if len(a_pfx) > 3:
+            return a_pfx
+
+        # Fail, if we're still not able to parse
+        raise ValueError('Unable to parse tuple %s <-> %s' % (a, b))
 
     @staticmethod
     def parse_diff(diff):
@@ -108,7 +151,7 @@ class Diff:
             minus = Diff.FILE_SEPARATOR_MINUS_REGEX.match(minus).group(1)
             plus = Diff.FILE_SEPARATOR_PLUS_REGEX.match(diff.pop(0)).group(1)
 
-            diff_index = minus, plus
+            filename = Diff.get_filename(minus, plus)
 
             while len(diff) and Diff.HUNK_REGEX.match(diff[0]):
                 hunk = Diff.HUNK_REGEX.match(diff.pop(0))
@@ -165,12 +208,12 @@ class Diff:
 
                 h = Hunk(insertions, deletions, context)
 
-                if diff_index not in patches:
-                    patches[diff_index] = {}
-                if hunk_heading not in patches[diff_index]:
-                    patches[diff_index][hunk_heading] = Hunk()
+                if filename not in patches:
+                    patches[filename] = {}
+                if hunk_heading not in patches[filename]:
+                    patches[filename][hunk_heading] = Hunk()
 
                 # hunks may occur twice or more often
-                patches[diff_index][hunk_heading].merge(h)
+                patches[filename][hunk_heading].merge(h)
 
         return Diff(patches, diff_lines)
