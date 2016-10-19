@@ -385,7 +385,19 @@ def preevaluate_diff_pair(ldiff, rdiff):
     return common_changed_files != 0
 
 
-def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes):
+def preevaluate_filenames(thresholds, right_files, left_file):
+    candidates = []
+    for right_file in right_files:
+        sim = fuzz.token_sort_ratio(left_file, right_file) / 100
+        if sim < thresholds.filename:
+            continue
+        candidates.append(right_file)
+    return left_file, candidates
+
+
+def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, parallelise=True):
+    cpu_factor = 0.5
+
     # Create two dictionaries - one for mails, one for commits that map
     # affected files to commit hashes resp. mailing list Message-IDs
     def file_commit_map(hashes):
@@ -399,28 +411,40 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes):
         return ret
 
     left_files = file_commit_map(left_hashes)
+    left_filenames = list(left_files.keys())
+
     right_files = file_commit_map(right_hashes)
+    right_filenames = list(right_files.keys())
+
+    f = functools.partial(preevaluate_filenames, thresholds, right_filenames)
+
+    if parallelise:
+        processes = int(cpu_count() * cpu_factor)
+        p = Pool(processes=processes, maxtasksperchild=1)
+        filename_mapping = p.map(f, left_filenames, chunksize=5)
+        p.close()
+        p.join()
+    else:
+        filename_mapping = list(map(f, left_filenames))
+
     preeval_result = {}
+    for left_file, dsts in filename_mapping:
+        left_hashes = left_files[left_file]
+        right_hashes = set()
+        for right_file in dsts:
+            right_hashes |= set(right_files[right_file])
+        for left_hash in left_hashes:
+            left = repo[left_hash]
+            for right_hash in right_hashes:
+                right = repo[right_hash]
+                if left.is_revert != right.is_revert:
+                    continue
+                if left_hash == right_hash:
+                    continue
+                if left_hash not in preeval_result:
+                    preeval_result[left_hash] = set()
+                preeval_result[left_hash] |= set([right_hash])
 
-    for l_file in left_files:
-        for r_file in right_files:
-            sim = fuzz.token_sort_ratio(l_file, r_file) / 100
-            if sim < thresholds.filename:
-                continue
-
-            srcs = left_files[l_file]
-            dsts = right_files[r_file]
-            for src in srcs:
-                left = repo[src]
-                for dst in dsts:
-                    right = repo[dst]
-                    if left.is_revert != right.is_revert:
-                        continue
-                    if src == dst:
-                        continue
-                    if src not in preeval_result:
-                        preeval_result[src] = set()
-                    preeval_result[src] |= set([dst])
     return preeval_result
 
 
