@@ -231,6 +231,11 @@ def create_patch_groups(config, sp_filename, su_filename, pg_filename):
 
     # Merge upstream results and patch group list
     for i in similar_upstream:
+        up = patch_groups.get_property(i[0])
+        if up is not None:
+            print('Error: Patch group %s already mapped to upstream patch %s' % (i[0], up))
+            print('Unable to overwrite with %s. Exiting.' % i.property)
+            quit()
         patch_groups.set_property(i[0], i.property)
 
     sys.stdout.write('Writing Patch Group file... ')
