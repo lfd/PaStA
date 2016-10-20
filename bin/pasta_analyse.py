@@ -191,7 +191,7 @@ def analyse_upstream(config, similar_patches):
                                              representatives, psd.upstream_hashes,
                                              EvaluationType.Upstream, config.thresholds,
                                              parallelise=True, verbose=True,
-                                             cpu_factor=0.5)
+                                             cpu_factor=0.25)
     print('Evaluation completed.')
 
     evaluation_result.merge(cherries)
