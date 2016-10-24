@@ -81,6 +81,9 @@ def find_cherries(repo, commit_hashes, dest_list, type):
 
 
 def analyse_succ(config):
+    cpu_factor = 1.0
+    num_cpus = int(cpu_count()*cpu_factor)
+
     # analyse_succ: compare successive stacks
     psd = config.psd
     global _repo
@@ -107,7 +110,7 @@ def analyse_succ(config):
 
     f = partial(_evaluate_patch_list_wrapper, EvaluationType.PatchStack, config.thresholds)
     print('Starting evaluation.')
-    pool = Pool(cpu_count(), maxtasksperchild=1)
+    pool = Pool(num_cpus, maxtasksperchild=1)
     results = pool.map(f, evaluation_list, chunksize=5)
     pool.close()
     pool.join()
