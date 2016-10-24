@@ -474,7 +474,7 @@ def evaluate_commit_list(repo,
 
     if verbose:
         print('Running preevaluation.')
-    preeval_result = preevaluate_commit_list(repo, thresholds, original_hashes, candidate_hashes)
+    preeval_result = preevaluate_commit_list(repo, thresholds, original_hashes, candidate_hashes, parallelise=parallelise)
     if verbose:
         print('Preevaluation finished.')
 
