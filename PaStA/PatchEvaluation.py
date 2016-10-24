@@ -388,9 +388,13 @@ def preevaluate_diff_pair(ldiff, rdiff):
 def preevaluate_filenames(thresholds, right_files, left_file):
     candidates = []
     for right_file in right_files:
-        sim = fuzz.token_sort_ratio(left_file, right_file) / 100
-        if sim < thresholds.filename:
-            continue
+        if thresholds.filename >= 1.0:
+            if left_file != right_file:
+                continue
+        else:
+            sim = fuzz.token_sort_ratio(left_file, right_file) / 100
+            if sim < thresholds.filename:
+                continue
         candidates.append(right_file)
     return left_file, candidates
 
