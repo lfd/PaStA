@@ -55,6 +55,9 @@ class SimRating:
     def __lt__(self, other):
         return self.msg + self.diff < other.msg + other.diff
 
+    def __eq__(self, other):
+        return self.msg == other.msg and self.diff == other.diff and self.diff_lines_ratio == other.diff_lines_ratio
+
     def __str__(self):
         return '%3.2f message and %3.2f diff, diff lines ratio: %3.2f' % (self.msg, self.diff, self.diff_lines_ratio)
 
