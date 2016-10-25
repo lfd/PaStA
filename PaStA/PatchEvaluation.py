@@ -307,36 +307,12 @@ def rate_diffs(thresholds, l_diff, r_diff):
         r_hunks = r_diff.patches[r_filename]
 
         levenshtein = []
+        hunk_compare = best_string_mapping(thresholds.heading, l_hunks.keys(), r_hunks.keys())
 
-        for l_hunk_heading, lhunk in l_hunks.items():
-            """
-             When comparing hunks, it is important to use the 'closest hunk' of the right side.
-             The left hunk does not necessarily have to be absolutely similar to the name of the right hunk.
-            """
-
-            # Try to find closest hunk match on the right side
-            # First, assume that we have no match at all
-            r_hunk_heading = None
-
-            # Is the left hunk heading empty?
-            if l_hunk_heading == '':
-                # Then search for an empty hunk heading on the right side
-                if '' in r_hunks:
-                    r_hunk_heading = ''
-            else:
-                # This gets the closest levenshtein rating from key against a list of candidate keys
-                closest_match, rating = sorted(
-                        map(lambda x: (x, fuzz.token_sort_ratio(l_hunk_heading, x)),
-                            r_hunks.keys()),
-                        key=lambda x: x[1])[-1]
-                if rating >= thresholds.heading * 100:
-                    r_hunk_heading = closest_match
-
-            # Only do comparison if we found an corresponding hunk on the right side
-            if r_hunk_heading is None:
-                continue
-
+        for l_hunk_heading, r_hunk_heading in hunk_compare:
+            lhunk = l_hunks[l_hunk_heading]
             rhunk = r_hunks[r_hunk_heading]
+
             if lhunk.deletions and rhunk.deletions:
                 levenshtein.append(fuzz.token_sort_ratio(lhunk.deletions, rhunk.deletions))
             if lhunk.insertions and rhunk.insertions:
