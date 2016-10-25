@@ -419,8 +419,10 @@ def evaluate_commit_list(repo,
     """
     Evaluates two list of original and candidate hashes against each other
     :param repo: repository
+    :param thresholds: evaluation thresholds
     :param original_hashes: list of commit hashes
     :param candidate_hashes: list of commit hashes to compare against
+    :param eval_type: evaluation type
     :param parallelise: Parallelise evaluation
     :param verbose: Verbose output
     :param cpu_factor: number of threads to be spawned is the number of CPUs*cpu_factor
