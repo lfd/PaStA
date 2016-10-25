@@ -478,8 +478,8 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
     return preeval_result
 
 
-def evaluate_commit_list(repo,
-                         original_hashes, candidate_hashes, eval_type, thresholds,
+def evaluate_commit_list(repo, thresholds,
+                         original_hashes, candidate_hashes, eval_type,
                          parallelise=False, verbose=False,
                          cpu_factor=1):
     """

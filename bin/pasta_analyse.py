@@ -29,9 +29,9 @@ _repo = None
 def _evaluate_patch_list_wrapper(type, thresholds, args):
     global _repo
     orig, cand = args
-    return evaluate_commit_list(_repo,
+    return evaluate_commit_list(_repo, thresholds,
                                 orig, cand,
-                                type, thresholds,
+                                type,
                                 parallelise=False)
 
 
@@ -150,13 +150,10 @@ def analyse_stack(config, similar_patches):
                              EvaluationType.PatchStack)
 
     print('Starting evaluation.')
-    evaluation_result = evaluate_commit_list(repo,
-                                             representatives,
-                                             representatives,
+    evaluation_result = evaluate_commit_list(repo, config.thresholds,
+                                             representatives, representatives,
                                              EvaluationType.PatchStack,
-                                             config.thresholds,
-                                             parallelise=True,
-                                             verbose=True)
+                                             parallelise=True, verbose=True)
     print('Evaluation completed.')
     evaluation_result.merge(cherries)
     evaluation_result.set_universe(representatives)
@@ -190,9 +187,9 @@ def analyse_upstream(config, similar_patches):
                              EvaluationType.Upstream)
 
     print('Starting evaluation.')
-    evaluation_result = evaluate_commit_list(repo,
+    evaluation_result = evaluate_commit_list(repo, config.thresholds,
                                              representatives, psd.upstream_hashes,
-                                             EvaluationType.Upstream, config.thresholds,
+                                             EvaluationType.Upstream,
                                              parallelise=True, verbose=True,
                                              cpu_factor=0.25)
     print('Evaluation completed.')
@@ -207,9 +204,9 @@ def analyse_upstream(config, similar_patches):
 
 def analyse_mbox(config, hashes, mail_ids):
     print('Starting evaluation.')
-    evaluation_result = evaluate_commit_list(config.repo,
+    evaluation_result = evaluate_commit_list(config.repo, config.thresholds,
                                              mail_ids, hashes,
-                                             EvaluationType.Mailinglist, config.thresholds,
+                                             EvaluationType.Mailinglist,
                                              parallelise=True, verbose=True)
     print('Evaluation completed.')
     return evaluation_result
