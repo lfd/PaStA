@@ -55,6 +55,9 @@ class SimRating:
     def __lt__(self, other):
         return self.msg + self.diff < other.msg + other.diff
 
+    def __str__(self):
+        return '%3.2f message and %3.2f diff, diff lines ratio: %3.2f' % (self.msg, self.diff, self.diff_lines_ratio)
+
 
 class EvaluationResult(dict):
     """
@@ -170,8 +173,7 @@ class EvaluationResult(dict):
                     yns = ''
                     show_commits(repo, orig_commit_hash, cand_commit_hash, enable_pager)
                     print('Length of list of candidates: %d' % len(candidates))
-                    print('Rating: %3.2f (%3.2f message and %3.2f diff, diff length ratio: %3.2f)' %
-                          (rating, sim_rating.msg, sim_rating.diff, sim_rating.diff_lines_ratio))
+                    print('Rating: %3.2f (%s)' % (rating, sim_rating))
                     print('(y)ay or (n)ay or (s)kip?  To abort: halt and (d)iscard, (h)alt and save')
 
                 if yns not in {'y', 'n', 's', 'd', 'h'}:

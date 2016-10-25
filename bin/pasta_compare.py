@@ -48,10 +48,7 @@ def compare(config, prog, argv):
         rating = evaluate_commit_list(repo, config.thresholds, [commit_a], [commit_b],
                                       eval_type=None)  # evaluation type plays no role in this case
         if rating:
-            rating = rating[commit_a][0][1]
-            print(str(rating.msg) + ' message and ' +
-                  str(rating.diff) + ' diff, diff length ratio: ' +
-                  str(rating.diff_lines_ratio))
+            print(rating[commit_a][0][1])
         else:
             print('Not related')
         getch()
