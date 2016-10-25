@@ -447,10 +447,16 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
             left = repo[left_hash]
             for right_hash in right_hashes:
                 right = repo[right_hash]
+                # don't compare revert patches
                 if left.is_revert != right.is_revert:
                     continue
+                # skip if we're comparing a patch against itself
                 if left_hash == right_hash:
                     continue
+                # check if this wasn't already inserted the other way round
+                if right_hash in preeval_result and left_hash in preeval_result[right_hash]:
+                    continue
+                # insert result
                 if left_hash not in preeval_result:
                     preeval_result[left_hash] = set()
                 preeval_result[left_hash] |= set([right_hash])
