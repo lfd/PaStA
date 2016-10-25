@@ -254,56 +254,82 @@ class DictList(dict):
             return DictList()
 
 
-def rate_diffs(thresholds, ldiff, rdiff):
-    levenshteins = []
+def rate_diffs(thresholds, l_diff, r_diff):
+    # Decide which files should be compared against each other
+    filename_compare = dict()
+    for l_filename in l_diff.patches.keys():
+        for r_filename in r_diff.patches.keys():
+            if l_filename == r_filename:
+                sim = 1
+            else:
+                sim = fuzz.token_sort_ratio(l_filename, r_filename) / 100
 
-    for file_tuple, l_hunks in l_diff.patches.items():
-        l_filename = get_filename(file_tuple)
-
-        for file_tuple, r_hunks in r_diff.patches.items():
-            r_filename = get_filename(file_tuple)
-
-            sim = fuzz.token_sort_ratio(l_filename, r_filename) / 100
             if sim < thresholds.filename:
                 continue
 
-            levenshtein = []
-            r_hunks = r_diff.patches[file_tuple]
+            if l_filename in filename_compare:
+                _, old_sim = filename_compare[l_filename]
+                if sim < old_sim:
+                    continue
 
-            for l_hunk_heading, lhunk in l_hunks.items():
-                """
-                 When comparing hunks, it is important to use the 'closest hunk' of the right side.
-                 The left hunk does not necessarily have to be absolutely similar to the name of the right hunk.
-                """
+            filename_compare[l_filename] = r_filename, sim
 
-                # Try to find closest hunk match on the right side
-                # First, assume that we have no match at all
-                r_hunk_heading = None
+    # Get a set of filenames of the right side that don't have a connection to the left side
+    unmapped = set(r_diff.patches.keys()) - {x[0] for x in filename_compare.values()}
+    # convert dict to a list of tuples
+    filename_compare =  [(l_filename, r_filename) for l_filename, (r_filename, _) in filename_compare.items()]
 
-                # Is the left hunk heading empty?
-                if l_hunk_heading == '':
-                    # Then search for an empty hunk heading on the right side
-                    if '' in r_hunks:
-                        r_hunk_heading = ''
-                else:
-                    # This gets the closest levenshtein rating from key against a list of candidate keys
-                    closest_match, rating = sorted(
-                            map(lambda x: (x, fuzz.token_sort_ratio(l_hunk_heading, x)),
-                                r_hunks.keys()),
-                            key=lambda x: x[1])[-1]
-                    if rating >= thresholds.heading * 100:
-                        r_hunk_heading = closest_match
+    # Map unmapped files on the right to files on the left
+    for r_filename in unmapped:
+        for l_filename in l_diff.patches.keys():
+            sim = fuzz.token_sort_ratio(l_filename, r_filename) / 100
+            if sim < thresholds.filename:
+                continue
+            filename_compare.append((l_filename, r_filename))
 
-                # Only do comparison if we found an corresponding hunk on the right side
-                if r_hunk_heading is not None:
-                    rhunk = r_hunks[r_hunk_heading]
-                    if lhunk.deletions and rhunk.deletions:
-                        levenshtein.append(fuzz.token_sort_ratio(lhunk.deletions, rhunk.deletions))
-                    if lhunk.insertions and rhunk.insertions:
-                        levenshtein.append(fuzz.token_sort_ratio(lhunk.insertions, rhunk.insertions))
+    levenshteins = []
+    for l_filename, r_filename in filename_compare:
+        l_hunks = l_diff.patches[l_filename]
+        r_hunks = r_diff.patches[r_filename]
 
-            if levenshtein:
-                levenshteins.append(mean(levenshtein))
+        levenshtein = []
+
+        for l_hunk_heading, lhunk in l_hunks.items():
+            """
+             When comparing hunks, it is important to use the 'closest hunk' of the right side.
+             The left hunk does not necessarily have to be absolutely similar to the name of the right hunk.
+            """
+
+            # Try to find closest hunk match on the right side
+            # First, assume that we have no match at all
+            r_hunk_heading = None
+
+            # Is the left hunk heading empty?
+            if l_hunk_heading == '':
+                # Then search for an empty hunk heading on the right side
+                if '' in r_hunks:
+                    r_hunk_heading = ''
+            else:
+                # This gets the closest levenshtein rating from key against a list of candidate keys
+                closest_match, rating = sorted(
+                        map(lambda x: (x, fuzz.token_sort_ratio(l_hunk_heading, x)),
+                            r_hunks.keys()),
+                        key=lambda x: x[1])[-1]
+                if rating >= thresholds.heading * 100:
+                    r_hunk_heading = closest_match
+
+            # Only do comparison if we found an corresponding hunk on the right side
+            if r_hunk_heading is None:
+                continue
+
+            rhunk = r_hunks[r_hunk_heading]
+            if lhunk.deletions and rhunk.deletions:
+                levenshtein.append(fuzz.token_sort_ratio(lhunk.deletions, rhunk.deletions))
+            if lhunk.insertions and rhunk.insertions:
+                levenshtein.append(fuzz.token_sort_ratio(lhunk.insertions, rhunk.insertions))
+
+        if levenshtein:
+            levenshteins.append(mean(levenshtein))
 
     if not levenshteins:
         levenshteins = [0]
