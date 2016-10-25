@@ -259,39 +259,48 @@ class DictList(dict):
             return DictList()
 
 
-def rate_diffs(thresholds, l_diff, r_diff):
-    # Decide which files should be compared against each other
-    filename_compare = dict()
-    for l_filename in l_diff.patches.keys():
-        for r_filename in r_diff.patches.keys():
-            if l_filename == r_filename:
-                sim = 1
-            else:
-                sim = fuzz.token_sort_ratio(l_filename, r_filename) / 100
+def best_string_mapping(threshold, left_list, right_list):
+    """
+    This function tries to find the closest mapping with the best weight of two lists of strings.
+    Example:
 
-            if sim < thresholds.filename:
-                continue
+      List A        List B
 
-            if l_filename in filename_compare:
-                _, old_sim = filename_compare[l_filename]
-                if sim < old_sim:
+    0:  'abc'         'abc'
+    1:  'cde'         'cde'
+    2:  'fgh'         'fgh
+    3:                'fgj
+
+    map_lists will try to map each element of List A to an element of List B, in respect to the given threshold.
+
+    As a[{0,1,2}] == b[{0,1,2}], those values will automatically be mapped. Additionally, a[2] will also be mapped to
+    b[3], if the threshold is low enough (cf. 0.5).
+    """
+    def injective_map(ll, rl, inverse_result=False):
+        ret = dict()
+        for l_entry in ll:
+            for r_entry in rl:
+                if l_entry == r_entry:
+                    sim = 1
+                else:
+                    sim = fuzz.token_sort_ratio(l_entry, r_entry) / 100
+
+                if sim < threshold:
                     continue
 
-            filename_compare[l_filename] = r_filename, sim
+                if l_entry in ret:
+                    _, old_sim = ret[l_entry]
+                    if sim < old_sim:
+                        continue
 
-    # Get a set of filenames of the right side that don't have a connection to the left side
-    unmapped = set(r_diff.patches.keys()) - {x[0] for x in filename_compare.values()}
-    # convert dict to a list of tuples
-    filename_compare =  [(l_filename, r_filename) for l_filename, (r_filename, _) in filename_compare.items()]
+                ret[l_entry] = r_entry, sim
+        return {(r, l) if inverse_result else (l, r) for l, (r, _) in ret.items()}
 
-    # Map unmapped files on the right to files on the left
-    for r_filename in unmapped:
-        for l_filename in l_diff.patches.keys():
-            sim = fuzz.token_sort_ratio(l_filename, r_filename) / 100
-            if sim < thresholds.filename:
-                continue
-            filename_compare.append((l_filename, r_filename))
+    return injective_map(left_list, right_list) | injective_map(right_list, left_list, True)
 
+
+def rate_diffs(thresholds, l_diff, r_diff):
+    filename_compare = best_string_mapping(thresholds.filename, l_diff.patches.keys(), r_diff.patches.keys())
     levenshteins = []
     for l_filename, r_filename in filename_compare:
         l_hunks = l_diff.patches[l_filename]
