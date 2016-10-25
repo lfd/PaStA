@@ -391,26 +391,6 @@ def _evaluation_helper(thresholds, l_r, verbose=False):
     return left, results
 
 
-def preevaluate_commit_pair(repo, lhash, rhash):
-    # We do not need to evaluate equivalent commit hashes, as they are already belong to the same equivalence class
-    if lhash == rhash:
-        return False
-
-    orig = repo[lhash]
-    cand = repo[rhash]
-
-    # Check if patch is a revertion
-    if orig.is_revert != cand.is_revert:
-        return False
-
-    return preevaluate_diff_pair(orig.diff, cand.diff)
-
-
-def preevaluate_diff_pair(ldiff, rdiff):
-    common_changed_files = len(ldiff.affected.intersection(rdiff.affected))
-    return common_changed_files != 0
-
-
 def preevaluate_filenames(thresholds, right_files, left_file):
     candidates = []
     for right_file in right_files:

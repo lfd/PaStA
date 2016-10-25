@@ -45,16 +45,15 @@ def compare(config, prog, argv):
 
         show_commits(repo, commit_a, commit_b, args.n)
 
-        rating = preevaluate_commit_pair(repo, commit_a, commit_b)
+        rating = evaluate_commit_list(repo, config.thresholds, [commit_a], [commit_b],
+                                      eval_type=None)  # evaluation type plays no role in this case
         if rating:
-            print('Preevaluation: Possible candidates')
-            rating = evaluate_commit_pair(repo, config.thresholds,
-                                          commit_a, commit_b)
+            rating = rating[commit_a][0][1]
             print(str(rating.msg) + ' message and ' +
                   str(rating.diff) + ' diff, diff length ratio: ' +
                   str(rating.diff_lines_ratio))
         else:
-            print('Preevaluation: Not related')
+            print('Not related')
         getch()
 
 if __name__ == '__main__':
