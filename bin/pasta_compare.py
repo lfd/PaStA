@@ -19,7 +19,7 @@ from PaStA import *
 
 
 def compare(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='create commit cache')
+    parser = argparse.ArgumentParser(prog=prog, description='compare patches')
 
     parser.add_argument('-mbox', action='store_true', default=False,
                         help='Also load mbox cache')
