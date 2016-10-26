@@ -23,6 +23,8 @@ def compare(config, prog, argv):
 
     parser.add_argument('-mbox', action='store_true', default=False,
                         help='Also load mbox cache')
+    parser.add_argument('-n', action='store_false', default=True,
+                        help = 'don\'t use a pager')
     parser.add_argument('commits', metavar='commit', type=str, nargs='+',
                         help='Commit hashes / Mail IDs')
     args = parser.parse_args(argv)
@@ -41,7 +43,7 @@ def compare(config, prog, argv):
         commit_a = commits[i]
         commit_b = commits[i+1]
 
-        show_commits(repo, commit_a, commit_b)
+        show_commits(repo, commit_a, commit_b, args.n)
 
         rating = preevaluate_commit_pair(repo, commit_a, commit_b)
         if rating:
