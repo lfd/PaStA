@@ -132,7 +132,7 @@ class Diff:
     def parse_diff_nosplit(diff):
         # Calculate diff_lines
         lines_of_interest = list(filter(lambda x: Diff.DIFF_SELECTOR_REGEX.match(x), diff))
-        diff_lines = sum(map(len, lines_of_interest))
+        diff_lines = len(lines_of_interest)
 
         # Check if we understand the diff format
         if diff and Diff.EXCLUDE_CC_REGEX.match(diff[0]):
