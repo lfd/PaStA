@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 import functools
+import os
 import pickle
 
 from enum import Enum
@@ -234,29 +235,22 @@ class DictList(dict):
             f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + ' '.join(sorted(x[1])), sorted(self.items()))) + '\n')
             f.close()
 
-        with open(filename + '.pkl', 'wb') as f:
-            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
-
     @staticmethod
-    def from_file(filename, human_readable=False, must_exist=False):
-        try:
-            if human_readable:
-                retval = DictList()
-                with open(filename, 'r') as f:
-                    for line in f:
-                        (key, val) = line.split(' ', 1)
-                        retval[key] = list(map(lambda x: x.rstrip('\n'), val.split(' ')))
-                    f.close()
-                return retval
-            else:
-                with open(filename, 'rb') as f:
-                    return DictList(pickle.load(f))
-
-        except FileNotFoundError:
-            print('Warning, file ' + filename + ' not found!')
+    def from_file(filename, must_exist=False):
+        if not os.path.isfile(filename):
             if must_exist:
-                raise
-            return DictList()
+                raise FileNotFoundError(filename=filename)
+            else:
+                print('Warning, file "%s" not found!' % filename)
+                return DictList()
+
+        retval = DictList()
+        with open(filename, 'r') as f:
+            for line in f:
+                key, val = line.split(' ', 1)
+                retval[key] = list(map(lambda x: x.rstrip('\n'), val.split(' ')))
+            f.close()
+        return retval
 
 
 def best_string_mapping(threshold, left_list, right_list):

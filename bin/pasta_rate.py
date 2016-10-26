@@ -93,8 +93,7 @@ def rate(config, prog, argv):
     similar_patches = EquivalenceClass.from_file(args.sp_filename)
     similar_upstream = EquivalenceClass.from_file(args.su_filename)
     similar_mailbox = EquivalenceClass.from_file(args.sm_filename)
-    human_readable = not args.fp_filename.endswith('.pkl')
-    false_positives = DictList.from_file(args.fp_filename, human_readable=human_readable)
+    false_positives = DictList.from_file(args.fp_filename)
 
     evaluation_result = EvaluationResult.from_file(args.er_filename)
 
@@ -119,8 +118,6 @@ def rate(config, prog, argv):
     similar_patches.to_file(args.sp_filename)
     similar_mailbox.to_file(args.sm_filename)
     fp_filename = args.fp_filename
-    if not human_readable:
-        fp_filename = os.path.splitext(fp_filename)[0]
     false_positives.to_file(fp_filename)
 
 
