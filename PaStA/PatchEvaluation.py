@@ -30,6 +30,92 @@ class EvaluationType(Enum):
     Mailinglist = 3
 
 
+class FalsePositives:
+    FILENAMES = {
+        EvaluationType.PatchStack: 'patch-stack',
+        EvaluationType.Upstream: 'upstream',
+        EvaluationType.Mailinglist: 'mailing-list',
+    }
+
+    def __init__(self, type, dir=None, must_exist=False):
+        self._type = type
+        self._is_dict = type != EvaluationType.PatchStack
+        self._false_positives = {} if self._is_dict else []
+        if dir:
+            filename = os.path.join(dir, FalsePositives.FILENAMES[type])
+            if not os.path.isfile(filename):
+                if must_exist:
+                    raise FileNotFoundError(filename)
+                else:
+                    print('Warning, false-positive file "%s" not found!' % filename)
+                return
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.rstrip('\n').split(' ')
+                if self._is_dict:
+                    first = line[0]
+                    rest = line[1:]
+                    self._false_positives[first] = set(rest)
+                else:
+                    self._false_positives.append(set(line))
+
+    def to_file(self, directory):
+        if len(self._false_positives) == 0:
+            return
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        fp_filename = os.path.join(directory,
+                                   FalsePositives.FILENAMES[self._type])
+
+        with open(fp_filename, 'w') as f:
+            if self._is_dict:
+                for key in sorted(self._false_positives.keys()):
+                    values = sorted(self._false_positives[key])
+                    f.write('%s %s\n' % (key, ' '.join(values)))
+            else:
+                sorted_fp = sorted([sorted(x) for x in self._false_positives])
+                for line in sorted_fp:
+                    f.write('%s\n' % ' '.join(line))
+
+    def mark(self, equivalence_class, left, right):
+        if self._is_dict:
+            if left not in self._false_positives:
+                self._false_positives[left] = set()
+            self._false_positives[left].add(right)
+        else:
+            l_group = equivalence_class.get_equivalence_id(left)
+            r_group = equivalence_class.get_equivalence_id(right)
+            succ = False
+            for i in self._false_positives:
+                id_set = {equivalence_class.get_equivalence_id(x) for x in i}
+                if l_group in id_set:
+                    i |= set([right])
+                    succ = True
+                if r_group in id_set:
+                    i |= set([left])
+                    succ = True
+                if succ:
+                    break
+            if not succ:
+                self._false_positives.append(set([left, right]))
+
+    def is_false_positive(self, equivalence_class, left, right):
+        if self._is_dict:
+            if left in self._false_positives and right in self._false_positives[left]:
+                return True
+            return False
+        else:
+            l_group = equivalence_class.get_equivalence_id(left)
+            r_group = equivalence_class.get_equivalence_id(right)
+
+            for i in self._false_positives:
+                i = {equivalence_class.get_equivalence_id(x) for x in i}
+                if l_group in i and r_group in i:
+                    return True
+            return False
+
+
 class SimRating:
     def __init__(self, msg, diff, diff_lines_ratio):
         """
@@ -68,11 +154,12 @@ class EvaluationResult(dict):
     An evaluation is a dictionary with a commit hash as key,
     and a list of tuples (hash, SimRating) as value.
     """
-
     def __init__(self, eval_type, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
         self.universe = set()
         self._eval_type = eval_type
+        self._false_positives = []
+        self.fp = None
 
     @property
     def eval_type(self):
@@ -102,11 +189,13 @@ class EvaluationResult(dict):
         self.universe = set(universe)
 
     @staticmethod
-    def from_file(filename):
+    def from_file(filename, fp_directory=None, fp_must_exist=False):
         with open(filename, 'rb') as f:
-            return pickle.load(f)
+            ret = pickle.load(f)
+        ret.fp = FalsePositives(ret.eval_type, fp_directory, fp_must_exist)
+        return ret
 
-    def interactive_rating(self, repo, equivalence_class, false_positive_list,
+    def interactive_rating(self, repo, equivalence_class,
                            thresholds, respect_commitdate=False, enable_pager=False):
         already_false_positive = 0
         already_detected = 0
@@ -117,7 +206,6 @@ class EvaluationResult(dict):
         skipped = 0
         skipped_by_dlr = 0
         skipped_by_commit_date = 0
-
         halt_save = False
 
         for i in self.universe:
@@ -138,15 +226,14 @@ class EvaluationResult(dict):
                 if cand_commit_hash == orig_commit_hash:
                     continue
 
-                # Check if patch is already known as false positive
-                if orig_commit_hash in false_positive_list and \
-                   cand_commit_hash in false_positive_list[orig_commit_hash]:
-                    already_false_positive += 1
-                    continue
-
                 # Check if those two patches are already related
                 if equivalence_class.is_related(orig_commit_hash, cand_commit_hash):
                     already_detected += 1
+                    continue
+
+                # Check if patch is already known as false positive
+                if self.fp.is_false_positive(equivalence_class, orig_commit_hash, cand_commit_hash):
+                    already_false_positive += 1
                     continue
 
                 if sim_rating.diff_lines_ratio < thresholds.diff_lines_ratio:
@@ -203,10 +290,7 @@ class EvaluationResult(dict):
                     else:
                         equivalence_class.insert(orig_commit_hash, cand_commit_hash)
                 elif yns == 'n':
-                    if orig_commit_hash in false_positive_list:
-                        false_positive_list[orig_commit_hash].append(cand_commit_hash)
-                    else:
-                        false_positive_list[orig_commit_hash] = [cand_commit_hash]
+                    self.fp.mark(equivalence_class, orig_commit_hash, cand_commit_hash)
 
         equivalence_class.optimize()
 
@@ -221,36 +305,6 @@ class EvaluationResult(dict):
         print(' Skipped by diff length ratio mismatch: ' + str(skipped_by_dlr))
         if respect_commitdate:
             print(' Skipped by commit date mismatch: ' + str(skipped_by_commit_date))
-
-
-class DictList(dict):
-    def __init__(self, *args, **kwargs):
-        dict.__init__(self, *args, **kwargs)
-
-    def to_file(self, filename):
-        if len(self) == 0:
-            return
-
-        with open(filename, 'w') as f:
-            f.write('\n'.join(map(lambda x: str(x[0]) + ' ' + ' '.join(sorted(x[1])), sorted(self.items()))) + '\n')
-            f.close()
-
-    @staticmethod
-    def from_file(filename, must_exist=False):
-        if not os.path.isfile(filename):
-            if must_exist:
-                raise FileNotFoundError(filename=filename)
-            else:
-                print('Warning, file "%s" not found!' % filename)
-                return DictList()
-
-        retval = DictList()
-        with open(filename, 'r') as f:
-            for line in f:
-                key, val = line.split(' ', 1)
-                retval[key] = list(map(lambda x: x.rstrip('\n'), val.split(' ')))
-            f.close()
-        return retval
 
 
 def best_string_mapping(threshold, left_list, right_list):
