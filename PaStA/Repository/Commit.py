@@ -16,7 +16,8 @@ from .Patch import Diff
 
 class Commit:
     SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:'
-                                 r'|Reported-by:|Tested-by:|LKML-Reference:|Patch:)'),
+                                 r'|Reported-by:|Tested-by:|LKML-Reference:|Patch:)'
+                                 r'|Wrecked-off-by:'),
                                 re.IGNORECASE)
     REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
 
