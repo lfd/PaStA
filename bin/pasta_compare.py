@@ -27,8 +27,13 @@ def compare(config, prog, argv):
                         help = 'don\'t use a pager')
     parser.add_argument('commits', metavar='commit', type=str, nargs='+',
                         help='Commit hashes / Mail IDs')
+
+    parser.add_argument('-th', dest='thres_heading', metavar='threshold', default=config.thresholds.heading, type=float,
+                        help='Minimum diff hunk section heading similarity (default: %(default)s)')
+
     args = parser.parse_args(argv)
 
+    config.thresholds.heading = args.thres_heading
     commits = args.commits
 
     repo = config.repo
