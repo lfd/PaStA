@@ -98,12 +98,13 @@ class Repository:
         with open(commit_cache_filename, 'wb') as f:
             pickle.dump(self.commit_cache, f, pickle.HIGHEST_PROTOCOL)
 
-    def cache_commits(self, commit_hashes, parallelise=True):
+    def cache_commits(self, commit_hashes, parallelise=True, cpu_factor = 1):
         """
         Caches a list of commit hashes
         :param commit_hashes: List of commit hashes
         :param parallelise: parallelise
         """
+        num_cpus = int(cpu_factor * cpu_count())
         already_cached = set(self.commit_cache.keys())
         worklist = set(commit_hashes) - already_cached
 
@@ -117,7 +118,7 @@ class Repository:
             global _tmp_repo
             _tmp_repo = self.repo
 
-            p = Pool(cpu_count(), maxtasksperchild=10)
+            p = Pool(num_cpus, maxtasksperchild=10)
             result = p.map(_retrieve_commit_subst, worklist, chunksize=100)
             p.close()
             p.join()
