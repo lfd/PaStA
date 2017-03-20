@@ -105,6 +105,9 @@ class Repository:
         :param parallelise: parallelise
         """
         num_cpus = int(cpu_factor * cpu_count())
+        # deactivate parallelistation, if we only have a single CPU
+        if num_cpus <= 1:
+            parallelise = False
         already_cached = set(self.commit_cache.keys())
         worklist = set(commit_hashes) - already_cached
 
