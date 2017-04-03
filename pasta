@@ -4,10 +4,10 @@
 PaStA - Patch Stack Analysis
 A tool for tracking the evolution of patch stacks
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
@@ -33,12 +33,12 @@ from bin.pasta_upstream_history import pasta_upstream_history
 
 
 __author__ = 'Ralf Ramsauer'
-__copyright__ = 'Copyright (c) OTH Regensburg, 2016'
+__copyright__ = 'Copyright (c) OTH Regensburg, 2016-2017'
 __credits__ = ['Ralf Ramsauer']
 __license__ = 'GPLv2'
 __version__ = '0.2'
 __maintainer__ = 'Ralf Ramsauer'
-__email__ = 'ralf.ramsauer@othr.de'
+__email__ = 'ralf.ramsauer@oth-regensburg.de'
 __status__ = 'Development'
 
 
