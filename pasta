@@ -17,7 +17,9 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 details.
 """
+
 import sys
+import errno
 
 from PaStA import Config
 
@@ -42,10 +44,14 @@ __email__ = 'ralf.ramsauer@oth-regensburg.de'
 __status__ = 'Development'
 
 
-def usage(me):
+def usage(me, exit_code=errno.EINVAL):
+    file = sys.stdout
+    if exit_code != 0:
+        file =sys.stderr
+
     print('PaStA - The Patch Stack Analysis (PaStA %s)\n'
           '\n'
-          'usage: %s [-c config] sub -h\n'
+          'usage: %s [-c config] sub [-h|--help]\n'
           'where sub is one of:\n'
           '  analyse\n'
           '  cache\n'
@@ -65,8 +71,8 @@ def usage(me):
           'There is NO WARRANTY, to the extent permitted by law.\n'
           '\n'
           'Written by %s.' %
-          (__version__, me, __copyright__, __license__, __author__))
-    quit()
+          (__version__, me, __copyright__, __license__, __author__), file=file)
+    quit(exit_code)
 
 
 def main(argv):
@@ -89,8 +95,8 @@ def main(argv):
 
     sub = argv.pop(0)
 
-    if sub == '-h':
-        usage(me)
+    if sub == '-h' or sub == '--help':
+        usage(me, 0)
     elif sub == 'analyse':
         analyse(config, sub, argv)
     elif sub == 'cache':
