@@ -115,6 +115,40 @@ class FalsePositives:
                     return True
             return False
 
+    def check_consistency(self, equivalence_class):
+        print_banner = True
+
+        def banner(banner):
+            nonlocal print_banner
+            if print_banner:
+                print(banner)
+            print_banner = False
+
+        if self._is_dict:
+            for origin, false_positives in self._false_positives.items():
+                for fp in false_positives:
+                    if origin in equivalence_class and \
+                        equivalence_class.get_property(origin) == fp:
+                        banner('Inconsistencies detected. The following patch '
+                               'on the patch stack is linked to an upstream '
+                               'patch though being markes as false positive:')
+                        print('%s => %s' % (origin, fp))
+        else:
+            for fp_group in self._false_positives:
+                ids = {hash: equivalence_class.get_equivalence_id(hash) for hash in fp_group}
+                res = dict()
+                for hash, id in ids.items():
+                    if id not in res:
+                        res[id] = []
+                    res[id].append(hash)
+
+                for hashes in res.values():
+                    if len(hashes) > 1:
+                        banner('Inconsistencies detected. The following patches '
+                               'are marked as related and marked as '
+                               'false-positives:')
+                        print(hashes)
+
 
 class SimRating:
     def __init__(self, msg, diff, diff_lines_ratio):

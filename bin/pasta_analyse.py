@@ -24,6 +24,9 @@ from termcolor import colored
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
+from PaStA.PatchEvaluation import FalsePositives
+
+
 _repo = None
 
 
@@ -221,13 +224,28 @@ def analyse_mbox(config, hashes, mail_ids):
 
 
 def create_patch_groups(config):
-    # similar patch groups
+    # similar patches on patch stacks
     similar_patches = EquivalenceClass.from_file(config.f_similar_patches,
                                                  must_exist=True)
 
-    # upstream results
+    # similar representatives -> upstream
     similar_upstream = EquivalenceClass.from_file(config.f_similar_upstream,
                                                   must_exist=True)
+
+    # perform some consistency checks before creating the patch groups
+    for i in similar_upstream:
+        if len(i) != 1:
+            print('Consistency error in similar_upstream file: '
+                  'Multiple patches are mapped to the same upstream: %s' % i)
+            quit()
+
+    # load false positives
+    fp_ps = FalsePositives(EvaluationType.PatchStack, config.d_false_positives)
+    fp_su = FalsePositives(EvaluationType.Upstream, config.d_false_positives)
+
+    # check consistency of false positives
+    fp_ps.check_consistency(similar_patches)
+    fp_su.check_consistency(similar_upstream)
 
     # create a copy of the similar patch list
     patch_groups = copy.deepcopy(similar_patches)
