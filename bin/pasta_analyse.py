@@ -266,10 +266,6 @@ def analyse(config, prog, argv):
                         default=config.similar_upstream,
                         help='Similar Upstream filename. Only required '
                              'together with mode finish.')
-    parser.add_argument('-sm', dest='sm_filename', metavar='filename',
-                        default=config.similar_mailbox,
-                        help='Similar mailbox filename. Only required together '
-                              'with mbox mode.')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
                         default=config.patch_groups,
                         help='Patch groups filename. '
