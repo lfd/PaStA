@@ -61,13 +61,6 @@ def describe_commit(commit):
 
 
 def patch_descriptions(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-cd', dest='cd_filename', metavar='filename',
-                        default=config.commit_description, help='Output: Commit description file')
-    parser.add_argument('-pg', dest='pg_filename', metavar='filename',
-                        default=config.patch_groups, help='Patch groups filename (optional)')
-    args = parser.parse_args(argv)
-
     repo = config.repo
     global _tmp_repo
     _tmp_repo = gitpython.Repo(config.repo_location)
@@ -75,7 +68,8 @@ def patch_descriptions(config, prog, argv):
     _config = config
 
     # similar patch groups
-    patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
+    patch_groups = EquivalenceClass.from_file(config.f_patch_groups,
+                                              must_exist=True)
 
     # We can at least cache all commits on the patch stacks
     repo.load_ccache(config.ccache_stack_filename)
@@ -99,7 +93,7 @@ def patch_descriptions(config, prog, argv):
     _config = None
 
     sys.stdout.write('Writing commit descriptions file...')
-    with open(args.cd_filename, 'w') as f:
+    with open(config.f_commit_description, 'w') as f:
         f.write('commit_hash branch_name author_date commit_date release_date\n')
         for commit_hash, info in all_description.items():
             f.write('%s %s %s %s %s\n' % (commit_hash, info[0], info[1], info[2], info[3]))

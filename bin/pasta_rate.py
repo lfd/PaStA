@@ -50,19 +50,19 @@ def mailinglist_rating(repo, evaluation_result, similar_patches, thresholds,
 def rate(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='classify analysation results')
 
-    parser.add_argument('-fp', dest='fp_dir', metavar='directory', default=config.false_positives,
+    parser.add_argument('-fp', dest='fp_dir', metavar='directory', default=config.d_false_positives,
                         help='directory containing false-positive files')
-    parser.add_argument('-sp', dest='sp_filename', metavar='filename', default=config.similar_patches,
+    parser.add_argument('-sp', dest='sp_filename', metavar='filename', default=config.f_similar_patches,
                         help='Similar patches filename')
-    parser.add_argument('-su', dest='su_filename', metavar='filename', default=config.similar_upstream,
+    parser.add_argument('-su', dest='su_filename', metavar='filename', default=config.f_similar_upstream,
                         help='Similar upstream filename')
-    parser.add_argument('-sm', dest='sm_filename', metavar='filename', default=config.similar_mailbox,
+    parser.add_argument('-sm', dest='sm_filename', metavar='filename', default=config.f_similar_mailbox,
                         help='Similar mailbox filename')
-    parser.add_argument('-er', dest='er_filename', metavar='filename', default=config.evaluation_result,
+    parser.add_argument('-er', dest='er_filename', metavar='filename', default=config.f_evaluation_result,
                         help='Evaluation result PKL filename')
 
     parser.add_argument('-mbox-mail-cache', dest='mbc_filename', metavar='filename',
-                        default=config.ccache_mbox_filename,
+                        default=config.f_ccache_mbox,
                         help='Mailbox Cache file. Only required together with mbox mode.')
 
     # Thresholds

@@ -53,24 +53,24 @@ def cache(config, prog, argv):
         args.upstream = True
 
     if args.stack:
-        repo.load_ccache(config.ccache_stack_filename)
+        repo.load_ccache(config.f_ccache_stack)
         repo.cache_commits(psd.commits_on_stacks)
-        repo.export_ccache(config.ccache_stack_filename)
+        repo.export_ccache(config.f_ccache_stack)
         repo.clear_commit_cache()
     if args.upstream:
-        repo.load_ccache(config.ccache_upstream_filename)
+        repo.load_ccache(config.f_ccache_upstream)
         repo.cache_commits(psd.upstream_hashes)
-        repo.export_ccache(config.ccache_upstream_filename)
+        repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if args.mbox:
-        ids = get_commits_from_file(config.mailbox_id_filename, ordered=False,
+        ids = get_commits_from_file(config.f_mailbox_id, ordered=False,
                                     must_exist=False)
         mindate = datetime.datetime.strptime(args.mindate, "%Y-%m-%d")
         maxdate = datetime.datetime.strptime(args.maxdate, "%Y-%m-%d")
         ids |= load_and_cache_mbox(repo, args.mbox, mindate, maxdate)
-        with open(config.mailbox_id_filename, 'w') as f:
+        with open(config.f_mailbox_id, 'w') as f:
             f.write('\n'.join(ids) + '\n')
-        repo.export_ccache(config.ccache_mbox_filename)
+        repo.export_ccache(config.f_ccache_mbox)
 
 
 if __name__ == '__main__':

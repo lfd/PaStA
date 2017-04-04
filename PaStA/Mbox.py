@@ -177,10 +177,10 @@ def fix_encoding(string):
     return string.encode('utf-8').decode('ascii', 'ignore')
 
 
-def load_and_cache_mbox(repo, mbox_filename, mindate, maxdate, parallelise=True):
+def load_and_cache_mbox(repo, f_mbox, mindate, maxdate, parallelise=True):
     print('Notice: Skipping mails until %s' % mindate)
-    sys.stdout.write('Loading mbox %s...' % mbox_filename)
-    mbox = mailbox.mbox(mbox_filename, create=False)
+    sys.stdout.write('Loading mbox %s...' % f_mbox)
+    mbox = mailbox.mbox(f_mbox, create=False)
 
     print(colored(' [done]', 'green'))
     print('Parsing %d Mails...' % len(mbox))

@@ -1,14 +1,15 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+
 import csv
 import os
 import re
@@ -188,7 +189,7 @@ class PatchStackDefinition:
 
         sys.stdout.write('Parsing patch stack definition...')
 
-        with open(config.patch_stack_definition_filename) as f:
+        with open(config.f_patch_stack_definition) as f:
             line_list = f.readlines()
 
         # Get the global CSV header which is the same for all groups
@@ -228,14 +229,15 @@ class PatchStackDefinition:
                                      row['StackReleaseDate'])
 
                 # get commit hashes of the patch stack
-                commit_hashes = get_commits_from_file(os.path.join(config.stack_hashes, stack.version))
+                commit_hashes = get_commits_from_file(
+                    os.path.join(config.d_stack_hashes, stack.version))
 
                 this_group.append(PatchStack(base, stack, commit_hashes))
 
             patch_stack_groups.append((group_name, this_group))
 
         # get upstream commit hashes
-        upstream = get_commits_from_file(config.upstream_hashes_filename)
+        upstream = get_commits_from_file(config.f_upstream_hashes)
         if config.upstream_blacklist:
             blacklist = get_commits_from_file(config.upstream_blacklist, ordered=False)
             # filter blacklistes commit hashes

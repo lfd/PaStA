@@ -80,10 +80,10 @@ class Repository:
         self.ccache[commit_hash] = _retrieve_commit(self.repo, commit_hash)
         return self.ccache[commit_hash]
 
-    def load_ccache(self, ccache_filename, must_exist=False):
-        print('Loading commit cache file %s...' % ccache_filename)
+    def load_ccache(self, f_ccache, must_exist=False):
+        print('Loading commit cache file %s...' % f_ccache)
         try:
-            with open(ccache_filename, 'rb') as f:
+            with open(f_ccache, 'rb') as f:
                 this_commits = pickle.load(f)
             print('Loaded %d commits from cache file' % len(this_commits))
             self.inject_commits(this_commits)
@@ -91,12 +91,12 @@ class Repository:
         except FileNotFoundError:
             if must_exist:
                 raise
-            print('Warning, commit cache file %s not found!' % ccache_filename)
+            print('Warning, commit cache file %s not found!' % f_ccache)
             return set()
 
-    def export_ccache(self, ccache_filename):
+    def export_ccache(self, f_ccache):
         print('Writing %d commits to cache file' % len(self.ccache))
-        with open(ccache_filename, 'wb') as f:
+        with open(f_ccache, 'wb') as f:
             pickle.dump(self.ccache, f, pickle.HIGHEST_PROTOCOL)
 
     def cache_commits(self, commit_hashes, parallelise=True, cpu_factor = 1):

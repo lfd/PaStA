@@ -25,7 +25,7 @@ from PaStA import *
 def statistics(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
-                        default=config.patch_groups, help='Patch group file')
+                        default=config.f_patch_groups, help='Patch group file')
     parser.add_argument('-R', dest='r_resources', metavar='directory',
                         default=config.R_resources, help='Output directory for R resources')
     parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['AD', 'CD', 'SRD'],

@@ -93,7 +93,7 @@ def analyse_succ(config):
     global _repo
     repo = config.repo
     _repo = repo
-    repo.load_ccache(config.ccache_stack_filename)
+    repo.load_ccache(config.f_ccache_stack)
 
     evaluation_list = []
     for patch_stack in psd:
@@ -172,7 +172,7 @@ def analyse_upstream(config, similar_patches):
     repo = config.repo
     psd = config.psd
 
-    repo.load_ccache(config.ccache_upstream_filename, must_exist=False)
+    repo.load_ccache(config.f_ccache_upstream, must_exist=False)
 
     sys.stdout.write('Determining patch stack representative system...')
     sys.stdout.flush()
@@ -222,11 +222,11 @@ def analyse_mbox(config, hashes, mail_ids):
 
 def create_patch_groups(config):
     # similar patch groups
-    similar_patches = EquivalenceClass.from_file(config.similar_patches,
+    similar_patches = EquivalenceClass.from_file(config.f_similar_patches,
                                                  must_exist=True)
 
     # upstream results
-    similar_upstream = EquivalenceClass.from_file(config.similar_upstream,
+    similar_upstream = EquivalenceClass.from_file(config.f_similar_upstream,
                                                   must_exist=True)
 
     # create a copy of the similar patch list
@@ -251,7 +251,7 @@ def create_patch_groups(config):
         patch_groups.set_property(i[0], i.property)
 
     sys.stdout.write('Writing Patch Group file... ')
-    patch_groups.to_file(config.patch_groups)
+    patch_groups.to_file(config.f_patch_groups)
     print(colored(' [done]', 'green'))
 
 
@@ -292,13 +292,13 @@ def analyse(config, prog, argv):
     # Load similar patches file. If args.mode is 'init' or 'mbox', it does not
     # necessarily have to exist.
     sp_must_exist = args.mode not in ['init', 'mbox']
-    similar_patches = EquivalenceClass.from_file(config.similar_patches,
+    similar_patches = EquivalenceClass.from_file(config.f_similar_patches,
                                                  must_exist=sp_must_exist)
 
     if args.mode == 'init':
         for commit_hash in config.psd.commits_on_stacks:
             similar_patches.insert_single(commit_hash)
-        similar_patches.to_file(config.similar_patches)
+        similar_patches.to_file(config.f_similar_patches)
     elif args.mode == 'finish':
         create_patch_groups(config)
     else:
@@ -309,12 +309,12 @@ def analyse(config, prog, argv):
         elif args.mode == 'upstream':
             result = analyse_upstream(config, similar_patches)
         elif args.mode == 'mbox':
-            mail_ids = config.repo.load_ccache(config.ccache_mbox_filename,
+            mail_ids = config.repo.load_ccache(config.f_ccache_mbox,
                                                must_exist=True)
-            hashes = config.repo.load_ccache(config.ccache_upstream_filename)
+            hashes = config.repo.load_ccache(config.f_ccache_upstream)
             result = analyse_mbox(config, hashes, mail_ids)
 
-        result.to_file(config.evaluation_result)
+        result.to_file(config.f_evaluation_result)
 
 
 if __name__ == '__main__':

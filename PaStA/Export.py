@@ -1,14 +1,15 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+
 from multiprocessing import Pool, cpu_count
 
 from .Util import format_date_ymd
@@ -31,7 +32,7 @@ class Export:
         self.repo = repo
         self.psd = patch_stack_definition
 
-    def diffstat(self, diffstat_filename):
+    def diffstat(self, f_diffstat):
         # Get raw pygit2 Repo and store it in temporary global variable
         repo = self.repo.repo
         global _tmp_repo
@@ -57,12 +58,12 @@ class Export:
         p.join()
         _tmp_repo = None
 
-        with open(diffstat_filename, 'w') as f:
+        with open(f_diffstat, 'w') as f:
             f.write('Version Deletions Insertions\n')
             for version_name, deletions, insertions in results:
                     f.write('%s %d %d\n' % (version_name, deletions, insertions))
 
-    def release_dates(self, mainline_release_dates_filename, stack_release_dates_filename):
+    def release_dates(self, f_mainline_release_dates, f_stack_release_dates):
         stacks = dict()
         base = dict()
 
@@ -71,31 +72,32 @@ class Export:
                 stacks[stack.stack_version] = group_name, stack.stack_release_date
                 base[stack.base_version] = stack.base_release_date
 
-        with open(mainline_release_dates_filename, 'w') as f:
+        with open(f_mainline_release_dates, 'w') as f:
             f.write('Version ReleaseDate\n')
             for version, date in base.items():
                 f.write('%s %s\n' %
                         (version, format_date_ymd(date)))
 
-        with open(stack_release_dates_filename, 'w') as f:
+        with open(f_stack_release_dates, 'w') as f:
             f.write('VersionGroup Version ReleaseDate\n')
             for version, (group, date) in stacks.items():
                 f.write('%s %s %s\n' % (group,
                                         version,
                                         format_date_ymd(date)))
 
-    def sorted_release_names(self, release_sort_filename):
-        with open(release_sort_filename, 'w') as f:
+    def sorted_release_names(self, f_release_sort):
+        with open(f_release_sort, 'w') as f:
             f.write('VersionGroup Version\n')
             for version_group, stacks in self.psd.iter_groups():
                 for stack in stacks:
                     f.write('%s %s\n' % (version_group, stack.stack_version))
 
-    def patch_groups(self, upstream_filename, patches_filename, occurrence_filename, patch_groups, date_selector):
+    def patch_groups(self, f_upstream, f_patches, f_occurrence,
+                     patch_groups, date_selector):
         psd = self.psd
-        upstream = open(upstream_filename, 'w')
-        patches = open(patches_filename, 'w')
-        occurrence = open(occurrence_filename, 'w')
+        upstream = open(f_upstream, 'w')
+        patches = open(f_patches, 'w')
+        occurrence = open(f_occurrence, 'w')
 
         # Write CSV Headers
         upstream.write('PatchGroup UpstreamHash UpstreamCommitDate FirstStackOccurence\n')

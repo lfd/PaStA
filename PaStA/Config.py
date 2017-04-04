@@ -96,30 +96,30 @@ class Config:
             return join(self._project_root, option(name))
 
         # parse locations, those will fallback to default values
-        self.patch_stack_definition_filename = path('PATCH_STACK_DEFINITION')
+        self.f_patch_stack_definition = path('PATCH_STACK_DEFINITION')
 
         # commit hash files and mailbox ID files
-        self.stack_hashes = path('STACK_HASHES')
-        self.upstream_hashes_filename = join(self.stack_hashes, 'upstream')
-        self.mailbox_id_filename = join(self.stack_hashes, 'mailbox')
+        self.d_stack_hashes = path('STACK_HASHES')
+        self.f_upstream_hashes = join(self.d_stack_hashes, 'upstream')
+        self.f_mailbox_id = join(self.d_stack_hashes, 'mailbox')
 
         # commit hash blacklist
         self.upstream_blacklist = pasta.get('UPSTREAM_BLACKLIST')
 
         # analysis results
-        self.similar_patches = path('SIMILAR_PATCHES')
-        self.similar_upstream = path('SIMILAR_UPSTREAM')
-        self.similar_mailbox = path('SIMILAR_MAILBOX')
-        self.false_positives = path('FALSE_POSTITIVES')
-        self.patch_groups = path('PATCH_GROUPS')
+        self.f_similar_patches = path('SIMILAR_PATCHES')
+        self.f_similar_upstream = path('SIMILAR_UPSTREAM')
+        self.f_similar_mailbox = path('SIMILAR_MAILBOX')
+        self.d_false_positives = path('FALSE_POSTITIVES')
+        self.f_patch_groups = path('PATCH_GROUPS')
 
-        self.commit_description = path('COMMIT_DESCRIPTION')
+        self.f_commit_description = path('COMMIT_DESCRIPTION')
 
         # pkl commit cache (ccache) and result files
-        self.evaluation_result = path('EVALUATION_RESULT')
-        self.ccache_stack_filename = path('COMMIT_CACHE_STACK')
-        self.ccache_upstream_filename = path('COMMIT_CACHE_UPSTREAM')
-        self.ccache_mbox_filename = path('COMMIT_CACHE_MBOX')
+        self.f_evaluation_result = path('EVALUATION_RESULT')
+        self.f_ccache_stack = path('COMMIT_CACHE_STACK')
+        self.f_ccache_upstream = path('COMMIT_CACHE_UPSTREAM')
+        self.f_ccache_mbox = path('COMMIT_CACHE_MBOX')
 
         # R location
         self.R_resources = path('R_RESOURCES')
