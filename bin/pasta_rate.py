@@ -48,41 +48,28 @@ def mailinglist_rating(repo, evaluation_result, similar_patches, thresholds,
 
 
 def rate(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='classify analysation results')
-
-    parser.add_argument('-fp', dest='fp_dir', metavar='directory', default=config.d_false_positives,
-                        help='directory containing false-positive files')
-    parser.add_argument('-sp', dest='sp_filename', metavar='filename', default=config.f_similar_patches,
-                        help='Similar patches filename')
-    parser.add_argument('-su', dest='su_filename', metavar='filename', default=config.f_similar_upstream,
-                        help='Similar upstream filename')
-    parser.add_argument('-sm', dest='sm_filename', metavar='filename', default=config.f_similar_mailbox,
-                        help='Similar mailbox filename')
-    parser.add_argument('-er', dest='er_filename', metavar='filename', default=config.f_evaluation_result,
-                        help='Evaluation result PKL filename')
-
-    parser.add_argument('-mbox-mail-cache', dest='mbc_filename', metavar='filename',
-                        default=config.f_ccache_mbox,
-                        help='Mailbox Cache file. Only required together with mbox mode.')
+    parser = argparse.ArgumentParser(prog=prog,
+                                     description='classify results of analysis')
 
     # Thresholds
-    parser.add_argument('-ta', dest='thres_accept', metavar='threshold', type=float,
-                        default=config.thresholds.autoaccept,
+    parser.add_argument('-ta', dest='thres_accept', metavar='threshold',
+                        type=float, default=config.thresholds.autoaccept,
                         help='Autoaccept threshold (default: %(default)s)')
-    parser.add_argument('-ti', dest='thres_interactive', metavar='threshold', type=float,
-                        default=config.thresholds.interactive,
+    parser.add_argument('-ti', dest='thres_interactive', metavar='threshold',
+                        type=float, default=config.thresholds.interactive,
                         help='Interactive threshold (default: %(default)s)')
-    parser.add_argument('-dlr', dest='thres_diff_lines', metavar='threshold',  type=float,
-                        default=config.thresholds.diff_lines_ratio,
+    parser.add_argument('-dlr', dest='thres_diff_lines', metavar='threshold',
+                        type=float, default=config.thresholds.diff_lines_ratio,
                         help='Diff lines ratio threshold (default: %(default)s)')
     parser.add_argument('-weight', dest='weight', metavar='weight', type=float,
                         default=config.thresholds.message_diff_weight,
-                        help='Heuristic factor for message to diff rating. (default: %(default)s)')
+                        help='Heuristic factor for message to diff rating. '
+                             '(default: %(default)s)')
 
-    parser.add_argument('-rcd', dest='resp_commit_date', action='store_true', default=False,
-                        help='Respect commit date')
-    parser.add_argument('-p', dest='enable_pager', action='store_true', default=False,
-                        help='Enable pager')
+    parser.add_argument('-rcd', dest='resp_commit_date', action='store_true',
+                        default=False, help='Respect commit date')
+    parser.add_argument('-p', dest='enable_pager', action='store_true',
+                        default=False, help='Enable pager')
     args = parser.parse_args(argv)
 
     config.thresholds = Thresholds(args.thres_accept,
@@ -91,39 +78,41 @@ def rate(config, prog, argv):
                                    config.thresholds.heading,  # does not matter for interactive rating
                                    config.thresholds.filename,  # does not matter for interactive rating
                                    args.weight)
-    config.false_positives = args.fp_dir
 
     repo = config.repo
 
     # Load already known positives and false positives
-    similar_patches = EquivalenceClass.from_file(args.sp_filename)
-    similar_upstream = EquivalenceClass.from_file(args.su_filename)
-    similar_mailbox = EquivalenceClass.from_file(args.sm_filename)
+    similar_patches = EquivalenceClass.from_file(config.f_similar_patches)
+    similar_upstream = EquivalenceClass.from_file(config.f_similar_upstream)
+    similar_mailbox = EquivalenceClass.from_file(config.f_similar_mailbox)
 
-    evaluation_result = EvaluationResult.from_file(args.er_filename,
-                                                   config.false_positives)
+    evaluation_result = EvaluationResult.from_file(config.f_evaluation_result,
+                                                   config.d_false_positives)
 
     if evaluation_result.eval_type == EvaluationType.PatchStack:
         print('Running patch stack rating...')
         patch_stack_rating(repo, evaluation_result, similar_patches,
-                           config.thresholds, args.resp_commit_date, args.enable_pager)
+                           config.thresholds, args.resp_commit_date,
+                           args.enable_pager)
     elif evaluation_result.eval_type == EvaluationType.Upstream:
         print('Running upstream rating...')
-        upstream_rating(repo, evaluation_result, similar_patches, similar_upstream,
-                        config.thresholds, args.resp_commit_date, args.enable_pager)
+        upstream_rating(repo, evaluation_result, similar_patches,
+                        similar_upstream, config.thresholds,
+                        args.resp_commit_date, args.enable_pager)
     elif evaluation_result.eval_type == EvaluationType.Mailinglist:
         print('Running mailing list rating...')
         # Mails are only available as cache.
-        config.repo.load_ccache(args.mbc_filename, must_exist=True)
+        config.repo.load_ccache(config.f_ccache_mbox, must_exist=True)
         mailinglist_rating(repo, evaluation_result, similar_mailbox,
                            config.thresholds, args.enable_pager)
     else:
-        raise NotImplementedError('rating for evaluation type is not implemented')
+        raise NotImplementedError('rating for evaluation type is not '
+                                  'implemented')
 
-    similar_upstream.to_file(args.su_filename)
-    similar_patches.to_file(args.sp_filename)
-    similar_mailbox.to_file(args.sm_filename)
-    evaluation_result.fp.to_file(config.false_positives)
+    similar_upstream.to_file(config.f_similar_upstream)
+    similar_patches.to_file(config.f_similar_patches)
+    similar_mailbox.to_file(config.f_similar_mailbox)
+    evaluation_result.fp.to_file(config.d_false_positives)
 
 
 if __name__ == '__main__':
