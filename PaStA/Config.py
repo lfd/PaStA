@@ -90,7 +90,6 @@ class Config:
         self.patch_groups = os.path.join(self._project_root, pasta.get('PATCH_GROUPS'))
         self.commit_description = os.path.join(self._project_root, pasta.get('COMMIT_DESCRIPTION'))
         self.evaluation_result = os.path.join(self._project_root, pasta.get('EVALUATION_RESULT'))
-        self.diffs_location = os.path.join(self._project_root, pasta.get('DIFFS'))
         self.R_resources = os.path.join(self._project_root, pasta.get('R_RESOURCES'))
         self.mbox_mindate = pasta.get('MBOX_MINDATE')
         self.mbox_maxdate = pasta.get('MBOX_MAXDATE')
