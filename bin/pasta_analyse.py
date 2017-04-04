@@ -93,7 +93,7 @@ def analyse_succ(config):
     global _repo
     repo = config.repo
     _repo = repo
-    repo.load_commit_cache(config.commit_cache_stack_filename)
+    repo.load_ccache(config.ccache_stack_filename)
 
     evaluation_list = []
     for patch_stack in psd:
@@ -172,8 +172,7 @@ def analyse_upstream(config, similar_patches):
     repo = config.repo
     psd = config.psd
 
-    repo.load_commit_cache(config.commit_cache_upstream_filename,
-                           must_exist=False)
+    repo.load_ccache(config.ccache_upstream_filename, must_exist=False)
 
     sys.stdout.write('Determining patch stack representative system...')
     sys.stdout.flush()
@@ -329,9 +328,9 @@ def analyse(config, prog, argv):
         elif args.mode == 'upstream':
             result = analyse_upstream(config, similar_patches)
         elif args.mode == 'mbox':
-            mail_ids = config.repo.load_commit_cache(config.commit_cache_mbox_filename,
-                                                     must_exist=True)
-            hashes = config.repo.load_commit_cache(config.commit_cache_upstream_filename)
+            mail_ids = config.repo.load_ccache(config.ccache_mbox_filename,
+                                               must_exist=True)
+            hashes = config.repo.load_ccache(config.ccache_upstream_filename)
             result = analyse_mbox(config, hashes, mail_ids)
 
         result.to_file(args.evaluation_result_filename)

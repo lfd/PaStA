@@ -53,14 +53,14 @@ def cache(config, prog, argv):
         args.upstream = True
 
     if args.stack:
-        repo.load_commit_cache(config.commit_cache_stack_filename)
+        repo.load_ccache(config.ccache_stack_filename)
         repo.cache_commits(psd.commits_on_stacks)
-        repo.export_commit_cache(config.commit_cache_stack_filename)
+        repo.export_ccache(config.ccache_stack_filename)
         repo.clear_commit_cache()
     if args.upstream:
-        repo.load_commit_cache(config.commit_cache_upstream_filename)
+        repo.load_ccache(config.ccache_upstream_filename)
         repo.cache_commits(psd.upstream_hashes)
-        repo.export_commit_cache(config.commit_cache_upstream_filename)
+        repo.export_ccache(config.ccache_upstream_filename)
         repo.clear_commit_cache()
     if args.mbox:
         ids = get_commits_from_file(config.mailbox_id_filename, ordered=False,
@@ -70,7 +70,7 @@ def cache(config, prog, argv):
         ids |= load_and_cache_mbox(repo, args.mbox, mindate, maxdate)
         with open(config.mailbox_id_filename, 'w') as f:
             f.write('\n'.join(ids) + '\n')
-        repo.export_commit_cache(config.commit_cache_mbox_filename)
+        repo.export_ccache(config.ccache_mbox_filename)
 
 
 if __name__ == '__main__':

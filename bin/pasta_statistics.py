@@ -3,20 +3,22 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+
 import os
 import sys
 
 from subprocess import call
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                '..')))
 from PaStA import *
 
 
@@ -68,7 +70,7 @@ def statistics(config, prog, argv):
         # commits of the patch stacks, as we need date information of each
         # of them
         if args.date_selector != 'SRD':
-            repo.load_commit_cache(config.commit_cache_stack_filename)
+            repo.load_ccache(config.ccache_stack_filename)
             repo.cache_commits(psd.commits_on_stacks)
 
         # Export information of patch groups

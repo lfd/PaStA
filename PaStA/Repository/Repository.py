@@ -1,14 +1,15 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+
 import pickle
 import pygit2
 import sys
@@ -54,15 +55,15 @@ def _retrieve_commit_subst(commit_hash):
 class Repository:
     def __init__(self, repo_location):
         self.repo_location = repo_location
-        self.commit_cache = {}
+        self.ccache = {}
         self.repo = pygit2.Repository(repo_location)
 
     def inject_commits(self, commit_dict):
         for key, val in commit_dict.items():
-            self.commit_cache[key] = val
+            self.ccache[key] = val
 
     def clear_commit_cache(self):
-        self.commit_cache .clear()
+        self.ccache.clear()
 
     def get_commit(self, commit_hash):
         """
@@ -72,17 +73,17 @@ class Repository:
         """
 
         # simply return commit if it is already cached
-        if commit_hash in self.commit_cache:
-            return self.commit_cache[commit_hash]
+        if commit_hash in self.ccache:
+            return self.ccache[commit_hash]
 
         # cache and return if it is not yet cached
-        self.commit_cache[commit_hash] = _retrieve_commit(self.repo, commit_hash)
-        return self.commit_cache[commit_hash]
+        self.ccache[commit_hash] = _retrieve_commit(self.repo, commit_hash)
+        return self.ccache[commit_hash]
 
-    def load_commit_cache(self, commit_cache_filename, must_exist=False):
-        print('Loading commit cache file %s...' % commit_cache_filename)
+    def load_ccache(self, ccache_filename, must_exist=False):
+        print('Loading commit cache file %s...' % ccache_filename)
         try:
-            with open(commit_cache_filename, 'rb') as f:
+            with open(ccache_filename, 'rb') as f:
                 this_commits = pickle.load(f)
             print('Loaded %d commits from cache file' % len(this_commits))
             self.inject_commits(this_commits)
@@ -90,13 +91,13 @@ class Repository:
         except FileNotFoundError:
             if must_exist:
                 raise
-            print('Warning, commit cache file %s not found!' % commit_cache_filename)
+            print('Warning, commit cache file %s not found!' % ccache_filename)
             return set()
 
-    def export_commit_cache(self, commit_cache_filename):
-        print('Writing %d commits to cache file' % len(self.commit_cache))
-        with open(commit_cache_filename, 'wb') as f:
-            pickle.dump(self.commit_cache, f, pickle.HIGHEST_PROTOCOL)
+    def export_ccache(self, ccache_filename):
+        print('Writing %d commits to cache file' % len(self.ccache))
+        with open(ccache_filename, 'wb') as f:
+            pickle.dump(self.ccache, f, pickle.HIGHEST_PROTOCOL)
 
     def cache_commits(self, commit_hashes, parallelise=True, cpu_factor = 1):
         """
@@ -108,13 +109,14 @@ class Repository:
         # deactivate parallelistation, if we only have a single CPU
         if num_cpus <= 1:
             parallelise = False
-        already_cached = set(self.commit_cache.keys())
+        already_cached = set(self.ccache.keys())
         worklist = set(commit_hashes) - already_cached
 
         if len(worklist) == 0:
             return
 
-        sys.stdout.write('Caching %d/%d commits. This may take a while...' % (len(worklist), len(commit_hashes)))
+        sys.stdout.write('Caching %d/%d commits. This may take a while...' %
+                         (len(worklist), len(commit_hashes)))
         sys.stdout.flush()
 
         if parallelise:
@@ -128,7 +130,8 @@ class Repository:
 
             _tmp_repo = None
         else:
-            result = map(lambda x: (x, _retrieve_commit(self.repo, x)), worklist)
+            result = map(lambda x: (x, _retrieve_commit(self.repo, x)),
+                         worklist)
 
         result = dict(result)
         self.inject_commits(result)

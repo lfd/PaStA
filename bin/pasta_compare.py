@@ -3,18 +3,20 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                '..')))
 from PaStA import *
 
 
@@ -28,8 +30,10 @@ def compare(config, prog, argv):
     parser.add_argument('commits', metavar='commit', type=str, nargs='+',
                         help='Commit hashes / Mail IDs')
 
-    parser.add_argument('-th', dest='thres_heading', metavar='threshold', default=config.thresholds.heading, type=float,
-                        help='Minimum diff hunk section heading similarity (default: %(default)s)')
+    parser.add_argument('-th', dest='thres_heading', metavar='threshold',
+                        default=config.thresholds.heading, type=float,
+                        help='Minimum diff hunk section heading similarity '
+                             '(default: %(default)s)')
 
     args = parser.parse_args(argv)
 
@@ -38,7 +42,7 @@ def compare(config, prog, argv):
 
     repo = config.repo
     if args.mbox:
-        repo.load_commit_cache(config.commit_cache_mbox_filename, must_exist=True)
+        repo.load_ccache(config.ccache_mbox_filename, must_exist=True)
 
     if len(commits) == 1:
         show_commit(repo, commits[0])
@@ -50,8 +54,10 @@ def compare(config, prog, argv):
 
         show_commits(repo, commit_a, commit_b, args.n)
 
-        rating = evaluate_commit_list(repo, config.thresholds, [commit_a], [commit_b],
-                                      eval_type=None)  # evaluation type plays no role in this case
+        # evaluation type plays no role in this case
+        rating = evaluate_commit_list(repo, config.thresholds,
+                                      [commit_a], [commit_b],
+                                      eval_type=None)
         if rating:
             print(rating[commit_a][0][1])
         else:

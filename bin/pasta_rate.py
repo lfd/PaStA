@@ -3,42 +3,48 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                '..')))
 from PaStA import *
 
 
 def patch_stack_rating(repo, evaluation_result, similar_patches,
                        thresholds, resp_commit_date, enable_pager):
-    evaluation_result.interactive_rating(repo, similar_patches,
-                                         thresholds, resp_commit_date, enable_pager)
+    evaluation_result.interactive_rating(repo, similar_patches, thresholds,
+                                         resp_commit_date, enable_pager)
 
 
 def upstream_rating(repo, evaluation_result, similar_patches, similar_upstream,
                     thresholds, resp_commit_date, enable_pager):
-    have_upstreams = set(map(lambda x: similar_patches.get_equivalence_id(x[0]), similar_upstream))
+    have_upstreams = set(map(lambda x: similar_patches.get_equivalence_id(x[0]),
+                             similar_upstream))
 
-    # Prefilter Evaluation Result: Equivalence classes, that already have upstream candidates must be dropped.
+    # Prefilter Evaluation Result: Equivalence classes, that already have
+    # upstream candidates must be dropped.
     for key in list(evaluation_result.keys()):
         if similar_patches.get_equivalence_id(key) in have_upstreams:
             del evaluation_result[key]
 
-    evaluation_result.interactive_rating(repo, similar_upstream,
-                                         thresholds, resp_commit_date, enable_pager)
+    evaluation_result.interactive_rating(repo, similar_upstream, thresholds,
+                                         resp_commit_date, enable_pager)
 
 
-def mailinglist_rating(repo, evaluation_result, similar_patches, thresholds, enable_pager):
-    evaluation_result.interactive_rating(repo, similar_patches, thresholds, enable_pager)
+def mailinglist_rating(repo, evaluation_result, similar_patches, thresholds,
+                       enable_pager):
+    evaluation_result.interactive_rating(repo, similar_patches, thresholds,
+                                         enable_pager)
 
 
 def rate(config, prog, argv):
@@ -56,7 +62,7 @@ def rate(config, prog, argv):
                         help='Evaluation result PKL filename')
 
     parser.add_argument('-mbox-mail-cache', dest='mbc_filename', metavar='filename',
-                        default=config.commit_cache_mbox_filename,
+                        default=config.ccache_mbox_filename,
                         help='Mailbox Cache file. Only required together with mbox mode.')
 
     # Thresholds
@@ -108,7 +114,7 @@ def rate(config, prog, argv):
     elif evaluation_result.eval_type == EvaluationType.Mailinglist:
         print('Running mailing list rating...')
         # Mails are only available as cache.
-        config.repo.load_commit_cache(args.mbc_filename, must_exist=True)
+        config.repo.load_ccache(args.mbc_filename, must_exist=True)
         mailinglist_rating(repo, evaluation_result, similar_mailbox,
                            config.thresholds, args.enable_pager)
     else:

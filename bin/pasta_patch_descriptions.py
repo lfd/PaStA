@@ -3,14 +3,15 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+
 import os
 import sys
 
@@ -21,7 +22,8 @@ from termcolor import colored
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
 
-# In this case, we have to use GitPython as pygit2 does not support describe --contains
+# In this case, we have to use GitPython as pygit2 does not support
+# 'git describe --contains'
 import git as gitpython
 
 
@@ -76,7 +78,7 @@ def patch_descriptions(config, prog, argv):
     patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
 
     # We can at least cache all commits on the patch stacks
-    repo.load_commit_cache(config.commit_cache_stack_filename)
+    repo.load_ccache(config.ccache_stack_filename)
     all_commit_hashes = []
     for i in patch_groups:
         all_commit_hashes += i

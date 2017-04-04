@@ -115,11 +115,11 @@ class Config:
 
         self.commit_description = path('COMMIT_DESCRIPTION')
 
-        # pkl cache and result files
+        # pkl commit cache (ccache) and result files
         self.evaluation_result = path('EVALUATION_RESULT')
-        self.commit_cache_stack_filename = path('COMMIT_CACHE_STACK')
-        self.commit_cache_upstream_filename = path('COMMIT_CACHE_UPSTREAM')
-        self.commit_cache_mbox_filename = path('COMMIT_CACHE_MBOX')
+        self.ccache_stack_filename = path('COMMIT_CACHE_STACK')
+        self.ccache_upstream_filename = path('COMMIT_CACHE_UPSTREAM')
+        self.ccache_mbox_filename = path('COMMIT_CACHE_MBOX')
 
         # R location
         self.R_resources = path('R_RESOURCES')
