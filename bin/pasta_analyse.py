@@ -256,20 +256,6 @@ def create_patch_groups(config, sp_filename, su_filename, pg_filename):
 def analyse(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Analyse patch stacks')
-    parser.add_argument('-er', dest='evaluation_result_filename',
-                        metavar='filename', default=config.evaluation_result,
-                        help='Evaluation result filename')
-    parser.add_argument('-sp', dest='sp_filename', metavar='filename',
-                        default=config.similar_patches,
-                        help='Similar Patches filename')
-    parser.add_argument('-su', dest='su_filename', metavar='filename',
-                        default=config.similar_upstream,
-                        help='Similar Upstream filename. Only required '
-                             'together with mode finish.')
-    parser.add_argument('-pg', dest='pg_filename', metavar='filename',
-                        default=config.patch_groups,
-                        help='Patch groups filename. '
-                             'Only required with -mode finish.')
 
     # Thresholds
     parser.add_argument('-th', dest='thres_heading', metavar='threshold',
@@ -304,18 +290,18 @@ def analyse(config, prog, argv):
     # Load similar patches file. If args.mode is 'init' or 'mbox', it does not
     # necessarily have to exist.
     sp_must_exist = args.mode not in ['init', 'mbox']
-    similar_patches = EquivalenceClass.from_file(args.sp_filename,
+    similar_patches = EquivalenceClass.from_file(config.similar_patches,
                                                  must_exist=sp_must_exist)
 
     if args.mode == 'init':
         for commit_hash in config.psd.commits_on_stacks:
             similar_patches.insert_single(commit_hash)
-        similar_patches.to_file(args.sp_filename)
+        similar_patches.to_file(config.similar_patches)
     elif args.mode == 'finish':
         create_patch_groups(config,
-                            args.sp_filename,
-                            args.su_filename,
-                            args.pg_filename)
+                            config.similar_patches,
+                            config.similar_upstream,
+                            config.patch_groups)
     else:
         if args.mode == 'stack-succ':
             result = analyse_succ(config)
@@ -329,7 +315,7 @@ def analyse(config, prog, argv):
             hashes = config.repo.load_ccache(config.ccache_upstream_filename)
             result = analyse_mbox(config, hashes, mail_ids)
 
-        result.to_file(args.evaluation_result_filename)
+        result.to_file(config.evaluation_result)
 
 
 if __name__ == '__main__':
