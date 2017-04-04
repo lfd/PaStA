@@ -271,18 +271,6 @@ def analyse(config, prog, argv):
                         default=config.similar_mailbox,
                         help='Similar mailbox filename. Only required together '
                               'with mbox mode.')
-    parser.add_argument('-mbox-mail-cache', dest='mbc_filename',
-                        metavar='filename',
-                        default=config.commit_cache_mbox_filename,
-                        help='Mailbox Cache file. Only required together with '
-                             'mbox mode.')
-    parser.add_argument('-mbox-commit-cache', dest='mbcc_filename',
-                        metavar='filename',
-                        default=config.commit_cache_upstream_filename,
-                        help='Commit Cache file. Only required together with '
-                             'mbox mode. Mailbox analysis will compare the '
-                             'mailbox against commithashes in this cache file. '
-                             'Defaults to upstream commit cache.')
     parser.add_argument('-pg', dest='pg_filename', metavar='filename',
                         default=config.patch_groups,
                         help='Patch groups filename. '
@@ -341,9 +329,9 @@ def analyse(config, prog, argv):
         elif args.mode == 'upstream':
             result = analyse_upstream(config, similar_patches)
         elif args.mode == 'mbox':
-            mail_ids = config.repo.load_commit_cache(args.mbc_filename,
+            mail_ids = config.repo.load_commit_cache(config.commit_cache_mbox_filename,
                                                      must_exist=True)
-            hashes = config.repo.load_commit_cache(args.mbcc_filename)
+            hashes = config.repo.load_commit_cache(config.commit_cache_upstream_filename)
             result = analyse_mbox(config, hashes, mail_ids)
 
         result.to_file(args.evaluation_result_filename)
