@@ -220,12 +220,14 @@ def analyse_mbox(config, hashes, mail_ids):
     return evaluation_result
 
 
-def create_patch_groups(config, sp_filename, su_filename, pg_filename):
+def create_patch_groups(config):
     # similar patch groups
-    similar_patches = EquivalenceClass.from_file(sp_filename, must_exist=True)
+    similar_patches = EquivalenceClass.from_file(config.similar_patches,
+                                                 must_exist=True)
 
     # upstream results
-    similar_upstream = EquivalenceClass.from_file(su_filename, must_exist=True)
+    similar_upstream = EquivalenceClass.from_file(config.similar_upstream,
+                                                  must_exist=True)
 
     # create a copy of the similar patch list
     patch_groups = copy.deepcopy(similar_patches)
@@ -249,7 +251,7 @@ def create_patch_groups(config, sp_filename, su_filename, pg_filename):
         patch_groups.set_property(i[0], i.property)
 
     sys.stdout.write('Writing Patch Group file... ')
-    patch_groups.to_file(pg_filename)
+    patch_groups.to_file(config.patch_groups)
     print(colored(' [done]', 'green'))
 
 
@@ -298,10 +300,7 @@ def analyse(config, prog, argv):
             similar_patches.insert_single(commit_hash)
         similar_patches.to_file(config.similar_patches)
     elif args.mode == 'finish':
-        create_patch_groups(config,
-                            config.similar_patches,
-                            config.similar_upstream,
-                            config.patch_groups)
+        create_patch_groups(config)
     else:
         if args.mode == 'stack-succ':
             result = analyse_succ(config)
