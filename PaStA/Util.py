@@ -1,14 +1,15 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+
 import termios
 import tty
 import shutil
@@ -88,9 +89,11 @@ def _fix_encoding(string):
 
 def _format_message(commit):
     message = ['Commit:     %s' % commit.commit_hash,
-               'Author:     %s <%s>' % (_fix_encoding(commit.author), commit.author_email),
+               'Author:     %s <%s>' %
+                    (_fix_encoding(commit.author), commit.author_email),
                'AuthorDate: %s' % commit.author_date,
-               'Committer   %s <%s>' % (_fix_encoding(commit.committer), commit.committer_email),
+               'Committer:   %s <%s>' %
+                    (_fix_encoding(commit.committer), commit.committer_email),
                'CommitDate: %s' % commit.commit_date,
                'Note: %s' % commit.note,
                ''] + _fix_encoding(commit.raw_message).split('\n')
