@@ -42,7 +42,7 @@ def compare(config, prog, argv):
 
     repo = config.repo
     if args.mbox:
-        repo.load_ccache(config.ccache_mbox_filename, must_exist=True)
+        repo.load_ccache(config.f_ccache_mbox, must_exist=True)
 
     if len(commits) == 1:
         show_commit(repo, commits[0])
