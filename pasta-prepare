@@ -8,14 +8,5 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-function die {
-  echo "$@" 1>&2;
-  exit -1;
-}
-
-echo "This may take a while. Take a cup of coffe. Really."
-
-git submodule update --init PaStA-resources || die "submodule update failed"
-
 cd PaStA-resources
 ./prepare_projects $1

@@ -3,11 +3,20 @@ PaStA - Patch Stack Analysis
 
 Getting PaStA
 -------------
+
+Clone PaStA and its resources submodule. The resources contain configuration as
+well as results of some sample projects.
+
 ```
 $ git clone https://github.com/lfd/PaStA.git
+$ cd PaStA
+$ git submodule update --init PaStA-resources
 ```
 
-**PaStA** runs on *Python3* and comes with the following dependencies:
+Requirements
+------------
+
+**PaStA** requires *Python3* and comes with the following dependencies:
 - git
 - pygit2
 - git-python (for PaStA-resources and patch_descriptions only)
@@ -15,10 +24,11 @@ $ git clone https://github.com/lfd/PaStA.git
 - R (tikzDevice, ggplot2)
 - fuzzywuzzy + python-levenshtein
 
-TL;DR
------
+Getting started
+---------------
+- Select the project to analyse by linking the config:
+  `ln -sf PaStA-resources/PreemptRT/PreemptRT.conf ./config`
 - Run `./pasta-prepare`
-- Link config `ln -sf PaStA-resources/PreemptRT/PreemptRT.conf ./config`
 - Run PaStA `./pasta -h`
 
 Running PaStA
