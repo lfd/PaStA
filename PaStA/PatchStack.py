@@ -186,6 +186,7 @@ class PatchStackDefinition:
         :return: PatchStackDefinition
         """
         csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
+        repo = config.repo
 
         sys.stdout.write('Parsing patch stack definition...')
 
@@ -228,9 +229,18 @@ class PatchStackDefinition:
                                      row['StackVersion'],
                                      row['StackReleaseDate'])
 
-                # get commit hashes of the patch stack
-                commit_hashes = load_commit_hashes(
-                    os.path.join(config.d_stack_hashes, stack.version))
+                stack_hashes_location = os.path.join(config.d_stack_hashes,
+                                                     stack.version)
+
+                # check if stack hashes are existent. If not, create them
+                if os.path.isfile(stack_hashes_location):
+                    commit_hashes = load_commit_hashes(stack_hashes_location)
+                else:
+                    print('Calculating missing stack hashes for %s' %
+                          stack.commit)
+                    commit_hashes = repo.get_commits_on_stack(base.commit,
+                                                              stack.commit)
+                    persist_commit_hashes(stack_hashes_location, commit_hashes)
 
                 this_group.append(PatchStack(base, stack, commit_hashes))
 
