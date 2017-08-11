@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+import git
 import pickle
 import pygit2
 import sys
@@ -139,3 +140,33 @@ class Repository:
 
     def __getitem__(self, item):
         return self.get_commit(item)
+
+    def get_commithash_range(self, range):
+        """
+        Gets all commithashes within a certain range
+        """
+        if range[0] is None:
+            range = range[1]
+        else:
+            range = '%s..%s' % range
+
+        # we use git.Repo, as pygit doesn't support this nifty log functionality
+        repo = git.Repo(self.repo_location)
+
+        upstream_hashes = repo.git.log('--pretty=format:%H', range)
+        upstream_hashes = upstream_hashes.splitlines()
+        return upstream_hashes
+
+    def get_commits_on_stack(self, base, stack):
+        """
+        Returns the commit hashes on a patch stack
+        """
+        stack_list = self.get_commithash_range((None, stack))
+        base_set = set(self.get_commithash_range((None, base)))
+
+        # Preserve order!
+        retval = []
+        for stack_hash in stack_list:
+            if stack_hash not in base_set:
+                retval.append(stack_hash)
+        return retval
