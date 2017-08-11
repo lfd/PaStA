@@ -31,7 +31,7 @@ def get_date_selector(repo, patch_stack_definition, selector):
     return date_selector
 
 
-def get_commits_from_file(filename, ordered=True, must_exist=True):
+def load_commit_hashes(filename, ordered=True, must_exist=True):
     content = file_to_string(filename, must_exist=must_exist)
     if content is None:
         content = ''

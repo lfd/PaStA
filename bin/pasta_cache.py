@@ -63,8 +63,8 @@ def cache(config, prog, argv):
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if args.mbox:
-        ids = get_commits_from_file(config.f_mailbox_id, ordered=False,
-                                    must_exist=False)
+        ids = load_commit_hashes(config.f_mailbox_id, ordered=False,
+                                 must_exist=False)
         mindate = datetime.datetime.strptime(args.mindate, "%Y-%m-%d")
         maxdate = datetime.datetime.strptime(args.maxdate, "%Y-%m-%d")
         ids |= load_and_cache_mbox(repo, args.mbox, mindate, maxdate)

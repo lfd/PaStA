@@ -229,7 +229,7 @@ class PatchStackDefinition:
                                      row['StackReleaseDate'])
 
                 # get commit hashes of the patch stack
-                commit_hashes = get_commits_from_file(
+                commit_hashes = load_commit_hashes(
                     os.path.join(config.d_stack_hashes, stack.version))
 
                 this_group.append(PatchStack(base, stack, commit_hashes))
@@ -237,9 +237,9 @@ class PatchStackDefinition:
             patch_stack_groups.append((group_name, this_group))
 
         # get upstream commit hashes
-        upstream = get_commits_from_file(config.f_upstream_hashes)
+        upstream = load_commit_hashes(config.f_upstream_hashes)
         if config.upstream_blacklist:
-            blacklist = get_commits_from_file(config.upstream_blacklist, ordered=False)
+            blacklist = load_commit_hashes(config.upstream_blacklist, ordered=False)
             # filter blacklistes commit hashes
             upstream = [x for x in upstream if x not in blacklist]
 
