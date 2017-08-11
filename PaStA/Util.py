@@ -31,6 +31,11 @@ def get_date_selector(repo, patch_stack_definition, selector):
     return date_selector
 
 
+def persist_commit_hashes(filename, commit_hashes):
+    with open(filename, 'w') as f:
+        f.write('\n'.join(commit_hashes) + '\n')
+
+
 def load_commit_hashes(filename, ordered=True, must_exist=True):
     content = file_to_string(filename, must_exist=must_exist)
     if content is None:
