@@ -246,8 +246,23 @@ class PatchStackDefinition:
 
             patch_stack_groups.append((group_name, this_group))
 
-        # get upstream commit hashes
-        upstream = load_commit_hashes(config.f_upstream_hashes)
+        # check if upstream commit hashes are existent. If not, create them
+        upstream = None
+        if (os.path.isfile(config.f_upstream_hashes)):
+            upstream = load_commit_hashes(config.f_upstream_hashes)
+
+            # check if upstream range in the config file is in sync
+            upstream_range = tuple(upstream.pop(0).split(' '))
+            if upstream_range != config.upstream_range:
+                print('Upstream range changed. Recalculating.')
+                upstream = None
+
+        if not upstream:
+            print('Calculating missing upstream commit hashes')
+            upstream = repo.get_commithash_range(config.upstream_range)
+            persist_commit_hashes(config.f_upstream_hashes,
+                                  [' '.join(config.upstream_range)] + upstream)
+
         if config.upstream_blacklist:
             blacklist = load_commit_hashes(config.upstream_blacklist, ordered=False)
             # filter blacklistes commit hashes

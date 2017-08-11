@@ -28,28 +28,19 @@ Getting started
 ---------------
 - Select the project to analyse by linking the config:
   `ln -sf PaStA-resources/PreemptRT/PreemptRT.conf ./config`
-- Run `./pasta-prepare`
 - Run PaStA `./pasta -h`
 
 Running PaStA
 -------------
 
-### Preparing PaStA PaStA configuration files and source code repositories of
-projects are stored in a separate repository `PaStA-resources`
+### PaStA Cache
+Many projects contain thousands of commits. It is time-consuming to determine
+and load commits. To increase overall performance, PaStA persists lists of
+commit hashes and creates pkl-based commit caches. Those lists will be created
+when needed. PaStA detects changes in the configuration file and automatically
+updates those lists.
 
-Running
-```
-$ ./pasta-prepare
-```
-will initialize and clone PaStA-resources (all preconfigured projects for
-analysation) as git submodules. Inside PaStA-resources, the project code
-repositories are submodules as well.
-
-### Create commit cache
-For some projects and repositories, PaStA has to compare tenthousands of
-diffs. Creating those diffs on-the-fly is possible but very slow. Because of
-this, PaStA is able to use a fast commit that can be reused.
-
+The commit cache has to be created manually:
 ```
 $ ./pasta cache -stack # Creates cache file for commits on the patch stacks
 $ ./pasta cache -upstream # Create cache file for upstream commits
@@ -123,9 +114,6 @@ gives you further detailed information about subcommands.
 #### pasta compare
 `./pasta compare` analyses a list of commit hashes given as command line
 arguments and displays the evaluation result as well as the original commits.
-
-#### pasta-prepare
-Initialises git submodules
 
 Creating a new PaStA project
 ----------------------------
