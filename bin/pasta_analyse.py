@@ -284,7 +284,7 @@ def analyse(config, prog, argv):
                              '(default: %(default)s)')
     parser.add_argument('-tf', dest='thres_filename', metavar='threshold',
                         default=config.thresholds.filename, type=float,
-                        help='Minimum filename similarity'
+                        help='Minimum filename similarity '
                              '(default: %(default)s)')
 
     parser.add_argument('mode', default='stack-succ',
