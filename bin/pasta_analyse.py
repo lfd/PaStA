@@ -214,7 +214,7 @@ def analyse_upstream(config, similar_patches):
 
 
 def analyse_mbox(config, mindate, maxdate):
-    upstream_hashes = config.psd.upstream_hashes
+    upstream_hashes = set(config.psd.upstream_hashes)
     repo = config.repo
 
     repo.load_ccache(config.f_ccache_mbox)
@@ -224,6 +224,8 @@ def analyse_mbox(config, mindate, maxdate):
 
     repo.cache_commits(upstream_hashes)
     message_ids, _ = repo.cache_commits(message_ids)
+
+    repo.cache_evict_except(upstream_hashes | message_ids)
 
     print('Starting evaluation.')
     evaluation_result = evaluate_commit_list(config.repo, config.thresholds,

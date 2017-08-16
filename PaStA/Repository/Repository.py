@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+import gc
 import git
 import os
 import pickle
@@ -130,6 +131,13 @@ class Repository:
         print('Writing %d commits to cache file' % len(self.ccache))
         with open(f_ccache, 'wb') as f:
             pickle.dump(self.ccache, f, pickle.HIGHEST_PROTOCOL)
+
+    def cache_evict_except(self, commit_except):
+        victims = self.ccache.keys() - commit_except
+        print('Evicting %d commits from cache' % len(victims))
+        for victim in victims:
+            del self.ccache[victim]
+        gc.collect()
 
     def cache_commits(self, commit_hashes, parallelise=True, cpu_factor = 1):
         """
