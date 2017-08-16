@@ -42,9 +42,10 @@ updates those lists.
 
 The commit cache has to be created manually:
 ```
-$ ./pasta cache -stack # Creates cache file for commits on the patch stacks
-$ ./pasta cache -upstream # Create cache file for upstream commits
-$ ./pasta cache -all # same as --stack --upstream
+$ ./pasta cache -create stack # Creates cache file for commits on the patch stacks
+$ ./pasta cache -create upstream # Create cache file for upstream commits
+$ ./pasta cache -create mbox # Create cache file for mail boxes (see below)
+$ ./pasta cache -create all # Create all caches
 ```
 
 ### Detecting and grouping similar patches
@@ -166,8 +167,9 @@ patches in a commit cache file. This file can be used for further analysis and
 is compared against all 'upstream' commits (master branch).
 
 1. Set active configuration
-2. Get dump of a mailing list. (e.g. by using sinntp)
-3. Run `./pasta cache -upstream -mbox gmane.comp.foobar.dump`
-4. Run `./pasta analyse mbox -th 0`
-5. Run `./pasta rate`
-6. Your result will be stored in `PaStA-resources/[project]/resources/similar-mailbox`
+2. Get dump of a mailing list in Unix-Mbox format. (e.g. by using sinntp)
+3. Store the mailbox file under `PaStA-resources/your-project/resources/mbox`
+4. Run `./pasta cache -create mbox`
+5. Run `./pasta analyse mbox -th 0`
+6. Run `./pasta rate`
+7. Your result will be stored in `PaStA-resources/[project]/resources/similar-mailbox`
