@@ -21,48 +21,75 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
 from PaStA import *
 
 
+def parse_choices(choices):
+    stack = upstream = mbox = False
+
+    if choices:
+        if choices == 'mbox':
+            mbox = True
+        elif choices == 'stack':
+            stack = True
+        elif choices == 'upstream':
+            upstream = True
+        else:
+            mbox = stack = upstream = True
+
+    return stack, upstream, mbox
+
+
+def remove_if_exist(filename):
+    if os.path.isfile(filename):
+        os.remove(filename)
+
+
 def cache(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='create commit cache')
 
-    parser.add_argument('-stack', action='store_true', default=False,
-                        help='create cache for commits on patch stacks')
-    parser.add_argument('-upstream', action='store_true', default=False,
-                        help='create cache for upstream commits')
-    parser.add_argument('-all', action='store_true', default=False,
-                        help='create cache for upstream and patch stack '
-                             'commits')
-    parser.add_argument('-mbox', action='store_true', default=None,
-                        help='create cache for mailbox')
+    choices = ['mbox', 'stack', 'upstream', 'all']
+    parser.add_argument('-create', metavar='create', default=None,
+                        choices=choices,
+                        help='create cache for commits on patch stacks, '
+                             'upstream commits, mailbox or all')
+    parser.add_argument('-clear', metavar='clear', default=None, choices=choices)
+
     parser.add_argument('-mindate', dest='mindate', metavar='mindate',
                         default=config.mbox_mindate,
                         help='Skip mails older than mindate '
-                             '(only together with -mbox, default: %(default)s)')
+                             '(only together with -create mbox, '
+                             'default: %(default)s)')
     parser.add_argument('-maxdate', dest='maxdate', metavar='maxdate',
                         default=config.mbox_maxdate,
                         help='Skip mails older than mindate '
-                             '(only together with -mbox, default: %(default)s)')
+                             '(only together with -create mbox, '
+                             'default: %(default)s)')
 
     args = parser.parse_args(argv)
 
     psd = config.psd
     repo = config.repo
 
-    if args.all:
-        args.stack = True
-        args.upstream = True
+    create_stack, create_upstream, create_mbox = parse_choices(args.create)
+    clear_stack, clear_upstream, clear_mbox = parse_choices(args.clear)
 
-    if args.stack:
+    if clear_stack:
+        remove_if_exist(config.f_ccache_stack)
+    if clear_upstream:
+        remove_if_exist(config.f_ccache_upstream)
+    if clear_mbox:
+        remove_if_exist(config.f_ccache_mbox)
+
+    if create_stack:
         repo.load_ccache(config.f_ccache_stack)
         repo.cache_commits(psd.commits_on_stacks)
         repo.export_ccache(config.f_ccache_stack)
         repo.clear_commit_cache()
-    if args.upstream:
+    if create_upstream:
         repo.load_ccache(config.f_ccache_upstream)
         repo.cache_commits(psd.upstream_hashes)
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
-    if args.mbox:
+    if create_mbox:
         mindate = datetime.datetime.strptime(args.mindate, "%Y-%m-%d")
         maxdate = datetime.datetime.strptime(args.maxdate, "%Y-%m-%d")
 
