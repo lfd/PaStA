@@ -150,10 +150,11 @@ class Repository:
         if num_cpus <= 1:
             parallelise = False
         already_cached = set(self.ccache.keys())
-        worklist = set(commit_hashes) - already_cached
+        commit_hashes = set(commit_hashes)
+        worklist = commit_hashes - already_cached
 
         if len(worklist) == 0:
-            return
+            return commit_hashes, set()
 
         sys.stdout.write('Caching %d/%d commits. This may take a while...' %
                          (len(worklist), len(commit_hashes)))
@@ -173,10 +174,13 @@ class Repository:
             result = map(lambda x: (x, self._load_commit(x)),
                          worklist)
 
+        invalid = {key for (key, value) in result if value is None}
         result = {key: value for (key, value) in result if value is not None}
 
         self.inject_commits(result)
         print(colored(' [done]', 'green'))
+
+        return set(result.keys()), invalid
 
     def __getitem__(self, item):
         return self.get_commit(item)

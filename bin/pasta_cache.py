@@ -100,7 +100,15 @@ def cache(config, prog, argv):
                  if value[0] >= args.mindate and value[0] <= args.maxdate]
 
         # yay, we can treat emails just like ordinary commit hashes
-        repo.cache_commits(index)
+        found, invalid = repo.cache_commits(index)
+
+        print('removing %d unparsable mails.' % len(invalid))
+        for i in invalid:
+            victim = index.pop(i)
+            filename = os.path.join(config.d_mailbox_split, victim[1], victim[2])
+            os.remove(filename)
+
+        mbox_write_index(config.f_mailbox_index, index)
 
         repo.export_ccache(config.f_ccache_mbox)
         repo.clear_commit_cache()
