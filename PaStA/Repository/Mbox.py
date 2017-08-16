@@ -22,7 +22,7 @@ from email.charset import CHARSETS
 from multiprocessing import cpu_count, Pool
 from termcolor import colored
 
-from .Repository import Commit
+from .Commit import Commit
 
 
 MAIL_FROM_REGEX = re.compile(r'(.*) <(.*)>')
