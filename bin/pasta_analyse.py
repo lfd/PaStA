@@ -213,7 +213,11 @@ def analyse_upstream(config, similar_patches):
     return evaluation_result
 
 
-def analyse_mbox(config, hashes, mail_ids):
+def analyse_mbox(config):
+    mail_ids = config.repo.load_ccache(config.f_ccache_mbox,
+                                       must_exist=True)
+    hashes = config.repo.load_ccache(config.f_ccache_upstream)
+
     print('Starting evaluation.')
     evaluation_result = evaluate_commit_list(config.repo, config.thresholds,
                                              mail_ids, hashes,
@@ -327,10 +331,7 @@ def analyse(config, prog, argv):
         elif args.mode == 'upstream':
             result = analyse_upstream(config, similar_patches)
         elif args.mode == 'mbox':
-            mail_ids = config.repo.load_ccache(config.f_ccache_mbox,
-                                               must_exist=True)
-            hashes = config.repo.load_ccache(config.f_ccache_upstream)
-            result = analyse_mbox(config, hashes, mail_ids)
+            result = analyse_mbox(config)
 
         result.to_file(config.f_evaluation_result)
 
