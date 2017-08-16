@@ -78,6 +78,8 @@ def cache(config, prog, argv):
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if create_mbox:
+        config.fail_no_mailbox()
+
         # load existing cache
         repo.load_ccache(config.f_ccache_mbox)
 

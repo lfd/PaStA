@@ -150,6 +150,12 @@ class Config:
         self.patch_stack_definition = \
             PatchStackDefinition.parse_definition_file(self)
 
+    def fail_no_mailbox(self):
+        if self.has_mailbox is False:
+            print("Mailbox '%s' not configured or not available. "
+                  "Check your config." % self.f_mailbox_index)
+            quit(-1)
+
     @property
     def psd(self):
         return self.patch_stack_definition

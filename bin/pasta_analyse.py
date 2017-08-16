@@ -214,6 +214,8 @@ def analyse_upstream(config, similar_patches):
 
 
 def analyse_mbox(config, mindate, maxdate):
+    config.fail_no_mailbox()
+
     upstream_hashes = set(config.psd.upstream_hashes)
     repo = config.repo
 
