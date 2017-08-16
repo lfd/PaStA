@@ -213,14 +213,21 @@ def analyse_upstream(config, similar_patches):
     return evaluation_result
 
 
-def analyse_mbox(config):
-    mail_ids = config.repo.load_ccache(config.f_ccache_mbox,
-                                       must_exist=True)
-    hashes = config.repo.load_ccache(config.f_ccache_upstream)
+def analyse_mbox(config, mindate, maxdate):
+    upstream_hashes = config.psd.upstream_hashes
+    repo = config.repo
+
+    repo.load_ccache(config.f_ccache_mbox)
+    repo.load_ccache(config.f_ccache_upstream)
+
+    message_ids = repo.mbox_get_message_ids(mindate, maxdate)
+
+    repo.cache_commits(upstream_hashes)
+    message_ids, _ = repo.cache_commits(message_ids)
 
     print('Starting evaluation.')
     evaluation_result = evaluate_commit_list(config.repo, config.thresholds,
-                                             mail_ids, hashes,
+                                             message_ids, upstream_hashes,
                                              EvaluationType.Mailinglist,
                                              parallelise=True, verbose=True)
     print('Evaluation completed.')
@@ -306,6 +313,16 @@ def analyse(config, prog, argv):
                              'mbox: '
                              'do mailbox analysis against upstream '
                              '(default: %(default)s)')
+
+    parser.add_argument('-mindate', dest='mindate', metavar='mindate',
+                        default=config.mbox_mindate, type=parse_date_ymd,
+                        help='Skip mails older than mindate '
+                             '(only together with  mbox, default: %(default)s)')
+    parser.add_argument('-maxdate', dest='maxdate', metavar='maxdate',
+                        default=config.mbox_maxdate, type=parse_date_ymd,
+                        help='Skip mails older than mindate '
+                             '(only together with mbox, default: %(default)s)')
+
     args = parser.parse_args(argv)
 
     config.thresholds.heading = args.thres_heading
@@ -331,7 +348,7 @@ def analyse(config, prog, argv):
         elif args.mode == 'upstream':
             result = analyse_upstream(config, similar_patches)
         elif args.mode == 'mbox':
-            result = analyse_mbox(config)
+            result = analyse_mbox(config, args.mindate, args.maxdate)
 
         result.to_file(config.f_evaluation_result)
 
