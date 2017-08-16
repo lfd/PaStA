@@ -12,7 +12,6 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-import datetime
 import os
 import sys
 
@@ -54,12 +53,12 @@ def cache(config, prog, argv):
     parser.add_argument('-clear', metavar='clear', default=None, choices=choices)
 
     parser.add_argument('-mindate', dest='mindate', metavar='mindate',
-                        default=config.mbox_mindate,
+                        default=config.mbox_mindate, type=parse_date_ymd,
                         help='Skip mails older than mindate '
                              '(only together with -create mbox, '
                              'default: %(default)s)')
     parser.add_argument('-maxdate', dest='maxdate', metavar='maxdate',
-                        default=config.mbox_maxdate,
+                        default=config.mbox_maxdate, type=parse_date_ymd,
                         help='Skip mails older than mindate '
                              '(only together with -create mbox, '
                              'default: %(default)s)')
@@ -90,9 +89,6 @@ def cache(config, prog, argv):
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if create_mbox:
-        mindate = datetime.datetime.strptime(args.mindate, "%Y-%m-%d")
-        maxdate = datetime.datetime.strptime(args.maxdate, "%Y-%m-%d")
-
         # load existing cache
         repo.load_ccache(config.f_ccache_mbox)
 
@@ -101,7 +97,7 @@ def cache(config, prog, argv):
 
         # filter dates
         index = [key for (key, value) in index.items()
-                 if value[0] >= mindate and value[0] <= maxdate]
+                 if value[0] >= args.mindate and value[0] <= args.maxdate]
 
         # yay, we can treat emails just like ordinary commit hashes
         repo.cache_commits(index)

@@ -14,7 +14,6 @@ import csv
 import os
 import re
 
-from datetime import datetime
 from termcolor import colored
 
 from .Util import *
@@ -24,7 +23,7 @@ class VersionPoint:
     def __init__(self, commit, version, release_date):
         self.commit = commit
         self.version = version
-        self.release_date = datetime.strptime(release_date, '%Y-%m-%d')
+        self.release_date = parse_date_ymd(release_date)
 
 
 class PatchStack:
