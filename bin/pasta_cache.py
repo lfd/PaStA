@@ -52,17 +52,6 @@ def cache(config, prog, argv):
                              'upstream commits, mailbox or all')
     parser.add_argument('-clear', metavar='clear', default=None, choices=choices)
 
-    parser.add_argument('-mindate', dest='mindate', metavar='mindate',
-                        default=config.mbox_mindate, type=parse_date_ymd,
-                        help='Skip mails older than mindate '
-                             '(only together with -create mbox, '
-                             'default: %(default)s)')
-    parser.add_argument('-maxdate', dest='maxdate', metavar='maxdate',
-                        default=config.mbox_maxdate, type=parse_date_ymd,
-                        help='Skip mails older than mindate '
-                             '(only together with -create mbox, '
-                             'default: %(default)s)')
-
     args = parser.parse_args(argv)
 
     psd = config.psd
@@ -94,10 +83,6 @@ def cache(config, prog, argv):
 
         # get overall mail index
         index = mbox_load_index(config.f_mailbox_index)
-
-        # filter dates
-        index = [key for (key, value) in index.items()
-                 if value[0] >= args.mindate and value[0] <= args.maxdate]
 
         # yay, we can treat emails just like ordinary commit hashes
         found, invalid = repo.cache_commits(index)
