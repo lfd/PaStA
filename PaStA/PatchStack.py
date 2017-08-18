@@ -186,7 +186,6 @@ class PatchStackDefinition:
         repo = config.repo
 
         printn('Parsing patch stack definition...')
-
         with open(config.f_patch_stack_definition) as f:
             line_list = f.readlines()
 
@@ -213,6 +212,8 @@ class PatchStackDefinition:
         if header is not None:
             csv_groups.append((header, content))
 
+        done()
+
         patch_stack_groups = []
         for group_name, csv_list in csv_groups:
             reader = csv.DictReader(csv_list, dialect='patchstack')
@@ -233,11 +234,12 @@ class PatchStackDefinition:
                 if os.path.isfile(stack_hashes_location):
                     commit_hashes = load_commit_hashes(stack_hashes_location)
                 else:
-                    print('Calculating missing stack hashes for %s' %
+                    printn('Calculating missing stack hashes for %s' %
                           stack.commit)
                     commit_hashes = repo.get_commits_on_stack(base.commit,
                                                               stack.commit)
                     persist_commit_hashes(stack_hashes_location, commit_hashes)
+                    done()
 
                 this_group.append(PatchStack(base, stack, commit_hashes))
 
@@ -245,20 +247,22 @@ class PatchStackDefinition:
 
         # check if upstream commit hashes are existent. If not, create them
         upstream = None
-        if (os.path.isfile(config.f_upstream_hashes)):
+        if os.path.isfile(config.f_upstream_hashes):
             upstream = load_commit_hashes(config.f_upstream_hashes)
 
             # check if upstream range in the config file is in sync
             upstream_range = tuple(upstream.pop(0).split(' '))
             if upstream_range != config.upstream_range:
-                print('Upstream range changed. Recalculating.')
+                # set upstream to None if inconsistencies are detected.
+                # upstream commit hash file will be renewed in the next step.
                 upstream = None
 
         if not upstream:
-            print('Calculating missing upstream commit hashes')
+            printn('Renewing upstream commit hash file...')
             upstream = repo.get_commithash_range(config.upstream_range)
             persist_commit_hashes(config.f_upstream_hashes,
                                   [' '.join(config.upstream_range)] + upstream)
+            done()
 
         if config.upstream_blacklist:
             blacklist = load_commit_hashes(config.upstream_blacklist, ordered=False)
@@ -267,6 +271,5 @@ class PatchStackDefinition:
 
         # Create patch stack list
         retval = PatchStackDefinition(patch_stack_groups, upstream)
-        done()
 
         return retval

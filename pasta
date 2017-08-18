@@ -88,7 +88,7 @@ def main(argv):
         argv.pop(0)
         config = argv.pop(0)
     config = Config(config)
-    print('Project: %s' % config.project_name)
+    print('Active configuration: %s' % config.project_name)
 
     if len(argv) < 1:
         usage(me)
