@@ -12,7 +12,6 @@ the COPYING file in the top-level directory.
 
 import datetime
 import email
-import functools
 import mailbox
 import os
 import quopri
@@ -20,7 +19,6 @@ import re
 import time
 
 from email.charset import CHARSETS
-from multiprocessing import cpu_count, Pool
 
 from .Commit import Commit
 
