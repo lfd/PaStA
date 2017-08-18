@@ -217,6 +217,14 @@ class Repository:
 
     def register_mailbox(self, d_mbox_split, f_mbox_index, f_mbox):
         # check if mailbox is already prepared
+        if not os.path.isfile(f_mbox_index) and os.path.isfile(f_mbox):
+            printn('Processing Mailbox...')
+            cwd = os.getcwd()
+            os.chdir(os.path.join(cwd, 'tools'))
+            call(['./process_mailbox.sh', f_mbox, d_mbox_split])
+            os.chdir(cwd)
+            done()
+
         if os.path.isfile(f_mbox_index):
             self.d_mbox_split = d_mbox_split
             self.mbox_index = mbox_load_index(f_mbox_index)
