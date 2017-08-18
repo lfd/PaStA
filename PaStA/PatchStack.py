@@ -14,8 +14,6 @@ import csv
 import os
 import re
 
-from termcolor import colored
-
 from .Util import *
 
 
@@ -187,7 +185,7 @@ class PatchStackDefinition:
         csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
         repo = config.repo
 
-        sys.stdout.write('Parsing patch stack definition...')
+        printn('Parsing patch stack definition...')
 
         with open(config.f_patch_stack_definition) as f:
             line_list = f.readlines()
@@ -269,6 +267,6 @@ class PatchStackDefinition:
 
         # Create patch stack list
         retval = PatchStackDefinition(patch_stack_groups, upstream)
-        print(colored(' [done]', 'green'))
+        done()
 
         return retval

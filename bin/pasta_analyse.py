@@ -19,7 +19,6 @@ import sys
 
 from functools import partial
 from multiprocessing import cpu_count, Pool
-from termcolor import colored
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
@@ -141,15 +140,15 @@ def analyse_stack(config, similar_patches):
     repo = config.repo
 
     # Iterate over similar patch list and get latest commit of patches
-    sys.stdout.write('Determining patch stack representative system...')
-    sys.stdout.flush()
+    printn('Determining patch stack representative system...')
+
     # Get the complete representative system
     # The lambda compares two patches of an equivalence class and chooses the
     # one with the later release version
     representatives = similar_patches.get_representative_system(
         lambda x, y: psd.is_stack_version_greater(psd.get_stack_of_commit(x),
                                                   psd.get_stack_of_commit(y)))
-    print(colored(' [done]', 'green'))
+    done()
 
     # cache commits
     repo.cache_commits(representatives)
@@ -177,15 +176,14 @@ def analyse_upstream(config, similar_patches):
 
     repo.load_ccache(config.f_ccache_upstream, must_exist=False)
 
-    sys.stdout.write('Determining patch stack representative system...')
-    sys.stdout.flush()
+    printn('Determining patch stack representative system...')
     # Get the complete representative system
     # The lambda compares two patches of an equivalence class and chooses the
     # one with the later release version
     representatives = similar_patches.get_representative_system(
         lambda x, y: psd.is_stack_version_greater(psd.get_stack_of_commit(x),
                                                   psd.get_stack_of_commit(y)))
-    print(colored(' [done]', 'green'))
+    done()
 
     # cache missing commits
     repo.cache_commits(psd.upstream_hashes)
@@ -283,9 +281,9 @@ def create_patch_groups(config):
             quit()
         patch_groups.set_property(i[0], i.property)
 
-    sys.stdout.write('Writing Patch Group file... ')
+    printn('Writing Patch Group file... ')
     patch_groups.to_file(config.f_patch_groups)
-    print(colored(' [done]', 'green'))
+    done()
 
 
 def analyse(config, prog, argv):

@@ -17,7 +17,6 @@ import sys
 
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
-from termcolor import colored
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
@@ -82,22 +81,22 @@ def patch_descriptions(config, prog, argv):
 
     all_commits = [repo[x] for x in all_commit_hashes]
 
-    sys.stdout.write('Getting descriptions...')
+    printn('Getting descriptions...')
     pool = Pool(cpu_count(), maxtasksperchild=1)
     all_description = dict(pool.map(describe_commit, all_commits, chunksize=1000))
     pool.close()
     pool.join()
-    print(colored(' [done]', 'green'))
+    done()
 
     _tmp_repo = None
     _config = None
 
-    sys.stdout.write('Writing commit descriptions file...')
+    printn('Writing commit descriptions file...')
     with open(config.f_commit_description, 'w') as f:
         f.write('commit_hash branch_name author_date commit_date release_date\n')
         for commit_hash, info in all_description.items():
             f.write('%s %s %s %s %s\n' % (commit_hash, info[0], info[1], info[2], info[3]))
-    print(colored(' [done]', 'green'))
+    done()
 
 
 if __name__ == '__main__':

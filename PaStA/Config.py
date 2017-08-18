@@ -153,7 +153,7 @@ class Config:
     def fail_no_mailbox(self):
         if self.has_mailbox is False:
             print("Mailbox '%s' not configured or not available. "
-                  "Check your config." % self.f_mailbox_index)
+                  "Check your config." % self.f_mailbox)
             quit(-1)
 
     @property

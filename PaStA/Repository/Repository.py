@@ -19,10 +19,11 @@ import sys
 
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
-from termcolor import colored
+from subprocess import call
 
 from .Commit import Commit
 from .Mbox import mbox_load_index, parse_mail
+from ..Util import done, printn
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
@@ -156,9 +157,8 @@ class Repository:
         if len(worklist) == 0:
             return commit_hashes, set()
 
-        sys.stdout.write('Caching %d/%d commits. This may take a while...' %
+        printn('Caching %d/%d commits. This may take a while...' %
                          (len(worklist), len(commit_hashes)))
-        sys.stdout.flush()
 
         if parallelise:
             global _tmp_repo
@@ -178,7 +178,7 @@ class Repository:
         result = {key: value for (key, value) in result if value is not None}
 
         self.inject_commits(result)
-        print(colored(' [done]', 'green'))
+        done()
 
         return set(result.keys()), invalid
 

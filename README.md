@@ -20,7 +20,6 @@ Requirements
 - git
 - pygit2
 - git-python (for PaStA-resources and patch_descriptions only)
-- termcolor
 - R (tikzDevice, ggplot2)
 - fuzzywuzzy + python-levenshtein
 
