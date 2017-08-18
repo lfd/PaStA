@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@othr.de>
@@ -9,18 +9,18 @@ Author:
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
+
 import datetime
 import email
 import functools
 import mailbox
+import os
 import quopri
 import re
-import sys
 import time
 
 from email.charset import CHARSETS
 from multiprocessing import cpu_count, Pool
-from termcolor import colored
 
 from .Commit import Commit
 
@@ -105,22 +105,16 @@ def parse_payload(payload):
     return msg, diff
 
 
-def parse_mail(mindate, maxdate, mail):
-    message_id = mail['Message-ID']
-
-    if message_id is None:
-        print('Message without message ID: "%s"' % mail['Subject'])
-        return None
+def parse_mail(d_mbox_split, index_entry):
+    filename = os.path.join(d_mbox_split, index_entry[1][1], index_entry[1][2])
+    mail = mailbox.mbox(filename, create=False)[0]
+    message_id = index_entry[0]
 
     try:
         date = time.mktime(email.utils.parsedate(mail['Date']))
     except:
         # assume epoch
         date = 0
-
-    date = datetime.datetime.fromtimestamp(date)
-    if date < mindate or date > maxdate:
-        return None
 
     payload = mail.get_payload()
 
@@ -177,31 +171,23 @@ def fix_encoding(string):
     return string.encode('utf-8').decode('ascii', 'ignore')
 
 
-def load_and_cache_mbox(repo, f_mbox, mindate, maxdate, parallelise=True):
-    print('Notice: Skipping mails until %s' % mindate)
-    sys.stdout.write('Loading mbox %s...' % f_mbox)
-    mbox = mailbox.mbox(f_mbox, create=False)
+def mbox_load_index(f_mbox_index):
+    with open(f_mbox_index) as index:
+        index = index.read().split('\n')
+        # last element is empty
+        index.pop()
 
-    print(colored(' [done]', 'green'))
-    print('Parsing %d Mails...' % len(mbox))
+    index = [tuple(x.split(' ')) for x in index]
+    index = {x[1]: (datetime.datetime.strptime(x[0], "%Y/%m/%d"), x[0], x[2])
+             for x in index}
 
-    parse_mail_partial = functools.partial(parse_mail, mindate, maxdate)
+    return index
 
-    if parallelise:
-        p = Pool(cpu_count())
-        result = p.map(parse_mail_partial, mbox)
-        p.close()
-        p.join()
-    else:
-        result = list(map(parse_mail_partial, mbox))
 
-    # Save memory
-    del mbox
+def mbox_write_index(f_mbox_index, index):
+    items = sorted(index.items())
+    items = ['%s %s %s' % (x[1][1], x[0], x[1][2]) for x in items]
+    items = '\n'.join(items) + '\n'
 
-    # Filter None values
-    result = dict(filter(bool, result))
-
-    print('Found %d patches on mailing list' % len(result))
-
-    repo.inject_commits(result)
-    return set(result.keys())
+    with open(f_mbox_index, 'w') as f:
+        f.write(items)

@@ -11,6 +11,7 @@ the COPYING file in the top-level directory.
 """
 
 import git
+import os
 import pickle
 import pygit2
 import sys
@@ -20,12 +21,16 @@ from multiprocessing import Pool, cpu_count
 from termcolor import colored
 
 from .Commit import Commit
+from .Mbox import mbox_load_index, parse_mail
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
 
 
-def _retrieve_commit(repo, commit_hash):
+def _retrieve_commit_repo(repo, commit_hash):
+    if commit_hash not in repo:
+        return None
+
     commit = repo[commit_hash]
 
     author_date = datetime.fromtimestamp(commit.author.time)
@@ -39,6 +44,17 @@ def _retrieve_commit(repo, commit_hash):
                   commit.committer.name, commit.committer.email, commit_date)
 
 
+def _retrieve_commit_mail(repo, message_id):
+    index = repo.mbox_index[message_id]
+    ret = parse_mail(repo.d_mbox_split, (message_id, index))
+    if not ret:
+        return None
+
+    _, commit = ret
+
+    return commit
+
+
 def _retrieve_diff(repo, commit_hash):
     commit = repo[commit_hash]
     if len(commit.parents) == 1:
@@ -49,8 +65,8 @@ def _retrieve_diff(repo, commit_hash):
     return diff or ''
 
 
-def _retrieve_commit_subst(commit_hash):
-    return commit_hash, _retrieve_commit(_tmp_repo, commit_hash)
+def _load_commit_subst(commit_hash):
+    return commit_hash, _tmp_repo._load_commit(commit_hash)
 
 
 class Repository:
@@ -58,6 +74,8 @@ class Repository:
         self.repo_location = repo_location
         self.ccache = {}
         self.repo = pygit2.Repository(repo_location)
+        self.mbox_index = None
+        self.d_mbox_split = None
 
     def inject_commits(self, commit_dict):
         for key, val in commit_dict.items():
@@ -65,6 +83,13 @@ class Repository:
 
     def clear_commit_cache(self):
         self.ccache.clear()
+
+    def _load_commit(self, commit_hash):
+        # check if the victim is an email
+        if commit_hash[0] == '<':
+            return _retrieve_commit_mail(self, commit_hash)
+        else:
+            return _retrieve_commit_repo(self.repo, commit_hash)
 
     def get_commit(self, commit_hash):
         """
@@ -78,8 +103,14 @@ class Repository:
             return self.ccache[commit_hash]
 
         # cache and return if it is not yet cached
-        self.ccache[commit_hash] = _retrieve_commit(self.repo, commit_hash)
-        return self.ccache[commit_hash]
+        commit = self._load_commit(commit_hash)
+        if commit is None:
+            raise KeyError('Commit or Mail not found: %s' % commit_hash)
+
+        # store commit in local cache
+        self.ccache[commit_hash] = commit
+
+        return commit
 
     def load_ccache(self, f_ccache, must_exist=False):
         print('Loading commit cache file %s...' % f_ccache)
@@ -122,19 +153,20 @@ class Repository:
 
         if parallelise:
             global _tmp_repo
-            _tmp_repo = self.repo
+            _tmp_repo = self
 
             p = Pool(num_cpus, maxtasksperchild=10)
-            result = p.map(_retrieve_commit_subst, worklist, chunksize=100)
+            result = p.map(_load_commit_subst, worklist, chunksize=100)
             p.close()
             p.join()
 
             _tmp_repo = None
         else:
-            result = map(lambda x: (x, _retrieve_commit(self.repo, x)),
+            result = map(lambda x: (x, self._load_commit(x)),
                          worklist)
 
-        result = dict(result)
+        result = {key: value for (key, value) in result if value is not None}
+
         self.inject_commits(result)
         print(colored(' [done]', 'green'))
 
@@ -170,3 +202,12 @@ class Repository:
             if stack_hash not in base_set:
                 retval.append(stack_hash)
         return retval
+
+    def register_mailbox(self, d_mbox_split, f_mbox_index, f_mbox):
+        # check if mailbox is already prepared
+        if os.path.isfile(f_mbox_index):
+            self.d_mbox_split = d_mbox_split
+            self.mbox_index = mbox_load_index(f_mbox_index)
+            return True
+
+        return False

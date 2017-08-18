@@ -32,7 +32,7 @@ def cache(config, prog, argv):
     parser.add_argument('-all', action='store_true', default=False,
                         help='create cache for upstream and patch stack '
                              'commits')
-    parser.add_argument('-mbox', metavar='filename', default=None,
+    parser.add_argument('-mbox', action='store_true', default=None,
                         help='create cache for mailbox')
     parser.add_argument('-mindate', dest='mindate', metavar='mindate',
                         default=config.mbox_mindate,
@@ -63,14 +63,24 @@ def cache(config, prog, argv):
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if args.mbox:
-        ids = load_commit_hashes(config.f_mailbox_id, ordered=False,
-                                 must_exist=False)
         mindate = datetime.datetime.strptime(args.mindate, "%Y-%m-%d")
         maxdate = datetime.datetime.strptime(args.maxdate, "%Y-%m-%d")
-        ids |= load_and_cache_mbox(repo, args.mbox, mindate, maxdate)
-        with open(config.f_mailbox_id, 'w') as f:
-            f.write('\n'.join(ids) + '\n')
+
+        # load existing cache
+        repo.load_ccache(config.f_ccache_mbox)
+
+        # get overall mail index
+        index = mbox_load_index(config.f_mailbox_index)
+
+        # filter dates
+        index = [key for (key, value) in index.items()
+                 if value[0] >= mindate and value[0] <= maxdate]
+
+        # yay, we can treat emails just like ordinary commit hashes
+        repo.cache_commits(index)
+
         repo.export_ccache(config.f_ccache_mbox)
+        repo.clear_commit_cache()
 
 
 if __name__ == '__main__':
