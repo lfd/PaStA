@@ -101,8 +101,6 @@ def rate(config, prog, argv):
                         args.resp_commit_date, args.enable_pager)
     elif evaluation_result.eval_type == EvaluationType.Mailinglist:
         print('Running mailing list rating...')
-        # Mails are only available as cache.
-        config.repo.load_ccache(config.f_ccache_mbox, must_exist=True)
         mailinglist_rating(repo, evaluation_result, similar_mailbox,
                            config.thresholds, args.enable_pager)
     else:
