@@ -215,6 +215,10 @@ class PatchStackDefinition:
 
         upstream = PatchStackDefinition._get_upstream_hashes(config)
 
+        if not os.path.isfile(config.f_patch_stack_definition):
+            print('Notice: No patch stack definition given.')
+            return PatchStackDefinition([], upstream)
+
         csv.register_dialect('patchstack', delimiter=' ',
                              quoting=csv.QUOTE_NONE)
         repo = config.repo
@@ -280,6 +284,4 @@ class PatchStackDefinition:
             patch_stack_groups.append((group_name, this_group))
 
         # Create patch stack list
-        retval = PatchStackDefinition(patch_stack_groups, upstream)
-
-        return retval
+        return PatchStackDefinition(patch_stack_groups, upstream)
