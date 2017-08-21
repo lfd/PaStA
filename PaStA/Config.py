@@ -11,7 +11,8 @@ the COPYING file in the top-level directory.
 """
 
 import configparser
-from os.path import join, dirname, realpath, isfile
+from os.path import join, dirname, realpath, isfile, isdir
+from os import makedirs
 
 from .Repository import Repository
 from .PatchStack import PatchStackDefinition
@@ -100,6 +101,9 @@ class Config:
 
         # commit hash files and mailbox ID files
         self.d_stack_hashes = path('STACK_HASHES')
+        if not isdir(self.d_stack_hashes):
+            makedirs(self.d_stack_hashes)
+
         self.f_upstream_hashes = join(self.d_stack_hashes, 'upstream')
         self.d_mailbox_split = path('MBOX_SPLIT')
         self.f_mailbox_index = join(self.d_mailbox_split, 'index')
