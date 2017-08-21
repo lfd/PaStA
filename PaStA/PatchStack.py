@@ -176,13 +176,47 @@ class PatchStackDefinition:
                 yield patch_stack
 
     @staticmethod
+    def _get_upstream_hashes(config):
+        repo = config.repo
+
+        # check if upstream commit hashes are existent. If not, create them
+        upstream = None
+        if os.path.isfile(config.f_upstream_hashes):
+            upstream = load_commit_hashes(config.f_upstream_hashes)
+
+            # check if upstream range in the config file is in sync
+            upstream_range = tuple(upstream.pop(0).split(' '))
+            if upstream_range != config.upstream_range:
+                # set upstream to None if inconsistencies are detected.
+                # upstream commit hash file will be renewed in the next step.
+                upstream = None
+
+        if not upstream:
+            printn('Renewing upstream commit hash file...')
+            upstream = repo.get_commithash_range(config.upstream_range)
+            persist_commit_hashes(config.f_upstream_hashes,
+                                  [' '.join(config.upstream_range)] + upstream)
+            done()
+
+        if config.upstream_blacklist:
+            blacklist = load_commit_hashes(config.upstream_blacklist, ordered=False)
+            # filter blacklistes commit hashes
+            upstream = [x for x in upstream if x not in blacklist]
+
+        return upstream
+
+    @staticmethod
     def parse_definition_file(config):
         """
         Parses the patch stack definition file
         :param config: PaStA configuration
         :return: PatchStackDefinition
         """
-        csv.register_dialect('patchstack', delimiter=' ', quoting=csv.QUOTE_NONE)
+
+        upstream = PatchStackDefinition._get_upstream_hashes(config)
+
+        csv.register_dialect('patchstack', delimiter=' ',
+                             quoting=csv.QUOTE_NONE)
         repo = config.repo
 
         printn('Parsing patch stack definition...')
@@ -244,30 +278,6 @@ class PatchStackDefinition:
                 this_group.append(PatchStack(base, stack, commit_hashes))
 
             patch_stack_groups.append((group_name, this_group))
-
-        # check if upstream commit hashes are existent. If not, create them
-        upstream = None
-        if os.path.isfile(config.f_upstream_hashes):
-            upstream = load_commit_hashes(config.f_upstream_hashes)
-
-            # check if upstream range in the config file is in sync
-            upstream_range = tuple(upstream.pop(0).split(' '))
-            if upstream_range != config.upstream_range:
-                # set upstream to None if inconsistencies are detected.
-                # upstream commit hash file will be renewed in the next step.
-                upstream = None
-
-        if not upstream:
-            printn('Renewing upstream commit hash file...')
-            upstream = repo.get_commithash_range(config.upstream_range)
-            persist_commit_hashes(config.f_upstream_hashes,
-                                  [' '.join(config.upstream_range)] + upstream)
-            done()
-
-        if config.upstream_blacklist:
-            blacklist = load_commit_hashes(config.upstream_blacklist, ordered=False)
-            # filter blacklistes commit hashes
-            upstream = [x for x in upstream if x not in blacklist]
 
         # Create patch stack list
         retval = PatchStackDefinition(patch_stack_groups, upstream)
