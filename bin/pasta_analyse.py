@@ -170,7 +170,7 @@ def analyse_stack(config, similar_patches):
     return evaluation_result
 
 
-def analyse_upstream(config, similar_patches):
+def analyse_upstream(config, similar_patches, upstream_hashes):
     repo = config.repo
     psd = config.psd
 
@@ -186,18 +186,18 @@ def analyse_upstream(config, similar_patches):
     done()
 
     # cache missing commits
-    repo.cache_commits(psd.upstream_hashes)
+    repo.cache_commits(upstream_hashes)
     repo.cache_commits(representatives)
 
     cherries = find_cherries(repo,
                              representatives,
-                             psd.upstream_hashes,
+                             upstream_hashes,
                              EvaluationType.Upstream)
 
     print('Starting evaluation.')
     evaluation_result = evaluate_commit_list(repo, config.thresholds,
                                              representatives,
-                                             psd.upstream_hashes,
+                                             upstream_hashes,
                                              EvaluationType.Upstream,
                                              parallelise=True, verbose=True,
                                              cpu_factor=0.25)
@@ -211,10 +211,8 @@ def analyse_upstream(config, similar_patches):
     return evaluation_result
 
 
-def analyse_mbox(config, mbox_time_window):
+def analyse_mbox(config, mbox_time_window, upstream_hashes):
     config.fail_no_mailbox()
-
-    upstream_hashes = set(config.psd.upstream_hashes)
     repo = config.repo
 
     repo.load_ccache(config.f_ccache_mbox)
@@ -338,6 +336,8 @@ def analyse(config, prog, argv):
     similar_patches = EquivalenceClass.from_file(config.f_similar_patches,
                                                  must_exist=sp_must_exist)
 
+    upstream_hashes = set(config.psd.upstream_hashes)
+
     if args.mode == 'init':
         for commit_hash in config.psd.commits_on_stacks:
             similar_patches.insert_single(commit_hash)
@@ -350,9 +350,9 @@ def analyse(config, prog, argv):
         elif args.mode == 'stack-rep':
             result = analyse_stack(config, similar_patches)
         elif args.mode == 'upstream':
-            result = analyse_upstream(config, similar_patches)
+            result = analyse_upstream(config, similar_patches, upstream_hashes)
         elif args.mode == 'mbox':
-            result = analyse_mbox(config, mbox_time_window)
+            result = analyse_mbox(config, mbox_time_window, upstream_hashes)
 
         result.to_file(config.f_evaluation_result)
 
