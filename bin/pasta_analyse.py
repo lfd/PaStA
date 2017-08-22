@@ -323,10 +323,17 @@ def analyse(config, prog, argv):
                         help='Skip mails older than mindate '
                              '(only together with mbox, default: %(default)s)')
 
+    parser.add_argument('-upstream', dest='upstream_range',
+                        metavar='<revision range>', default=None,
+                        help='Specify upstream revision range, '
+                             'e.g.: v0.1..v0.2 (default: %s)' %
+                             config.upstream_range)
+
     args = parser.parse_args(argv)
 
     config.thresholds.heading = args.thres_heading
     config.thresholds.filename = args.thres_filename
+    repo = config.repo
 
     mbox_time_window = args.mindate, args.maxdate
 
@@ -336,7 +343,10 @@ def analyse(config, prog, argv):
     similar_patches = EquivalenceClass.from_file(config.f_similar_patches,
                                                  must_exist=sp_must_exist)
 
-    upstream_hashes = set(config.psd.upstream_hashes)
+    if args.upstream_range is not None:
+        upstream_hashes = set(repo.get_commithash_range(args.upstream_range))
+    else:
+        upstream_hashes = set(config.psd.upstream_hashes)
 
     if args.mode == 'init':
         for commit_hash in config.psd.commits_on_stacks:
