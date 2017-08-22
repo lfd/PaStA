@@ -84,9 +84,8 @@ class Config:
                                           self.repo_location)
         self.repo = Repository(self.repo_location)
 
-        self.upstream_range = (pasta.get('UPSTREAM_MIN'),
-                               pasta.get('UPSTREAM_MAX'))
-        if not all(self.upstream_range):
+        self.upstream_range = pasta.get('UPSTREAM')
+        if not self.upstream_range:
             raise RuntimeError('Please provide a valid upstream range in your '
                                'config')
 

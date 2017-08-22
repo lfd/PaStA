@@ -188,25 +188,20 @@ class Repository:
     def get_commithash_range(self, range):
         """
         Gets all commithashes within a certain range
+        Usage: get_commithash_range('v2.0..v2.1')
+               get_commithash_ranse('v3.0')
         """
-        if range[0] is None:
-            range = range[1]
-        else:
-            range = '%s..%s' % range
 
         # we use git.Repo, as pygit doesn't support this nifty log functionality
         repo = git.Repo(self.repo_location)
-
-        upstream_hashes = repo.git.log('--pretty=format:%H', range)
-        upstream_hashes = upstream_hashes.splitlines()
-        return upstream_hashes
+        return repo.git.log('--pretty=format:%H', range).splitlines()
 
     def get_commits_on_stack(self, base, stack):
         """
         Returns the commit hashes on a patch stack
         """
-        stack_list = self.get_commithash_range((None, stack))
-        base_set = set(self.get_commithash_range((None, base)))
+        stack_list = self.get_commithash_range(stack)
+        base_set = set(self.get_commithash_range(base))
 
         # Preserve order!
         retval = []

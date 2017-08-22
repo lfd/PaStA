@@ -185,8 +185,7 @@ class PatchStackDefinition:
             upstream = load_commit_hashes(config.f_upstream_hashes)
 
             # check if upstream range in the config file is in sync
-            upstream_range = tuple(upstream.pop(0).split(' '))
-            if upstream_range != config.upstream_range:
+            if not upstream or upstream.pop(0) != config.upstream_range:
                 # set upstream to None if inconsistencies are detected.
                 # upstream commit hash file will be renewed in the next step.
                 upstream = None
@@ -195,7 +194,7 @@ class PatchStackDefinition:
             printn('Renewing upstream commit hash file...')
             upstream = repo.get_commithash_range(config.upstream_range)
             persist_commit_hashes(config.f_upstream_hashes,
-                                  [' '.join(config.upstream_range)] + upstream)
+                                  [config.upstream_range] + upstream)
             done()
 
         if config.upstream_blacklist:
