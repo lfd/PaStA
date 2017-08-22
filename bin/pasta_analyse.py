@@ -211,7 +211,7 @@ def analyse_upstream(config, similar_patches):
     return evaluation_result
 
 
-def analyse_mbox(config, mindate, maxdate):
+def analyse_mbox(config, mbox_time_window):
     config.fail_no_mailbox()
 
     upstream_hashes = set(config.psd.upstream_hashes)
@@ -220,7 +220,7 @@ def analyse_mbox(config, mindate, maxdate):
     repo.load_ccache(config.f_ccache_mbox)
     repo.load_ccache(config.f_ccache_upstream)
 
-    message_ids = repo.mbox_get_message_ids(mindate, maxdate)
+    message_ids = repo.mbox_get_message_ids(mbox_time_window)
 
     repo.cache_commits(upstream_hashes)
     message_ids, _ = repo.cache_commits(message_ids)
@@ -330,6 +330,8 @@ def analyse(config, prog, argv):
     config.thresholds.heading = args.thres_heading
     config.thresholds.filename = args.thres_filename
 
+    mbox_time_window = args.mindate, args.maxdate
+
     # Load similar patches file. If args.mode is 'init' or 'mbox', it does not
     # necessarily have to exist.
     sp_must_exist = args.mode not in ['init', 'mbox']
@@ -350,7 +352,7 @@ def analyse(config, prog, argv):
         elif args.mode == 'upstream':
             result = analyse_upstream(config, similar_patches)
         elif args.mode == 'mbox':
-            result = analyse_mbox(config, args.mindate, args.maxdate)
+            result = analyse_mbox(config, mbox_time_window)
 
         result.to_file(config.f_evaluation_result)
 

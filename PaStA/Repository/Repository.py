@@ -232,6 +232,6 @@ class Repository:
 
         return False
 
-    def mbox_get_message_ids(self, mindate, maxdate):
+    def mbox_get_message_ids(self, time_window):
         return [x[0] for x in self.mbox_index.items()
-                if mindate <= x[1][0] <= maxdate]
+                if time_window[0] <= x[1][0] <= time_window[1]]
