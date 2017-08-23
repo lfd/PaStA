@@ -23,8 +23,6 @@ from PaStA import *
 def compare(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='compare patches')
 
-    parser.add_argument('-mbox', action='store_true', default=False,
-                        help='Also load mbox cache')
     parser.add_argument('-n', action='store_false', default=True,
                         help = 'don\'t use a pager')
     parser.add_argument('commits', metavar='commit', type=str, nargs='+',
@@ -41,8 +39,6 @@ def compare(config, prog, argv):
     commits = args.commits
 
     repo = config.repo
-    if args.mbox:
-        repo.load_ccache(config.f_ccache_mbox, must_exist=True)
 
     if len(commits) == 1:
         show_commit(repo, commits[0])
