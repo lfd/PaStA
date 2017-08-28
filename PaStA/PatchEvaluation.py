@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@othr.de>
@@ -18,7 +18,7 @@ from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
 from statistics import mean
 
-from .Util import getch, show_commits
+from .Util import *
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
@@ -224,8 +224,10 @@ class EvaluationResult(dict):
 
     @staticmethod
     def from_file(filename, fp_directory=None, fp_must_exist=False):
+        printn('Loading evaluation result...')
         with open(filename, 'rb') as f:
             ret = pickle.load(f)
+        done()
         ret.fp = FalsePositives(ret.eval_type, fp_directory, fp_must_exist)
         return ret
 
