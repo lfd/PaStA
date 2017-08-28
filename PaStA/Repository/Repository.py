@@ -222,7 +222,9 @@ class Repository:
 
         if os.path.isfile(f_mbox_index):
             self.d_mbox_split = d_mbox_split
+            printn('Loading Mailbox index...')
             self.mbox_index = mbox_load_index(f_mbox_index)
+            done()
             return True
 
         return False
