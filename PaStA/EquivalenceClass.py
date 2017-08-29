@@ -130,7 +130,7 @@ class EquivalenceClass:
         # Recreate the forward lookup dictionary
         for i, keylist in enumerate(self.transitive_list):
             if keylist.property:
-                self.property_lookup[property] = i
+                self.property_lookup[keylist.property] = i
             for key in keylist:
                 self.forward_lookup[key] = i
 
