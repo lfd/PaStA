@@ -1,10 +1,10 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
@@ -41,6 +41,8 @@ class EquivalenceClass:
             self.transitive_list.append(PropertyList([key]))
             new_id = len(self.transitive_list) - 1
             self.forward_lookup[key] = new_id
+            return new_id
+        return self.forward_lookup[key]
 
     def insert(self, key1, key2):
         id1 = key1 in self.forward_lookup
@@ -51,47 +53,58 @@ class EquivalenceClass:
             id = len(self.transitive_list) - 1
             self.forward_lookup[key1] = id
             self.forward_lookup[key2] = id
+            return id
         elif id1 and id2:
             # Get indices
             id1 = self.forward_lookup[key1]
             id2 = self.forward_lookup[key2]
 
             # if indices equal, then we have nothing to do
-            if id1 != id2:
-                prop1 = self.transitive_list[id1].property
-                prop2 = self.transitive_list[id2].property
+            if id1 == id2:
+                return id1
 
-                if prop1:
-                    del self.property_lookup[prop1]
-                if prop2:
-                    del self.property_lookup[prop2]
+            # next thing is to check properties
+            prop1 = self.transitive_list[id1].property
+            prop2 = self.transitive_list[id2].property
 
-                if prop1 is None or prop2 is None:
-                    result_property = prop1 or prop2
-                else:
-                    if prop1 == prop2:
-                        print('Warning: Merging to equivalence classes with different properties!')
-                    # On collission, choose the first property
-                    result_property = prop1
+            # remove keys from property_lookup, if they exist
+            self.property_lookup.pop(prop1, None)
+            self.property_lookup.pop(prop2, None)
 
-                # Merge lists
-                self.transitive_list[id1] += self.transitive_list[id2]
-                self.transitive_list[id1].property = result_property
-                self.property_lookup[property] = id1
+            # select resulting property
+            if prop1 is None or prop2 is None:
+                result_property = prop1 or prop2
+            else:
+                # TODO Think of a property data structure that supports multiple elements
+                if prop1 != prop2:
+                    print('Warning: Merging equivalence classes with different properties!')
+                # On collission, choose the first property
+                result_property = prop1
 
-                # Remove orphaned list
-                self.transitive_list[id2] = PropertyList()
+            # merge lists
+            self.transitive_list[id1] += self.transitive_list[id2]
+            self.transitive_list[id1].property = result_property
+            self.property_lookup[result_property] = id1
 
-                for i in self.transitive_list[id1]:
-                    self.forward_lookup[i] = id1
+            # remove orphaned list
+            self.transitive_list[id2] = PropertyList()
+
+            # update all entries
+            for i in self.transitive_list[id1]:
+                self.forward_lookup[i] = id1
+
+            # return resulting id1
+            return id1
         elif id1:
             id = self.forward_lookup[key1]
             self.transitive_list[id].append(key2)
             self.forward_lookup[key2] = id
+            return id
         else:
             id = self.forward_lookup[key2]
             self.transitive_list[id].append(key1)
             self.forward_lookup[key1] = id
+            return id
 
     def merge(self, other):
         for i in other.transitive_list:
