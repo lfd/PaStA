@@ -144,27 +144,40 @@ class EquivalenceClass:
         return False
 
     def set_property(self, key, property):
-        # insert the key, if it is not existent
-        if key not in self.forward_lookup:
-            self.insert_single(key)
-
         # maybe another equiv class already has that property.
         # search for property and merge them, if possible.
         if property in self.property_lookup:
+            # delete own property, if existent
+            if key in self.forward_lookup:
+                my_id = self.forward_lookup[key]
+                self.set_property_by_id(my_id, None)
+
             id = self.property_lookup[property]
             # Get the key of the other one
             key_other = self.transitive_list[id][0]
             # Combine both keys
             self.insert(key, key_other)
         else:
-            id = self.forward_lookup[key]
+            id = self.insert_single(key)
             self.set_property_by_id(id, property)
 
     def set_property_by_id(self, id, property):
         if id < 0:
             raise IndexError('Out of bounds')
+        # Check if the ID already has a property
+        old_property = self.transitive_list[id].property
+
+        # Remove old property, if exists
+        if old_property:
+            del self.property_lookup[old_property]
+            print('Warning, replacing property %s -> %s!' %
+                  (old_property, property))
+
         self.transitive_list[id].property = property
-        self.property_lookup[property] = id
+
+        # only insert to property_lookup if property is not none
+        if property:
+            self.property_lookup[property] = id
 
     def get_property(self, key):
         id = self.forward_lookup[key]
