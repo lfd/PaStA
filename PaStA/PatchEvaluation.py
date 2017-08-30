@@ -331,16 +331,16 @@ class EvaluationResult(dict):
         equivalence_class.optimize()
 
         print('\n\nSome statistics:')
-        print(' Interactive Accepted: ' + str(accepted))
-        print(' Automatically accepted: ' + str(auto_accepted))
-        print(' Interactive declined: ' + str(declined))
-        print(' Automatically declined: ' + str(auto_declined))
-        print(' Skipped: ' + str(skipped))
-        print(' Skipped due to previous detection: ' + str(already_detected))
-        print(' Skipped due to false positive mark: ' + str(already_false_positive))
-        print(' Skipped by diff length ratio mismatch: ' + str(skipped_by_dlr))
+        print(' Interactive Accepted: %d' % accepted)
+        print(' Automatically accepted: %d' % auto_accepted)
+        print(' Interactive declined: %d' % declined)
+        print(' Automatically declined: %d' % auto_declined)
+        print(' Skipped: %d' % skipped)
+        print(' Skipped due to previous detection: %d' % already_detected)
+        print(' Skipped due to false positive mark: %d' % already_false_positive)
+        print(' Skipped by diff length ratio mismatch: %d' % skipped_by_dlr)
         if respect_commitdate:
-            print(' Skipped by commit date mismatch: ' + str(skipped_by_commit_date))
+            print(' Skipped by commit date mismatch: %d' % skipped_by_commit_date)
 
 
 def best_string_mapping(threshold, left_list, right_list):
