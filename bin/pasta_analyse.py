@@ -12,7 +12,6 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-import copy
 import os
 import re
 import sys
@@ -22,9 +21,6 @@ from multiprocessing import cpu_count, Pool
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
-
-from PaStA.PatchEvaluation import FalsePositives
-
 
 _repo = None
 
@@ -135,7 +131,7 @@ def analyse_succ(config):
     return evaluation_result
 
 
-def analyse_stack(config, similar_patches):
+def analyse_stack(config, patch_groups):
     psd = config.psd
     repo = config.repo
 
@@ -145,7 +141,7 @@ def analyse_stack(config, similar_patches):
     # Get the complete representative system
     # The lambda compares two patches of an equivalence class and chooses the
     # one with the later release version
-    representatives = similar_patches.get_representative_system(
+    representatives = patch_groups.get_representative_system(
         lambda x, y: psd.is_stack_version_greater(psd.get_stack_of_commit(x),
                                                   psd.get_stack_of_commit(y)))
     done()
@@ -170,7 +166,7 @@ def analyse_stack(config, similar_patches):
     return evaluation_result
 
 
-def analyse_upstream(config, similar_patches, upstream_hashes):
+def analyse_upstream(config, patch_groups, upstream_hashes):
     repo = config.repo
     psd = config.psd
 
@@ -180,7 +176,7 @@ def analyse_upstream(config, similar_patches, upstream_hashes):
     # Get the complete representative system
     # The lambda compares two patches of an equivalence class and chooses the
     # one with the later release version
-    representatives = similar_patches.get_representative_system(
+    representatives = patch_groups.get_representative_system(
         lambda x, y: psd.is_stack_version_greater(psd.get_stack_of_commit(x),
                                                   psd.get_stack_of_commit(y)))
     done()
@@ -234,54 +230,6 @@ def analyse_mbox(config, mbox_time_window, upstream_hashes):
     return evaluation_result
 
 
-def create_patch_groups(config):
-    # similar patches on patch stacks
-    similar_patches = EquivalenceClass.from_file(config.f_similar_patches,
-                                                 must_exist=True)
-
-    # similar representatives -> upstream
-    similar_upstream = EquivalenceClass.from_file(config.f_similar_upstream,
-                                                  must_exist=True)
-
-    # perform some consistency checks before creating the patch groups
-    for i in similar_upstream.iter_untagged():
-        if len(i) != 1:
-            print('Consistency error in similar_upstream file: '
-                  'Multiple patches are mapped to the same upstream: %s' % i)
-            quit()
-
-    # load false positives
-    fp_ps = FalsePositives(EvaluationType.PatchStack, config.d_false_positives)
-    fp_su = FalsePositives(EvaluationType.Upstream, config.d_false_positives)
-
-    # check consistency of false positives
-    fp_ps.check_consistency(similar_patches)
-    fp_su.check_consistency(similar_upstream)
-
-    # create a copy of the similar patch list
-    patch_groups = copy.deepcopy(similar_patches)
-
-    # Insert every single key of the patch stack into the transitive list.
-    # Already existing keys will be skipped. This results in a list with at
-    # least one key for each patch set
-    stack_commit_hashes = config.psd.commits_on_stacks
-    for i in stack_commit_hashes:
-        patch_groups.insert_single(i)
-    patch_groups.optimize()
-
-    # Merge upstream results and patch group list
-    for i in similar_upstream:
-        patch_groups.insert(*i)
-
-    # maintain list of tags
-    for tag in similar_upstream.get_tagged():
-        patch_groups.tag(tag)
-
-    printn('Writing Patch Group file... ')
-    patch_groups.to_file(config.f_patch_groups)
-    done()
-
-
 def analyse(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Analyse patch stacks')
@@ -298,7 +246,7 @@ def analyse(config, prog, argv):
 
     parser.add_argument('mode', default='stack-succ',
                         choices=['init', 'stack-succ', 'stack-rep', 'upstream',
-                                 'finish', 'mbox'],
+                                 'mbox'],
                         help='init: initialise\n'
                              'stack-rep: '
                              'compare representatives of the stack - '
@@ -306,8 +254,6 @@ def analyse(config, prog, argv):
                              'compare successive versions of the stacks - '
                              'upstream: '
                              'compare representatives against upstream - '
-                             'finish: '
-                             'create patch-groups file - '
                              'mbox: '
                              'do mailbox analysis against upstream '
                              '(default: %(default)s)')
@@ -338,8 +284,8 @@ def analyse(config, prog, argv):
     # Load similar patches file. If args.mode is 'init' or 'mbox', it does not
     # necessarily have to exist.
     sp_must_exist = args.mode not in ['init', 'mbox']
-    similar_patches = EquivalenceClass.from_file(config.f_similar_patches,
-                                                 must_exist=sp_must_exist)
+    patch_groups = EquivalenceClass.from_file(config.f_patch_groups,
+                                              must_exist=sp_must_exist)
 
     if args.upstream_range is not None:
         upstream_hashes = set(repo.get_commithash_range(args.upstream_range))
@@ -348,17 +294,15 @@ def analyse(config, prog, argv):
 
     if args.mode == 'init':
         for commit_hash in config.psd.commits_on_stacks:
-            similar_patches.insert_single(commit_hash)
-        similar_patches.to_file(config.f_similar_patches)
-    elif args.mode == 'finish':
-        create_patch_groups(config)
+            patch_groups.insert_single(commit_hash)
+        patch_groups.to_file(config.f_patch_groups)
     else:
         if args.mode == 'stack-succ':
             result = analyse_succ(config)
         elif args.mode == 'stack-rep':
-            result = analyse_stack(config, similar_patches)
+            result = analyse_stack(config, patch_groups)
         elif args.mode == 'upstream':
-            result = analyse_upstream(config, similar_patches, upstream_hashes)
+            result = analyse_upstream(config, patch_groups, upstream_hashes)
         elif args.mode == 'mbox':
             result = analyse_mbox(config, mbox_time_window, upstream_hashes)
 

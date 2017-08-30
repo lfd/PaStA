@@ -117,8 +117,6 @@ class Config:
         self.upstream_blacklist = pasta.get('UPSTREAM_BLACKLIST')
 
         # analysis results
-        self.f_similar_patches = path('SIMILAR_PATCHES')
-        self.f_similar_upstream = path('SIMILAR_UPSTREAM')
         self.f_similar_mailbox = path('SIMILAR_MAILBOX')
         self.d_false_positives = path('FALSE_POSTITIVES')
         self.f_patch_groups = path('PATCH_GROUPS')
