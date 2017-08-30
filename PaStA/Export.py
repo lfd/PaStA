@@ -12,7 +12,7 @@ the COPYING file in the top-level directory.
 
 from multiprocessing import Pool, cpu_count
 
-from .Util import format_date_ymd
+from .Util import format_date_ymd, get_first_upstream
 
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
@@ -105,7 +105,8 @@ class Export:
         occurrence.write('PatchGroup OldestVersion LatestVersion FirstReleasedIn LastReleasedIn\n')
 
         cntr = 0
-        for group in patch_groups:
+        for group in patch_groups.iter_untagged():
+            group = list(group)
             cntr += 1
 
             # write stack patches
@@ -116,9 +117,9 @@ class Export:
                 patches.write('%d %s %s %s\n' % (cntr, patch, stack_version, base_version))
 
             # optional: write upstream information
-            if group.property:
-                commit = self.repo[group.property]
-
+            commit = get_first_upstream(self.repo, patch_groups, group[0])
+            if commit:
+                commit = self.repo[commit]
                 first_stack_occurence = min(map(date_selector, group))
 
                 upstream.write('%d %s %s %s\n' % (cntr,
