@@ -19,9 +19,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from PaStA import *
 
 
-def upstream_duration(repo, date_selector, patch_group):
-    first_stack_relase = min(map(lambda x: date_selector(x), patch_group))
-    upstream_date = repo[patch_group.property].commit_date
+def upstream_duration(repo, date_selector, patch_groups, rep):
+    group = patch_groups.get_untagged(rep)
+    upstream = get_first_upstream(repo, patch_groups, rep)
+
+    first_stack_relase = min(map(lambda x: date_selector(x), group))
+    upstream_date = repo[upstream].commit_date
 
     delta = first_stack_relase - upstream_date
     return delta
@@ -44,16 +47,22 @@ def pasta_upstream_history(config, prog, argv):
 
     date_selector = get_date_selector(repo, psd, args.date_selector)
 
-    upstream_groups = list(filter(lambda x: x.property, patch_groups))
+    groups_with_upstream = set()
+    for group in patch_groups:
+        rep = list(group)[0]
+        if patch_groups.get_tagged(rep):
+            groups_with_upstream.add(rep)
 
-    upstream_helper = functools.partial(upstream_duration, repo, date_selector)
+
+    upstream_helper = functools.partial(upstream_duration, repo, date_selector,
+                                        patch_groups)
     upstream_groups = list(map(lambda x: (x, upstream_helper(x)),
-                               upstream_groups))
+                               groups_with_upstream))
 
     upstream_groups.sort(key=lambda x: x[1])
 
-    for group, duration in upstream_groups:
-        upstream = repo[group.property]
+    for rep, duration in upstream_groups:
+        upstream = repo[get_first_upstream(repo, patch_groups, rep)]
         print('%d\t- %s (%s)' % (duration.days,
                                  upstream.subject,
                                  upstream.author.encode('utf-8').decode('ascii', 'ignore')))
