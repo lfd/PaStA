@@ -70,13 +70,15 @@ def patch_descriptions(config, prog, argv):
     config.fail_no_patch_groups()
     patch_groups = config.patch_groups
 
-    # We can at least cache all commits on the patch stacks
-    repo.load_ccache(config.ccache_stack_filename)
+    # we can at least cache all commits on the patch stacks
+    repo.load_ccache(config.f_ccache_stack)
+
+    # iterate over everything, including upstream commits
     all_commit_hashes = []
     for i in patch_groups:
         all_commit_hashes += i
-        if i.property:
-            all_commit_hashes.append(i.property)
+
+    # now cache everything
     repo.cache_commits(all_commit_hashes, parallelise=True)
 
     all_commits = [repo[x] for x in all_commit_hashes]
