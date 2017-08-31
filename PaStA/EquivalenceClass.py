@@ -113,6 +113,9 @@ class EquivalenceClass:
             return self.tags.intersection(self.classes[self.lookup[key]])
         return self.tags
 
+    def get_untagged(self, key):
+        return self.classes[self.lookup[key]] - self.tags
+
     def has_tag(self, key):
         return key in self.tags
 
@@ -157,8 +160,6 @@ class EquivalenceClass:
             retval.add(rep)
 
         return retval
-
-
 
     def __iter__(self):
         for elem in self.classes:
