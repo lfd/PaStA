@@ -1,16 +1,17 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 from functools import partial
 
+from .Util import get_first_upstream
 
 class PatchFlow:
     def __init__(self, invariant, dropped, new):
@@ -83,25 +84,23 @@ class PatchComposition:
     @staticmethod
     def is_forwardport(repo, patch_groups, date_selector, commit):
         """
-        Given a commit hash on the patch stack, is_forwardport returns True, if the commit is a forward port,
-        False, if it is a backport and None if it has no upstream candidate
+        Given a commit hash on the patch stack, is_forwardport returns True,
+        if the commit is a forward port, False, if it is a backport and None if
+        it has no upstream candidate
         :param repo: Repository
         :param patch_groups: patch groups
         :param date_selector: date_selector
         :param commit: commit on the patch stack
         :return:
         """
-        id = patch_groups.get_equivalence_id(commit)
-        return PatchComposition.is_forwardport_by_id(repo, patch_groups, date_selector, id)
-
-    @staticmethod
-    def is_forwardport_by_id(repo, patch_groups, date_selector, id):
-        if patch_groups.get_property_by_id(id) is None:
+        upstream = patch_groups.get_tagged(commit)
+        if not upstream:
             return None
 
-        upstream = patch_groups.get_property_by_id(id)
+        commits_in_class = patch_groups.get_untagged(commit)
+        upstream = get_first_upstream(repo, patch_groups, commit)
 
-        first_stack_occurence = min(map(date_selector, patch_groups.get_commit_hashes_by_id(id)))
+        first_stack_occurence = min(map(date_selector, commits_in_class))
         upstream_commit_date = repo[upstream].commit_date
 
         delta = upstream_commit_date - first_stack_occurence
@@ -113,8 +112,9 @@ class PatchComposition:
 
     @staticmethod
     def from_commits(repo, patch_groups, date_selector, commits):
-        # Bind parameters to function
-        classifier = partial(PatchComposition.is_forwardport, repo, patch_groups, date_selector)
+        # bind parameters to function
+        classifier = partial(PatchComposition.is_forwardport,
+                             repo, patch_groups, date_selector)
         description = [(lambda x: (x, classifier(x)))(x) for x in commits]
 
         forwardports = [x[0] for x in description if x[1] is True]

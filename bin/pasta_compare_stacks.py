@@ -57,7 +57,8 @@ def print_flow(repo, commits, destinations=None, verbosity=0, indent=4):
 
 
 def print_upstream(repo, patch_groups, x, verbosity, indent=4):
-    print_flow(repo, x, [(x, [patch_groups.get_property(x)]) for x in x], verbosity=verbosity, indent=indent)
+    print_flow(repo, x, [(x, patch_groups.get_tagged(x)) for x in x],
+               verbosity=verbosity, indent=indent)
 
 
 def compare_stack_against_stack(repo, patch_groups, date_selector, stack_from, stack_to, verbosity=0):
