@@ -281,11 +281,10 @@ def analyse(config, prog, argv):
 
     mbox_time_window = args.mindate, args.maxdate
 
-    # Load similar patches file. If args.mode is 'init' or 'mbox', it does not
-    # necessarily have to exist.
-    sp_must_exist = args.mode not in ['init', 'mbox']
-    patch_groups = EquivalenceClass.from_file(config.f_patch_groups,
-                                              must_exist=sp_must_exist)
+    # if args.mode is 'init' or 'mbox', it does not necessarily have to exist.
+    if args.mode not in ['init', 'mbox']:
+        config.fail_no_patch_groups()
+    patch_groups = config.patch_groups
 
     if args.upstream_range is not None:
         upstream_hashes = set(repo.get_commithash_range(args.upstream_range))

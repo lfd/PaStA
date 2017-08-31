@@ -3,7 +3,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@othr.de>
@@ -116,8 +116,6 @@ def compare_stack_against_upstream(repo, patch_groups, date_selector, stack, ver
 
 def compare_stacks(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-pg', dest='pg_filename', metavar='filename',
-                        default=config.patch_groups, help='Patch group file')
     parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['SRD', 'CD'],
                         help='Date selector: Either Commit Date or Stack Release Date (default: %(default)s)')
     parser.add_argument('versions', metavar='version', nargs=2, help='versions to compare')
@@ -126,10 +124,10 @@ def compare_stacks(config, prog, argv):
     parser.set_defaults(R=True)
     args = parser.parse_args(argv)
 
+    config.fail_no_patch_groups()
     psd = config.psd
     repo = config.repo
-
-    patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
+    patch_groups = config.patch_groups
     date_selector = get_date_selector(repo, psd, args.date_selector)
 
     stack_from = psd.get_stack_by_name(args.versions[0])

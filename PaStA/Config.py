@@ -14,6 +14,7 @@ import configparser
 from os.path import join, dirname, realpath, isfile, isdir
 from os import makedirs
 
+from .EquivalenceClass import EquivalenceClass
 from .Repository import Repository
 from .PatchStack import PatchStackDefinition
 
@@ -120,6 +121,7 @@ class Config:
         self.f_similar_mailbox = path('SIMILAR_MAILBOX')
         self.d_false_positives = path('FALSE_POSTITIVES')
         self.f_patch_groups = path('PATCH_GROUPS')
+        self.patch_groups = EquivalenceClass.from_file(self.f_patch_groups)
 
         self.f_commit_description = path('COMMIT_DESCRIPTION')
 
@@ -155,6 +157,12 @@ class Config:
         if self.has_mailbox is False:
             print("Mailbox '%s' not configured or not available. "
                   "Check your config." % self.f_mailbox)
+            quit(-1)
+
+    def fail_no_patch_groups(self):
+        if not isfile(self.f_patch_groups):
+            print('patch groups %s not existent! Finish analysis first.' %
+                  self.f_patch_groups)
             quit(-1)
 
     @property

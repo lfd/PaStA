@@ -67,8 +67,8 @@ def patch_descriptions(config, prog, argv):
     _config = config
 
     # similar patch groups
-    patch_groups = EquivalenceClass.from_file(config.f_patch_groups,
-                                              must_exist=True)
+    config.fail_no_patch_groups()
+    patch_groups = config.patch_groups
 
     # We can at least cache all commits on the patch stacks
     repo.load_ccache(config.ccache_stack_filename)

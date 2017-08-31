@@ -24,8 +24,6 @@ from PaStA import *
 
 def statistics(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-pg', dest='pg_filename', metavar='filename',
-                        default=config.f_patch_groups, help='Patch group file')
     parser.add_argument('-R', dest='r_resources', metavar='directory',
                         default=config.R_resources, help='Output directory for R resources')
     parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['AD', 'CD', 'SRD'],
@@ -35,10 +33,11 @@ def statistics(config, prog, argv):
     parser.set_defaults(R=True)
     args = parser.parse_args(argv)
 
+    config.fail_no_patch_groups()
     psd = config.psd
     repo = config.repo
 
-    patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
+    patch_groups = config.patch_groups
 
     r_resources = args.r_resources
     if not os.path.exists(r_resources):

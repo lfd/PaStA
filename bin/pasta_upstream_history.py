@@ -3,10 +3,10 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
@@ -28,15 +28,17 @@ def upstream_duration(repo, date_selector, patch_group):
 
 
 def pasta_upstream_history(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-pg', dest='pg_filename', metavar='filename',
-                        default=config.patch_groups, help='Patch group file')
-    parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['SRD', 'CD'],
-                        help='Date selector: Either Commit Date or Stack Release Date (default: %(default)s)')
+    parser = argparse.ArgumentParser(prog=prog,
+                                     description='Interactive Rating: Rate '
+                                                 'evaluation results')
+    parser.add_argument('-ds', dest='date_selector', default='SRD',
+                        choices=['SRD', 'CD'],
+                        help='Date selector: Either Commit Date or Stack Release'
+                             ' Date (default: %(default)s)')
     args = parser.parse_args(argv)
 
-    patch_groups = EquivalenceClass.from_file(args.pg_filename, must_exist=True)
-
+    config.fail_no_patch_groups()
+    patch_groups = config.patch_groups
     psd = config.psd
     repo = config.repo
 
@@ -45,7 +47,8 @@ def pasta_upstream_history(config, prog, argv):
     upstream_groups = list(filter(lambda x: x.property, patch_groups))
 
     upstream_helper = functools.partial(upstream_duration, repo, date_selector)
-    upstream_groups = list(map(lambda x: (x, upstream_helper(x)), upstream_groups))
+    upstream_groups = list(map(lambda x: (x, upstream_helper(x)),
+                               upstream_groups))
 
     upstream_groups.sort(key=lambda x: x[1])
 

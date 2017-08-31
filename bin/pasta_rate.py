@@ -53,20 +53,20 @@ def rate(config, prog, argv):
                                    args.weight)
 
     repo = config.repo
-
-    # Load already known positives and false positives
-    patch_groups = EquivalenceClass.from_file(config.f_patch_groups)
-    similar_mailbox = EquivalenceClass.from_file(config.f_similar_mailbox)
-
     evaluation_result = EvaluationResult.from_file(config.f_evaluation_result,
                                                    config.d_false_positives)
+    filename = config.f_patch_groups
 
     if evaluation_result.eval_type == EvaluationType.PatchStack:
         print('Running patch stack rating...')
+        patch_groups = config.patch_groups
     elif evaluation_result.eval_type == EvaluationType.Upstream:
         print('Running upstream rating...')
+        patch_groups = config.patch_groups
     elif evaluation_result.eval_type == EvaluationType.Mailinglist:
         print('Running mailing list rating...')
+        patch_groups = EquivalenceClass.from_file(config.f_similar_mailbox)
+        filename = config.f_similar_mailbox
     else:
         raise NotImplementedError('rating for evaluation type is not '
                                   'implemented')
@@ -76,8 +76,7 @@ def rate(config, prog, argv):
                                          args.resp_commit_date,
                                          args.enable_pager)
 
-    patch_groups.to_file(config.f_patch_groups)
-    similar_mailbox.to_file(config.f_similar_mailbox)
+    patch_groups.to_file(filename)
     evaluation_result.fp.to_file(config.d_false_positives)
 
 
