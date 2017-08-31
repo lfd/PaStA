@@ -48,13 +48,14 @@ $ ./pasta cache -create all # Create all caches
 ```
 
 ### Detecting and grouping similar patches
-Analysing patches on the stacks and eventually linking them into equivalence
-classes is split in two different command: `pasta analyse` and `pasta rate`.
+Detecting similar patches on patch stacks (i.e., branches) and eventually
+linking them into equivalence classes is split in two different commands:
+`pasta analyse` and `pasta rate`.
 Reason for the split is the comparatively long duration of the analysation
 phase. After `pasta analyse`, you might want to reuse the results of the
 analysation and run `pasta rate` for several times on the same data set.
 
-The detection phase is split in five steps:
+The detection phase is split in four steps:
 1. Initialisation of similar patches on the patch stacks
    ```
    $ ./pasta analyse init
@@ -76,16 +77,11 @@ The detection phase is split in five steps:
    $ ./pasta analyse upstream
    $ ./pasta rate
    ```
-5. Finally, merge the results of the equivalence classes of the stacks and their
-   corresponding upstream candidates by running
-   ```
-   $ ./pasta analyse finish
-   ```
 
 This will create a `patch-groups` file inside the resources directory of your
 projecta. Each line represents a group of similar patches, commit hashes are
-separated by whitespaces. A line can optionally end with ' => ' and point to an
-upstream commit hash, if this group is connected to an upstream commit hash.
+separated by whitespaces. A line can optionally end with ' => ' and point to
+upstream commit hash(es).
 
 ### Run statistics
 After **PaStA** created the `patch-groups` file, you can run some predefined
