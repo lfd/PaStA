@@ -22,6 +22,6 @@ from .EquivalenceClass import EquivalenceClass
 from .PatchEvaluation import EvaluationResult, EvaluationType, evaluate_commit_list, SimRating, evaluate_commit_pair
 from .Config import Thresholds
 from .Util import format_date_ymd, load_commit_hashes, get_date_selector, getch,\
-    show_commit, show_commits, parse_date_ymd, printn, done
+    show_commit, show_commits, parse_date_ymd, printn, done, get_first_upstream
 from .PatchDynamics import PatchFlow, PatchComposition
 from .Export import Export

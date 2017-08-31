@@ -177,3 +177,10 @@ def printn(str):
 
 def done():
     print(' [done]')
+
+
+def get_first_upstream(repo, patch_groups, commit):
+    tags = patch_groups.get_tagged(commit)
+    if tags:
+        return min(tags, key=lambda x: repo[x].commit_date)
+    return None
