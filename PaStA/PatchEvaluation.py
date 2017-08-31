@@ -128,26 +128,18 @@ class FalsePositives:
             for origin, false_positives in self._false_positives.items():
                 for fp in false_positives:
                     if origin in equivalence_class and \
-                        equivalence_class.get_property(origin) == fp:
+                        fp in equivalence_class.get_tagged(origin):
                         banner('Inconsistencies detected. The following patch '
                                'on the patch stack is linked to an upstream '
                                'patch though being markes as false positive:')
                         print('%s => %s' % (origin, fp))
         else:
             for fp_group in self._false_positives:
-                ids = {hash: equivalence_class.get_equivalence_id(hash) for hash in fp_group}
-                res = dict()
-                for hash, id in ids.items():
-                    if id not in res:
-                        res[id] = []
-                    res[id].append(hash)
-
-                for hashes in res.values():
-                    if len(hashes) > 1:
-                        banner('Inconsistencies detected. The following patches '
-                               'are marked as related and marked as '
-                               'false-positives:')
-                        print(hashes)
+                if not equivalence_class.is_unrelated(*fp_group):
+                    banner('Inconsistencies detected. The following patches '
+                           'are marked as related and marked as '
+                           'false-positives:')
+                    print(fp_group)
 
 
 class SimRating:
@@ -319,14 +311,18 @@ class EvaluationResult(dict):
                             break
 
                 if yns == 'y':
-                    if self.eval_type == EvaluationType.Upstream or self.eval_type == EvaluationType.Mailinglist:
-                        equivalence_class.set_property(orig_commit_hash, cand_commit_hash)
-                        # Upstream rating can not have multiple candidates. So break after the first match
+                    equivalence_class.insert(orig_commit_hash, cand_commit_hash)
+                    if self.eval_type == EvaluationType.Upstream or\
+                        self.eval_type == EvaluationType.Mailinglist:
+                        equivalence_class.tag(cand_commit_hash)
+                        # Upstream rating can not have multiple candidates.
+                        # So break after the first match
+                        # TODO really?
                         break
-                    else:
-                        equivalence_class.insert(orig_commit_hash, cand_commit_hash)
+
                 elif yns == 'n':
-                    self.fp.mark(equivalence_class, orig_commit_hash, cand_commit_hash)
+                    self.fp.mark(equivalence_class, orig_commit_hash,
+                                 cand_commit_hash)
 
         equivalence_class.optimize()
 

@@ -11,202 +11,141 @@ the COPYING file in the top-level directory.
 """
 
 
-class PropertyList(list):
-    """
-    Just a list that has an additional property
-    """
-    def __init__(self, *args, **kwargs):
-        list.__init__(self, *args, **kwargs)
-        self._property = None
-
-    @property
-    def property(self):
-        return self._property
-
-    @property.setter
-    def property(self, property):
-        self._property = property
-
-
 class EquivalenceClass:
-    PROPERTY_SEPARATOR = ' => '
+    SEPARATOR = ' => '
 
     def __init__(self):
-        self.forward_lookup = {}
-        self.property_lookup = {}
-        self.transitive_list = []
-
-    def insert_single(self, key):
-        if key not in self.forward_lookup:
-            self.transitive_list.append(PropertyList([key]))
-            new_id = len(self.transitive_list) - 1
-            self.forward_lookup[key] = new_id
-            return new_id
-        return self.forward_lookup[key]
-
-    def insert(self, key1, key2):
-        id1 = key1 in self.forward_lookup
-        id2 = key2 in self.forward_lookup
-
-        if not id1 and not id2:
-            self.transitive_list.append(PropertyList([key1, key2]))
-            id = len(self.transitive_list) - 1
-            self.forward_lookup[key1] = id
-            self.forward_lookup[key2] = id
-            return id
-        elif id1 and id2:
-            # Get indices
-            id1 = self.forward_lookup[key1]
-            id2 = self.forward_lookup[key2]
-
-            # if indices equal, then we have nothing to do
-            if id1 == id2:
-                return id1
-
-            # next thing is to check properties
-            prop1 = self.transitive_list[id1].property
-            prop2 = self.transitive_list[id2].property
-
-            # remove keys from property_lookup, if they exist
-            self.property_lookup.pop(prop1, None)
-            self.property_lookup.pop(prop2, None)
-
-            # select resulting property
-            if prop1 is None or prop2 is None:
-                result_property = prop1 or prop2
-            else:
-                # TODO Think of a property data structure that supports multiple elements
-                if prop1 != prop2:
-                    print('Warning: Merging equivalence classes with different properties!')
-                # On collission, choose the first property
-                result_property = prop1
-
-            # merge lists
-            self.transitive_list[id1] += self.transitive_list[id2]
-            self.transitive_list[id1].property = result_property
-            self.property_lookup[result_property] = id1
-
-            # remove orphaned list
-            self.transitive_list[id2] = PropertyList()
-
-            # update all entries
-            for i in self.transitive_list[id1]:
-                self.forward_lookup[i] = id1
-
-            # return resulting id1
-            return id1
-        elif id1:
-            id = self.forward_lookup[key1]
-            self.transitive_list[id].append(key2)
-            self.forward_lookup[key2] = id
-            return id
-        else:
-            id = self.forward_lookup[key2]
-            self.transitive_list[id].append(key1)
-            self.forward_lookup[key1] = id
-            return id
-
-    def merge(self, other):
-        for i in other.transitive_list:
-            base = i[0]
-            for j in i[1:]:
-                self.insert(base, j)
-        self.optimize()
+        self.classes = list()
+        self.lookup = dict()
+        self.tags = set()
 
     def optimize(self):
-        # Get optimized list by filtering orphaned elements
-        self.transitive_list = list(filter(None, self.transitive_list))
+        # get optimized list by filtering orphaned elements
+        self.classes = list(filter(None, self.classes))
 
-        # Reset lookup table
-        self.forward_lookup = {}
-        self.property_lookup = {}
+        # reset lookup table
+        self.lookup = dict()
 
-        # Sort inner lists
-        for i in self.transitive_list:
-            i.sort()
-        # Sort outer list
-        self.transitive_list.sort()
-
-        # Recreate the forward lookup dictionary
-        for i, keylist in enumerate(self.transitive_list):
-            if keylist.property:
-                self.property_lookup[keylist.property] = i
+        # recreate the lookup dictionary
+        for i, keylist in enumerate(self.classes):
             for key in keylist:
-                self.forward_lookup[key] = i
+                self.lookup[key] = i
 
-    def is_related(self, key1, key2):
-        if key1 in self.forward_lookup and key2 in self.forward_lookup:
-            return self.forward_lookup[key1] == self.forward_lookup[key2]
-        if key1 in self.forward_lookup:
-            return self.get_property(key1) == key2
-        if key2 in self.forward_lookup:
-            return self.get_property(key2) == key1
+    def is_related(self, *elems):
+        """
+        Returns True, if _all_ elements are in the same equivalence class
+        """
+        ids = {self.lookup.get(x, None) for x in elems}
+
+        if None in ids:
+            return False
+
+        return len(ids) == 1
+
+    def is_unrelated(self, *elems):
+        """
+        Returns True, if _all_ elements are in their own class
+        """
+        num_elems = len(elems)
+        ids = [self.lookup.get(x, None) for x in elems]
+        num_elems -= ids.count(None)
+        ids = set(ids)
+        ids.discard(None)
+
+        if len(ids) == num_elems:
+            return True
         return False
 
-    def set_property(self, key, property):
-        # maybe another equiv class already has that property.
-        # search for property and merge them, if possible.
-        if property in self.property_lookup:
-            # delete own property, if existent
-            if key in self.forward_lookup:
-                my_id = self.forward_lookup[key]
-                self.set_property_by_id(my_id, None)
 
-            id = self.property_lookup[property]
-            # Get the key of the other one
-            key_other = self.transitive_list[id][0]
-            # Combine both keys
-            self.insert(key, key_other)
-        else:
-            id = self.insert_single(key)
-            self.set_property_by_id(id, property)
+    def insert_single(self, elem):
+        if elem in self.lookup:
+            return self.lookup[elem]
 
-    def set_property_by_id(self, id, property):
-        if id < 0:
-            raise IndexError('Out of bounds')
-        # Check if the ID already has a property
-        old_property = self.transitive_list[id].property
+        self.classes.append(set([elem]))
+        id = len(self.classes) - 1
+        self.lookup[elem] = id
 
-        # Remove old property, if exists
-        if old_property:
-            del self.property_lookup[old_property]
-            print('Warning, replacing property %s -> %s!' %
-                  (old_property, property))
+        return id
 
-        self.transitive_list[id].property = property
+    def _merge_ids(self, *ids):
+        new_class = set()
+        new_id = min(ids)
 
-        # only insert to property_lookup if property is not none
-        if property:
-            self.property_lookup[property] = id
+        for id in ids:
+            for elem in self.classes[id]:
+                self.lookup[elem] = new_id
+            new_class |= self.classes[id]
+            self.classes[id] = set()
 
-    def get_property(self, key):
-        id = self.forward_lookup[key]
-        return self.get_property_by_id(id)
+        self.classes[new_id] = new_class
 
-    def get_property_by_id(self, id):
-        if id < 0:
-            raise IndexError('Out of bounds')
-        return self.transitive_list[id].property
+        # truncate empty trailing list elements
+        while not self.classes[-1]:
+            self.classes.pop()
+
+        return new_id
+
+    def insert(self, *elems):
+        ids = [self.insert_single(elem) for elem in elems]
+
+        # check if all elements are already in the same class
+        if len(set(ids)) == 1:
+            return ids[0]
+
+        return self._merge_ids(*ids)
 
     def get_equivalence_id(self, key):
-        if key in self.forward_lookup:
-            return self.forward_lookup[key]
-        for i in self:
-            if i.property and i.property == key:
-                return self.forward_lookup[i[0]]
-        raise IndexError('Unable to find equivalence id for %s' % key)
+        return self.lookup[key]
+
+    def tag(self, key, tag=True):
+        if tag is True:
+            self.tags.add(key)
+        else:
+            self.tags.discard(key)
+
+    def get_tagged(self, key=None):
+        """
+        Returns all tagged entries that are related to key.
+
+        If key is not specified, this function returns all tags.
+        """
+        if key:
+            return self.tags.intersection(self.classes[self.lookup[key]])
+        return self.tags
+
+    def has_tag(self, key):
+        return key in self.tags
+
+    def __str__(self):
+        retval = str()
+
+        untagged_list = [sorted(x) for x in self.iter_untagged()]
+        untagged_list.sort()
+
+        for untagged in untagged_list:
+            tagged = self.get_tagged(untagged[0])
+            retval += ' '.join(sorted([str(x) for x in untagged]))
+            if len(tagged):
+                retval += EquivalenceClass.SEPARATOR + \
+                          ' '.join(sorted([str(x) for x in tagged]))
+            retval += '\n'
+
+        return retval
 
     def get_representative_system(self, compare_function):
         """
-        Return a complete representative system of the equivalence class
+        Return a complete representative system of the equivalence class. Only
+        untagged entries are considered.
 
-        :param compare_function: a function that compares two elements of an equivalence class
-        :return:
+        :param compare_function: a function that compares two elements of an
+                                 equivalence class
         """
         retval = set()
-        for equivclass in self.transitive_list:
-            if len(equivclass) == 0:
+        for equivclass in self.iter_untagged():
+            equivclass = list(equivclass)
+            if not equivclass:
                 continue
+
             if len(equivclass) == 1:
                 retval.add(equivclass[0])
                 continue
@@ -219,34 +158,28 @@ class EquivalenceClass:
 
         return retval
 
-    def get_commit_hashes(self, key):
-        """
-        :param key: commit hash
-        :return: Returns a set of all related commit hashes
-        """
-        id = self.forward_lookup[key]
-        return self.get_commit_hashes_by_id(id)
 
-    def get_commit_hashes_by_id(self, id):
-        if id < 0:
-            raise IndexError('Out of bounds')
-        return set(self.transitive_list[id])
 
-    def get_all_commit_hashes(self):
-        """
-        :return: Returns a set of all commit hashes managed by the object
-        """
-        retval = []
-        for i in self.transitive_list:
-            retval += i
-        return set(retval)
+    def __iter__(self):
+        for elem in self.classes:
+            if not elem:
+                continue
+            yield elem
+
+    def iter_untagged(self):
+        for elem in self.classes:
+            untagged = elem - self.tags
+            if not untagged:
+                continue
+            yield untagged
+
+    def __contains__(self, item):
+        return item in self.lookup
 
     def to_file(self, filename):
-        # Optimizing before writing keeps uniformity of data
         self.optimize()
         with open(filename, 'w') as f:
             f.write(str(self))
-            f.close()
 
     @staticmethod
     def from_file(filename, must_exist=False):
@@ -264,50 +197,15 @@ class EquivalenceClass:
         if not (content and len(content)):
             return retval
 
-        # split by linebreak
         content = list(filter(None, content.splitlines()))
-        for i in content:
-            # Search for property
-            property = None
-            if EquivalenceClass.PROPERTY_SEPARATOR in i:
-                i, property = i.split(EquivalenceClass.PROPERTY_SEPARATOR)
+        content = [(lambda x: (x[0].split(' ') if x[0] else [],
+                               x[1].split(' ') if len(x) == 2 else []))
+                   (x.split(EquivalenceClass.SEPARATOR))
+                   for x in content]
 
-            # split eache line by whitespace
-            commit_hashes = i.split(' ')
+        for untagged, tagged in content:
+            retval.insert(*(untagged + tagged))
+            for tag in tagged:
+                retval.tag(tag)
 
-            # choose first element to be a reference
-            base = commit_hashes[0]
-            # insert this single reference
-            retval.insert_single(base)
-
-            # Set all other elements
-            for commit_hash in commit_hashes[1:]:
-                retval.insert(base, commit_hash)
-
-            # Set property, if existing
-            if property:
-                retval.set_property(base, property)
-
-        retval.optimize()
         return retval
-
-    def __iter__(self):
-        self.optimize()
-        for i in self.transitive_list:
-            yield i
-
-    def __str__(self):
-        self.optimize()
-        retval = ''
-        for i in self.transitive_list:
-            retval += ' '.join(map(str, i))
-            if i.property:
-                retval += EquivalenceClass.PROPERTY_SEPARATOR + str(i.property)
-            retval += '\n'
-        return retval
-
-    def __contains__(self, key):
-        return key in self.forward_lookup
-
-    def num_classes(self):
-        return len([x for x in self.transitive_list if x])

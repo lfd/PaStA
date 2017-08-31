@@ -244,7 +244,7 @@ def create_patch_groups(config):
                                                   must_exist=True)
 
     # perform some consistency checks before creating the patch groups
-    for i in similar_upstream:
+    for i in similar_upstream.iter_untagged():
         if len(i) != 1:
             print('Consistency error in similar_upstream file: '
                   'Multiple patches are mapped to the same upstream: %s' % i)
@@ -271,13 +271,11 @@ def create_patch_groups(config):
 
     # Merge upstream results and patch group list
     for i in similar_upstream:
-        up = patch_groups.get_property(i[0])
-        if up is not None:
-            print('Error: Patch group %s already mapped to upstream patch %s' %
-                  (i[0], up))
-            print('Unable to overwrite with %s. Exiting.' % i.property)
-            quit()
-        patch_groups.set_property(i[0], i.property)
+        patch_groups.insert(*i)
+
+    # maintain list of tags
+    for tag in similar_upstream.get_tagged():
+        patch_groups.tag(tag)
 
     printn('Writing Patch Group file... ')
     patch_groups.to_file(config.f_patch_groups)
