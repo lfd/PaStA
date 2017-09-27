@@ -1,0 +1,15 @@
+{%extends "bootstrap/base.html" %}
+
+{% block title %}PaStA Web - {{ title }}{% endblock %}
+
+{% block navbar %}
+{{nav.mynavbar.render()}}
+{% endblock %}
+
+{%- block content %}
+{{super()}}
+{%- block footer %}
+<br><br><br>
+<footer>&copy; 2017 OTH Regensburg</footer>
+{%- endblock footer %}
+{%- endblock content %}

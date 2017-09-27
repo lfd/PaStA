@@ -23,6 +23,10 @@ Requirements
 - R (tikzDevice, ggplot2)
 - fuzzywuzzy + python-levenshtein
 - procmail
+- flask
+  - flask-wtf
+  - flask-bootstrap
+  - flask-nav
 
 Getting started
 ---------------

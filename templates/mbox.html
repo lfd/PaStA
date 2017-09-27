@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% from "mbox_input.html" import render_mbox_form %}
+
+{% block content %}
+<h1 class="text-center">Project: {{ project }}</h1>
+{% if base %}
+<div class="container">
+    And this is the history of<br>
+    <h4>
+        <span style="font-family:monospace;">
+            {{ base.commit_hash }}
+            <a target="_blank" href="{{ url_for('view', id=base.commit_hash) }}" class="btn btn-info" role="button">View</a>
+        </span>
+    </h4>
+    <hr>
+    {% if history %}
+        {% for element in history %}
+                <h5>
+                    {% if element[4] == True %}
+                        <span style="font-family:monospace; font-weight:bold;">
+                    {% else %}
+                        <span style="font-family:monospace">
+                    {% endif %}
+                    <small class="text-muted">{{ element[1] }}</small>
+                    {{ element[2] }}
+                    </span>
+                    {% for i in element[3] %}
+                        <span class="badge badge-secondary">{{ i }}</span>
+                    {% endfor %}
+                    <a target="_blank" href="{{ url_for('view', id=element[0]) }}" class="btn btn-info" role="button">View</a>
+                </h5>
+        {% endfor %}
+        <hr>
+    {% else %}
+        <h4>Meh, sorry, nothing found...</h4>
+    {% endif %}
+</div>
+{% endif %}
+
+{{ render_mbox_form(lookup_form) }}
+
+{{ super() }}
+{% endblock %}

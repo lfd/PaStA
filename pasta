@@ -37,6 +37,7 @@ from bin.pasta_statistics import statistics
 from bin.pasta_compare_stacks import compare_stacks
 from bin.pasta_patch_descriptions import patch_descriptions
 from bin.pasta_upstream_history import pasta_upstream_history
+from bin.pasta_web import web
 
 
 __author__ = 'Ralf Ramsauer'
@@ -71,6 +72,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  patch_descriptions\n'
           '  ripup\n'
           '  upstream_history\n'
+          '  web\n'
           '\n'
           'If -c is not provided, PaStA will choose ./config as config file\n'
           '\n'
@@ -128,6 +130,8 @@ def main(argv):
         ripup(config, sub, argv)
     elif sub == 'upstream_history':
         pasta_upstream_history(config, sub, argv)
+    elif sub == 'web':
+        web(config, sub, argv)
     else:
         print('Unknown command: %s' % sub)
         usage(me)
