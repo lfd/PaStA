@@ -22,6 +22,7 @@ Requirements
 - git-python (for PaStA-resources and patch_descriptions only)
 - R (tikzDevice, ggplot2)
 - fuzzywuzzy + python-levenshtein
+- procmail
 
 Getting started
 ---------------
