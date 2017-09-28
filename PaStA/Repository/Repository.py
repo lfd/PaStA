@@ -39,7 +39,7 @@ def _retrieve_commit_repo(repo, commit_hash):
     commit_date = datetime.fromtimestamp(commit.commit_time)
 
     # Respect timezone offsets?
-    return Commit(commit_hash,
+    return Commit(commit.hex,
                   commit.message,
                   _retrieve_diff(repo, commit_hash),
                   commit.author.name, commit.author.email, author_date,
@@ -110,7 +110,9 @@ class Repository:
             raise KeyError('Commit or Mail not found: %s' % commit_hash)
 
         # store commit in local cache
-        self.ccache[commit_hash] = commit
+        # use commit.commit_hash instead of commit_hash, because commit_hash
+        # might be abbreviated.
+        self.ccache[commit.commit_hash] = commit
 
         return commit
 
