@@ -21,6 +21,8 @@ details.
 import sys
 import errno
 
+from copy import deepcopy
+
 from PaStA import Config
 
 from bin.pasta_analyse import analyse
@@ -120,4 +122,4 @@ def main(argv):
         usage(me)
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main(deepcopy(sys.argv))
