@@ -37,10 +37,14 @@ def _retrieve_commit_repo(repo, commit_hash):
     author_date = datetime.fromtimestamp(commit.author.time)
     commit_date = datetime.fromtimestamp(commit.commit_time)
 
+    # default: diff is empty. This filters merge commits and commits with no
+    # parents
+    diff = ''
+    if len(commit.parents) == 1:
+        diff = repo.diff(commit.parents[0], commit).patch
+
     # Respect timezone offsets?
-    return Commit(commit.hex,
-                  commit.message,
-                  _retrieve_diff(repo, commit_hash),
+    return Commit(commit.hex, commit.message, diff,
                   commit.author.name, commit.author.email, author_date,
                   commit.committer.name, commit.committer.email, commit_date)
 
@@ -56,16 +60,6 @@ def _retrieve_commit_mail(repo, message_id):
     _, commit = ret
 
     return commit
-
-
-def _retrieve_diff(repo, commit_hash):
-    commit = repo[commit_hash]
-    if len(commit.parents) == 1:
-        diff = repo.diff(commit.parents[0], commit).patch
-    else:
-        # Filter merge commits and commits with no parents
-        diff = None
-    return diff or ''
 
 
 def _load_commit_subst(commit_hash):
