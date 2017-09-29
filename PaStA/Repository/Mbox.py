@@ -109,10 +109,10 @@ def parse_mail(d_mbox_split, index_entry):
     message_id = index_entry[0]
 
     try:
-        date = time.mktime(email.utils.parsedate(mail['Date']))
+        date = email.utils.parsedate_to_datetime(mail['Date'])
     except:
         # assume epoch
-        date = 0
+        date = datetime.datetime.utcfromtimestamp(0)
 
     payload = mail.get_payload()
 
