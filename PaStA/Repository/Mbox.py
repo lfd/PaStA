@@ -103,10 +103,9 @@ def parse_payload(payload):
     return msg, diff
 
 
-def parse_mail(d_mbox_split, index_entry):
-    filename = os.path.join(d_mbox_split, index_entry[1][1], index_entry[1][2])
+def parse_mail(filename):
     mail = mailbox.mbox(filename, create=False)[0]
-    message_id = index_entry[0]
+    message_id = mail['Message-ID']
 
     try:
         date = email.utils.parsedate_to_datetime(mail['Date'])
