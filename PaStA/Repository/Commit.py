@@ -14,19 +14,23 @@ import re
 from .Patch import Diff
 
 
-class Commit:
+class MessageDiff:
+    """
+    An abstract class that consists of a message, and a diff.
+    """
+
     SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:'
                                  r'|Reported-by:|Tested-by:|LKML-Reference:|Patch:)'
                                  r'|Wrecked-off-by:'),
                                 re.IGNORECASE)
+
     REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
 
-    def __init__(self, commit_hash, message, diff,
-                 author, author_email, author_date,
-                 committer, committer_email, commit_date,
-                 note=None):
+    def __init__(self, message, diff, author_name, author_email, author_date):
 
-        self.commit_hash = commit_hash
+        self.author = author_name
+        self.author_email = author_email
+        self.author_date = author_date
 
         if isinstance(message, list):
             self.raw_message = '\n'.join(message)
@@ -46,14 +50,6 @@ class Commit:
         else:
             self.message = filtered
 
-        self.committer = committer
-        self.committer_email = committer_email
-        self.commit_date = commit_date
-
-        self.author = author
-        self.author_email = author_email
-        self.author_date = author_date
-
         # Is a revert message?
         self.is_revert = bool(Commit.REVERT_REGEX.search(self.raw_message))
 
@@ -64,8 +60,23 @@ class Commit:
             self.raw_diff = diff
             self.diff = Diff.parse_diff(diff)
 
-        self.note = note
-
     @property
     def subject(self):
         return self.message[0]
+
+
+class Commit(MessageDiff):
+    def __init__(self, commit_hash, message, diff,
+                 author_name, author_email, author_date,
+                 committer, committer_email, commit_date,
+                 note=None):
+        super(Commit, self).__init__(message, diff, author_name, author_email,
+                                     author_date)
+
+        self.commit_hash = commit_hash
+
+        self.committer = committer
+        self.committer_email = committer_email
+        self.commit_date = commit_date
+
+        self.note = note
