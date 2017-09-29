@@ -15,7 +15,6 @@ import git
 import os
 import pickle
 import pygit2
-import sys
 
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
