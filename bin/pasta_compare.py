@@ -60,6 +60,7 @@ def compare(config, prog, argv):
             print('Not related')
         getch()
 
+
 if __name__ == '__main__':
     config = Config(sys.argv[1])
     compare(config, sys.argv[0], sys.argv[2:])
