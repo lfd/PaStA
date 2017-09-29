@@ -19,6 +19,8 @@ import sys
 
 from datetime import datetime
 
+from .Repository.Commit import Commit, PatchMail
+
 
 def get_date_selector(repo, patch_stack_definition, selector):
     # Date selector "Stack Release Date"
@@ -106,12 +108,15 @@ def _format_message(commit):
     message = ['Commit:     %s' % commit.commit_hash,
                'Author:     %s <%s>' %
                     (_fix_encoding(commit.author), commit.author_email),
-               'AuthorDate: %s' % commit.author_date,
-               'Committer:   %s <%s>' %
+               'AuthorDate: %s' % commit.author_date]
+    if isinstance(commit, Commit):
+        message += ['Committer:   %s <%s>' %
                     (_fix_encoding(commit.committer), commit.committer_email),
-               'CommitDate: %s' % commit.commit_date,
-               'Note: %s' % commit.note,
-               ''] + _fix_encoding(commit.raw_message).split('\n')
+                    'CommitDate: %s' % commit.commit_date]
+    if isinstance(commit, PatchMail):
+        message += ['Mail Subject: %s' % commit.subject]
+
+    message += [''] + _fix_encoding(commit.raw_message).split('\n')
     return message
 
 

@@ -19,11 +19,11 @@ import time
 
 from email.charset import CHARSETS
 
-from .Commit import Commit
+from .Commit import PatchMail
 
 
 MAIL_FROM_REGEX = re.compile(r'(.*) <(.*)>')
-PATCH_SUBJECT_REGEX = re.compile(r'\[(.*)\]:? ?(.*)')
+PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
 
 
 def parse_single_message(mail):
@@ -136,12 +136,10 @@ def parse_mail(filename):
         msg, diff = retval
         # Insert message subject
 
-        note = None
         subject = mail['Subject']
         match = PATCH_SUBJECT_REGEX.match(subject)
         if match:
-            note = match.group(1)
-            subject = match.group(2)
+            subject = match.group(1)
 
         msg = [subject, ''] + msg
         match = MAIL_FROM_REGEX.match(mail['From'])
@@ -152,15 +150,13 @@ def parse_mail(filename):
             author = mail['From']
             author_email = ''
 
-        commit = Commit(message_id, msg, diff,
-                        author, author_email, date,
-                        'NOT COMMITTED', 'NOT COMMITTED', datetime.datetime.fromtimestamp(0),
-                        note)
+        patchmail = PatchMail(message_id, msg, diff,
+                              author, author_email, date, mail['Subject'])
     except:
         print('Diff parser error: %s' % message_id)
         return None
 
-    return message_id, commit
+    return message_id, patchmail
 
 
 def fix_encoding(string):
