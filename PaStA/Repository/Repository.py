@@ -182,6 +182,15 @@ class Repository:
     def __getitem__(self, item):
         return self.get_commit(item)
 
+    def __contains__(self, item):
+        if item in self.mbox_index:
+            return True
+
+        try:
+            return item in self.repo
+        except:
+            return False
+
     def get_commithash_range(self, range):
         """
         Gets all commithashes within a certain range
