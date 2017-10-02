@@ -110,7 +110,7 @@ def _format_message(commit):
                     (_fix_encoding(commit.author), commit.author_email),
                'AuthorDate: %s' % commit.author_date]
     if isinstance(commit, Commit):
-        message += ['Committer:   %s <%s>' %
+        message += ['Committer:  %s <%s>' %
                     (_fix_encoding(commit.committer), commit.committer_email),
                     'CommitDate: %s' % commit.commit_date]
     if isinstance(commit, PatchMail):
