@@ -53,8 +53,7 @@ def _retrieve_commit_repo(repo, commit_hash):
 
 
 def _retrieve_commit_mail(repo, message_id):
-    _, date_str, md5 = repo.mbox_index[message_id]
-    filename = os.path.join(repo.d_mbox_split, date_str, md5)
+    filename = repo.get_mail_filename(message_id)
 
     ret = parse_mail(filename)
     if not ret:
@@ -237,6 +236,10 @@ class Repository:
             return True
 
         return False
+
+    def get_mail_filename(self, message_id):
+        _, date_str, md5 = self.mbox_index[message_id]
+        return os.path.join(self.d_mbox_split, date_str, md5)
 
     def mbox_get_message_ids(self, time_window):
         return [x[0] for x in self.mbox_index.items()
