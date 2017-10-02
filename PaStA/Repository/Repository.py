@@ -16,7 +16,7 @@ import os
 import pickle
 import pygit2
 
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from multiprocessing import Pool, cpu_count
 from subprocess import call
 
@@ -34,8 +34,11 @@ def _retrieve_commit_repo(repo, commit_hash):
 
     commit = repo[commit_hash]
 
-    author_date = datetime.fromtimestamp(commit.author.time)
-    commit_date = datetime.fromtimestamp(commit.commit_time)
+    auth_tz = timezone(timedelta(minutes=commit.author.offset))
+    commit_tz = tz=timezone(timedelta(minutes=commit.commit_time_offset))
+
+    author_date = datetime.fromtimestamp(commit.author.time, auth_tz)
+    commit_date = datetime.fromtimestamp(commit.commit_time, commit_tz)
 
     # default: diff is empty. This filters merge commits and commits with no
     # parents
