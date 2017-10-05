@@ -152,8 +152,7 @@ class Repository:
 
             _tmp_repo = None
         else:
-            result = map(lambda x: (x, self._load_commit(x)),
-                         worklist)
+            result = list(map(lambda x: (x, self._load_commit(x)), worklist))
 
         invalid = {key for (key, value) in result if value is None}
         result = {key: value for (key, value) in result if value is not None}
