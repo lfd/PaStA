@@ -11,9 +11,8 @@ the COPYING file in the top-level directory.
 """
 import re
 
-from datetime import datetime, timezone, timedelta
-
 from .Patch import Diff
+from ..Util import _fix_encoding
 
 
 class MessageDiff:
@@ -63,49 +62,15 @@ class MessageDiff:
             self.raw_diff = diff
             self.diff = Diff.parse_diff(diff)
 
+    def format_message(self, custom):
+        message = ['Commit:     %s' % self.commit_hash,
+                   'Author:     %s <%s>' %
+                   (_fix_encoding(self.author), self.author_email),
+                   'AuthorDate: %s' % self.author_date]
+        message += custom + [''] + _fix_encoding(self.raw_message).split('\n')
+
+        return message
+
     @property
     def subject(self):
         return self.message[0]
-
-
-class PatchMail(MessageDiff):
-    def __init__(self, message_id, message, diff,
-                 author_name, author_email, author_date,
-                 mail_subject):
-        super(PatchMail, self).__init__(message, diff, author_name,
-                                        author_email, author_date)
-
-        # Simply name it commit_hash, otherwise we would have to refactor
-        # tons of code.
-        self.commit_hash = message_id
-
-        self.mail_subject = mail_subject
-
-
-class Commit(MessageDiff):
-    def __init__(self, repo, commit_hash):
-
-        commit = repo[commit_hash]
-
-        auth_tz = timezone(timedelta(minutes=commit.author.offset))
-        commit_tz = timezone(timedelta(minutes=commit.commit_time_offset))
-
-        author_date = datetime.fromtimestamp(commit.author.time, auth_tz)
-        commit_date = datetime.fromtimestamp(commit.commit_time, commit_tz)
-
-        # default: diff is empty. This filters merge commits and commits with no
-        # parents
-        diff = ''
-        if len(commit.parents) == 1:
-            diff = repo.diff(commit.parents[0], commit).patch
-
-        # Respect timezone offsets?
-        self.commit_hash = commit.hex
-
-        self.committer = commit.committer.name
-        self.committer_email = commit.committer.email
-        self.commit_date = commit_date
-
-        super(Commit, self).__init__(commit.message, diff, commit.author.name,
-                                     commit.author.email,
-                                     author_date)

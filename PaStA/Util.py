@@ -19,8 +19,6 @@ import sys
 
 from datetime import datetime
 
-from .Repository.Commit import Commit, PatchMail
-
 
 def get_date_selector(repo, patch_stack_definition, selector):
     # Date selector "Stack Release Date"
@@ -104,22 +102,6 @@ def _fix_encoding(string):
     return string.encode('utf-8').decode('ascii', 'ignore')
 
 
-def _format_message(commit):
-    message = ['Commit:     %s' % commit.commit_hash,
-               'Author:     %s <%s>' %
-                    (_fix_encoding(commit.author), commit.author_email),
-               'AuthorDate: %s' % commit.author_date]
-    if isinstance(commit, Commit):
-        message += ['Committer:  %s <%s>' %
-                    (_fix_encoding(commit.committer), commit.committer_email),
-                    'CommitDate: %s' % commit.commit_date]
-    if isinstance(commit, PatchMail):
-        message += ['Mail Subject: %s' % commit.subject]
-
-    message += [''] + _fix_encoding(commit.raw_message).split('\n')
-    return message
-
-
 def pager(text, enable_pager=True):
     _, lines = shutil.get_terminal_size()
     if text.count('\n') > lines and enable_pager:
@@ -134,7 +116,7 @@ def pager(text, enable_pager=True):
 
 def show_commit(repo, hash, enable_pager=True):
     commit = repo[hash]
-    message = _format_message(commit) + commit.raw_diff.split('\n')
+    message = commit.format_message() + commit.raw_diff.split('\n')
     pager('\n'.join(message), enable_pager)
 
 
@@ -155,8 +137,8 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
     left_commit = repo[left_hash]
     right_commit = repo[right_hash]
 
-    left_message = _format_message(left_commit)
-    right_message = _format_message(right_commit)
+    left_message = left_commit.format_message()
+    right_message = right_commit.format_message()
 
     left_diff = left_commit.raw_diff.split('\n')
     right_diff = right_commit.raw_diff.split('\n')

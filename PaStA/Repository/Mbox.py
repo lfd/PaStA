@@ -18,11 +18,28 @@ import re
 
 from email.charset import CHARSETS
 
-from .Commit import PatchMail
-
+from .MessageDiff import MessageDiff
 
 MAIL_FROM_REGEX = re.compile(r'(.*) <(.*)>')
 PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
+
+
+class PatchMail(MessageDiff):
+    def __init__(self, message_id, message, diff,
+                 author_name, author_email, author_date,
+                 mail_subject):
+        super(PatchMail, self).__init__(message, diff, author_name,
+                                        author_email, author_date)
+
+        # Simply name it commit_hash, otherwise we would have to refactor
+        # tons of code.
+        self.commit_hash = message_id
+
+        self.mail_subject = mail_subject
+
+    def format_message(self):
+        custom = ['Mail Subject: %s' % self.subject]
+        return super(PatchMail, self).format_message(custom)
 
 
 def parse_single_message(mail):

@@ -16,15 +16,51 @@ import os
 import pickle
 import pygit2
 
+from datetime import datetime, timezone, timedelta
 from multiprocessing import Pool, cpu_count
 from subprocess import call
 
-from .Commit import Commit
+from .MessageDiff import MessageDiff
 from .Mbox import mbox_load_index, parse_mail
-from ..Util import done, printn
+from ..Util import done, printn, _fix_encoding
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
+
+
+class Commit(MessageDiff):
+    def __init__(self, repo, commit_hash):
+
+        commit = repo[commit_hash]
+
+        auth_tz = timezone(timedelta(minutes=commit.author.offset))
+        commit_tz = timezone(timedelta(minutes=commit.commit_time_offset))
+
+        author_date = datetime.fromtimestamp(commit.author.time, auth_tz)
+        commit_date = datetime.fromtimestamp(commit.commit_time, commit_tz)
+
+        # default: diff is empty. This filters merge commits and commits with no
+        # parents
+        diff = ''
+        if len(commit.parents) == 1:
+            diff = repo.diff(commit.parents[0], commit).patch
+
+        # Respect timezone offsets?
+        self.commit_hash = commit.hex
+
+        self.committer = commit.committer.name
+        self.committer_email = commit.committer.email
+        self.commit_date = commit_date
+
+        super(Commit, self).__init__(commit.message, diff, commit.author.name,
+                                     commit.author.email,
+                                     author_date)
+
+    def format_message(self):
+        custom = ['Committer:  %s <%s>' %
+                  (_fix_encoding(self.committer), self.committer_email),
+                  'CommitDate: %s' % self.commit_date]
+        return super(Commit, self).format_message(custom)
 
 
 def _retrieve_commit_repo(repo, commit_hash):
