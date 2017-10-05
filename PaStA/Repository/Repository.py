@@ -22,7 +22,7 @@ from subprocess import call
 
 from .MessageDiff import MessageDiff
 from .Mbox import mbox_load_index, parse_mail
-from ..Util import done, printn, _fix_encoding
+from ..Util import done, printn, fix_encoding
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
@@ -58,7 +58,7 @@ class Commit(MessageDiff):
 
     def format_message(self):
         custom = ['Committer:  %s <%s>' %
-                  (_fix_encoding(self.committer), self.committer_email),
+                  (fix_encoding(self.committer), self.committer_email),
                   'CommitDate: %s' % self.commit_date]
         return super(Commit, self).format_message(custom)
 

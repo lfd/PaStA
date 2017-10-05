@@ -12,7 +12,7 @@ the COPYING file in the top-level directory.
 import re
 
 from .Patch import Diff
-from ..Util import _fix_encoding
+from ..Util import fix_encoding
 
 
 class MessageDiff:
@@ -65,9 +65,9 @@ class MessageDiff:
     def format_message(self, custom):
         message = ['Commit:     %s' % self.commit_hash,
                    'Author:     %s <%s>' %
-                   (_fix_encoding(self.author), self.author_email),
+                   (fix_encoding(self.author), self.author_email),
                    'AuthorDate: %s' % self.author_date]
-        message += custom + [''] + _fix_encoding(self.raw_message).split('\n')
+        message += custom + [''] + fix_encoding(self.raw_message).split('\n')
 
         return message
 
