@@ -172,7 +172,7 @@ def parse_mail(filename):
         print('Diff parser error: %s' % message_id)
         return None
 
-    return message_id, patchmail
+    return patchmail
 
 
 def fix_encoding(string):

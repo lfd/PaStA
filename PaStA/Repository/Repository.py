@@ -73,13 +73,7 @@ def _retrieve_commit_repo(repo, commit_hash):
 def _retrieve_commit_mail(repo, message_id):
     filename = repo.get_mail_filename(message_id)
 
-    ret = parse_mail(filename)
-    if not ret:
-        return None
-
-    _, commit = ret
-
-    return commit
+    return parse_mail(filename)
 
 
 def _load_commit_subst(commit_hash):
