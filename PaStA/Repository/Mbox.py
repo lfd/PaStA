@@ -15,7 +15,6 @@ import email
 import mailbox
 import quopri
 import re
-import time
 
 from email.charset import CHARSETS
 
