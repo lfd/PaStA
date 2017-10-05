@@ -44,7 +44,8 @@ class MessageDiff:
         # Split by linebreaks and filter empty lines
         self.message = list(filter(None, self.message))
         # Filter signed-off-by lines
-        filtered = list(filter(lambda x: not Commit.SIGN_OFF_REGEX.match(x), self.message))
+        filtered = list(filter(lambda x: not MessageDiff.SIGN_OFF_REGEX.match(x),
+                               self.message))
 
         # if the filtered result is empty, then leave at least one line
         if not filtered:
@@ -53,7 +54,7 @@ class MessageDiff:
             self.message = filtered
 
         # Is a revert message?
-        self.is_revert = bool(Commit.REVERT_REGEX.search(self.raw_message))
+        self.is_revert = bool(MessageDiff.REVERT_REGEX.search(self.raw_message))
 
         if isinstance(diff, list):
             self.raw_diff = '\n'.join(diff)
