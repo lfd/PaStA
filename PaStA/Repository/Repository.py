@@ -63,19 +63,6 @@ class Commit(MessageDiff):
         return super(Commit, self).format_message(custom)
 
 
-def _retrieve_commit_repo(repo, commit_hash):
-    if commit_hash not in repo:
-        return None
-
-    return Commit(repo, commit_hash)
-
-
-def _retrieve_commit_mail(repo, message_id):
-    filename = repo.get_mail_filename(message_id)
-
-    return parse_mail(filename)
-
-
 def _load_commit_subst(commit_hash):
     return commit_hash, _tmp_repo._load_commit(commit_hash)
 
@@ -98,9 +85,12 @@ class Repository:
     def _load_commit(self, commit_hash):
         # check if the victim is an email
         if commit_hash[0] == '<':
-            return _retrieve_commit_mail(self, commit_hash)
+            return parse_mail(self.get_mail_filename(commit_hash))
         else:
-            return _retrieve_commit_repo(self.repo, commit_hash)
+            if commit_hash not in self.repo:
+                return None
+
+            return Commit(self.repo, commit_hash)
 
     def get_commit(self, commit_hash):
         """
