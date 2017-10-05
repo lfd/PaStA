@@ -11,6 +11,8 @@ the COPYING file in the top-level directory.
 """
 import re
 
+from datetime import datetime, timezone, timedelta
+
 from .Patch import Diff
 
 
@@ -80,17 +82,29 @@ class PatchMail(MessageDiff):
 
 
 class Commit(MessageDiff):
-    def __init__(self, commit_hash, message, diff,
-                 author_name, author_email, author_date,
-                 committer, committer_email, commit_date,
-                 note=None):
-        super(Commit, self).__init__(message, diff, author_name, author_email,
-                                     author_date)
+    def __init__(self, repo, commit_hash):
 
-        self.commit_hash = commit_hash
+        commit = repo[commit_hash]
 
-        self.committer = committer
-        self.committer_email = committer_email
+        auth_tz = timezone(timedelta(minutes=commit.author.offset))
+        commit_tz = timezone(timedelta(minutes=commit.commit_time_offset))
+
+        author_date = datetime.fromtimestamp(commit.author.time, auth_tz)
+        commit_date = datetime.fromtimestamp(commit.commit_time, commit_tz)
+
+        # default: diff is empty. This filters merge commits and commits with no
+        # parents
+        diff = ''
+        if len(commit.parents) == 1:
+            diff = repo.diff(commit.parents[0], commit).patch
+
+        # Respect timezone offsets?
+        self.commit_hash = commit.hex
+
+        self.committer = commit.committer.name
+        self.committer_email = commit.committer.email
         self.commit_date = commit_date
 
-        self.note = note
+        super(Commit, self).__init__(commit.message, diff, commit.author.name,
+                                     commit.author.email,
+                                     author_date)
