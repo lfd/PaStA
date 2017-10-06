@@ -228,7 +228,7 @@ class Repository:
             quit(-1)
 
     def get_mail_filename(self, message_id):
-        _, date_str, md5 = self.mbox_index[message_id]
+        _, date_str, md5, _ = self.mbox_index[message_id]
         return os.path.join(self.d_mbox, date_str, md5)
 
     def mbox_get_message_ids(self, time_window):

@@ -26,11 +26,14 @@ def mbox_prepare(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Prepare mailbox')
 
+    parser.add_argument('listname', metavar='listname', type=str,
+                        help='List name')
     parser.add_argument('filename', metavar='filename', type=str,
                         help='Mailbox filename')
 
     args = parser.parse_args(argv)
     filename = os.path.realpath(args.filename)
+    listname = args.listname
 
     # check if mailbox is already prepared
     if not os.path.isfile(filename):
@@ -40,7 +43,7 @@ def mbox_prepare(config, prog, argv):
     printn('Processing Mailbox...')
     cwd = os.getcwd()
     os.chdir(os.path.join(cwd, 'tools'))
-    call(['./process_mailbox.sh', filename, config.d_mbox])
+    call(['./process_mailbox.sh', listname, filename, config.d_mbox])
     os.chdir(cwd)
     done()
 

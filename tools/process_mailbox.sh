@@ -13,15 +13,19 @@ function die {
 	exit -1;
 }
 
-if [ "$#" -ne 2 ]; then
-	echo "Usage: $0 mailbox_file destination_directory"
+if [ "$#" -ne 3 ]; then
+	echo "Usage: $0 listname mailbox_file destination_directory"
 	echo
 	echo "This script splits up a mailbox file into seperate mail"
 	echo "files, placed into date-separated subdirectories."
 	exit 1
 fi
 
-BASEDIR=${2}
+LISTNAME=${1}
+BASEDIR=${3}
+LISTS=${3}/lists
 mkdir -p $BASEDIR || die "Unable to create basedir"
 
-formail -n $(nproc) -s <${1} ./process_mail.sh ${BASEDIR}
+formail -n $(nproc) -s <${2} ./process_mail.sh ${LISTNAME} ${BASEDIR}
+
+sort -u $LISTS -o $LISTS

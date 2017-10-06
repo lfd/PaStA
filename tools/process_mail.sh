@@ -10,7 +10,8 @@
 
 # Sorts one single mail. Invoked by process_mailbox.sh
 
-BASEDIR=$1
+LISTNAME=$1
+BASEDIR=$2
 TMP=$(mktemp)
 cat /dev/stdin > $TMP
 
@@ -54,6 +55,8 @@ if (($R > 0)); then
 	fi
 	echo "Success."
 fi
+
+echo "$ID $LISTNAME" >> ${BASEDIR}/lists
 
 DSTDIR="${BASEDIR}/${DATE}"
 DSTFILE="${DSTDIR}/${MD5}"

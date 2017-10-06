@@ -177,26 +177,45 @@ def parse_mail(filename):
 
 
 def mbox_load_index(d_mbox):
+    f_mbox_lists = os.path.join(d_mbox, 'lists')
     f_mbox_index = os.path.join(d_mbox, 'index')
-    print('Loading index...')
-    with open(f_mbox_index) as index:
-        index = index.read().split('\n')
-        # last element is empty
-        index.pop()
 
-    index = [tuple(x.split(' ')) for x in index]
-    index = {x[1]: (datetime.datetime.strptime(x[0], "%Y/%m/%d"), x[0], x[2])
-             for x in index}
+    def load_file(filename):
+        with open(filename) as f:
+            f = f.read().split('\n')
+            # last element is empty
+            f.pop()
+        f = [tuple(x.split(' ')) for x in f]
+
+        return f
+
+    print('Loading index...')
+    lists = dict()
+    for message_id, list_name in load_file(f_mbox_lists):
+        if message_id not in lists:
+            lists[message_id] = set()
+        lists[message_id].add(list_name)
+
+    index = load_file(f_mbox_index)
+    index = {x[1]: (datetime.datetime.strptime(x[0], "%Y/%m/%d"), x[0], x[2],
+                    lists[x[1]]) for x in index}
 
     return index
 
 
 def mbox_write_index(d_mbox, index):
+    f_mbox_lists = os.path.join(d_mbox, 'lists')
     f_mbox_index = os.path.join(d_mbox, 'index')
 
     items = sorted(index.items())
-    items = ['%s %s %s' % (x[1][1], x[0], x[1][2]) for x in items]
-    items = '\n'.join(items) + '\n'
+
+    index = ['%s %s %s' % (x[1][1], x[0], x[1][2]) for x in items]
+    index = '\n'.join(index) + '\n'
 
     with open(f_mbox_index, 'w') as f:
-        f.write(items)
+        f.write(index)
+
+    with open(f_mbox_lists, 'w') as f:
+        for message_id, (_, _, _, lists) in items:
+            for list in sorted(lists):
+                f.write('%s %s\n' % (message_id, list))
