@@ -81,8 +81,7 @@ class Config:
         self.repo_location = pasta.get('REPO')
         if not self.repo_location:
             raise RuntimeError('Location of repository not found')
-        self.repo_location = join(self._project_root,
-                                          self.repo_location)
+        self.repo_location = join(self._project_root, self.repo_location)
         self.repo = Repository(self.repo_location)
 
         self.upstream_range = pasta.get('UPSTREAM')
