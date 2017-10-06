@@ -72,7 +72,7 @@ class Repository:
         self.ccache = {}
         self.repo = pygit2.Repository(repo_location)
         self.mbox_index = None
-        self.d_mbox_split = None
+        self.d_mbox = None
 
     def _inject_commits(self, commit_dict):
         for key, val in commit_dict.items():
@@ -185,7 +185,7 @@ class Repository:
         return self.get_commit(item)
 
     def __contains__(self, item):
-        if item in self.mbox_index:
+        if self.mbox_index and item in self.mbox_index:
             return True
 
         try:
@@ -218,19 +218,18 @@ class Repository:
                 retval.append(stack_hash)
         return retval
 
-    def register_mailbox(self, d_mbox_split, f_mbox_index):
-        if os.path.isfile(f_mbox_index):
-            self.d_mbox_split = d_mbox_split
-            printn('Loading Mailbox index...')
-            self.mbox_index = mbox_load_index(f_mbox_index)
-            done()
-            return True
-
-        return False
+    def register_mailbox(self, d_mbox):
+        try:
+            self.d_mbox = d_mbox
+            self.mbox_index = mbox_load_index(d_mbox)
+        except Exception as e:
+            print('Unable to load mailbox: %s' % str(e))
+            print('Did you forget to run \'pasta mbox_prepare\'?')
+            quit(-1)
 
     def get_mail_filename(self, message_id):
         _, date_str, md5 = self.mbox_index[message_id]
-        return os.path.join(self.d_mbox_split, date_str, md5)
+        return os.path.join(self.d_mbox, date_str, md5)
 
     def mbox_get_message_ids(self, time_window):
         return [x[0] for x in self.mbox_index.items()

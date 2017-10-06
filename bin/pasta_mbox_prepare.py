@@ -40,7 +40,7 @@ def mbox_prepare(config, prog, argv):
     printn('Processing Mailbox...')
     cwd = os.getcwd()
     os.chdir(os.path.join(cwd, 'tools'))
-    call(['./process_mailbox.sh', filename, config.d_mailbox_split])
+    call(['./process_mailbox.sh', filename, config.d_mbox])
     os.chdir(cwd)
     done()
 

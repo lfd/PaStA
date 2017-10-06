@@ -78,13 +78,13 @@ def cache(config, prog, argv):
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if create_mbox:
-        config.fail_no_mailbox()
+        config.repo.register_mailbox(config.d_mbox)
 
         # load existing cache
         repo.load_ccache(config.f_ccache_mbox)
 
         # get overall mail index
-        index = mbox_load_index(config.f_mailbox_index)
+        index = mbox_load_index(config.d_mbox)
 
         # yay, we can treat emails just like ordinary commit hashes
         found, invalid = repo.cache_commits(index)
@@ -92,10 +92,10 @@ def cache(config, prog, argv):
         print('removing %d unparsable mails.' % len(invalid))
         for i in invalid:
             victim = index.pop(i)
-            filename = os.path.join(config.d_mailbox_split, victim[1], victim[2])
+            filename = os.path.join(config.d_mbox, victim[1], victim[2])
             os.remove(filename)
 
-        mbox_write_index(config.f_mailbox_index, index)
+        mbox_write_index(config.d_mbox, index)
 
         repo.export_ccache(config.f_ccache_mbox)
         repo.clear_commit_cache()

@@ -13,6 +13,7 @@ the COPYING file in the top-level directory.
 import datetime
 import email
 import mailbox
+import os
 import quopri
 import re
 
@@ -175,7 +176,9 @@ def parse_mail(filename):
     return patchmail
 
 
-def mbox_load_index(f_mbox_index):
+def mbox_load_index(d_mbox):
+    f_mbox_index = os.path.join(d_mbox, 'index')
+    print('Loading index...')
     with open(f_mbox_index) as index:
         index = index.read().split('\n')
         # last element is empty
@@ -188,7 +191,9 @@ def mbox_load_index(f_mbox_index):
     return index
 
 
-def mbox_write_index(f_mbox_index, index):
+def mbox_write_index(d_mbox, index):
+    f_mbox_index = os.path.join(d_mbox, 'index')
+
     items = sorted(index.items())
     items = ['%s %s %s' % (x[1][1], x[0], x[1][2]) for x in items]
     items = '\n'.join(items) + '\n'

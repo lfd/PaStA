@@ -208,7 +208,7 @@ def analyse_upstream(config, patch_groups, upstream_hashes):
 
 
 def analyse_mbox(config, mbox_time_window, upstream_hashes):
-    config.fail_no_mailbox()
+    config.repo.register_mailbox(config.d_mbox)
     repo = config.repo
 
     repo.load_ccache(config.f_ccache_mbox)
