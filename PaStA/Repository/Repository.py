@@ -20,7 +20,7 @@ from datetime import datetime, timezone, timedelta
 from multiprocessing import Pool, cpu_count
 
 from .MessageDiff import MessageDiff
-from .Mbox import mbox_load_index, parse_mail
+from .Mbox import mbox_load_index, PatchMail
 from ..Util import done, printn, fix_encoding
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
@@ -43,8 +43,10 @@ class Commit(MessageDiff):
         diff = ''
         if len(commit.parents) == 1:
             diff = repo.diff(commit.parents[0], commit).patch
+            # there may be empty commits
+            if not diff:
+                diff = ''
 
-        # Respect timezone offsets?
         self.commit_hash = commit.hex
 
         self.committer = commit.committer.name
@@ -83,13 +85,14 @@ class Repository:
 
     def _load_commit(self, commit_hash):
         # check if the victim is an email
-        if commit_hash[0] == '<':
-            return parse_mail(self.get_mail_filename(commit_hash))
-        else:
-            if commit_hash not in self.repo:
-                return None
-
-            return Commit(self.repo, commit_hash)
+        try:
+            if commit_hash[0] == '<':
+                return PatchMail(self.get_mail_filename(commit_hash))
+            else:
+                return Commit(self.repo, commit_hash)
+        except Exception as e:
+            print('Caught an error for %s: %s' % (commit_hash, str(e)))
+            return None
 
     def get_commit(self, commit_hash):
         """

@@ -26,17 +26,50 @@ PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
 
 
 class PatchMail(MessageDiff):
-    def __init__(self, message_id, message, diff,
-                 author_name, author_email, author_date,
-                 mail_subject):
-        super(PatchMail, self).__init__(message, diff, author_name,
-                                        author_email, author_date)
+    def __init__(self, filename):
+        mail = mailbox.mbox(filename, create=False)[0]
 
         # Simply name it commit_hash, otherwise we would have to refactor
         # tons of code.
-        self.commit_hash = message_id
+        self.commit_hash = mail['Message-ID']
+        self.mail_subject = mail['Subject']
 
-        self.mail_subject = mail_subject
+        try:
+            date = email.utils.parsedate_to_datetime(mail['Date'])
+        except:
+            # assume epoch
+            date = datetime.datetime.utcfromtimestamp(0)
+
+        payload = mail.get_payload()
+
+        # Check encoding and decode
+        cte = mail['Content-Transfer-Encoding']
+        if cte == 'QUOTED-PRINTABLE':
+            charset = mail.get_content_charset()
+            if charset not in CHARSETS:
+                charset = 'ascii'
+            payload = quopri.decodestring(payload)
+            payload = payload.decode(charset, errors='ignore')
+
+        # MAY RAISE AN ERROR, FORBID RETURN NULL
+        msg, diff = parse_payload(payload)
+
+        # reconstruct commit message
+        subject = self.mail_subject
+        match = PATCH_SUBJECT_REGEX.match(self.mail_subject)
+        if match:
+            subject = match.group(1)
+        msg = [subject, ''] + msg
+
+        author_name = mail['From']
+        author_email = ''
+        match = MAIL_FROM_REGEX.match(author_name)
+        if match:
+            author_name = match.group(1)
+            author_email = match.group(2)
+
+        super(PatchMail, self).__init__(msg, diff, author_name, author_email,
+                                        date)
 
     def format_message(self):
         custom = ['Mail Subject: %s' % self.subject]
@@ -94,11 +127,10 @@ def parse_payload(payload):
     elif isinstance(payload, str):
         retval = parse_single_message(payload)
     else:
-        print('Warning: unknown payload type')
-        return None
+        raise TypeError('Warning: unknown payload type')
 
     if retval is None:
-        return None
+        raise TypeError('Unable to split mail to msg and diff')
 
     msg, diff = retval
 
@@ -117,63 +149,6 @@ def parse_payload(payload):
         msg = msg[0:diffstat_start]
 
     return msg, diff
-
-
-def parse_mail(filename):
-    mail = mailbox.mbox(filename, create=False)[0]
-    message_id = mail['Message-ID']
-
-    try:
-        date = email.utils.parsedate_to_datetime(mail['Date'])
-    except:
-        # assume epoch
-        date = datetime.datetime.utcfromtimestamp(0)
-
-    payload = mail.get_payload()
-
-    # Check encoding and decode
-    cte = mail['Content-Transfer-Encoding']
-    if cte == 'QUOTED-PRINTABLE':
-        charset = mail.get_content_charset()
-        if charset not in CHARSETS:
-            charset = 'ascii'
-        payload = quopri.decodestring(payload)
-        payload = payload.decode(charset, errors='ignore')
-
-    try:
-        retval = parse_payload(payload)
-    except:
-        print('Mail parser error on message: %s' % message_id)
-        return None
-
-    if retval is None:
-        return None
-
-    try:
-        msg, diff = retval
-        # Insert message subject
-
-        subject = mail['Subject']
-        match = PATCH_SUBJECT_REGEX.match(subject)
-        if match:
-            subject = match.group(1)
-
-        msg = [subject, ''] + msg
-        match = MAIL_FROM_REGEX.match(mail['From'])
-        if match:
-            author = match.group(1)
-            author_email = match.group(2)
-        else:
-            author = mail['From']
-            author_email = ''
-
-        patchmail = PatchMail(message_id, msg, diff,
-                              author, author_email, date, mail['Subject'])
-    except:
-        print('Diff parser error: %s' % message_id)
-        return None
-
-    return patchmail
 
 
 def mbox_load_index(d_mbox):
