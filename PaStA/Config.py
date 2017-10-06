@@ -106,12 +106,10 @@ class Config:
         self.f_upstream_hashes = join(self.d_stack_hashes, 'upstream')
         self.d_mailbox_split = path('MBOX_SPLIT')
         self.f_mailbox_index = join(self.d_mailbox_split, 'index')
-        self.f_mailbox = path('MBOX')
 
         # register mailbox to repository, if existent
         self.has_mailbox = self.repo.register_mailbox(self.d_mailbox_split,
-                                                      self.f_mailbox_index,
-                                                      self.f_mailbox)
+                                                      self.f_mailbox_index)
 
         # commit hash blacklist
         self.upstream_blacklist = pasta.get('UPSTREAM_BLACKLIST')

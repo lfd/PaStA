@@ -18,7 +18,6 @@ import pygit2
 
 from datetime import datetime, timezone, timedelta
 from multiprocessing import Pool, cpu_count
-from subprocess import call
 
 from .MessageDiff import MessageDiff
 from .Mbox import mbox_load_index, parse_mail
@@ -219,16 +218,7 @@ class Repository:
                 retval.append(stack_hash)
         return retval
 
-    def register_mailbox(self, d_mbox_split, f_mbox_index, f_mbox):
-        # check if mailbox is already prepared
-        if not os.path.isfile(f_mbox_index) and os.path.isfile(f_mbox):
-            printn('Processing Mailbox...')
-            cwd = os.getcwd()
-            os.chdir(os.path.join(cwd, 'tools'))
-            call(['./process_mailbox.sh', f_mbox, d_mbox_split])
-            os.chdir(cwd)
-            done()
-
+    def register_mailbox(self, d_mbox_split, f_mbox_index):
         if os.path.isfile(f_mbox_index):
             self.d_mbox_split = d_mbox_split
             printn('Loading Mailbox index...')

@@ -29,6 +29,7 @@ from bin.pasta_analyse import analyse
 from bin.pasta_cache import cache
 from bin.pasta_compare import compare
 from bin.pasta_compare_eqclasses import compare_eqclasses
+from bin.pasta_mbox_prepare import mbox_prepare
 from bin.pasta_rate import rate
 from bin.pasta_statistics import statistics
 from bin.pasta_compare_stacks import compare_stacks
@@ -58,6 +59,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  analyse\n'
           '  cache\n'
           '  compare\n'
+          '  mbox_prepare\n'
           '  rate\n'
           '  statistics\n'
           '  compare_stacks\n'
@@ -107,6 +109,8 @@ def main(argv):
         compare(config, sub, argv)
     elif sub == 'compare_eqclasses':
         compare_eqclasses(config, sub, argv)
+    elif sub == 'mbox_prepare':
+        mbox_prepare(config, sub, argv)
     elif sub == 'rate':
         rate(config, sub, argv)
     elif sub == 'statistics':
