@@ -175,10 +175,6 @@ def parse_mail(filename):
     return patchmail
 
 
-def fix_encoding(string):
-    return string.encode('utf-8').decode('ascii', 'ignore')
-
-
 def mbox_load_index(f_mbox_index):
     with open(f_mbox_index) as index:
         index = index.read().split('\n')
