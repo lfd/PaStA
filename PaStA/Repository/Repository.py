@@ -75,7 +75,7 @@ class Repository:
         self.mbox_index = None
         self.d_mbox_split = None
 
-    def inject_commits(self, commit_dict):
+    def _inject_commits(self, commit_dict):
         for key, val in commit_dict.items():
             self.ccache[key] = val
 
@@ -121,7 +121,7 @@ class Repository:
             with open(f_ccache, 'rb') as f:
                 this_commits = pickle.load(f)
             print('Loaded %d commits from cache file' % len(this_commits))
-            self.inject_commits(this_commits)
+            self._inject_commits(this_commits)
             return set(this_commits.keys())
         except FileNotFoundError:
             if must_exist:
@@ -177,7 +177,7 @@ class Repository:
         invalid = {key for (key, value) in result if value is None}
         result = {key: value for (key, value) in result if value is not None}
 
-        self.inject_commits(result)
+        self._inject_commits(result)
         done()
 
         return set(result.keys()), invalid
