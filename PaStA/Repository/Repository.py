@@ -182,7 +182,7 @@ class Repository:
         self._inject_commits(result)
         done()
 
-        return set(result.keys()), invalid
+        return commit_hashes - invalid, invalid
 
     def __getitem__(self, item):
         return self.get_commit(item)
