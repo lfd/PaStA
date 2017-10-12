@@ -214,7 +214,7 @@ def analyse_mbox(config, mbox_time_window, upstream_hashes):
     repo.load_ccache(config.f_ccache_mbox)
     repo.load_ccache(config.f_ccache_upstream)
 
-    message_ids = repo.mbox_get_message_ids(mbox_time_window)
+    message_ids = repo.mbox.message_ids(mbox_time_window)
 
     repo.cache_commits(upstream_hashes)
     message_ids, _ = repo.cache_commits(message_ids)

@@ -12,7 +12,6 @@ the COPYING file in the top-level directory.
 
 import gc
 import git
-import os
 import pickle
 import pygit2
 
@@ -20,7 +19,7 @@ from datetime import datetime, timezone, timedelta
 from multiprocessing import Pool, cpu_count
 
 from .MessageDiff import MessageDiff
-from .Mbox import mbox_load_index, PatchMail
+from .Mbox import Mbox, PatchMail
 from ..Util import done, printn, fix_encoding
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
@@ -73,8 +72,7 @@ class Repository:
         self.repo_location = repo_location
         self.ccache = {}
         self.repo = pygit2.Repository(repo_location)
-        self.mbox_index = None
-        self.d_mbox = None
+        self.mbox = None
 
     def _inject_commits(self, commit_dict):
         for key, val in commit_dict.items():
@@ -87,7 +85,7 @@ class Repository:
         # check if the victim is an email
         try:
             if commit_hash[0] == '<':
-                return PatchMail(self.get_mail_filename(commit_hash))
+                return PatchMail(self.mbox[commit_hash])
             else:
                 return Commit(self.repo, commit_hash)
         except Exception as e:
@@ -179,6 +177,10 @@ class Repository:
         invalid = {key for (key, value) in result if value is None}
         result = {key: value for (key, value) in result if value is not None}
 
+        if self.mbox:
+            invalid_mail = {x for x in invalid if x[0] == '<'}
+            self.mbox.invalidate(invalid_mail)
+
         self._inject_commits(result)
         done()
 
@@ -188,7 +190,7 @@ class Repository:
         return self.get_commit(item)
 
     def __contains__(self, item):
-        if self.mbox_index and item in self.mbox_index:
+        if self.mbox and item in self.mbox:
             return True
 
         try:
@@ -223,17 +225,8 @@ class Repository:
 
     def register_mailbox(self, d_mbox):
         try:
-            self.d_mbox = d_mbox
-            self.mbox_index = mbox_load_index(d_mbox)
+            self.mbox = Mbox(d_mbox)
         except Exception as e:
             print('Unable to load mailbox: %s' % str(e))
             print('Did you forget to run \'pasta mbox_prepare\'?')
             quit(-1)
-
-    def get_mail_filename(self, message_id):
-        _, date_str, md5, _ = self.mbox_index[message_id]
-        return os.path.join(self.d_mbox, date_str, md5)
-
-    def mbox_get_message_ids(self, time_window):
-        return [x[0] for x in self.mbox_index.items()
-                if time_window[0] <= x[1][0] <= time_window[1]]

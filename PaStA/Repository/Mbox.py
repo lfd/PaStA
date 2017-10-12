@@ -151,11 +151,34 @@ def parse_payload(payload):
     return msg, diff
 
 
-def mbox_load_index(d_mbox):
-    f_mbox_lists = os.path.join(d_mbox, 'lists')
-    f_mbox_index = os.path.join(d_mbox, 'index')
+class Mbox:
+    def __init__(self, d_mbox):
+        self.d_mbox = d_mbox
+        self.f_mbox_lists = os.path.join(d_mbox, 'lists')
+        self.f_mbox_index = os.path.join(d_mbox, 'index')
+        self.f_mbox_invalid = os.path.join(d_mbox, 'invalid')
 
-    def load_file(filename):
+        print('Loading Mbox index...')
+        lists = dict()
+        for message_id, list_name in Mbox._load_file(self.f_mbox_lists):
+            if message_id not in lists:
+                lists[message_id] = set()
+            lists[message_id].add(list_name)
+
+        self.index = Mbox._load_index(self.f_mbox_index, lists)
+        self.invalid = Mbox._load_index(self.f_mbox_invalid, lists, False)
+
+    @staticmethod
+    def _load_index(filename, lists, must_exist=True):
+        content = Mbox._load_file(filename, must_exist)
+        return {x[1]: (datetime.datetime.strptime(x[0], "%Y/%m/%d"),
+                       x[0], x[2], lists[x[1]]) for x in content}
+
+    @staticmethod
+    def _load_file(filename, must_exist=True):
+        if not os.path.isfile(filename) and must_exist is False:
+            return []
+
         with open(filename) as f:
             f = f.read().split('\n')
             # last element is empty
@@ -164,33 +187,35 @@ def mbox_load_index(d_mbox):
 
         return f
 
-    print('Loading index...')
-    lists = dict()
-    for message_id, list_name in load_file(f_mbox_lists):
-        if message_id not in lists:
-            lists[message_id] = set()
-        lists[message_id].add(list_name)
+    def __getitem__(self, message_id):
+        _, date_str, md5, _ = self.index[message_id]
+        return os.path.join(self.d_mbox, date_str, md5)
 
-    index = load_file(f_mbox_index)
-    index = {x[1]: (datetime.datetime.strptime(x[0], "%Y/%m/%d"), x[0], x[2],
-                    lists[x[1]]) for x in index}
+    def __contains__(self, item):
+        return item in self.index
 
-    return index
+    def message_ids(self, time_window=None):
+        if time_window:
+            return [x[0] for x in self.index.items()
+                    if time_window[0] <= x[1][0] <= time_window[1]]
+        else:
+            return self.index.keys()
 
+    def get_lists(self, message_id):
+        return self.index[message_id][3]
 
-def mbox_write_index(d_mbox, index):
-    f_mbox_lists = os.path.join(d_mbox, 'lists')
-    f_mbox_index = os.path.join(d_mbox, 'index')
+    def invalidate(self, invalid):
+        def write_index(filename, foo):
+            with open(filename, 'w') as f:
+                ret = ['%s %s %s' % (x[1][1], x[0], x[1][2]) for x in foo]
+                ret = '\n'.join(ret) + '\n'
+                f.write(ret)
 
-    items = sorted(index.items())
+        for message_id in invalid:
+            self.invalid[message_id] = self.index.pop(message_id)
 
-    index = ['%s %s %s' % (x[1][1], x[0], x[1][2]) for x in items]
-    index = '\n'.join(index) + '\n'
+        invalid = sorted(self.invalid.items())
+        valid = sorted(self.index.items())
 
-    with open(f_mbox_index, 'w') as f:
-        f.write(index)
-
-    with open(f_mbox_lists, 'w') as f:
-        for message_id, (_, _, _, lists) in items:
-            for list in sorted(lists):
-                f.write('%s %s\n' % (message_id, list))
+        write_index(self.f_mbox_index, valid)
+        write_index(self.f_mbox_invalid, invalid)

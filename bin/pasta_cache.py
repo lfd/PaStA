@@ -80,23 +80,8 @@ def cache(config, prog, argv):
     if create_mbox:
         config.repo.register_mailbox(config.d_mbox)
 
-        # load existing cache
         repo.load_ccache(config.f_ccache_mbox)
-
-        # get overall mail index
-        index = mbox_load_index(config.d_mbox)
-
-        # yay, we can treat emails just like ordinary commit hashes
-        found, invalid = repo.cache_commits(index)
-
-        print('removing %d unparsable mails.' % len(invalid))
-        for i in invalid:
-            victim = index.pop(i)
-            filename = os.path.join(config.d_mbox, victim[1], victim[2])
-            os.remove(filename)
-
-        mbox_write_index(config.d_mbox, index)
-
+        repo.cache_commits(repo.mbox.message_ids())
         repo.export_ccache(config.f_ccache_mbox)
         repo.clear_commit_cache()
 
