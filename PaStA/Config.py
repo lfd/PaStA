@@ -148,8 +148,8 @@ class Config:
 
     def fail_no_patch_groups(self):
         if not isfile(self.f_patch_groups):
-            print('patch groups %s not existent! Finish analysis first.' %
-                  self.f_patch_groups)
+            print('patch groups %s not existent! '
+                  'Run \'pasta analyse init\' first.' % self.f_patch_groups)
             quit(-1)
 
     @property
