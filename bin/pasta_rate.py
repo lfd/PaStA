@@ -55,28 +55,24 @@ def rate(config, prog, argv):
     repo = config.repo
     evaluation_result = EvaluationResult.from_file(config.f_evaluation_result,
                                                    config.d_false_positives)
-    filename = config.f_patch_groups
 
-    if evaluation_result.eval_type == EvaluationType.PatchStack:
-        print('Running patch stack rating...')
-        patch_groups = config.patch_groups
-    elif evaluation_result.eval_type == EvaluationType.Upstream:
-        print('Running upstream rating...')
-        patch_groups = config.patch_groups
-    elif evaluation_result.eval_type == EvaluationType.Mailinglist:
-        print('Running mailing list rating...')
-        patch_groups = EquivalenceClass.from_file(config.f_similar_mailbox)
-        filename = config.f_similar_mailbox
-    else:
-        raise NotImplementedError('rating for evaluation type is not '
-                                  'implemented')
+    f_patch_groups = config.f_pasta_result
+    if evaluation_result.is_mbox:
+        config.repo.register_mailbox(config.d_mbox)
+        f_patch_groups = config.f_mbox_result
+
+    patch_groups = EquivalenceClass.from_file(f_patch_groups, must_exist=True)
+
+    print('Starting %s rating for %s analysis' %
+          (('mailbox' if evaluation_result.is_mbox else 'patch stack'),
+           evaluation_result.eval_type.name))
 
     evaluation_result.interactive_rating(repo, patch_groups,
                                          config.thresholds,
                                          args.resp_commit_date,
                                          args.enable_pager)
 
-    patch_groups.to_file(filename)
+    patch_groups.to_file(f_patch_groups)
     evaluation_result.fp.to_file(config.d_false_positives)
 
 

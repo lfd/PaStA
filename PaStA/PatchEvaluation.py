@@ -4,7 +4,7 @@ PaStA - Patch Stack Analysis
 Copyright (c) OTH Regensburg, 2016-2017
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
@@ -27,22 +27,23 @@ _tmp_repo = None
 class EvaluationType(Enum):
     PatchStack = 1
     Upstream = 2
-    Mailinglist = 3
 
 
 class FalsePositives:
     FILENAMES = {
         EvaluationType.PatchStack: 'patch-stack',
         EvaluationType.Upstream: 'upstream',
-        EvaluationType.Mailinglist: 'mailing-list',
     }
 
-    def __init__(self, type, dir=None, must_exist=False):
+    def __init__(self, is_mbox, type, dir=None, must_exist=False):
         self._type = type
         self._is_dict = type != EvaluationType.PatchStack
         self._false_positives = {} if self._is_dict else []
+        self._prefix = 'mbox-' if is_mbox else ''
+
         if dir:
-            filename = os.path.join(dir, FalsePositives.FILENAMES[type])
+            filename = os.path.join(dir, self._prefix +
+                                    FalsePositives.FILENAMES[type])
             if not os.path.isfile(filename):
                 if must_exist:
                     raise FileNotFoundError(filename)
@@ -65,7 +66,7 @@ class FalsePositives:
 
         if not os.path.exists(directory):
             os.makedirs(directory)
-        fp_filename = os.path.join(directory,
+        fp_filename = os.path.join(directory, self._prefix +
                                    FalsePositives.FILENAMES[self._type])
 
         with open(fp_filename, 'w') as f:
@@ -180,16 +181,12 @@ class EvaluationResult(dict):
     An evaluation is a dictionary with a commit hash as key,
     and a list of tuples (hash, SimRating) as value.
     """
-    def __init__(self, eval_type, *args, **kwargs):
+    def __init__(self, is_mbox = None, eval_type = None, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
-        self.universe = set()
-        self._eval_type = eval_type
+        self.eval_type = eval_type
+        self.is_mbox = is_mbox
         self._false_positives = []
         self.fp = None
-
-    @property
-    def eval_type(self):
-        return self._eval_type
 
     def merge(self, other):
         # Check if this key already exists in the check_list
@@ -208,16 +205,14 @@ class EvaluationResult(dict):
         with open(filename, 'wb') as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
-    def set_universe(self, universe):
-        self.universe = set(universe)
-
     @staticmethod
     def from_file(filename, fp_directory=None, fp_must_exist=False):
         printn('Loading evaluation result...')
         with open(filename, 'rb') as f:
             ret = pickle.load(f)
         done()
-        ret.fp = FalsePositives(ret.eval_type, fp_directory, fp_must_exist)
+        ret.fp = FalsePositives(ret.is_mbox, ret.eval_type,
+                                fp_directory, fp_must_exist)
         return ret
 
     def interactive_rating(self, repo, equivalence_class,
@@ -232,9 +227,6 @@ class EvaluationResult(dict):
         skipped_by_dlr = 0
         skipped_by_commit_date = 0
         halt_save = False
-
-        for i in self.universe:
-            equivalence_class.insert_single(i)
 
         # Convert the dictionary of evaluation results to a sorted list,
         # sorted by its SimRating
@@ -309,13 +301,8 @@ class EvaluationResult(dict):
 
                 if yns == 'y':
                     equivalence_class.insert(orig_commit_hash, cand_commit_hash)
-                    if self.eval_type == EvaluationType.Upstream or\
-                        self.eval_type == EvaluationType.Mailinglist:
+                    if self.eval_type == EvaluationType.Upstream:
                         equivalence_class.tag(cand_commit_hash)
-                        # Upstream rating can not have multiple candidates.
-                        # So break after the first match
-                        # TODO really?
-                        break
 
                 elif yns == 'n':
                     self.fp.mark(equivalence_class, orig_commit_hash,
@@ -531,17 +518,18 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
     return preeval_result
 
 
-def evaluate_commit_list(repo, thresholds,
-                         original_hashes, candidate_hashes, eval_type,
+def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
+                         original_hashes, candidate_hashes,
                          parallelise=False, verbose=False,
                          cpu_factor=1):
     """
     Evaluates two list of original and candidate hashes against each other
     :param repo: repository
     :param thresholds: evaluation thresholds
+    :param is_mbox: Is a mailbox involved?
+    :param eval_type: evaluation type
     :param original_hashes: list of commit hashes
     :param candidate_hashes: list of commit hashes to compare against
-    :param eval_type: evaluation type
     :param parallelise: Parallelise evaluation
     :param verbose: Verbose output
     :param cpu_factor: number of threads to be spawned is the number of CPUs*cpu_factor
@@ -564,7 +552,7 @@ def evaluate_commit_list(repo, thresholds,
     global _tmp_repo
     _tmp_repo = repo
 
-    retval = EvaluationResult(eval_type=eval_type)
+    retval = EvaluationResult(is_mbox, eval_type)
     if parallelise:
         p = Pool(processes=processes, maxtasksperchild=1)
         result = p.map(f_eval, preeval_result.items(), chunksize=50)

@@ -110,10 +110,10 @@ class Config:
         self.upstream_blacklist = pasta.get('UPSTREAM_BLACKLIST')
 
         # analysis results
-        self.f_similar_mailbox = path('SIMILAR_MAILBOX')
         self.d_false_positives = path('FALSE_POSTITIVES')
-        self.f_patch_groups = path('PATCH_GROUPS')
-        self.patch_groups = EquivalenceClass.from_file(self.f_patch_groups)
+
+        self.f_pasta_result = path('PASTA_RESULT')
+        self.f_mbox_result = path('MBOX_RESULT')
 
         self.f_commit_description = path('COMMIT_DESCRIPTION')
 
@@ -146,10 +146,11 @@ class Config:
             PatchStackDefinition.parse_definition_file(self)
 
 
-    def fail_no_patch_groups(self):
-        if not isfile(self.f_patch_groups):
-            print('patch groups %s not existent! '
-                  'Run \'pasta analyse init\' first.' % self.f_patch_groups)
+    @staticmethod
+    def fail_result_not_exists(filename):
+        if not isfile(filename):
+            print('Result %s not existent! Run \'pasta analyse init\' first.'
+                  % filename)
             quit(-1)
 
     @property

@@ -37,8 +37,10 @@ def compare(config, prog, argv):
 
     config.thresholds.heading = args.thres_heading
     commits = args.commits
-
     repo = config.repo
+
+    if any([x.startswith('<') for x in commits]):
+        repo.register_mailbox(config.d_mbox)
 
     if len(commits) == 1:
         show_commit(repo, commits[0])
@@ -52,8 +54,8 @@ def compare(config, prog, argv):
 
         # evaluation type plays no role in this case
         rating = evaluate_commit_list(repo, config.thresholds,
-                                      [commit_a], [commit_b],
-                                      eval_type=None)
+                                      None, None,
+                                      [commit_a], [commit_b])
         if rating:
             print(rating[commit_a][0][1])
         else:
