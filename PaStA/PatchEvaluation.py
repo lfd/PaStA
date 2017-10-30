@@ -192,9 +192,6 @@ class EvaluationResult(dict):
         return self._eval_type
 
     def merge(self, other):
-        if self.eval_type != other.eval_type:
-            raise ValueError('Unable to merge results of different types')
-
         # Check if this key already exists in the check_list
         # if yes, then append to the list
         for key, value in other.items():
