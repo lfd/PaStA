@@ -80,52 +80,6 @@ def find_cherries(repo, commit_hashes, dest_list):
     return cherries
 
 
-def analyse_succ(config):
-    cpu_factor = 1.0
-    num_cpus = int(cpu_count() * cpu_factor)
-
-    # analyse_succ: compare successive stacks
-    psd = config.psd
-    global _repo
-    repo = config.repo
-    _repo = repo
-    repo.load_ccache(config.f_ccache_stack)
-
-    evaluation_list = []
-    for patch_stack in psd:
-        successor = psd.get_successor(patch_stack)
-        if successor == None:
-            break
-
-        print('Queueing %s <-> %s' % (patch_stack.stack_version,
-                                      successor.stack_version))
-        evaluation_list.append((patch_stack.commit_hashes,
-                                successor.commit_hashes))
-
-    # cache missing commits
-    repo.cache_commits(psd.commits_on_stacks)
-
-    cherries = find_cherries(repo,
-                             psd.commits_on_stacks,
-                             psd.commits_on_stacks)
-
-    f = partial(_evaluate_patch_list_wrapper, config.thresholds)
-    print('Starting evaluation.')
-    pool = Pool(num_cpus, maxtasksperchild=1)
-    results = pool.map(f, evaluation_list, chunksize=5)
-    pool.close()
-    pool.join()
-    print('Evaluation completed.')
-    _repo = None
-
-    evaluation_result = EvaluationResult(False, EvaluationType.PatchStack)
-    for result in results:
-        evaluation_result.merge(result)
-    evaluation_result.merge(cherries)
-
-    return evaluation_result
-
-
 def analyse_mbox(config, mbox_time_window, upstream_hashes):
     repo = config.repo
 
@@ -232,12 +186,52 @@ def analyse(config, prog, argv):
         patch_groups.to_file(f_patch_groups)
         return
 
+    cherries = EvaluationResult()
     if mode == 'succ':
         if mbox:
             print('Not available in mailbox mode!')
             quit(-1)
 
-        evaluation_result = analyse_succ(config)
+        num_cpus = int(cpu_count() * args.cpu_factor)
+
+        psd = config.psd
+        global _repo
+        repo = config.repo
+        _repo = repo
+
+        repo.load_ccache(config.f_ccache_stack)
+
+        evaluation_list = []
+        for patch_stack in psd:
+            successor = psd.get_successor(patch_stack)
+            if successor == None:
+                break
+
+            print('Queueing %s <-> %s' % (patch_stack.stack_version,
+                                          successor.stack_version))
+            evaluation_list.append((patch_stack.commit_hashes,
+                                    successor.commit_hashes))
+
+        # cache missing commits
+        repo.cache_commits(psd.commits_on_stacks)
+
+        cherries = find_cherries(repo,
+                                 psd.commits_on_stacks, psd.commits_on_stacks)
+
+        f = partial(_evaluate_patch_list_wrapper, config.thresholds)
+        print('Starting evaluation.')
+        pool = Pool(num_cpus, maxtasksperchild=1)
+        results = pool.map(f, evaluation_list, chunksize=5)
+        pool.close()
+        pool.join()
+        print('Evaluation completed.')
+        _repo = None
+
+        evaluation_result = EvaluationResult(False, EvaluationType.PatchStack)
+
+        for result in results:
+            evaluation_result.merge(result)
+
     else: # mode is rep or upstream
         # iterate over similar patch list and get latest commit of patches
         printn('Determining patch stack representative system...')
@@ -279,8 +273,6 @@ def analyse(config, prog, argv):
             if not mbox:
                 cherries = find_cherries(repo, representatives,
                                          config.psd.commits_on_stacks)
-            else:
-                cherries = EvaluationResult()
 
             type = EvaluationType.PatchStack
 
@@ -292,8 +284,7 @@ def analyse(config, prog, argv):
                                                  cpu_factor=args.cpu_factor)
         print('Evaluation completed.')
 
-        evaluation_result.merge(cherries)
-
+    evaluation_result.merge(cherries)
     evaluation_result.to_file(config.f_evaluation_result)
 
 
