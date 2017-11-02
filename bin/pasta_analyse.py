@@ -165,6 +165,10 @@ def analyse(config, prog, argv):
         config.repo.register_mailbox(config.d_mbox)
         f_patch_groups = config.f_mbox_result
 
+        # load mbox ccache very early, because we need it in any case if it
+        # exists.
+        repo.load_ccache(config.f_ccache_mbox)
+
     # if mode is 'init', it does not necessarily have to exist.
     if mode != 'init':
         config.fail_result_not_exists(f_patch_groups)
@@ -175,6 +179,12 @@ def analyse(config, prog, argv):
         # select victims
         if mbox:
             victims = config.repo.mbox.message_ids(mbox_time_window)
+
+            # we have to temporarily cache those commits to filter out invalid
+            # emails. Commit cache is already loaded, so evict everything except
+            # victims and then cache all victims.
+            repo.cache_evict_except(victims)
+            victims, _ = repo.cache_commits(victims)
         else:
             victims = config.psd.commits_on_stacks
 
@@ -240,7 +250,6 @@ def analyse(config, prog, argv):
         # The lambda compares two patches of an equivalence class and chooses the
         # one with the later release version
         if mbox:
-            repo.load_ccache(config.f_ccache_mbox)
             repo.cache_commits(patch_groups.get_untagged())
             representatives = patch_groups.get_representative_system(
                 lambda x, y:
