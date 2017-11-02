@@ -245,11 +245,10 @@ def analyse(config, prog, argv):
                     repo.get_commit(x).author_date >
                     repo.get_commit(y).author_date)
         else:
-            psd = config.psd
             representatives = patch_groups.get_representative_system(
-                lambda x, y: psd.is_stack_version_greater(
-                    psd.get_stack_of_commit(x),
-                    psd.get_stack_of_commit(y)))
+                lambda x, y: config.psd.is_stack_version_greater(
+                    config.psd.get_stack_of_commit(x),
+                    config.psd.get_stack_of_commit(y)))
         done()
 
         if mode == 'upstream':
