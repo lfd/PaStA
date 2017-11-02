@@ -240,6 +240,8 @@ def analyse(config, prog, argv):
         # The lambda compares two patches of an equivalence class and chooses the
         # one with the later release version
         if mbox:
+            repo.load_ccache(config.f_ccache_mbox)
+            repo.cache_commits(patch_groups.get_untagged())
             representatives = patch_groups.get_representative_system(
                 lambda x, y:
                     repo.get_commit(x).author_date >
