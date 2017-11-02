@@ -167,6 +167,16 @@ is compared against all 'upstream' commits (master branch).
 3. Run `./pasta mbox_prepare list-name filename
 4. Repeat step 3 for multiple times to parse multiple lists
 5. Run `./pasta cache -create mbox`
-6. Run `./pasta analyse mbox -th 0`
-7. Run `./pasta rate`
-8. Your result will be stored in `PaStA-resources/[project]/resources/similar-mailbox`
+6. Run `./pasta analyse -mbox init`
+
+To compare all mails on the list against each other:
+
+7. Run `./pasta analyse -mbox rep`
+8. Run `./pasta rate`
+
+To compare all mails on the list against upstream:
+
+7. Run `./pasta analyse -mbox upstream`
+8. Run `./pasta rate`
+
+9. Your result will be stored in `PaStA-resources/[project]/resources/similar-mailbox`
