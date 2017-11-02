@@ -10,6 +10,8 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+import functools
+
 
 class EquivalenceClass:
     SEPARATOR = ' => '
@@ -113,8 +115,15 @@ class EquivalenceClass:
             return self.tags.intersection(self.classes[self.lookup[key]])
         return self.tags
 
-    def get_untagged(self, key):
-        return self.classes[self.lookup[key]] - self.tags
+    def get_untagged(self, key=None):
+        """
+        Returns all untagged entries that are related to key.
+
+        If key is not specified, this function returns all untagged.
+        """
+        if key:
+            return self.classes[self.lookup[key]] - self.tags
+        return functools.reduce(lambda x,y: x | y, self.classes) - self.tags
 
     def has_tag(self, key):
         return key in self.tags
