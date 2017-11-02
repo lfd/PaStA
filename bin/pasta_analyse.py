@@ -162,6 +162,10 @@ def analyse(config, prog, argv):
                         help='Minimum filename similarity '
                              '(default: %(default)s)')
 
+    parser.add_argument('-cpu', dest='cpu_factor', metavar='cpu', type=float,
+                        default=1.0, help='CPU factor for parallelisation '
+                                        '(default: %(default)s)')
+
     # boolean switch to chose mailbox analysis
     parser.add_argument('-mbox', dest='mbox', default=False,
                         action='store_true')
@@ -281,15 +285,11 @@ def analyse(config, prog, argv):
             type = EvaluationType.PatchStack
 
         print('Starting evaluation.')
-        evaluation_result = evaluate_commit_list(repo,
-                                                 config.thresholds,
-                                                 mbox,
-                                                 type,
-                                                 representatives,
-                                                 candidates,
-                                                 parallelise=True,
-                                                 verbose=True,
-                                                 cpu_factor=1)
+        evaluation_result = evaluate_commit_list(repo, config.thresholds,
+                                                 mbox, type,
+                                                 representatives, candidates,
+                                                 parallelise=True, verbose=True,
+                                                 cpu_factor=args.cpu_factor)
         print('Evaluation completed.')
 
         evaluation_result.merge(cherries)
