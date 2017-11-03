@@ -538,14 +538,17 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
 
     processes = int(cpu_count() * cpu_factor)
 
-    print('Comparing %d commit hashes against %d commit hashes' % (len(original_hashes), len(candidate_hashes)))
+    print('Comparing %d commit hashes against %d commit hashes'
+          % (len(original_hashes), len(candidate_hashes)))
 
     # Bind thresholds to evaluation
     f_eval = functools.partial(_evaluation_helper, thresholds, verbose=verbose)
 
     if verbose:
         print('Running preevaluation.')
-    preeval_result = preevaluate_commit_list(repo, thresholds, original_hashes, candidate_hashes, parallelise=parallelise)
+    preeval_result = preevaluate_commit_list(repo, thresholds,
+                                             original_hashes, candidate_hashes,
+                                             parallelise=parallelise)
     if verbose:
         print('Preevaluation finished.')
 
