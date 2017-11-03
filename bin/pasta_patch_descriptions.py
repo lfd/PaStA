@@ -16,6 +16,7 @@ import os
 import sys
 
 from datetime import datetime
+from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -25,6 +26,7 @@ from PaStA import *
 # 'git describe --contains'
 import git as gitpython
 
+log = getLogger(__name__[-15:])
 
 _config = None
 _tmp_repo = None
@@ -83,22 +85,22 @@ def patch_descriptions(config, prog, argv):
 
     all_commits = [repo[x] for x in all_commit_hashes]
 
-    printn('Getting descriptions...')
+    log.info('Getting descriptions...')
     pool = Pool(cpu_count(), maxtasksperchild=1)
     all_description = dict(pool.map(describe_commit, all_commits, chunksize=1000))
     pool.close()
     pool.join()
-    done()
+    log.info('  ↪ done')
 
     _tmp_repo = None
     _config = None
 
-    printn('Writing commit descriptions file...')
+    log.info('Writing commit descriptions file')
     with open(config.f_commit_description, 'w') as f:
         f.write('commit_hash branch_name author_date commit_date release_date\n')
         for commit_hash, info in all_description.items():
             f.write('%s %s %s %s %s\n' % (commit_hash, info[0], info[1], info[2], info[3]))
-    done()
+        log.info('  ↪ done')
 
 
 if __name__ == '__main__':

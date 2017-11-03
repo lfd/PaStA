@@ -14,7 +14,10 @@ import csv
 import os
 import re
 
+from logging import getLogger
 from .Util import parse_date_ymd, load_commit_hashes, persist_commit_hashes
+
+log = getLogger(__name__[-15:])
 
 
 class VersionPoint:
@@ -191,11 +194,11 @@ class PatchStackDefinition:
                 upstream = None
 
         if not upstream:
-            printn('Renewing upstream commit hash file...')
+            log.info('Renewing upstream commit hash file')
             upstream = repo.get_commithash_range(config.upstream_range)
             persist_commit_hashes(config.f_upstream_hashes,
                                   [config.upstream_range] + upstream)
-            done()
+            log.info('  ↪ done')
 
         if config.upstream_blacklist:
             blacklist = load_commit_hashes(config.upstream_blacklist, ordered=False)
@@ -215,14 +218,14 @@ class PatchStackDefinition:
         upstream = PatchStackDefinition._get_upstream_hashes(config)
 
         if not os.path.isfile(config.f_patch_stack_definition):
-            print('Notice: No patch stack definition given.')
+            log.warning('No patch stack definition given')
             return PatchStackDefinition([], upstream)
 
         csv.register_dialect('patchstack', delimiter=' ',
                              quoting=csv.QUOTE_NONE)
         repo = config.repo
 
-        printn('Parsing patch stack definition...')
+        log.info('Parsing patch stack definition')
         with open(config.f_patch_stack_definition) as f:
             line_list = f.readlines()
 
@@ -249,7 +252,7 @@ class PatchStackDefinition:
         if header is not None:
             csv_groups.append((header, content))
 
-        done()
+        log.info('  ↪ done')
 
         patch_stack_groups = []
         for group_name, csv_list in csv_groups:
@@ -271,12 +274,12 @@ class PatchStackDefinition:
                 if os.path.isfile(stack_hashes_location):
                     commit_hashes = load_commit_hashes(stack_hashes_location)
                 else:
-                    printn('Calculating missing stack hashes for %s' %
-                          stack.commit)
+                    log.info('Calculating missing stack hashes for %s' %
+                             stack.commit)
                     commit_hashes = repo.get_commits_on_stack(base.commit,
                                                               stack.commit)
                     persist_commit_hashes(stack_hashes_location, commit_hashes)
-                    done()
+                    log.info('  ↪ done')
 
                 this_group.append(PatchStack(base, stack, commit_hashes))
 

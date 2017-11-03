@@ -15,9 +15,13 @@ the COPYING file in the top-level directory.
 import os
 import sys
 
+from logging import getLogger
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 '..')))
 from PaStA import *
+
+log = getLogger(__name__[-15:])
 
 
 def rate(config, prog, argv):
@@ -63,9 +67,9 @@ def rate(config, prog, argv):
 
     patch_groups = EquivalenceClass.from_file(f_patch_groups, must_exist=True)
 
-    print('Starting %s rating for %s analysis' %
-          (('mailbox' if evaluation_result.is_mbox else 'patch stack'),
-           evaluation_result.eval_type.name))
+    log.info('Starting %s rating for %s analysis' %
+             (('mailbox' if evaluation_result.is_mbox else 'patch stack'),
+              evaluation_result.eval_type.name))
 
     evaluation_result.interactive_rating(repo, patch_groups,
                                          config.thresholds,

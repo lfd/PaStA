@@ -18,6 +18,9 @@ import subprocess
 import sys
 
 from datetime import datetime
+from logging import getLogger
+
+log = getLogger(__name__[-15:])
 
 
 def get_date_selector(repo, patch_stack_definition, selector):
@@ -155,15 +158,6 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
     text += ['-' * (split_length+1) + '+' + '-' * (columns-split_length-2)]
     text += side_by_side(left_diff, right_diff, split_length)
     pager('\n'.join(text), enable_pager)
-
-
-def printn(str):
-    sys.stdout.write(str)
-    sys.stdout.flush()
-
-
-def done():
-    print(' [done]')
 
 
 def get_first_upstream(repo, patch_groups, commit):

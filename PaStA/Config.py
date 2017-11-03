@@ -11,11 +11,15 @@ the COPYING file in the top-level directory.
 """
 
 import configparser
+
 from os.path import join, dirname, realpath, isfile, isdir
 from os import makedirs
+from logging import getLogger
 
 from .Repository import Repository
 from .PatchStack import PatchStackDefinition
+
+log = getLogger(__name__[-15:])
 
 
 class Thresholds:
@@ -144,12 +148,11 @@ class Config:
         self.patch_stack_definition = \
             PatchStackDefinition.parse_definition_file(self)
 
-
     @staticmethod
     def fail_result_not_exists(filename):
         if not isfile(filename):
-            print('Result %s not existent! Run \'pasta analyse init\' first.'
-                  % filename)
+            log.error('Result %s not existent' % filename)
+            log.error('Run \'pasta analyse init\' first.')
             quit(-1)
 
     @property

@@ -15,11 +15,14 @@ the COPYING file in the top-level directory.
 import os
 import sys
 
+from logging import getLogger
 from subprocess import call
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 '..')))
 from PaStA import *
+
+log = getLogger(__name__[-15:])
 
 
 def mbox_prepare(config, prog, argv):
@@ -37,15 +40,15 @@ def mbox_prepare(config, prog, argv):
 
     # check if mailbox is already prepared
     if not os.path.isfile(filename):
-        print('Error: \'%s\' does not exist' % filename)
+        log.error('does not exist: %s' % filename)
         quit(-1)
 
-    printn('Processing Mailbox...')
+    log.info('Processing Mailbox')
     cwd = os.getcwd()
     os.chdir(os.path.join(cwd, 'tools'))
     call(['./process_mailbox.sh', listname, filename, config.d_mbox])
     os.chdir(cwd)
-    done()
+    log.info('  ↪ done')
 
 
 if __name__ == '__main__':

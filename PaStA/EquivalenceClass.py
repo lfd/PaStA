@@ -10,6 +10,10 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+from logging import getLogger
+
+log = getLogger(__name__[-15:])
+
 
 class EquivalenceClass:
     SEPARATOR = ' => '
@@ -197,7 +201,7 @@ class EquivalenceClass:
             with open(filename, 'r') as f:
                 content = f.read()
         except FileNotFoundError:
-            print('Warning, file ' + filename + ' not found!')
+            log.warning('Equivalence class not found: %s' % filename)
             if must_exist:
                 raise
             return retval

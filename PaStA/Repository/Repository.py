@@ -16,11 +16,14 @@ import pickle
 import pygit2
 
 from datetime import datetime, timezone, timedelta
+from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
 from .MessageDiff import MessageDiff
 from .Mbox import Mbox, PatchMail
-from ..Util import done, printn, fix_encoding
+from ..Util import fix_encoding
+
+log = getLogger(__name__[-15:])
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
@@ -89,7 +92,7 @@ class Repository:
             else:
                 return Commit(self.repo, commit_hash)
         except Exception as e:
-            print('Caught an error for %s: %s' % (commit_hash, str(e)))
+            log.warning('Unable to load commit %s: %s' % (commit_hash, str(e)))
             return None
 
     def get_commit(self, commit_hash):
@@ -116,27 +119,27 @@ class Repository:
         return commit
 
     def load_ccache(self, f_ccache, must_exist=False):
-        print('Loading commit cache file %s...' % f_ccache)
+        log.info('Loading commit cache file %s' % f_ccache)
         try:
             with open(f_ccache, 'rb') as f:
                 this_commits = pickle.load(f)
-            print('Loaded %d commits from cache file' % len(this_commits))
+                log.info('  ↪ Loaded %d commits from cache file' % len(this_commits))
             self._inject_commits(this_commits)
             return set(this_commits.keys())
         except FileNotFoundError:
             if must_exist:
                 raise
-            print('Warning, commit cache file %s not found!' % f_ccache)
+                log.info('  ↪ Warning, commit cache file %s not found!' % f_ccache)
             return set()
 
     def export_ccache(self, f_ccache):
-        print('Writing %d commits to cache file' % len(self.ccache))
+        log.info('Writing %d commits to cache file' % len(self.ccache))
         with open(f_ccache, 'wb') as f:
             pickle.dump(self.ccache, f, pickle.HIGHEST_PROTOCOL)
 
     def cache_evict_except(self, commit_except):
         victims = self.ccache.keys() - commit_except
-        print('Evicting %d commits from cache' % len(victims))
+        log.info('Evicting %d commits from cache' % len(victims))
         for victim in victims:
             del self.ccache[victim]
         gc.collect()
@@ -158,8 +161,7 @@ class Repository:
         if len(worklist) == 0:
             return commit_hashes, set()
 
-        printn('Caching %d/%d commits. This may take a while...' %
-                         (len(worklist), len(commit_hashes)))
+        log.info('Caching %d/%d commits' % (len(worklist), len(commit_hashes)))
 
         if parallelise:
             global _tmp_repo
@@ -182,7 +184,7 @@ class Repository:
             self.mbox.invalidate(invalid_mail)
 
         self._inject_commits(result)
-        done()
+        log.info('  ↪ done')
 
         return commit_hashes - invalid, invalid
 
@@ -227,6 +229,6 @@ class Repository:
         try:
             self.mbox = Mbox(d_mbox)
         except Exception as e:
-            print('Unable to load mailbox: %s' % str(e))
-            print('Did you forget to run \'pasta mbox_prepare\'?')
+            log.error('Unable to load mailbox: %s' % str(e))
+            log.error('Did you forget to run \'pasta mbox_prepare\'?')
             quit(-1)

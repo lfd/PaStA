@@ -17,10 +17,13 @@ import re
 import sys
 
 from functools import partial
+from logging import getLogger
 from multiprocessing import cpu_count, Pool
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from PaStA import *
+
+log = getLogger(__name__[-15:])
 
 _repo = None
 
@@ -48,7 +51,7 @@ def find_cherries(repo, commit_hashes, dest_list):
     :param dest_list: list of potential cherry-pick hashes
     :return: EvaluationResult containing all detected cherry picks
     """
-    print('Auto-detecting cherry-picks...')
+    log.info('Auto-detecting cherry-picks')
     cherries = EvaluationResult()
 
     cherry_rgxs = [r'.*pick.*', r'.*upstream.*commit.*',
@@ -73,10 +76,10 @@ def find_cherries(repo, commit_hashes, dest_list):
                         cherries[commit_hash] = [(cherry,
                                                   SimRating(1.0, 1.0, 1.0))]
                 else:
-                    print('Found cherry-pick: %s <-> %s but it is not a valid '
-                          'reference in this context' % (commit_hash, cherry))
+                    log.info('Found cherry-pick %s <-> %s but it is not a valid '
+                             'reference in this context' % (commit_hash, cherry))
 
-    print('Done. Found %d cherry-picks' % len(cherries))
+    log.info('  ↪ done. Found %d cherry-picks' % len(cherries))
     return cherries
 
 
@@ -93,12 +96,12 @@ def analyse_mbox(config, mbox_time_window, upstream_hashes):
 
     repo.cache_evict_except(upstream_hashes | message_ids)
 
-    print('Starting evaluation.')
+    log.info('Starting evaluation')
     evaluation_result = evaluate_commit_list(config.repo, config.thresholds,
                                              message_ids, upstream_hashes,
                                              EvaluationType.Mailinglist,
                                              parallelise=True, verbose=True)
-    print('Evaluation completed.')
+    log.info('  ↪ done.')
     return evaluation_result
 
 
@@ -199,7 +202,7 @@ def analyse(config, prog, argv):
     cherries = EvaluationResult()
     if mode == 'succ':
         if mbox:
-            print('Not available in mailbox mode!')
+            log.error('Not available in mailbox mode!')
             quit(-1)
 
         num_cpus = int(cpu_count() * args.cpu_factor)
@@ -217,8 +220,8 @@ def analyse(config, prog, argv):
             if successor == None:
                 break
 
-            print('Queueing %s <-> %s' % (patch_stack.stack_version,
-                                          successor.stack_version))
+            log.info('Queueing %s <-> %s' % (patch_stack.stack_version,
+                                             successor.stack_version))
             evaluation_list.append((patch_stack.commit_hashes,
                                     successor.commit_hashes))
 
@@ -229,12 +232,12 @@ def analyse(config, prog, argv):
                                  psd.commits_on_stacks, psd.commits_on_stacks)
 
         f = partial(_evaluate_patch_list_wrapper, config.thresholds)
-        print('Starting evaluation.')
+        log.info('Starting evaluation.')
         pool = Pool(num_cpus, maxtasksperchild=1)
         results = pool.map(f, evaluation_list, chunksize=5)
         pool.close()
         pool.join()
-        print('Evaluation completed.')
+        log.info('  ↪ done.')
         _repo = None
 
         evaluation_result = EvaluationResult(False, EvaluationType.PatchStack)
@@ -244,7 +247,7 @@ def analyse(config, prog, argv):
 
     else: # mode is rep or upstream
         # iterate over similar patch list and get latest commit of patches
-        printn('Determining patch stack representative system...')
+        log.info('Determining patch stack representative system')
 
         # Get the complete representative system
         # The lambda compares two patches of an equivalence class and chooses the
@@ -260,7 +263,7 @@ def analyse(config, prog, argv):
                 lambda x, y: config.psd.is_stack_version_greater(
                     config.psd.get_stack_of_commit(x),
                     config.psd.get_stack_of_commit(y)))
-        done()
+        log.info('  ↪ done')
 
         if mode == 'upstream':
             if args.upstream_range is not None:
@@ -286,13 +289,13 @@ def analyse(config, prog, argv):
 
             type = EvaluationType.PatchStack
 
-        print('Starting evaluation.')
+        log.info('Starting evaluation')
         evaluation_result = evaluate_commit_list(repo, config.thresholds,
                                                  mbox, type,
                                                  representatives, candidates,
                                                  parallelise=True, verbose=True,
                                                  cpu_factor=args.cpu_factor)
-        print('Evaluation completed.')
+        log.info('  ↪ done.')
 
     evaluation_result.merge(cherries)
     evaluation_result.to_file(config.f_evaluation_result)

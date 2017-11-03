@@ -18,8 +18,9 @@ FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 details.
 """
 
-import sys
 import errno
+import logging
+import sys
 
 from copy import deepcopy
 
@@ -45,6 +46,8 @@ __version__ = '0.3'
 __maintainer__ = 'Ralf Ramsauer'
 __email__ = 'ralf.ramsauer@oth-regensburg.de'
 __status__ = 'Development'
+
+log = logging.getLogger('PaStA')
 
 
 def usage(me, exit_code=errno.EINVAL):
@@ -92,7 +95,7 @@ def main(argv):
         argv.pop(0)
         config = argv.pop(0)
     config = Config(config)
-    print('Active configuration: %s' % config.project_name)
+    log.info('Active configuration: %s' % config.project_name)
 
     if len(argv) < 1:
         usage(me)
@@ -127,4 +130,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)-15s %(name)-15s %(levelname)-8s '
+                               '%(message)s')
+
     main(deepcopy(sys.argv))

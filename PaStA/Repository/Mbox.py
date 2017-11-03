@@ -18,8 +18,11 @@ import quopri
 import re
 
 from email.charset import CHARSETS
+from logging import getLogger
 
 from .MessageDiff import MessageDiff
+
+log = getLogger(__name__[-15:])
 
 MAIL_FROM_REGEX = re.compile(r'(.*) <(.*)>')
 PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
@@ -158,12 +161,13 @@ class Mbox:
         self.f_mbox_index = os.path.join(d_mbox, 'index')
         self.f_mbox_invalid = os.path.join(d_mbox, 'invalid')
 
-        print('Loading Mbox index...')
+        log.info('Loading Mbox index')
         lists = dict()
         for message_id, list_name in Mbox._load_file(self.f_mbox_lists):
             if message_id not in lists:
                 lists[message_id] = set()
             lists[message_id].add(list_name)
+        log.info('  ↪ done')
 
         self.index = Mbox._load_index(self.f_mbox_index, lists)
         self.invalid = Mbox._load_index(self.f_mbox_invalid, lists, False)

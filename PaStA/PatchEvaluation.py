@@ -16,9 +16,12 @@ import pickle
 from enum import Enum
 from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
+from logging import getLogger
 from statistics import mean
 
 from .Util import *
+
+log = getLogger(__name__[-15:])
 
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
@@ -48,7 +51,7 @@ class FalsePositives:
                 if must_exist:
                     raise FileNotFoundError(filename)
                 else:
-                    print('Warning, false-positive file "%s" not found!' % filename)
+                    log.warning('false-positive file not found: %s' % filename)
                 return
         with open(filename, 'r') as f:
             for line in f:
@@ -207,10 +210,10 @@ class EvaluationResult(dict):
 
     @staticmethod
     def from_file(filename, fp_directory=None, fp_must_exist=False):
-        printn('Loading evaluation result...')
+        log.info('Loading evaluation result')
         with open(filename, 'rb') as f:
             ret = pickle.load(f)
-        done()
+        log.info('  ↪ done')
         ret.fp = FalsePositives(ret.is_mbox, ret.eval_type,
                                 fp_directory, fp_must_exist)
         return ret
@@ -538,23 +541,23 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
 
     processes = int(cpu_count() * cpu_factor)
 
-    print('Comparing %d commit hashes against %d commit hashes'
+    log.info('Comparing %d commit hashes against %d commit hashes'
           % (len(original_hashes), len(candidate_hashes)))
 
     # Bind thresholds to evaluation
     f_eval = functools.partial(_evaluation_helper, thresholds, verbose=verbose)
 
     if verbose:
-        print('Running preevaluation.')
+        log.info('Running preevaluation.')
     preeval_result = preevaluate_commit_list(repo, thresholds,
                                              original_hashes, candidate_hashes,
                                              parallelise=parallelise)
     if verbose:
-        print('Preevaluation finished.')
+        log.info('  ↪ done')
 
     original_comparisons = len(original_hashes)*len(candidate_hashes)
     preeval_comparisons = sum([len(x) for x in preeval_result.values()])
-    print('Preevaluation reduced %d comparisons down to %d. (factor: %0.2f)' %
+    log.info('Preevaluation reduced %d comparisons down to %d. (factor: %0.2f)' %
           (original_comparisons, preeval_comparisons,
            original_comparisons / preeval_comparisons))
 
