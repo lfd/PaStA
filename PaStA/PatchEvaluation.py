@@ -552,6 +552,12 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
     if verbose:
         print('Preevaluation finished.')
 
+    original_comparisons = len(original_hashes)*len(candidate_hashes)
+    preeval_comparisons = sum([len(x) for x in preeval_result.values()])
+    print('Preevaluation reduced %d comparisons down to %d. (factor: %0.2f)' %
+          (original_comparisons, preeval_comparisons,
+           original_comparisons / preeval_comparisons))
+
     global _tmp_repo
     _tmp_repo = repo
 
