@@ -10,8 +10,6 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-import functools
-
 
 class EquivalenceClass:
     SEPARATOR = ' => '
@@ -123,7 +121,7 @@ class EquivalenceClass:
         """
         if key:
             return self.classes[self.lookup[key]] - self.tags
-        return functools.reduce(lambda x,y: x | y, self.classes) - self.tags
+        return set(self.lookup.keys()) - self.tags
 
     def has_tag(self, key):
         return key in self.tags
