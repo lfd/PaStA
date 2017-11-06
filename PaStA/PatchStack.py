@@ -14,7 +14,7 @@ import csv
 import os
 import re
 
-from .Util import *
+from .Util import parse_date_ymd, load_commit_hashes, persist_commit_hashes
 
 
 class VersionPoint:
