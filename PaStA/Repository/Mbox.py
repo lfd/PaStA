@@ -167,10 +167,12 @@ class Mbox:
             if message_id not in lists:
                 lists[message_id] = set()
             lists[message_id].add(list_name)
-        log.info('  ↪ done')
+        log.info('  ↪ loaded mail-to-list mappings')
 
         self.index = Mbox._load_index(self.f_mbox_index, lists)
+        log.info('  ↪ loaded mail index')
         self.invalid = Mbox._load_index(self.f_mbox_invalid, lists, False)
+        log.info('  ↪ loaded invalid mail index')
 
     @staticmethod
     def _load_index(filename, lists, must_exist=True):
