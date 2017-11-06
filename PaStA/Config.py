@@ -14,7 +14,6 @@ import configparser
 from os.path import join, dirname, realpath, isfile, isdir
 from os import makedirs
 
-from .EquivalenceClass import EquivalenceClass
 from .Repository import Repository
 from .PatchStack import PatchStackDefinition
 
