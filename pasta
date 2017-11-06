@@ -135,3 +135,5 @@ if __name__ == '__main__':
                                '%(message)s')
 
     main(deepcopy(sys.argv))
+
+    log.info('Shutting down')
