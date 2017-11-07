@@ -37,11 +37,25 @@ class PatchMail(MessageDiff):
         self.commit_hash = mail['Message-ID']
         self.mail_subject = mail['Subject']
 
+        # we need timezone aware datetimes due to the fact, that most of all
+        # emails contain timezone aware timestamps. There's an issue with
+        # timezone unaware timestamps: they can't be compared to timezone aware
+        # timestamps. To cope with that, we simple shift those mails to UTC
+        # (which is also true in most cases).
+        #
+        # E.g. python converts this timestamp to an timezone unaware one,
+        # while it is GMT:
+        #   'Fri, 23 Feb 2007 13:35:50 -0000 (GMT)'
         try:
             date = email.utils.parsedate_to_datetime(mail['Date'])
         except:
             # assume epoch
+            log.debug('  Message %s: unable to parse date %s' %
+                      (self.commit_hash, mail['Date']))
             date = datetime.datetime.utcfromtimestamp(0)
+
+        if date.tzinfo is None:
+            date = date.replace(tzinfo=datetime.timezone.utc)
 
         payload = mail.get_payload()
 
