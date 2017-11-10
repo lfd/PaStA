@@ -83,28 +83,6 @@ def find_cherries(repo, commit_hashes, dest_list):
     return cherries
 
 
-def analyse_mbox(config, mbox_time_window, upstream_hashes):
-    repo = config.repo
-
-    repo.load_ccache(config.f_ccache_mbox)
-    repo.load_ccache(config.f_ccache_upstream)
-
-    message_ids = repo.mbox.message_ids(mbox_time_window)
-
-    repo.cache_commits(upstream_hashes)
-    message_ids, _ = repo.cache_commits(message_ids)
-
-    repo.cache_evict_except(upstream_hashes | message_ids)
-
-    log.info('Starting evaluation')
-    evaluation_result = evaluate_commit_list(config.repo, config.thresholds,
-                                             message_ids, upstream_hashes,
-                                             EvaluationType.Mailinglist,
-                                             parallelise=True, verbose=True)
-    log.info('  ↪ done.')
-    return evaluation_result
-
-
 def analyse(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Analyse patch stacks')
