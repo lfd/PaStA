@@ -20,9 +20,11 @@ class MessageDiff:
     An abstract class that consists of a message, and a diff.
     """
 
-    SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:|Reviewed-by:'
-                                 r'|Reported-by:|Tested-by:|LKML-Reference:|Patch:)'
-                                 r'|Wrecked-off-by:'),
+    SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:'
+                                 r'|Reviewed-by:|Reported-by:|Tested-by:'
+                                 r'|LKML-Reference:|Patch:|Wrecked-off-by:'
+                                 r'|Gitweb:|Merge:|Fixes:|Commit:|Patchwork:'
+                                 r')'),
                                 re.IGNORECASE)
 
     REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
