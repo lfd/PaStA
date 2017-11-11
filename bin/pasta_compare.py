@@ -54,7 +54,7 @@ def compare(config, prog, argv):
 
         # evaluation type plays no role in this case
         rating = evaluate_commit_list(repo, config.thresholds,
-                                      None, None,
+                                      False, None,
                                       [commit_a], [commit_b])
         if rating:
             print(rating[commit_a][0][1])
