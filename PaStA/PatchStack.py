@@ -201,9 +201,14 @@ class PatchStackDefinition:
             log.info('  ↪ done')
 
         if config.upstream_blacklist:
-            blacklist = load_commit_hashes(config.upstream_blacklist, ordered=False)
+            log.debug('Loading upstream blacklist')
+            blacklist = load_commit_hashes(config.upstream_blacklist,
+                                           ordered=False)
             # filter blacklistes commit hashes
+            log.debug('  Excluding %d commits from upstream commit list'
+                      % len(blacklist))
             upstream = [x for x in upstream if x not in blacklist]
+            log.debug('  ↪ done')
 
         return upstream
 
