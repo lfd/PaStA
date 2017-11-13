@@ -57,8 +57,8 @@ class Thresholds:
 class Config:
 
     # Configuration file containing default parameters
-    DEFAULT_CONFIG = 'PaStA-resources/common/default.cfg'
-    BLACKLIST_LOCATION = 'PaStA-resources/common/blacklists'
+    DEFAULT_CONFIG = 'resources/common/default.cfg'
+    BLACKLIST_LOCATION = 'resources/common/blacklists'
 
     def __init__(self, config_file):
         self._project_root = dirname(realpath(config_file))

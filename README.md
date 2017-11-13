@@ -10,7 +10,7 @@ well as results of some sample projects.
 ```
 $ git clone https://github.com/lfd/PaStA.git
 $ cd PaStA
-$ git submodule update --init PaStA-resources
+$ git submodule update --init resources
 ```
 
 Requirements
@@ -19,7 +19,7 @@ Requirements
 **PaStA** requires *Python3* and comes with the following dependencies:
 - git
 - pygit2
-- git-python (for PaStA-resources and patch_descriptions only)
+- git-python (for resources and patch_descriptions only)
 - R (tikzDevice, ggplot2)
 - fuzzywuzzy + python-levenshtein
 - procmail
@@ -27,7 +27,7 @@ Requirements
 Getting started
 ---------------
 - Select the project to analyse by linking the config:
-  `ln -sf PaStA-resources/PreemptRT/PreemptRT.conf ./config`
+  `ln -sf resources/PreemptRT/PreemptRT.conf ./config`
 - Run PaStA `./pasta -h`
 
 Running PaStA
@@ -115,7 +115,7 @@ arguments and displays the evaluation result as well as the original commits.
 Creating a new PaStA project
 ----------------------------
 ### Preparing the repository
-All project-relevant file are located in `PaStA-resources/PROJECT_NAME/`.
+All project-relevant file are located in `resources/PROJECT_NAME/`.
 Default locations inside that directory:
 - `PROJECT_NAME.cfg`: the main configuration file of the project. This file sets
   the project name, different version ranges and default thresholds.
@@ -127,7 +127,7 @@ Default locations inside that directory:
 
 ### PaStA configuration format
 The **PaStA** configuration file scheme is similar to the Windows *ini* format.
-All configuration file inherit from `PaStA-resources/common/default.cfg` and
+All configuration file inherit from `resources/common/default.cfg` and
 must implement some mandatory values. This is a minimal example for a project
 configuration file:
 ```
@@ -142,7 +142,7 @@ UPSTREAM_MAX = v2.0
 For setting the current active project **PaStA**, just create a symbolic link of
 the configuration file to the root directory of **PaStA**. E.g.:
 ```
-$ ln -sf PaStA-resources/PreemptRT/PreemptRT.cfg ./config
+$ ln -sf resources/PreemptRT/PreemptRT.cfg ./config
 ```
 
 All further calls on **PaStA** tools will use this configuration file.
@@ -179,4 +179,4 @@ To compare all mails on the list against upstream:
 7. Run `./pasta analyse -mbox upstream`
 8. Run `./pasta rate`
 
-9. Your result will be stored in `PaStA-resources/[project]/resources/similar-mailbox`
+9. Your result will be stored in `resources/[project]/resources/similar-mailbox`
