@@ -373,21 +373,31 @@ def best_string_mapping(threshold, left_list, right_list):
 def rate_diffs(thresholds, l_diff, r_diff):
     filename_compare = best_string_mapping(thresholds.filename, l_diff.patches.keys(), r_diff.patches.keys())
     levenshteins = []
+
+    def compare_hunks(left, right):
+        # This case happens for example, if both hunks remove empty newlines
+        if left == right:
+            return 100
+        return fuzz.token_sort_ratio(left, right)
+
     for l_filename, r_filename in filename_compare:
         l_hunks = l_diff.patches[l_filename]
         r_hunks = r_diff.patches[r_filename]
 
         levenshtein = []
-        hunk_compare = best_string_mapping(thresholds.heading, l_hunks.keys(), r_hunks.keys())
+        hunk_compare = best_string_mapping(thresholds.heading,
+                                           l_hunks.keys(), r_hunks.keys())
 
         for l_hunk_heading, r_hunk_heading in hunk_compare:
             lhunk = l_hunks[l_hunk_heading]
             rhunk = r_hunks[r_hunk_heading]
 
             if lhunk.deletions and rhunk.deletions:
-                levenshtein.append(fuzz.token_sort_ratio(lhunk.deletions, rhunk.deletions))
+                levenshtein.append(compare_hunks(lhunk.deletions,
+                                                 rhunk.deletions))
             if lhunk.insertions and rhunk.insertions:
-                levenshtein.append(fuzz.token_sort_ratio(lhunk.insertions, rhunk.insertions))
+                levenshtein.append(compare_hunks(lhunk.insertions,
+                                                 rhunk.insertions))
 
         if levenshtein:
             levenshteins.append(mean(levenshtein))
