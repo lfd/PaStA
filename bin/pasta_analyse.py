@@ -141,21 +141,14 @@ def analyse(config, prog, argv):
     mbox = args.mbox
     mode = args.mode
 
-    f_patch_groups = config.f_pasta_result
+    f_patch_groups, patch_groups = config.load_patch_groups(mbox,
+                                                            mode != 'init')
+
     if mbox:
         mbox_time_window = args.mindate, args.maxdate
-        config.repo.register_mailbox(config.d_mbox)
-        f_patch_groups = config.f_mbox_result
-
         # load mbox ccache very early, because we need it in any case if it
         # exists.
         repo.load_ccache(config.f_ccache_mbox)
-
-    # if mode is 'init', it does not necessarily have to exist.
-    if mode != 'init':
-        config.fail_result_not_exists(f_patch_groups)
-
-    patch_groups = EquivalenceClass.from_file(f_patch_groups, must_exist=False)
 
     if mode == 'init':
         # select victims

@@ -20,6 +20,8 @@ import sys
 from datetime import datetime
 from logging import getLogger
 
+from .EquivalenceClass import EquivalenceClass
+
 log = getLogger(__name__[-15:])
 
 

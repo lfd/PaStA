@@ -16,6 +16,7 @@ from os.path import join, dirname, realpath, isfile, isdir
 from os import makedirs
 from logging import getLogger
 
+from .EquivalenceClass import EquivalenceClass
 from .Repository import Repository
 from .PatchStack import PatchStackDefinition
 
@@ -147,6 +148,20 @@ class Config:
 
         self.patch_stack_definition = \
             PatchStackDefinition.parse_definition_file(self)
+
+    def load_patch_groups(self, is_mbox, must_exist=False):
+        f_patch_groups = self.f_pasta_result
+        if is_mbox:
+            self.repo.register_mailbox(self.d_mbox)
+            f_patch_groups = self.f_mbox_result
+
+        if must_exist:
+            Config.fail_result_not_exists(f_patch_groups)
+
+        patch_groups = EquivalenceClass.from_file(f_patch_groups,
+                                                  must_exist=must_exist)
+
+        return f_patch_groups, patch_groups
 
     @staticmethod
     def fail_result_not_exists(filename):

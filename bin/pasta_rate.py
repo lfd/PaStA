@@ -60,12 +60,8 @@ def rate(config, prog, argv):
     evaluation_result = EvaluationResult.from_file(config.f_evaluation_result,
                                                    config.d_false_positives)
 
-    f_patch_groups = config.f_pasta_result
-    if evaluation_result.is_mbox:
-        config.repo.register_mailbox(config.d_mbox)
-        f_patch_groups = config.f_mbox_result
-
-    patch_groups = EquivalenceClass.from_file(f_patch_groups, must_exist=True)
+    f_patch_groups, patch_groups =\
+        config.load_patch_groups(evaluation_result.is_mbox, True)
 
     log.info('Starting %s rating for %s analysis' %
              (('mailbox' if evaluation_result.is_mbox else 'patch stack'),
