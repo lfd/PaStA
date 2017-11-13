@@ -94,6 +94,10 @@ class PatchMail(MessageDiff):
 
 
 def parse_single_message(mail):
+    # Before using splitlines(), we have to replace ASCII \f by sth. else, like
+    # a whitespace. Otherwise weird things happen.
+    mail = mail.replace('\f', ' ')
+
     mail = mail.splitlines()
 
     valid = False
