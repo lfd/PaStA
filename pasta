@@ -32,6 +32,7 @@ from bin.pasta_compare import compare
 from bin.pasta_compare_eqclasses import compare_eqclasses
 from bin.pasta_mbox_prepare import mbox_prepare
 from bin.pasta_rate import rate
+from bin.pasta_ripup import ripup
 from bin.pasta_statistics import statistics
 from bin.pasta_compare_stacks import compare_stacks
 from bin.pasta_patch_descriptions import patch_descriptions
@@ -68,6 +69,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  compare_stacks\n'
           '  compare_eqclasses\n'
           '  patch_descriptions\n'
+          '  ripup\n'
           '  upstream_history\n'
           '\n'
           'If -c is not provided, PaStA will choose ./config as config file\n'
@@ -122,6 +124,8 @@ def main(argv):
         compare_stacks(config, sub, argv)
     elif sub == 'patch_descriptions':
         patch_descriptions(config, sub, argv)
+    elif sub == 'ripup':
+        ripup(config, sub, argv)
     elif sub == 'upstream_history':
         pasta_upstream_history(config, sub, argv)
     else:
