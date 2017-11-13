@@ -237,5 +237,7 @@ class Mbox:
         invalid = sorted(self.invalid.items())
         valid = sorted(self.index.items())
 
-        write_index(self.f_mbox_index, valid)
-        write_index(self.f_mbox_invalid, invalid)
+        if len(valid):
+            write_index(self.f_mbox_index, valid)
+        if len(invalid):
+            write_index(self.f_mbox_invalid, invalid)
