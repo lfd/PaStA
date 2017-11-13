@@ -35,6 +35,18 @@ class EquivalenceClass:
             for key in keylist:
                 self.lookup[key] = i
 
+    def remove_class(self, representative):
+        id = self.lookup[representative]
+
+        elems = self.classes.pop(id)
+        for elem in elems:
+            self.lookup.pop(elem)
+
+        for elem in elems:
+            self.insert_single(elem)
+
+        return elems
+
     def is_related(self, *elems):
         """
         Returns True, if _all_ elements are in the same equivalence class
