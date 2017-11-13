@@ -60,7 +60,6 @@ class EquivalenceClass:
             return True
         return False
 
-
     def insert_single(self, elem):
         if elem in self.lookup:
             return self.lookup[elem]
