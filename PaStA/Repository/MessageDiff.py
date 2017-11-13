@@ -30,7 +30,6 @@ class MessageDiff:
     REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
 
     def __init__(self, message, diff, author_name, author_email, author_date):
-
         self.author = author_name
         self.author_email = author_email
         self.author_date = author_date

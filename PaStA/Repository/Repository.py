@@ -31,7 +31,6 @@ _tmp_repo = None
 
 class Commit(MessageDiff):
     def __init__(self, repo, commit_hash):
-
         commit = repo[commit_hash]
 
         auth_tz = timezone(timedelta(minutes=commit.author.offset))
@@ -56,8 +55,7 @@ class Commit(MessageDiff):
         self.commit_date = commit_date
 
         super(Commit, self).__init__(commit.message, diff, commit.author.name,
-                                     commit.author.email,
-                                     author_date)
+                                     commit.author.email, author_date)
 
     def format_message(self):
         custom = ['Committer:  %s <%s>' %
