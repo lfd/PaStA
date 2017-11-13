@@ -76,8 +76,9 @@ def find_cherries(repo, commit_hashes, dest_list):
                         cherries[commit_hash] = [(cherry,
                                                   SimRating(1.0, 1.0, 1.0))]
                 else:
-                    log.info('Found cherry-pick %s <-> %s but it is not a valid '
-                             'reference in this context' % (commit_hash, cherry))
+                    log.info('Found cherry-pick %s <-> %s but it is not a '
+                             'valid reference in this context'
+                             % (commit_hash, cherry))
 
     log.info('  ↪ done. Found %d cherry-picks' % len(cherries))
     return cherries
@@ -228,8 +229,8 @@ def analyse(config, prog, argv):
         log.info('Determining patch stack representative system')
 
         # Get the complete representative system
-        # The lambda compares two patches of an equivalence class and chooses the
-        # one with the later release version
+        # The lambda compares two patches of an equivalence class and chooses
+        # the one with the later release version
         if mbox:
             repo.cache_commits(patch_groups.get_untagged())
             representatives = patch_groups.get_representative_system(
