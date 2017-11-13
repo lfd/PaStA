@@ -175,18 +175,19 @@ class Mbox:
         self.f_mbox_index = os.path.join(d_mbox, 'index')
         self.f_mbox_invalid = os.path.join(d_mbox, 'invalid')
 
-        log.info('Loading Mbox index')
+        log.info('Loading Mailbox')
         lists = dict()
         for message_id, list_name in Mbox._load_file(self.f_mbox_lists):
             if message_id not in lists:
                 lists[message_id] = set()
             lists[message_id].add(list_name)
-        log.info('  ↪ loaded mail-to-list mappings')
+        log.info('  ↪ loaded mail-to-list mappings: %s mappings' % len(lists))
 
         self.index = Mbox._load_index(self.f_mbox_index, lists)
-        log.info('  ↪ loaded mail index')
+        log.info('  ↪ loaded mail index: found %d mails', len(self.index))
         self.invalid = Mbox._load_index(self.f_mbox_invalid, lists, False)
-        log.info('  ↪ loaded invalid mail index')
+        log.info('  ↪ loaded invalid mail index: found %d invalid mails'
+                 % len(self.invalid))
 
     @staticmethod
     def _load_index(filename, lists, must_exist=True):
