@@ -130,10 +130,13 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG,
-                        stream=sys.stdout,
-                        format='%(asctime)-15s %(name)-15s %(levelname)-8s '
-                               '%(message)s')
+    fmt = '%(asctime)-15s %(name)-15s %(levelname)-8s %(message)s'
+    level = logging.DEBUG
+
+    logging.basicConfig(level=level, stream=sys.stdout, format=fmt)
+    filehandler = logging.FileHandler(filename='./log', mode='a')
+    filehandler.setFormatter(logging.Formatter(fmt))
+    logging.getLogger().addHandler(filehandler)
 
     main(deepcopy(sys.argv))
 
