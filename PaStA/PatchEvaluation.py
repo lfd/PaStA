@@ -208,14 +208,18 @@ class EvaluationResult(dict):
         with open(filename, 'wb') as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
+    def load_fp(self, fp_directory, must_exist):
+        self.fp = FalsePositives(self.is_mbox, self.eval_type,
+                                 fp_directory, must_exist)
+
     @staticmethod
     def from_file(filename, fp_directory=None, fp_must_exist=False):
         log.info('Loading evaluation result')
         with open(filename, 'rb') as f:
             ret = pickle.load(f)
         log.info('  ↪ done')
-        ret.fp = FalsePositives(ret.is_mbox, ret.eval_type,
-                                fp_directory, fp_must_exist)
+        ret.load_fp(fp_directory, fp_must_exist)
+
         return ret
 
     def interactive_rating(self, repo, equivalence_class,
