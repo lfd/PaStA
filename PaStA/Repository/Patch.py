@@ -141,6 +141,12 @@ class Diff:
 
         self.affected = set(self.patches.keys())
 
+    def split_footer(self):
+        diff = self.raw[:-self.footer]
+        footer = self.raw[-self.footer:]
+
+        return diff, footer
+
     @staticmethod
     def get_filename(a, b):
         """

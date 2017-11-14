@@ -145,8 +145,8 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
     left_message = left_commit.format_message()
     right_message = right_commit.format_message()
 
-    left_diff = left_commit.diff.raw
-    right_diff = right_commit.diff.raw
+    left_diff, left_footer = left_commit.diff.split_footer()
+    right_diff, right_footer = right_commit.diff.split_footer()
 
     columns, _ = shutil.get_terminal_size()
     maxlen = int((columns-3)/2)
@@ -155,10 +155,13 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
     if split_length > maxlen:
         split_length = maxlen
 
+    separator =\
+        ['-' * (split_length + 1) + '+' + '-' * (columns - split_length - 2)]
+
     text = []
-    text += side_by_side(left_message, right_message, split_length)
-    text += ['-' * (split_length+1) + '+' + '-' * (columns-split_length-2)]
-    text += side_by_side(left_diff, right_diff, split_length)
+    text += side_by_side(left_message, right_message, split_length) + separator
+    text += side_by_side(left_diff, right_diff, split_length) + separator
+    text += side_by_side(left_footer, right_footer, split_length) + separator
     pager('\n'.join(text), enable_pager)
 
 
