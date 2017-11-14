@@ -54,7 +54,11 @@ class Commit(MessageDiff):
         self.committer_email = commit.committer.email
         self.commit_date = commit_date
 
-        super(Commit, self).__init__(commit.message, diff, commit.author.name,
+        # split message and diff at newlines
+        message = commit.message.split('\n')
+        diff = diff.split('\n')
+
+        super(Commit, self).__init__(message, diff, commit.author.name,
                                      commit.author.email, author_date)
 
     def format_message(self):

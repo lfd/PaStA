@@ -19,7 +19,6 @@ class MessageDiff:
     """
     An abstract class that consists of a message, and a diff.
     """
-
     SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:'
                                  r'|Reviewed-by:|Reported-by:|Tested-by:'
                                  r'|LKML-Reference:|Patch:|Wrecked-off-by:'
@@ -27,19 +26,13 @@ class MessageDiff:
                                  r')'),
                                 re.IGNORECASE)
 
-    REVERT_REGEX = re.compile(r'revert', re.IGNORECASE)
-
     def __init__(self, message, diff, author_name, author_email, author_date):
         self.author = author_name
         self.author_email = author_email
         self.author_date = author_date
 
-        if isinstance(message, list):
-            self.raw_message = '\n'.join(message)
-            self.message = message
-        else:
-            self.raw_message = message
-            self.message = message.split('\n')
+        self.raw_message = message
+        self.message = message
 
         # Split by linebreaks and filter empty lines
         self.message = list(filter(None, self.message))
@@ -53,22 +46,18 @@ class MessageDiff:
         else:
             self.message = filtered
 
-        # Is a revert message?
-        self.is_revert = bool(MessageDiff.REVERT_REGEX.search(self.raw_message))
+        # is a revert message?
+        self.is_revert = any('revert' in x.lower() for x in self.raw_message)
 
-        if isinstance(diff, list):
-            self.raw_diff = '\n'.join(diff)
-            self.diff = Diff.parse_diff_nosplit(diff)
-        else:
-            self.raw_diff = diff
-            self.diff = Diff.parse_diff(diff)
+        # do the tricky part: parse the diff
+        self.diff = Diff(diff)
 
     def format_message(self, custom):
         message = ['Commit:     %s' % self.commit_hash,
                    'Author:     %s <%s>' %
                    (fix_encoding(self.author), self.author_email),
                    'AuthorDate: %s' % self.author_date]
-        message += custom + [''] + fix_encoding(self.raw_message).split('\n')
+        message += custom + [''] + [fix_encoding(x) for x in self.raw_message]
 
         return message
 

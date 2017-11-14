@@ -121,7 +121,7 @@ def pager(text, enable_pager=True):
 
 def show_commit(repo, hash, enable_pager=True):
     commit = repo[hash]
-    message = commit.format_message() + commit.raw_diff.split('\n')
+    message = commit.format_message() + commit.diff.raw
     pager('\n'.join(message), enable_pager)
 
 
@@ -145,8 +145,8 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
     left_message = left_commit.format_message()
     right_message = right_commit.format_message()
 
-    left_diff = left_commit.raw_diff.split('\n')
-    right_diff = right_commit.raw_diff.split('\n')
+    left_diff = left_commit.diff.raw
+    right_diff = right_commit.diff.raw
 
     columns, _ = shutil.get_terminal_size()
     maxlen = int((columns-3)/2)

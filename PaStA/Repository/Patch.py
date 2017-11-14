@@ -55,92 +55,24 @@ class Diff:
     LINE_IDENTIFIER_CONTEXT = ' '
     LINE_IDENTIFIER_NEWLINE = '\\'
 
-    def __init__(self, patches, lines):
-        self._patches = patches
-        self._lines = lines
-        self._affected = set(self.patches.keys())
+    def __init__(self, diff):
+        # we pop from the list until it is empty. Copy it first, to prevent its
+        # deletion
+        self.raw = list(diff)
+        self.patches = {}
+        self.affected = set()
 
-    @property
-    def lines(self):
-        return self._lines
-
-    @property
-    def patches(self):
-        return self._patches
-
-    @property
-    def affected(self):
-        return self._affected
-
-    @staticmethod
-    def get_filename(a, b):
-        """
-        get_filename: Determine the filename of a diff of a file
-        """
-        # chomp preceeding a/'s and b/'s
-        if a.startswith('a/'):
-            a = a[2:]
-        if b.startswith('b/'):
-            b = b[2:]
-
-        if a == b:
-            return a
-        elif a == '/dev/null' and b != '/dev/null':
-            return b
-        elif b == '/dev/null' and a != '/dev/null':
-            return a
-
-        # If everything else fails, try to drop everything before the first '/'
-        a = a.split('/', 1)[1]
-        b = b.split('/', 1)[1]
-        if a == b:
-            return a
-
-        # If it still fails, return the longest common suffix
-        a_sfx = a[-len(b):]
-        b_sfx = b[-len(a):]
-        while a_sfx != b_sfx:
-            a_sfx = a_sfx[1:]
-            b_sfx = b_sfx[1:]
-
-        # This makes only sense, if we have a few characters left
-        if len(a_sfx) > 3:
-            return a_sfx
-
-        # Still not working? Ok, take the longest common prefix
-        min_len = min(len(a), len(b))
-        a_pfx = a[0:min_len]
-        b_pfx = b[0:min_len]
-        while a_pfx != b_pfx:
-            a_pfx = a_pfx[0:-1]
-            b_pfx = b_pfx[0:-1]
-
-        # This makes only sense, if we have a few characters left
-        if len(a_pfx) > 3:
-            return a_pfx
-
-        # Fail, if we're still not able to parse
-        raise ValueError('Unable to parse tuple %s <-> %s' % (a, b))
-
-    @staticmethod
-    def parse_diff(diff):
-        # Only split at \n and not at \r
-        diff = diff.split('\n')
-        return Diff.parse_diff_nosplit(diff)
-
-    @staticmethod
-    def parse_diff_nosplit(diff):
         # Calculate diff_lines
-        lines_of_interest = list(filter(lambda x: Diff.DIFF_SELECTOR_REGEX.match(x), diff))
-        diff_lines = len(lines_of_interest)
+        self.lines = len(list(
+            filter(lambda x: Diff.DIFF_SELECTOR_REGEX.match(x), diff)))
 
         # Check if we understand the diff format
         if diff and Diff.EXCLUDE_CC_REGEX.match(diff[0]):
-            return Diff({}, 0)
-
-        patches = {}
+            return
 
         while len(diff):
+            self.footer = len(diff)
+
             # Consume till the first occurence of '--- '
             while len(diff):
                 minus = diff.pop(0)
@@ -148,8 +80,11 @@ class Diff:
                     break
             if len(diff) == 0:
                 break
+
+            self.footer = 0
             minus = Diff.FILE_SEPARATOR_MINUS_REGEX.match(minus).group(1)
-            plus = Diff.FILE_SEPARATOR_PLUS_REGEX.match(diff.pop(0)).group(1)
+            plus = Diff.FILE_SEPARATOR_PLUS_REGEX.match(diff.pop(0)).group(
+                1)
 
             filename = Diff.get_filename(minus, plus)
 
@@ -208,12 +143,62 @@ class Diff:
 
                 h = Hunk(insertions, deletions, context)
 
-                if filename not in patches:
-                    patches[filename] = {}
-                if hunk_heading not in patches[filename]:
-                    patches[filename][hunk_heading] = Hunk()
+                if filename not in self.patches:
+                    self.patches[filename] = {}
+                if hunk_heading not in self.patches[filename]:
+                    self.patches[filename][hunk_heading] = Hunk()
 
                 # hunks may occur twice or more often
-                patches[filename][hunk_heading].merge(h)
+                self.patches[filename][hunk_heading].merge(h)
 
-        return Diff(patches, diff_lines)
+        self.affected = set(self.patches.keys())
+
+    @staticmethod
+    def get_filename(a, b):
+        """
+        get_filename: Determine the filename of a diff of a file
+        """
+        # chomp preceeding a/'s and b/'s
+        if a.startswith('a/'):
+            a = a[2:]
+        if b.startswith('b/'):
+            b = b[2:]
+
+        if a == b:
+            return a
+        elif a == '/dev/null' and b != '/dev/null':
+            return b
+        elif b == '/dev/null' and a != '/dev/null':
+            return a
+
+        # If everything else fails, try to drop everything before the first '/'
+        a = a.split('/', 1)[1]
+        b = b.split('/', 1)[1]
+        if a == b:
+            return a
+
+        # If it still fails, return the longest common suffix
+        a_sfx = a[-len(b):]
+        b_sfx = b[-len(a):]
+        while a_sfx != b_sfx:
+            a_sfx = a_sfx[1:]
+            b_sfx = b_sfx[1:]
+
+        # This makes only sense, if we have a few characters left
+        if len(a_sfx) > 3:
+            return a_sfx
+
+        # Still not working? Ok, take the longest common prefix
+        min_len = min(len(a), len(b))
+        a_pfx = a[0:min_len]
+        b_pfx = b[0:min_len]
+        while a_pfx != b_pfx:
+            a_pfx = a_pfx[0:-1]
+            b_pfx = b_pfx[0:-1]
+
+        # This makes only sense, if we have a few characters left
+        if len(a_pfx) > 3:
+            return a_pfx
+
+        # Fail, if we're still not able to parse
+        raise ValueError('Unable to parse tuple %s <-> %s' % (a, b))
