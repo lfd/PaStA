@@ -146,6 +146,8 @@ if __name__ == '__main__':
     filehandler.setFormatter(logging.Formatter(fmt))
     logging.getLogger().addHandler(filehandler)
 
+    log.info('Cmdline: ' + ' '.join(sys.argv))
+
     main(deepcopy(sys.argv))
 
     log.info('Shutting down')
