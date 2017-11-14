@@ -14,26 +14,14 @@ import re
 
 class Hunk:
     def __init__(self, insertions=None, deletions=None, context=None):
-        self._insertions = insertions or []
-        self._deletions = deletions or []
-        self._context = context or []
+        self.insertions = insertions or []
+        self.deletions = deletions or []
+        self.context = context or []
 
     def merge(self, other):
-        self._insertions += other.insertions
-        self._deletions += other.deletions
-        self._context += other.context
-
-    @property
-    def deletions(self):
-        return self._deletions
-
-    @property
-    def insertions(self):
-        return self._insertions
-
-    @property
-    def context(self):
-        return self._context
+        self.insertions += other.insertions
+        self.deletions += other.deletions
+        self.context += other.context
 
 
 class Diff:
