@@ -121,6 +121,8 @@ class Config:
 
         self.f_commit_description = path('COMMIT_DESCRIPTION')
 
+        self.f_upstream_duration = path('UPSTREAM_DURATION')
+
         # pkl commit cache (ccache) and result files
         self.f_evaluation_result = path('EVALUATION_RESULT')
         self.f_ccache_stack = path('COMMIT_CACHE_STACK')

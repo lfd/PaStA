@@ -35,6 +35,7 @@ from bin.pasta_ripup import ripup
 from bin.pasta_statistics import statistics
 from bin.pasta_compare_stacks import compare_stacks
 from bin.pasta_patch_descriptions import patch_descriptions
+from bin.pasta_upstream_duration import upstream_duration
 from bin.pasta_upstream_history import pasta_upstream_history
 from bin.pasta_web import web
 
@@ -127,6 +128,8 @@ def main(argv):
         ripup(config, sub, argv)
     elif sub == 'upstream_history':
         pasta_upstream_history(config, sub, argv)
+    elif sub == 'upstream_duration':
+        upstream_duration(config, sub, argv)
     elif sub == 'web':
         web(config, sub, argv)
     else:
