@@ -54,6 +54,15 @@ def ripup(config, prog, argv):
                         default=config.thresholds.message_diff_weight,
                         help='Heuristic factor for message to diff rating. '
                              '(default: %(default)s)')
+    parser.add_argument('-th', dest='thres_heading', metavar='threshold',
+                        default=config.thresholds.heading, type=float,
+                        help='Minimum diff hunk section heading similarity '
+                             '(default: %(default)s)')
+    parser.add_argument('-tf', dest='thres_filename', metavar='threshold',
+                        default=config.thresholds.filename, type=float,
+                        help='Minimum filename similarity '
+                             '(default: %(default)s)')
+
 
     args = parser.parse_args(argv)
     representative = args.rep
@@ -62,8 +71,8 @@ def ripup(config, prog, argv):
     config.thresholds = Thresholds(args.thres_accept,
                                    args.thres_interactive,
                                    args.thres_diff_lines,
-                                   config.thresholds.heading,  # does not matter for interactive rating
-                                   config.thresholds.filename,  # does not matter for interactive rating
+                                   args.thres_heading,
+                                   args.thres_filename,
                                    args.weight)
 
     f_patch_groups, patch_groups = config.load_patch_groups(args.mbox, True)
