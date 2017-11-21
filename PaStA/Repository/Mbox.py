@@ -106,7 +106,7 @@ def parse_single_message(mail):
     patch = []
 
     for line in mail:
-        if line.startswith('diff '):
+        if line.startswith('diff ') or line.startswith('--- a/'):
             valid = True
 
         if valid:
