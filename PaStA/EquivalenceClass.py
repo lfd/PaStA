@@ -184,17 +184,30 @@ class EquivalenceClass:
         return retval
 
     def __iter__(self):
+        # iterate over all classes, and return all items
         for elem in self.classes:
             if not elem:
                 continue
             yield elem
 
     def iter_untagged(self):
+        # iterate over all classes, but return untagged items only
         for elem in self.classes:
             untagged = elem - self.tags
             if not untagged:
                 continue
             yield untagged
+
+    def iter_tagged_only(self):
+        # iterate only over classes that are tagged, and return both:
+        # tagged and untagged
+        for group in self: # calls self.__iter__()
+            tagged = group & self.tags
+            if len(tagged) == 0:
+                continue
+            untagged = group - tagged
+
+            yield untagged, tagged
 
     def __contains__(self, item):
         return item in self.lookup
