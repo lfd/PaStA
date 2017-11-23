@@ -86,7 +86,7 @@ class PatchMail(MessageDiff):
             author_email = match.group(2)
 
         super(PatchMail, self).__init__(msg, diff, author_name, author_email,
-                                        date)
+                                        date, snip_header=True)
 
     def format_message(self):
         custom = ['Mail Subject: %s' % self.subject]
