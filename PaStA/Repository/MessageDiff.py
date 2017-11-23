@@ -30,21 +30,19 @@ class MessageDiff:
         self.author = author_name
         self.author_email = author_email
         self.author_date = author_date
-
         self.raw_message = message
-        self.message = message
 
         # Split by linebreaks and filter empty lines
-        self.message = list(filter(None, self.message))
+        message = list(filter(None, message))
         # Filter signed-off-by lines
         filtered = list(filter(lambda x: not MessageDiff.SIGN_OFF_REGEX.match(x),
-                               self.message))
+                               message))
 
         # if the filtered result is empty, then leave at least one line
-        if not filtered:
-            self.message = [self.message[0]]
-        else:
-            self.message = filtered
+        if filtered:
+            message = filtered
+
+        self.message = message
 
         # is a revert message?
         self.is_revert = any('revert' in x.lower() for x in self.raw_message)
