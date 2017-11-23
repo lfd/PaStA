@@ -94,7 +94,7 @@ def ripup(config, prog, argv):
 
     evaluation_result.interactive_rating(repo, patch_groups, config.thresholds,
                                          False, True)
-
+    evaluation_result.fp.to_file(config.d_false_positives)
     patch_groups.to_file(f_patch_groups)
 
 
