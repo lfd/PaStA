@@ -23,7 +23,7 @@ class MessageDiff:
                                  r'|Reviewed-by:|Reported-by:|Tested-by:'
                                  r'|LKML-Reference:|Patch:|Wrecked-off-by:'
                                  r'|Gitweb:|Merge:|Fixes:|Commit:|Patchwork:'
-                                 r')'),
+                                 r'|From:)'),
                                 re.IGNORECASE)
 
     def __init__(self, message, diff, author_name, author_email, author_date,
