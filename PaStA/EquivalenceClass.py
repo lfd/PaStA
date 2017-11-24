@@ -128,6 +128,13 @@ class EquivalenceClass:
             return self.tags.intersection(self.classes[self.lookup[key]])
         return self.tags
 
+    def __getitem__(self, item):
+        if item in self.lookup:
+            id = self.get_equivalence_id(item)
+            return self.classes[id]
+
+        return None
+
     def get_untagged(self, key=None):
         """
         Returns all untagged entries that are related to key.
