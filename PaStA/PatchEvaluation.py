@@ -40,28 +40,26 @@ class FalsePositives:
 
     def __init__(self, is_mbox, type, dir=None, must_exist=False):
         self._type = type
-        self._is_dict = type != EvaluationType.PatchStack
-        self._false_positives = {} if self._is_dict else []
+        self._false_positives = {}
         self._prefix = 'mbox-' if is_mbox else ''
 
-        if dir:
-            filename = os.path.join(dir, self._prefix +
-                                    FalsePositives.FILENAMES[type])
-            if not os.path.isfile(filename):
-                if must_exist:
-                    raise FileNotFoundError(filename)
-                else:
-                    log.warning('false-positive file not found: %s' % filename)
-                return
+        if dir is None:
+            return
+
+        filename = os.path.join(dir, self._prefix +
+                                FalsePositives.FILENAMES[type])
+        if not os.path.isfile(filename):
+            if must_exist:
+                raise FileNotFoundError(filename)
+            else:
+                log.warning('false-positive file not found: %s' % filename)
+            return
         with open(filename, 'r') as f:
             for line in f:
                 line = line.rstrip('\n').split(' ')
-                if self._is_dict:
-                    first = line[0]
-                    rest = line[1:]
-                    self._false_positives[first] = set(rest)
-                else:
-                    self._false_positives.append(set(line))
+                origin = line[0]
+                destination = line[1:]
+                self._false_positives[origin] = set(destination)
 
     def to_file(self, directory):
         if len(self._false_positives) == 0:
@@ -73,77 +71,53 @@ class FalsePositives:
                                    FalsePositives.FILENAMES[self._type])
 
         with open(fp_filename, 'w') as f:
-            if self._is_dict:
-                for key in sorted(self._false_positives.keys()):
-                    values = sorted(self._false_positives[key])
-                    f.write('%s %s\n' % (key, ' '.join(values)))
-            else:
-                sorted_fp = sorted([sorted(x) for x in self._false_positives])
-                for line in sorted_fp:
-                    f.write('%s\n' % ' '.join(line))
+            for origin in sorted(self._false_positives.keys()):
+                destinations = sorted(self._false_positives[origin])
+                f.write('%s %s\n' % (origin, ' '.join(destinations)))
 
-    def mark(self, equivalence_class, left, right):
-        if self._is_dict:
-            if left not in self._false_positives:
-                self._false_positives[left] = set()
-            self._false_positives[left].add(right)
-        else:
-            l_group = equivalence_class.get_equivalence_id(left)
-            r_group = equivalence_class.get_equivalence_id(right)
-            succ = False
-            for i in self._false_positives:
-                id_set = {equivalence_class.get_equivalence_id(x) for x in i}
-                if l_group in id_set:
-                    i |= set([right])
-                    succ = True
-                if r_group in id_set:
-                    i |= set([left])
-                    succ = True
-                if succ:
-                    break
-            if not succ:
-                self._false_positives.append(set([left, right]))
+    def mark(self, equivalence_class, origin, destination):
+        if self.is_false_positive(equivalence_class, origin, destination):
+            return
 
-    def is_false_positive(self, equivalence_class, left, right):
-        if self._is_dict:
-            if left in self._false_positives and right in self._false_positives[left]:
-                return True
-            return False
-        else:
-            l_group = equivalence_class.get_equivalence_id(left)
-            r_group = equivalence_class.get_equivalence_id(right)
+        # try to find a alternative origin
+        for candidate in self._false_positives.keys():
+            if equivalence_class.is_related(origin, candidate):
+                origin = candidate
+                break
 
-            for i in self._false_positives:
-                i = {equivalence_class.get_equivalence_id(x) for x in i}
-                if l_group in i and r_group in i:
-                    return True
+        if origin not in self._false_positives:
+            self._false_positives[origin] = set()
+
+        self._false_positives[origin].add(destination)
+
+    def is_false_positive(self, equivalence_class, origin, destination):
+        alt_origin = list(equivalence_class.get_untagged(origin) &\
+                     self._false_positives.keys())
+
+        if len(alt_origin) == 0:
             return False
 
-    def check_consistency(self, equivalence_class):
-        print_banner = True
+        origin = alt_origin[0]
+        if len(alt_origin) > 1:
+            # merge those keys that are now equivalent
+            for sub in alt_origin[1:]:
+                self._false_positives[origin] |= self._false_positives[sub]
+                del self._false_positives[sub]
 
-        def banner(banner):
-            nonlocal print_banner
-            if print_banner:
-                print(banner)
-            print_banner = False
-
-        if self._is_dict:
-            for origin, false_positives in self._false_positives.items():
-                for fp in false_positives:
-                    if origin in equivalence_class and \
-                        fp in equivalence_class.get_tagged(origin):
-                        banner('Inconsistencies detected. The following patch '
-                               'on the patch stack is linked to an upstream '
-                               'patch though being markes as false positive:')
-                        print('%s => %s' % (origin, fp))
+        alt_destination = equivalence_class[destination]
+        if alt_destination is not None:
+            destination = alt_destination
         else:
-            for fp_group in self._false_positives:
-                if not equivalence_class.is_unrelated(*fp_group):
-                    banner('Inconsistencies detected. The following patches '
-                           'are marked as related and marked as '
-                           'false-positives:')
-                    print(fp_group)
+            destination = set(destination)
+
+        fp_dsts = self._false_positives[origin]
+
+        intersect = destination & fp_dsts
+
+        if len(intersect) > 1:
+            return True
+
+        return False
 
 
 class SimRating:
