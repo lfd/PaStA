@@ -55,7 +55,9 @@ def upstream_duration_of_group(group):
 
     delta = youngest_upstream_date - youngest_mail_date
 
-    return youngest_upstream, delta
+    delta = delta.days
+
+    return youngest_upstream, len(untagged), len(tagged), delta
 
 
 def upstream_duration(config, prog, argv):
@@ -84,11 +86,14 @@ def upstream_duration(config, prog, argv):
     pool.join()
     log.info('  ↪ done.')
 
+    # sort by upstream duration
+    result.sort(key = lambda x: x[3])
+
     # save raw results
     with open(config.f_upstream_duration, 'w') as f:
-        for commit, delta in result:
-            f.write('%s %d\n' % (commit, delta.days))
-
+        f.write('rep num_equiv num_up dur\n')
+        for line in result:
+            f.write('%s %d %d %d\n' % line)
 
 
 if __name__ == '__main__':
