@@ -288,6 +288,8 @@ class EvaluationResult(dict):
                     self.fp.mark(equivalence_class, orig_commit_hash,
                                  cand_commit_hash)
 
+                log.info('Continuing...')
+
         equivalence_class.optimize()
 
         print('\n\nSome statistics:')
