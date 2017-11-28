@@ -16,7 +16,6 @@ import pickle
 from enum import Enum
 from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
-from logging import getLogger
 from statistics import mean
 
 from .Util import *
