@@ -29,8 +29,9 @@ def ripup(config, prog, argv):
                                      description='Rip up equivalence class and '
                                                  'reanalyse')
 
-    parser.add_argument('rep', metavar='representative', type=str,
-                        help='Representative of equivalence class')
+    parser.add_argument('reps', metavar='representative', type=str, nargs='+',
+                        help='Representatives of equivalence class. Allows to '
+                             'specify multiple classes.')
 
     # boolean switch to chose mailbox analysis
     parser.add_argument('-mbox', dest='mbox', default=False,
@@ -63,9 +64,8 @@ def ripup(config, prog, argv):
                         help='Minimum filename similarity '
                              '(default: %(default)s)')
 
-
     args = parser.parse_args(argv)
-    representative = args.rep
+    representatives = args.reps
     repo = config.repo
 
     config.thresholds = Thresholds(args.thres_accept,
@@ -77,25 +77,27 @@ def ripup(config, prog, argv):
 
     f_patch_groups, patch_groups = config.load_patch_groups(args.mbox, True)
 
-    if representative not in patch_groups:
-        log.error('Not found in any patch group: %s' % representative)
-        return
+    for representative in representatives:
+        if representative not in patch_groups:
+            log.error('Not found in any patch group: %s' % representative)
+            continue
 
-    elems = patch_groups.remove_class(representative)
+        elems = patch_groups.remove_class(representative)
 
-    evaluation_result = evaluate_commit_list(repo, config.thresholds, args.mbox,
-                                             EvaluationType.PatchStack,
-                                             patch_groups,
-                                             elems, elems,
-                                             parallelise=False, verbose=True,
-                                             cpu_factor=args.cpu_factor)
+        evaluation_result = evaluate_commit_list(repo, config.thresholds,
+                                                 args.mbox,
+                                                 EvaluationType.PatchStack,
+                                                 patch_groups,
+                                                 elems, elems,
+                                                 parallelise=False,
+                                                 verbose=True,
+                                                 cpu_factor=args.cpu_factor)
 
-    evaluation_result.load_fp(config.d_false_positives, False)
-
-    evaluation_result.interactive_rating(repo, patch_groups, config.thresholds,
-                                         False, True)
-    evaluation_result.fp.to_file(config.d_false_positives)
-    patch_groups.to_file(f_patch_groups)
+        evaluation_result.load_fp(config.d_false_positives, False)
+        evaluation_result.interactive_rating(repo, patch_groups,
+                                             config.thresholds, False, True)
+        evaluation_result.fp.to_file(config.d_false_positives)
+        patch_groups.to_file(f_patch_groups)
 
 
 if __name__ == '__main__':
