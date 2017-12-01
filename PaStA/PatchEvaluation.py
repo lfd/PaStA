@@ -113,7 +113,7 @@ class FalsePositives:
 
         intersect = destination & fp_dsts
 
-        if len(intersect) > 1:
+        if len(intersect) > 0:
             return True
 
         return False
