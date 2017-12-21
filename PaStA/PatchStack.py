@@ -281,8 +281,8 @@ class PatchStackDefinition:
                 else:
                     log.info('Calculating missing stack hashes for %s' %
                              stack.commit)
-                    commit_hashes = repo.get_commits_on_stack(base.commit,
-                                                              stack.commit)
+                    commit_hashes = repo.cherry(base.commit,
+                                                stack.commit)
                     persist_commit_hashes(stack_hashes_location, commit_hashes)
                     log.info('  ↪ done')
 

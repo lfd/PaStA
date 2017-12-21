@@ -213,7 +213,7 @@ class Repository:
         repo = git.Repo(self.repo_location)
         return repo.git.log('--pretty=format:%H', range).splitlines()
 
-    def get_commits_on_stack(self, base, stack):
+    def cherry(self, base, stack):
         """
         Returns the commit hashes on a patch stack
         """
