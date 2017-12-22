@@ -217,15 +217,18 @@ class Repository:
         """
         Returns the commit hashes on a patch stack
         """
-        stack_list = self.get_commithash_range(stack)
-        base_set = set(self.get_commithash_range(base))
+        repo = git.Repo(self.repo_location)
+        cherries = repo.git.cherry(base, stack).splitlines()
+        cherries = [x.split() for x in cherries]
 
-        # Preserve order!
-        retval = []
-        for stack_hash in stack_list:
-            if stack_hash not in base_set:
-                retval.append(stack_hash)
-        return retval
+        has_removals = '-' in [x[0] for x in cherries]
+        if has_removals:
+            log.warning('Removals in patch stacks are not implemented!')
+
+        inserted_cherries = [x[1] for x in cherries]
+
+        # preserve order
+        return list(reversed(inserted_cherries))
 
     def register_mailbox(self, d_mbox):
         try:
