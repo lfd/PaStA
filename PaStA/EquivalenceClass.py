@@ -121,6 +121,9 @@ class EquivalenceClass:
     def has_tag(self, key):
         return key in self.tags
 
+    def get_keys(self):
+        return set(self.lookup.keys())
+
     def get_tagged(self, key=None):
         """
         Returns all tagged entries that are related to key.
@@ -147,6 +150,9 @@ class EquivalenceClass:
             return self.classes[id]
 
         return None
+
+    def __len__(self):
+        return len(self.classes)
 
     def __str__(self):
         retval = str()
