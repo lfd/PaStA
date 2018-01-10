@@ -30,6 +30,7 @@ from bin.pasta_analyse import analyse
 from bin.pasta_cache import cache
 from bin.pasta_check_connectivity import check_connectivity
 from bin.pasta_compare import compare
+from bin.pasta_compare_eqclasses import compare_eqclasses
 from bin.pasta_mbox_prepare import mbox_prepare
 from bin.pasta_optimise_eqclass import optimise_eqclass
 from bin.pasta_rate import rate
@@ -120,6 +121,8 @@ def main(argv):
         check_connectivity(config, sub, argv)
     elif sub == 'compare':
         compare(config, sub, argv)
+    elif sub == 'compare_eqclasses':
+        compare_eqclasses(sub, argv)
     elif sub == 'mbox_prepare':
         mbox_prepare(config, sub, argv)
     elif sub == 'optimise_eqclass':
