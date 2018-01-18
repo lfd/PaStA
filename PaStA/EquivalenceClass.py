@@ -47,6 +47,11 @@ class EquivalenceClass:
 
         return elems
 
+    def remove_key(self, key):
+        self.tags.discard(key)
+        id = self.lookup.pop(key)
+        self.classes[id].remove(key)
+
     def is_related(self, *elems):
         """
         Returns True, if _all_ elements are in the same equivalence class
