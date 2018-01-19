@@ -31,6 +31,7 @@ from bin.pasta_cache import cache
 from bin.pasta_check_connectivity import check_connectivity
 from bin.pasta_compare import compare
 from bin.pasta_mbox_prepare import mbox_prepare
+from bin.pasta_optimise_eqclass import optimise_eqclass
 from bin.pasta_rate import rate
 from bin.pasta_ripup import ripup
 from bin.pasta_statistics import statistics
@@ -67,6 +68,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  check_connectivity\n'
           '  compare\n'
           '  mbox_prepare\n'
+          '  optimise_eqclass\n'
           '  rate\n'
           '  statistics\n'
           '  compare_stacks\n'
@@ -120,6 +122,8 @@ def main(argv):
         compare(config, sub, argv)
     elif sub == 'mbox_prepare':
         mbox_prepare(config, sub, argv)
+    elif sub == 'optimise_eqclass':
+        optimise_eqclass(sub, argv)
     elif sub == 'rate':
         rate(config, sub, argv)
     elif sub == 'statistics':
