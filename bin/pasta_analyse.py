@@ -174,7 +174,7 @@ def analyse(config, prog, argv):
     cherries = EvaluationResult()
     if mode == 'succ':
         if mbox:
-            log.error('Not available in mailbox mode!')
+            log.error('Analysis mode succ is not available in mailbox mode!')
             quit(-1)
 
         num_cpus = int(cpu_count() * args.cpu_factor)
