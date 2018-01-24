@@ -206,20 +206,21 @@ class EvaluationResult(dict):
         skipped = 0
         skipped_by_dlr = 0
         skipped_by_commit_date = 0
-        halt_save = False
+
+        def accept(orig, cand):
+            equivalence_class.insert(orig, cand)
+            if self.eval_type == EvaluationType.Upstream:
+                equivalence_class.tag(cand)
 
         # Convert the dictionary of evaluation results to a sorted list,
         # sorted by its SimRating
         sorted_er = list(self.items())
         sorted_er.sort(key=lambda x: x[1][0][1])
 
+        filtered_er = dict()
+
         for orig_commit_hash, candidates in sorted_er:
-
-            if halt_save:
-                break
-
             for cand_commit_hash, sim_rating in candidates:
-
                 # this comparison is the first one, as it holds in most cases
                 if sim_rating.diff_lines_ratio < thresholds.diff_lines_ratio:
                     skipped_by_dlr += 1
@@ -254,55 +255,23 @@ class EvaluationResult(dict):
                          (1-thresholds.message_diff_weight) * sim_rating.diff
 
                 # maybe we can autoaccept the patch?
-                yns = ''
                 if rating >= thresholds.autoaccept:
                     auto_accepted += 1
-                    yns = 'y'
+                    accept(orig_commit_hash, cand_commit_hash)
+                    continue
                 # or even automatically drop it away?
                 elif rating < thresholds.interactive:
                     auto_declined += 1
                     continue
-                # Nope? Then let's do an interactive rating by a human
-                else:
-                    show_commits(repo, orig_commit_hash, cand_commit_hash, enable_pager)
-                    print('Length of list of candidates: %d' % len(candidates))
-                    print('Rating: %3.2f (%s)' % (rating, sim_rating))
-                    print('(y)ay or (n)ay or (s)kip?  To abort: halt and (d)iscard, (h)alt and save')
 
-                if yns not in {'y', 'n', 's', 'd', 'h'}:
-                    while yns not in {'y', 'n', 's', 'd', 'h'}:
-                        yns = getch()
-                        if yns == 'y':
-                            accepted += 1
-                        elif yns == 'n':
-                            declined += 1
-                        elif yns == 's':
-                            skipped += 1
-                        elif yns == 'd':
-                            quit()
-                        elif yns == 'h':
-                            halt_save = True
-                            break
+                # ok, so we have a proper candidate, queue it.
+                if orig_commit_hash not in filtered_er:
+                    filtered_er[orig_commit_hash] = list()
+                filtered_er[orig_commit_hash].append((cand_commit_hash, rating))
 
-                if yns == 'y':
-                    equivalence_class.insert(orig_commit_hash, cand_commit_hash)
-                    if self.eval_type == EvaluationType.Upstream:
-                        equivalence_class.tag(cand_commit_hash)
-
-                elif yns == 'n':
-                    self.fp.mark(equivalence_class, orig_commit_hash,
-                                 cand_commit_hash)
-
-                log.info('Continuing...')
-
-        equivalence_class.optimize()
-
-        log.info('\n\nSome statistics:')
-        log.info(' Interactive Accepted: %d' % accepted)
+        log.info('Some intermediate stats:')
         log.info(' Automatically accepted: %d' % auto_accepted)
-        log.info(' Interactive declined: %d' % declined)
         log.info(' Automatically declined: %d' % auto_declined)
-        log.info(' Skipped: %d' % skipped)
         log.info(' Skipped due to previous detection: %d' % already_detected)
         log.info(' Skipped due to false positive mark: %d'
                  % already_false_positive)
@@ -310,6 +279,51 @@ class EvaluationResult(dict):
         if respect_commitdate:
             log.info(' Skipped by commit date mismatch: %d'
                      % skipped_by_commit_date)
+        log.info('')
+        pending = sum([len(x) for x in filtered_er.values()])
+        log.info('%d pending interactive checks' % pending)
+        if pending:
+            log.info('Continue with interactive rating? Y/n')
+            yns = getch()
+            if yns.lower() == 'n':
+                equivalence_class.optimize()
+                return
+
+        halt_save = False
+        for orig, cands in filtered_er.items():
+            if halt_save:
+                break
+
+            for cand, rating in cands:
+                show_commits(repo, orig, cand, enable_pager)
+                print('Rating: %3.2f' % rating)
+                print('(y)ay or (n)ay or (s)kip?  '
+                      'To abort: halt and (d)iscard, (h)alt and save')
+
+                yns = ''
+                while yns not in {'y', 'n', 's', 'd', 'h'}:
+                    yns = getch()
+
+                if yns == 'y':
+                    accept(orig, cand)
+                    accepted += 1
+                elif yns == 'n':
+                    self.fp.mark(equivalence_class, orig, cand)
+                    declined += 1
+                elif yns == 's':
+                    skipped += 1
+                elif yns == 'd':
+                    quit()
+                elif yns == 'h':
+                    halt_save = True
+                    break
+
+        equivalence_class.optimize()
+
+        log.info('Final stats:')
+        log.info(' Interactive Accepted: %d' % accepted)
+        log.info(' Interactive declined: %d' % declined)
+        log.info(' Skipped: %d' % skipped)
 
 
 def best_string_mapping(threshold, left_list, right_list):
