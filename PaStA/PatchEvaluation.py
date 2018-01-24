@@ -219,22 +219,27 @@ class EvaluationResult(dict):
                 break
 
             for cand_commit_hash, sim_rating in candidates:
-                # Check if both commit hashes are the same
+
+                # this comparison is the first one, as it holds in most cases
+                if sim_rating.diff_lines_ratio < thresholds.diff_lines_ratio:
+                    skipped_by_dlr += 1
+                    continue
+
+                # unlikely, but this comparison is cheap
                 if cand_commit_hash == orig_commit_hash:
                     continue
 
-                # Check if those two patches are already related
-                if equivalence_class.is_related(orig_commit_hash, cand_commit_hash):
+                # check if those two patches are already related
+                if equivalence_class.is_related(orig_commit_hash,
+                                                cand_commit_hash):
                     already_detected += 1
                     continue
 
-                # Check if patch is already known as false positive
-                if self.fp.is_false_positive(equivalence_class, orig_commit_hash, cand_commit_hash):
+                # expensive check, so put it at the bottom
+                if self.fp.is_false_positive(equivalence_class,
+                                             orig_commit_hash,
+                                             cand_commit_hash):
                     already_false_positive += 1
-                    continue
-
-                if sim_rating.diff_lines_ratio < thresholds.diff_lines_ratio:
-                    skipped_by_dlr += 1
                     continue
 
                 if respect_commitdate:
@@ -244,11 +249,12 @@ class EvaluationResult(dict):
                         skipped_by_commit_date += 1
                         continue
 
-                # Weight by message_diff_weight
+                # weight by message_diff_weight
                 rating = thresholds.message_diff_weight * sim_rating.msg +\
                          (1-thresholds.message_diff_weight) * sim_rating.diff
 
-                # Maybe we can autoaccept the patch?
+                # maybe we can autoaccept the patch?
+                yns = ''
                 if rating >= thresholds.autoaccept:
                     auto_accepted += 1
                     yns = 'y'
@@ -258,7 +264,6 @@ class EvaluationResult(dict):
                     continue
                 # Nope? Then let's do an interactive rating by a human
                 else:
-                    yns = ''
                     show_commits(repo, orig_commit_hash, cand_commit_hash, enable_pager)
                     print('Length of list of candidates: %d' % len(candidates))
                     print('Rating: %3.2f (%s)' % (rating, sim_rating))
