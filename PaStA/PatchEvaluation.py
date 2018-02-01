@@ -107,7 +107,7 @@ class FalsePositives:
         if alt_destination is not None:
             destination = alt_destination
         else:
-            destination = set(destination)
+            destination = set([destination])
 
         fp_dsts = self._false_positives[origin]
 
