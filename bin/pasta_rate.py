@@ -28,6 +28,13 @@ def rate(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='classify results of analysis')
 
+    # evaluation result and patch groups
+    parser.add_argument('-er', dest='er_filename', metavar='filename',
+                        default=config.f_evaluation_result,
+                        help='Evaluation result PKL filename')
+    parser.add_argument('-pg', dest='pg_filename', metavar='filename',
+                        default=None, help='Filename for patch groups')
+
     # Thresholds
     parser.add_argument('-ta', dest='thres_accept', metavar='threshold',
                         type=float, default=config.thresholds.autoaccept,
@@ -47,6 +54,7 @@ def rate(config, prog, argv):
                         default=False, help='Respect commit date')
     parser.add_argument('-p', dest='enable_pager', action='store_true',
                         default=False, help='Enable pager')
+
     args = parser.parse_args(argv)
 
     config.thresholds = Thresholds(args.thres_accept,
@@ -57,11 +65,13 @@ def rate(config, prog, argv):
                                    args.weight)
 
     repo = config.repo
-    evaluation_result = EvaluationResult.from_file(config.f_evaluation_result,
+    evaluation_result = EvaluationResult.from_file(args.er_filename,
                                                    config.d_false_positives)
 
     f_patch_groups, patch_groups =\
-        config.load_patch_groups(evaluation_result.is_mbox, True)
+        config.load_patch_groups(evaluation_result.is_mbox,
+                                 must_exist=True,
+                                 f_patch_groups=args.pg_filename)
 
     log.info('Starting %s rating for %s analysis' %
              (('mailbox' if evaluation_result.is_mbox else 'patch stack'),
