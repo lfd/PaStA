@@ -97,6 +97,9 @@ def analyse(config, prog, argv):
                         default=config.thresholds.filename, type=float,
                         help='Minimum filename similarity '
                              '(default: %(default)s)')
+    parser.add_argument('-er', dest='er_filename', metavar='filename',
+                        default=config.f_evaluation_result,
+                        help='Evaluation result PKL filename')
 
     parser.add_argument('-cpu', dest='cpu_factor', metavar='cpu', type=float,
                         default=1.0, help='CPU factor for parallelisation '
@@ -270,7 +273,7 @@ def analyse(config, prog, argv):
         log.info('  ↪ done.')
 
     evaluation_result.merge(cherries)
-    evaluation_result.to_file(config.f_evaluation_result)
+    evaluation_result.to_file(args.er_filename)
 
 
 if __name__ == '__main__':
