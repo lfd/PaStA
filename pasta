@@ -88,7 +88,7 @@ def usage(me, exit_code=errno.EINVAL):
           '\n'
           'Written by %s.' %
           (__version__, me, __copyright__, __license__, __author__), file=file)
-    quit(exit_code)
+    sys.exit(exit_code)
 
 
 def main(argv):
@@ -103,46 +103,47 @@ def main(argv):
             usage(me)
         argv.pop(0)
         config = argv.pop(0)
-    config = Config(config)
-    log.info('Active configuration: %s' % config.project_name)
 
     if len(argv) < 1:
         usage(me)
 
     sub = argv.pop(0)
+    if sub == 'compare_eqclasses':
+        return compare_eqclasses(sub, argv)
+    if sub == 'optimise_eqclass':
+        return optimise_eqclass(sub, argv)
+
+    config = Config(config)
+    log.info('Active configuration: %s' % config.project_name)
 
     if sub == '-h' or sub == '--help':
         usage(me, 0)
     elif sub == 'analyse':
-        analyse(config, sub, argv)
+        return analyse(config, sub, argv)
     elif sub == 'cache':
-        cache(config, sub, argv)
+        return cache(config, sub, argv)
     elif sub == 'check_connectivity':
-        check_connectivity(config, sub, argv)
+        return check_connectivity(config, sub, argv)
     elif sub == 'compare':
-        compare(config, sub, argv)
-    elif sub == 'compare_eqclasses':
-        compare_eqclasses(sub, argv)
+        return compare(config, sub, argv)
     elif sub == 'mbox_prepare':
-        mbox_prepare(config, sub, argv)
-    elif sub == 'optimise_eqclass':
-        optimise_eqclass(sub, argv)
+        return mbox_prepare(config, sub, argv)
     elif sub == 'rate':
-        rate(config, sub, argv)
+        return rate(config, sub, argv)
     elif sub == 'statistics':
-        statistics(config, sub, argv)
+        return statistics(config, sub, argv)
     elif sub == 'compare_stacks':
-        compare_stacks(config, sub, argv)
+        return compare_stacks(config, sub, argv)
     elif sub == 'patch_descriptions':
-        patch_descriptions(config, sub, argv)
+        return patch_descriptions(config, sub, argv)
     elif sub == 'ripup':
-        ripup(config, sub, argv)
+        return ripup(config, sub, argv)
     elif sub == 'upstream_history':
-        pasta_upstream_history(config, sub, argv)
+        return pasta_upstream_history(config, sub, argv)
     elif sub == 'upstream_duration':
-        upstream_duration(config, sub, argv)
+        return upstream_duration(config, sub, argv)
     elif sub == 'web':
-        web(config, sub, argv)
+        return web(config, sub, argv)
     else:
         print('Unknown command: %s' % sub)
         usage(me)
@@ -159,6 +160,8 @@ if __name__ == '__main__':
 
     log.info('Cmdline: ' + ' '.join(sys.argv))
 
-    main(deepcopy(sys.argv))
+    ret = main(deepcopy(sys.argv))
 
     log.info('Shutting down')
+
+    sys.exit(ret if ret else 0)
