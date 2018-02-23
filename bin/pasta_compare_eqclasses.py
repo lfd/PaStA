@@ -42,11 +42,28 @@ def compare_eqclasses(prog, argv):
     parser.add_argument('-fm', action='store_true', default=False,
                         help='Fowlkes-Mallow score')
     parser.add_argument('-f', type=str, help='Write results to filename')
+    parser.add_argument('-test', action='store_true', default=False,
+                        help='run tests')
 
     args = parser.parse_args(argv)
 
-    prediction = EquivalenceClass.from_file(args.classes[0], must_exist=True)
-    ground_truth = EquivalenceClass.from_file(args.classes[1], must_exist=True)
+    # These are the converted example from:
+    # https://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-clustering-1.html
+
+    if args.test:
+        ground_truth = EquivalenceClass()
+        prediction = EquivalenceClass()
+
+        prediction.insert(0,1,2,3,4,5)
+        prediction.insert(6,7,8,9,10,11)
+        prediction.insert(12, 13, 14, 15, 16)
+
+        ground_truth.insert(0,2,3,4,5,6,12,14)
+        ground_truth.insert(1, 7, 8, 9, 11)
+        ground_truth.insert(10,13,15,16)
+    else:
+        prediction = EquivalenceClass.from_file(args.classes[0], must_exist=True)
+        ground_truth = EquivalenceClass.from_file(args.classes[1], must_exist=True)
 
     # intermix all keys
     ground_truth_keys = ground_truth.get_keys()
