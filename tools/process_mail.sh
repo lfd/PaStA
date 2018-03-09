@@ -41,7 +41,8 @@ function get_date {
 	return 0
 }
 
-ID=$(cat $TMP | grep "^Message-ID:" | head -n 1 | sed -e 's/Message-ID:\s*//')
+ID=$(cat -v $TMP | grep "^Message-ID:" | head -n 1 |
+     sed -e 's/Message-ID:\s*\(.*\)/\1/' -e 's/\s*$//')
 MD5=$(echo -en $ID | md5sum | awk '{ print $1 }')
 
 # Try to get a valid mail date
