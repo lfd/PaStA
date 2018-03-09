@@ -23,7 +23,8 @@ function die {
 
 function get_date {
 	local HEADER=$1
-	local DATE=$(cat $TMP | grep "^${HEADER}:" | head -n 1 | sed -e "s/${HEADER}:\s*//")
+	local DATE=$(cat $TMP | grep "^${HEADER}:" | head -n 1 |
+		     sed -e "s/${HEADER}:\s*//")
 	local YEAR=$(date -d "${DATE}" "+%Y")
 
 	if [ "$YEAR" == "" ]; then
