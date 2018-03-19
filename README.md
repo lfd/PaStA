@@ -19,7 +19,7 @@ Requirements
 **PaStA** requires *Python3* and comes with the following dependencies:
 - git
 - pygit2
-- git-python (for resources and patch_descriptions only)
+- git-python (for patch_descriptions only)
 - R (tikzDevice, ggplot2)
 - fuzzywuzzy + python-levenshtein
 - procmail
