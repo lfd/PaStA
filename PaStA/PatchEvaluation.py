@@ -347,6 +347,9 @@ def best_string_mapping(threshold, left_list, right_list):
         ret = dict()
         for l_entry in ll:
             for r_entry in rl:
+                # This check is _required_ as fuzzywuzzy currently contains a
+                # bug that does misevaluations in case of equivalence. See
+                # https://github.com/seatgeek/fuzzywuzzy/issues/196
                 if l_entry == r_entry:
                     sim = 1
                 else:
@@ -372,6 +375,9 @@ def rate_diffs(thresholds, l_diff, r_diff):
 
     def compare_hunks(left, right):
         # This case happens for example, if both hunks remove empty newlines
+        # This check is _required_ as fuzzywuzzy currently contains a bug that
+        # does misevaluations in case of equivalence. See
+        # https://github.com/seatgeek/fuzzywuzzy/issues/196
         if left == right:
             return 100
         return fuzz.token_sort_ratio(left, right)
