@@ -433,10 +433,13 @@ def evaluate_commit_pair(repo, thresholds, lhs_commit_hash, rhs_commit_hash):
     if lhs_commit_hash == rhs_commit_hash:
         return SimRating(1, 1, 1)
 
-    lhs_commit = repo[lhs_commit_hash]
-    rhs_commit = repo[rhs_commit_hash]
+    lhs = repo[lhs_commit_hash]
+    rhs = repo[rhs_commit_hash]
 
-    return evaluate_patch_pair(thresholds, (lhs_commit.message, lhs_commit.diff), (rhs_commit.message, rhs_commit.diff))
+    lhs = lhs.message, lhs.diff
+    rhs = rhs.message, rhs.diff
+
+    return evaluate_patch_pair(thresholds, lhs, rhs)
 
 
 def _evaluate_commit_pair_helper(thresholds, lhs_commit_hash, rhs_commit_hash):
