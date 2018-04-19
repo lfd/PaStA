@@ -295,6 +295,10 @@ class EvaluationResult(dict):
                 break
 
             for cand, rating in cands:
+                # check if those two patches are already related
+                if equivalence_class.is_related(orig, cand):
+                    continue
+
                 show_commits(repo, orig, cand, enable_pager)
                 print('Rating: %3.2f' % rating)
                 print('(y)ay or (n)ay or (s)kip?  '
