@@ -57,6 +57,9 @@ class MessageDiff:
         filtered = list(filter(lambda x: not MessageDiff.SIGN_OFF_REGEX.match(x),
                                message))
 
+        if len(filtered) > 1 and filtered[0] == filtered[1]:
+            filtered.pop(0)
+
         # if the filtered result is empty, then leave at least one line
         if filtered:
             message = filtered
