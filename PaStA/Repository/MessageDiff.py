@@ -19,11 +19,29 @@ class MessageDiff:
     """
     An abstract class that consists of a message, and a diff.
     """
-    SIGN_OFF_REGEX = re.compile((r'^(Signed-off-by:|Acked-by:|Link:|CC:'
-                                 r'|Reviewed-by:|Reported-by:|Tested-by:'
-                                 r'|LKML-Reference:|Patch:|Wrecked-off-by:'
-                                 r'|Gitweb:|Merge:|Fixes:|Commit:|Patchwork:'
-                                 r'|From:)'),
+    SIGN_OFF_REGEX = re.compile(r'^('
+                                r'Signed-off-by:|'
+                                r'Acked-by:|'
+                                r'Link:|'
+                                r'CC:|'
+                                r'Reviewed-by:|'
+                                r'Reported-by:|'
+                                r'Tested-by:|'
+                                r'LKML-Reference:|'
+                                r'Patch:|'
+                                r'Wrecked-off-by:|'
+                                r'Gitweb:|'
+                                r'Merge:|'
+                                r'Fixes:|'
+                                r'Commit:|'
+                                r'Patchwork:|'
+                                r'From:|'
+                                r'Commit-ID:|'
+                                r'Author:|'
+                                r'AuthorDate:|'
+                                r'Committer:|'
+                                r'CommitDate:'
+                                r')',
                                 re.IGNORECASE)
 
     def __init__(self, message, diff, author_name, author_email, author_date,
