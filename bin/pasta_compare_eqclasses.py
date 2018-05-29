@@ -28,7 +28,7 @@ def compare_eqclasses(prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Compare Equivalence Classes')
     parser.add_argument('classes', metavar='eqclass', type=str, nargs=2,
-                        help='Prediction / Ground Truth')
+                        help='Ground Truth / Prediction')
     parser.add_argument('-ar', action='store_true', default=False,
                         help='Adjusted rand score')
     parser.add_argument('-mi', action='store_true', default=False,
@@ -62,8 +62,8 @@ def compare_eqclasses(prog, argv):
         ground_truth.insert(1, 7, 8, 9, 11)
         ground_truth.insert(10,13,15,16)
     else:
-        prediction = EquivalenceClass.from_file(args.classes[0], must_exist=True)
-        ground_truth = EquivalenceClass.from_file(args.classes[1], must_exist=True)
+        ground_truth = EquivalenceClass.from_file(args.classes[0], must_exist=True)
+        prediction = EquivalenceClass.from_file(args.classes[1], must_exist=True)
 
     # intermix all keys
     ground_truth_keys = ground_truth.get_keys()
@@ -75,7 +75,7 @@ def compare_eqclasses(prog, argv):
         prediction.insert_single(key)
 
     missing = prediction_keys - ground_truth_keys
-    log.info('%d keys missing in prediction' % len(missing))
+    log.info('%d keys missing in ground truth' % len(missing))
     for key in missing:
         ground_truth.insert_single(key)
 

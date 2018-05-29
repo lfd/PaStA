@@ -95,7 +95,7 @@ def parallelise(maxsize, task):
 		t = Thread(target=task, args=(queue,))
 		t.start()
 		threads.append(t)
-	
+
 	i = queue_fill(queue)
 	print('put %d items' % i)
 
@@ -119,7 +119,7 @@ for upstream in [False, True]:
 			if os.path.isfile(lock):
 				print('Lock exists for tf %0.2f th %0.2f. Skipping...' % (tf, th))
 				continue
-	
+
 			call(['touch', lock])
 			if upstream:
 				mode = 'upstream'
@@ -207,7 +207,7 @@ def worker_compare(q):
 			q.task_done()
 			continue
 
-		call(['./pasta', 'compare_eqclasses', '-ar', '-mi', '-nmi', '-pur', '-fm', '-f', comp_destination, result_destination, ground_truth])
+		call(['./pasta', 'compare_eqclasses', '-ar', '-mi', '-nmi', '-pur', '-fm', '-f', comp_destination, ground_truth, result_destination])
 
 		q.task_done()
 
