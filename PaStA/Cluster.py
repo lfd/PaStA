@@ -15,7 +15,7 @@ from logging import getLogger
 log = getLogger(__name__[-15:])
 
 
-class EquivalenceClass:
+class Cluster:
     SEPARATOR = ' => '
 
     def __init__(self):
@@ -169,7 +169,7 @@ class EquivalenceClass:
             tagged = self.get_tagged(untagged[0])
             retval += ' '.join(sorted([str(x) for x in untagged]))
             if len(tagged):
-                retval += EquivalenceClass.SEPARATOR + \
+                retval += Cluster.SEPARATOR + \
                           ' '.join(sorted([str(x) for x in tagged]))
             retval += '\n'
 
@@ -237,7 +237,7 @@ class EquivalenceClass:
 
     @staticmethod
     def from_file(filename, must_exist=False):
-        retval = EquivalenceClass()
+        retval = Cluster()
 
         try:
             with open(filename, 'r') as f:
@@ -254,7 +254,7 @@ class EquivalenceClass:
         content = list(filter(None, content.splitlines()))
         content = [(lambda x: (x[0].split(' ') if x[0] else [],
                                x[1].split(' ') if len(x) == 2 else []))
-                   (x.split(EquivalenceClass.SEPARATOR))
+                   (x.split(Cluster.SEPARATOR))
                    for x in content]
 
         for untagged, tagged in content:

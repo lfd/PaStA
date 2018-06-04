@@ -26,7 +26,7 @@ def optimise_eqclass(prog, argv):
 
     args = parser.parse_args(argv)
 
-    res = EquivalenceClass.from_file(args.eqclass, must_exist=True)
+    res = Cluster.from_file(args.eqclass, must_exist=True)
     res.optimize()
     res.to_file(args.eqclass)
 

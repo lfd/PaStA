@@ -20,7 +20,7 @@ import sys
 from datetime import datetime
 from logging import getLogger
 
-from .EquivalenceClass import EquivalenceClass
+from .Cluster import Cluster
 
 log = getLogger(__name__[-15:])
 

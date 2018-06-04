@@ -16,7 +16,7 @@ from os.path import join, dirname, realpath, isfile, isdir
 from os import makedirs
 from logging import getLogger
 
-from .EquivalenceClass import EquivalenceClass
+from .Cluster import Cluster
 from .Repository import Repository
 from .PatchStack import PatchStackDefinition
 
@@ -161,8 +161,7 @@ class Config:
         if must_exist:
             Config.fail_result_not_exists(f_patch_groups)
 
-        patch_groups = EquivalenceClass.from_file(f_patch_groups,
-                                                  must_exist=must_exist)
+        patch_groups = Cluster.from_file(f_patch_groups, must_exist=must_exist)
 
         return f_patch_groups, patch_groups
 
