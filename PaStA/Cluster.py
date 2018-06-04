@@ -57,6 +57,18 @@ class Cluster:
         id = self.lookup.pop(key)
         self.classes[id].remove(key)
 
+    def remove_single_element_clusters(self):
+        single_element_clusters = set()
+        for cluster in self:
+            if len(cluster) == 1:
+                single_element_clusters.add(list(cluster)[0])
+
+        for representative in single_element_clusters:
+            self.remove_key(representative)
+        self.optimize()
+
+        return len(single_element_clusters)
+
     def is_related(self, *elems):
         """
         Returns True, if _all_ elements are in the same equivalence class
