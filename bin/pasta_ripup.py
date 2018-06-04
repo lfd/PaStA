@@ -82,7 +82,7 @@ def ripup(config, prog, argv):
             log.error('Not found in any patch group: %s' % representative)
             continue
 
-        elems = patch_groups.remove_class(representative)
+        elems = patch_groups.ripup_cluster(representative)
 
         evaluation_result = evaluate_commit_list(repo, config.thresholds,
                                                  args.mbox,

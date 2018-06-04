@@ -35,7 +35,12 @@ class Cluster:
             for key in keylist:
                 self.lookup[key] = i
 
-    def remove_class(self, representative):
+    def ripup_cluster(self, representative):
+        """
+        Rips up a cluster. This removes all connections of the elements of the
+        cluster and reinserts them as single-element clusters
+        :return: Elements of the former cluster
+        """
         id = self.lookup[representative]
 
         elems = self.classes.pop(id)
