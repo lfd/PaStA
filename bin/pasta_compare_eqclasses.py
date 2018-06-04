@@ -24,6 +24,45 @@ from PaStA import *
 log = getLogger(__name__[-15:])
 
 
+def prec_rec(ground_truth, prediction):
+    ground_truth_keys = ground_truth.get_keys()
+    prediction_keys = prediction.get_keys()
+
+    combs = list(combinations(ground_truth_keys | prediction_keys, 2))
+    false_positives = 0
+    true_positives = 0
+    false_negatives = 0
+    true_negatives = 0
+
+    for source, dest in combs:
+        truth = ground_truth.is_related(source, dest)
+        pred = prediction.is_related(source, dest)
+
+        if (truth, pred) == (True, True):
+            true_positives += 1
+        elif (truth, pred) == (False, False):
+            true_negatives += 1
+        elif (truth, pred) == (False, True):
+            false_positives += 1
+        elif (truth, pred) == (True, False):
+            false_negatives += 1
+
+    log.info('')
+    log.info('Comparisons: %d' % len(combs))
+    log.info('True Positives: %d' % true_positives)
+    log.info('True Negatives: %d' % true_negatives)
+    log.info('False Positives: %d' % false_positives)
+    log.info('False Negatives: %d' % false_negatives)
+
+    precision = true_positives / (true_positives + false_positives)
+    recall = true_positives / (true_positives + false_negatives)
+    fmeasure = 2 * precision * recall / (precision + recall)
+
+    log.info('  Precision: %f' % precision)
+    log.info('  Recall: %f' % recall)
+    log.info('  F-Measure: %f' % fmeasure)
+
+
 def compare_eqclasses(prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Compare Equivalence Classes')
@@ -39,6 +78,8 @@ def compare_eqclasses(prog, argv):
                         help='Normalised mutual info score')
     parser.add_argument('-pur', action='store_true', default=False,
                         help='Purity')
+    parser.add_argument('-pr', action='store_true', default=False,
+                        help='Classic Precision/Recall')
     parser.add_argument('-fm', action='store_true', default=False,
                         help='Fowlkes-Mallow score')
     parser.add_argument('-remove-identical', action='store_true', default=False,
@@ -84,6 +125,9 @@ def compare_eqclasses(prog, argv):
                 prediction.remove_key(element)
         ground_truth.optimize()
         prediction.optimize()
+
+    if (args.pr):
+        prec_rec(ground_truth, prediction)
 
     # intermix all keys
     ground_truth_keys = ground_truth.get_keys()
@@ -158,42 +202,6 @@ def compare_eqclasses(prog, argv):
                 f.write("pur: %0.3f\n" % purity)
             if args.fm:
                 f.write("fm: %0.3f\n" % fm)
-
-    return 0
-
-    combs = list(combinations(ground_truth_keys, 2))
-    false_positives = 0
-    true_positives = 0
-    false_negatives = 0
-    true_negatives = 0
-
-    for source, dest in combs:
-        truth = ground_truth.is_related(source, dest)
-        pred = prediction.is_related(source, dest)
-
-        if (truth, pred) == (True, True):
-            true_positives += 1
-        elif (truth, pred) == (False, False):
-            true_negatives += 1
-        elif (truth, pred) == (False, True):
-            false_positives += 1
-        elif (truth, pred) == (True, False):
-            false_negatives += 1
-
-    log.info('')
-    log.info('Comparisons: %d' % len(combs))
-    log.info('True Positives: %d' % true_positives)
-    log.info('True Negatives: %d' % true_negatives)
-    log.info('False Positives: %d' % false_positives)
-    log.info('False Negatives: %d' % false_negatives)
-
-    precision = true_positives / (true_positives + false_positives)
-    recall = true_positives / (true_positives + false_negatives)
-    fmeasure = 2 * precision * recall / (precision + recall)
-
-    log.info('  Precision: %f' % precision)
-    log.info('  Recall: %f' % recall)
-    log.info('  F-Measure: %f' % fmeasure)
 
     return 0
 
