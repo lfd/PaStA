@@ -106,17 +106,17 @@ def compare_eqclasses(prog, argv):
         log.info("Normalised mutual info score: %0.3f" % nmi)
     if args.pur:
         elements = len(gt)
-        sum = 0
+        hits = 0
         for w in ground_truth:
             this = 0
             for element in w:
-                furz = prediction[element]
-                foo = len(w & furz)
+                tmp = prediction[element]
+                foo = len(w & tmp)
                 if foo > this:
                     this = foo
-            sum += this
-        pur = sum / elements
-        log.info('Purity: %0.3f' % pur)
+            hits += this
+        purity = hits / elements
+        log.info('Purity: %0.3f' % purity)
     if args.fm:
         fm = metrics.fowlkes_mallows_score(gt, t)
         log.info("Fowlkes-Mallows score: %0.3f" % fm)
@@ -135,7 +135,7 @@ def compare_eqclasses(prog, argv):
             if args.ami:
                 f.write("ami: %0.3f\n" % ami)
             if args.pur:
-                f.write("pur: %0.3f\n" % pur)
+                f.write("pur: %0.3f\n" % purity)
             if args.fm:
                 f.write("fm: %0.3f\n" % fm)
 
