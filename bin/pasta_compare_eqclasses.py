@@ -41,6 +41,8 @@ def compare_eqclasses(prog, argv):
                         help='Purity')
     parser.add_argument('-fm', action='store_true', default=False,
                         help='Fowlkes-Mallow score')
+    parser.add_argument('-remove-identical', action='store_true', default=False,
+                        help='Remove identical clusters before comparing')
     parser.add_argument('-f', type=str, help='Write results to filename')
     parser.add_argument('-test', action='store_true', default=False,
                         help='run tests')
@@ -64,6 +66,24 @@ def compare_eqclasses(prog, argv):
     else:
         ground_truth = Cluster.from_file(args.classes[0], must_exist=True)
         prediction = Cluster.from_file(args.classes[1], must_exist=True)
+
+    # remove identical clusters, if desired
+    if args.remove_identical:
+        identical = list()
+        for cluster in ground_truth:
+            cand = prediction.get_cluster(list(cluster)[0])
+            if not cand:
+                continue
+            elif cand == cluster:
+                identical.append(cand)
+        log.info('Removing %d identical clusters (%d elements)...' %
+                 (len(identical), sum([len(x) for x in identical])))
+        for cluster in identical:
+            for element in cluster:
+                ground_truth.remove_key(element)
+                prediction.remove_key(element)
+        ground_truth.optimize()
+        prediction.optimize()
 
     # intermix all keys
     ground_truth_keys = ground_truth.get_keys()
