@@ -146,6 +146,14 @@ class Cluster:
     def get_keys(self):
         return set(self.lookup.keys())
 
+    def get_cluster(self, key):
+        """
+        Given a key, this function returns all elements of the cluster as a set
+        """
+        if key not in self:
+            return None
+        return self.classes[self.lookup[key]].copy()
+
     def get_tagged(self, key=None):
         """
         Returns all tagged entries that are related to key.
