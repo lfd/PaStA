@@ -562,6 +562,13 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
     :return: a dictionary with originals as keys and a list of potential candidates as value
     """
 
+    def print_reduction(name, original, pre):
+        factor = float('inf')
+        if pre:
+            factor = original / pre
+        log.info('%s reduced %d comparisons down to %d. (factor: %0.2f)' %
+                 (name, original, pre, factor))
+
     processes = int(cpu_count() * cpu_factor)
 
     log.info('Comparing %d commit hashes against %d commit hashes'
@@ -580,9 +587,7 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
 
     original_comparisons = len(original_hashes)*len(candidate_hashes)
     preeval_comparisons = sum([len(x) for x in preeval_result.values()])
-    log.info('Preevaluation reduced %d comparisons down to %d. (factor: %0.2f)' %
-          (original_comparisons, preeval_comparisons,
-           original_comparisons / preeval_comparisons))
+    print_reduction('Preevaluation', original_comparisons, preeval_comparisons)
 
     global _tmp_repo
     _tmp_repo = repo
