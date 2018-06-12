@@ -30,9 +30,9 @@ from bin.pasta_analyse import analyse
 from bin.pasta_cache import cache
 from bin.pasta_check_connectivity import check_connectivity
 from bin.pasta_compare import compare
-from bin.pasta_compare_eqclasses import compare_eqclasses
+from bin.pasta_compare_clusters import compare_clusters
 from bin.pasta_mbox_prepare import mbox_prepare
-from bin.pasta_optimise_eqclass import optimise_eqclass
+from bin.pasta_optimise_cluster import optimise_cluster
 from bin.pasta_rate import rate
 from bin.pasta_ripup import ripup
 from bin.pasta_statistics import statistics
@@ -69,11 +69,11 @@ def usage(me, exit_code=errno.EINVAL):
           '  check_connectivity\n'
           '  compare\n'
           '  mbox_prepare\n'
-          '  optimise_eqclass\n'
+          '  optimise_cluster\n'
           '  rate\n'
           '  statistics\n'
           '  compare_stacks\n'
-          '  compare_eqclasses\n'
+          '  compare_clusters\n'
           '  patch_descriptions\n'
           '  ripup\n'
           '  upstream_history\n'
@@ -108,10 +108,10 @@ def main(argv):
         usage(me)
 
     sub = argv.pop(0)
-    if sub == 'compare_eqclasses':
-        return compare_eqclasses(sub, argv)
-    if sub == 'optimise_eqclass':
-        return optimise_eqclass(sub, argv)
+    if sub == 'compare_clusters':
+        return compare_clusters(sub, argv)
+    if sub == 'optimise_cluster':
+        return optimise_cluster(sub, argv)
 
     config = Config(config)
     log.info('Active configuration: %s' % config.project_name)

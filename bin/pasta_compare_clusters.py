@@ -63,7 +63,7 @@ def prec_rec(ground_truth, prediction):
     log.info('  F-Measure: %f' % fmeasure)
 
 
-def compare_eqclasses(prog, argv):
+def compare_clusters(prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Compare Equivalence Classes')
     parser.add_argument('classes', metavar='eqclass', type=str, nargs=2,
@@ -207,5 +207,5 @@ def compare_eqclasses(prog, argv):
 
 
 if __name__ == '__main__':
-    ret = compare_eqclasses(sys.argv[0], sys.argv[1:])
+    ret = compare_clusters(sys.argv[0], sys.argv[1:])
     sys.exit(ret)

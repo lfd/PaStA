@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from PaStA import *
 
 
-def optimise_eqclass(prog, argv):
+def optimise_cluster(prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Optimise an equiv\' class')
     parser.add_argument('eqclass', metavar='eqclass', type=str,
@@ -32,4 +32,4 @@ def optimise_eqclass(prog, argv):
 
 
 if __name__ == '__main__':
-    optimise_eqclass(sys.argv[0], sys.argv[2:])
+    optimise_cluster(sys.argv[0], sys.argv[2:])
