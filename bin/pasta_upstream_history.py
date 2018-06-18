@@ -16,7 +16,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from PaStA import *
+from pypasta import *
 
 
 def upstream_duration(repo, date_selector, patch_groups, rep):

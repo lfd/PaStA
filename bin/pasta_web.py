@@ -18,9 +18,9 @@ import sys
 from logging import getLogger
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from PaStA import *
+from pypasta import *
 
-from PaStA.Repository import PatchMail
+from pypasta.Repository import PatchMail
 
 from flask import Flask, render_template, request, Response
 from flask_bootstrap import Bootstrap

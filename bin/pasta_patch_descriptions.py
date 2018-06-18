@@ -20,7 +20,7 @@ from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from PaStA import *
+from pypasta import *
 
 # In this case, we have to use GitPython as pygit2 does not support
 # 'git describe --contains'

@@ -24,7 +24,7 @@ import sys
 
 from copy import deepcopy
 
-from PaStA import Config
+from pypasta import Config
 
 from bin.pasta_analyse import analyse
 from bin.pasta_cache import cache

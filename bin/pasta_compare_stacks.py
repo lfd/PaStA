@@ -17,7 +17,7 @@ import sys
 from functools import partial
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from PaStA import *
+from pypasta import *
 
 
 # copied from: http://stackoverflow.com/questions/6076690/verbose-level-with-argparse-and-multiple-v-options

@@ -19,7 +19,7 @@ from subprocess import call
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 '..')))
-from PaStA import *
+from pypasta import *
 
 
 def statistics(config, prog, argv):

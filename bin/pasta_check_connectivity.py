@@ -18,7 +18,7 @@ import sys
 from logging import getLogger
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from PaStA import *
+from pypasta import *
 
 log = getLogger(__name__[-15:])
 

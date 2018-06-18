@@ -18,7 +18,7 @@ from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from PaStA import *
+from pypasta import *
 
 log = getLogger(__name__[-15:])
 repo = None

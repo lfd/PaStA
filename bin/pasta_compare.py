@@ -17,7 +17,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 '..')))
-from PaStA import *
+from pypasta import *
 
 
 def compare(config, prog, argv):
