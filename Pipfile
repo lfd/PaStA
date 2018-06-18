@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+gitpython = "*"
+pygit2 = "*"
+fuzzywuzzy = "*"
+python-levenshtein = "*"
+numpy = "*"
+scipy = ">=0.13.3"
+scikit-learn = "*"
+flask = "*"
+flask-bootstrap = "*"
+flask-nav = "*"
+flask-wtf = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.6"

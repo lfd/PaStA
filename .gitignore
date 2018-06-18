@@ -3,6 +3,7 @@ __pycache__/
 *.pkl
 .Rhistory
 .Rproj.user
+Pipfile.lock
 R/R.Rproj
 R/.RData
 log
