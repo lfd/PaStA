@@ -10,7 +10,7 @@ well as results of some sample projects.
 ```
 $ git clone https://github.com/lfd/PaStA.git
 $ cd PaStA
-$ git submodule update --init resources
+$ git submodule update --recursive --init resources
 ```
 
 Requirements
@@ -28,6 +28,17 @@ Requirements
   - flask-wtf
   - flask-bootstrap
   - flask-nav
+
+For simple and painless installation without messing up your system's
+installation, PaStA provides a pipenv configuration file for a virtual python
+environment:
+
+```
+pip3 install --local pipenv
+cd PaStA
+pipenv install
+pipenv shell
+```
 
 Getting started
 ---------------
