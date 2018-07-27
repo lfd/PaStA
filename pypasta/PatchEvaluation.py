@@ -347,6 +347,14 @@ def best_string_mapping(threshold, left_list, right_list):
     As a[{0,1,2}] == b[{0,1,2}], those values will automatically be mapped. Additionally, a[2] will also be mapped to
     b[3], if the threshold is low enough (cf. 0.5).
     """
+
+    if threshold >= 1.0:
+        ret = set()
+        for left in left_list:
+            if left in right_list:
+                ret.add((left, left))
+        return ret
+
     def injective_map(ll, rl, inverse_result=False):
         ret = dict()
         for l_entry in ll:
