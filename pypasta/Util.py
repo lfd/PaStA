@@ -103,8 +103,12 @@ def _ansi_clrscr():
     sys.stdout.write('\x1b[2J\x1b[H')
 
 
-def fix_encoding(string):
-    return string.encode('utf-8').decode('ascii', 'ignore')
+def fix_encoding(bstring):
+    try:
+        bstring = bstring.decode('utf-8')
+    except:
+        bstring = bstring.decode('iso8859')
+    return bstring
 
 
 def pager(text, enable_pager=True):
@@ -131,11 +135,11 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
         while len(left) or len(right):
             line = ''
             if len(left):
-                line = fix_encoding(left.pop(0)).expandtabs(6)[0:split_length]
+                line = left.pop(0).expandtabs(6)[0:split_length]
             line = line.ljust(split_length)
             line += ' | '
             if len(right):
-                line += fix_encoding(right.pop(0)).expandtabs(6)[0:split_length]
+                line += right.pop(0).expandtabs(6)[0:split_length]
             ret.append(line)
         return ret
 

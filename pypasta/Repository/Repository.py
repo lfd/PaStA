@@ -50,20 +50,22 @@ class Commit(MessageDiff):
 
         self.commit_hash = commit.hex
 
-        self.committer = commit.committer.name
+        self.committer = fix_encoding(commit.committer.raw_name)
         self.committer_email = commit.committer.email
         self.commit_date = commit_date
 
         # split message and diff at newlines
-        message = commit.message.split('\n')
+        message = fix_encoding(commit.raw_message).split('\n')
         diff = diff.split('\n')
 
-        super(Commit, self).__init__(message, diff, commit.author.name,
+        author_name = fix_encoding(commit.author.raw_name)
+
+        super(Commit, self).__init__(message, diff, author_name,
                                      commit.author.email, author_date)
 
     def format_message(self):
         custom = ['Committer:  %s <%s>' %
-                  (fix_encoding(self.committer), self.committer_email),
+                  (self.committer, self.committer_email),
                   'CommitDate: %s' % self.commit_date]
         return super(Commit, self).format_message(custom)
 
