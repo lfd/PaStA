@@ -431,14 +431,13 @@ def evaluate_patch_pair(thresholds, lhs, rhs):
     left_diff_lines = left_diff.lines
     right_diff_lines = right_diff.lines
 
-    diff_lines_ratio = min(left_diff_lines, right_diff_lines) / max(left_diff_lines, right_diff_lines)
+    diff_lines_ratio = min(left_diff_lines, right_diff_lines) / \
+                       max(left_diff_lines, right_diff_lines)
+    if diff_lines_ratio < thresholds.diff_lines_ratio:
+        return SimRating(0, 0, diff_lines_ratio)
 
     # get rating of message
     msg_rating = fuzz.token_sort_ratio(left_message, right_message) / 100
-
-    # Skip on diff_lines_ratio less than 1%
-    if diff_lines_ratio < 0.01:
-        return SimRating(msg_rating, 0, diff_lines_ratio)
 
     # get rating of diff
     diff_rating = rate_diffs(thresholds, left_diff, right_diff)

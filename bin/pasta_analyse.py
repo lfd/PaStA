@@ -97,6 +97,10 @@ def analyse(config, prog, argv):
                         default=config.thresholds.filename, type=float,
                         help='Minimum filename similarity '
                              '(default: %(default)s)')
+    parser.add_argument('-dlr', dest='thres_diff_lines', metavar='threshold',
+                        type=float, default=config.thresholds.diff_lines_ratio,
+                        help='Diff lines ratio threshold (default: %(default)s)')
+
     parser.add_argument('-er', dest='er_filename', metavar='filename',
                         default=config.f_evaluation_result,
                         help='Evaluation result PKL filename')
@@ -140,6 +144,8 @@ def analyse(config, prog, argv):
 
     config.thresholds.heading = args.thres_heading
     config.thresholds.filename = args.thres_filename
+    config.thresholds.diff_lines_ratio = args.thres_diff_lines
+
     repo = config.repo
     mbox = args.mbox
     mode = args.mode

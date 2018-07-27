@@ -42,9 +42,6 @@ def rate(config, prog, argv):
     parser.add_argument('-ti', dest='thres_interactive', metavar='threshold',
                         type=float, default=config.thresholds.interactive,
                         help='Interactive threshold (default: %(default)s)')
-    parser.add_argument('-dlr', dest='thres_diff_lines', metavar='threshold',
-                        type=float, default=config.thresholds.diff_lines_ratio,
-                        help='Diff lines ratio threshold (default: %(default)s)')
     parser.add_argument('-weight', dest='weight', metavar='weight', type=float,
                         default=config.thresholds.message_diff_weight,
                         help='Heuristic factor for message to diff rating. '
@@ -57,12 +54,9 @@ def rate(config, prog, argv):
 
     args = parser.parse_args(argv)
 
-    config.thresholds = Thresholds(args.thres_accept,
-                                   args.thres_interactive,
-                                   args.thres_diff_lines,
-                                   config.thresholds.heading,  # does not matter for interactive rating
-                                   config.thresholds.filename,  # does not matter for interactive rating
-                                   args.weight)
+    config.thresholds.autoaccept = args.thres_accept
+    config.thresholds.interactive = args.thres_interactive
+    config.thresholds.message_diff_weight = args.weight
 
     repo = config.repo
     evaluation_result = EvaluationResult.from_file(args.er_filename,
