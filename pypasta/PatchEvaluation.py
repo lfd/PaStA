@@ -472,15 +472,12 @@ def _evaluation_helper(thresholds, l_r, verbose=False):
 
 
 def preevaluate_filenames(thresholds, right_files, left_file):
+    # We won't enter preevaluate_filenames, if tf >= 1.0
     candidates = []
     for right_file in right_files:
-        if thresholds.filename >= 1.0:
-            if left_file != right_file:
-                continue
-        else:
-            sim = fuzz.token_sort_ratio(left_file, right_file) / 100
-            if sim < thresholds.filename:
-                continue
+        sim = fuzz.token_sort_ratio(left_file, right_file) / 100
+        if sim < thresholds.filename:
+            continue
         candidates.append(right_file)
     return left_file, candidates
 
@@ -500,14 +497,32 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
                 ret[file] |= set([hash])
         return ret
 
+    log.info('Creating file maps...')
     left_files = file_commit_map(left_hashes)
     left_filenames = list(left_files.keys())
 
     right_files = file_commit_map(right_hashes)
     right_filenames = list(right_files.keys())
 
-    f = functools.partial(preevaluate_filenames, thresholds, right_filenames)
+    preeval_result = {}
+    # Use the quick path if tf >= 1.0
+    if thresholds.filename >= 1.0:
+        log.info('Creating preevaluation result...')
+        for left_hash in left_hashes:
+            this_right_hashes = set()
+            affects = repo[left_hash].diff.affected
+            for affect in affects:
+                if affect in right_files:
+                    this_right_hashes |= right_files[affect]
+            # no comparisons against each other
+            this_right_hashes.discard(left_hash)
+            if len(this_right_hashes):
+                preeval_result[left_hash] = this_right_hashes
+        return preeval_result
 
+    # Otherwise, take the long path...
+    log.info('Mapping filenames...')
+    f = functools.partial(preevaluate_filenames, thresholds, right_filenames)
     if parallelise:
         processes = int(cpu_count() * cpu_factor)
         p = Pool(processes=processes, maxtasksperchild=1)
@@ -517,7 +532,7 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
     else:
         filename_mapping = list(map(f, left_filenames))
 
-    preeval_result = {}
+    log.info('Creating preevaluation result...')
     for left_file, dsts in filename_mapping:
         left_hashes = left_files[left_file]
         right_hashes = set()
