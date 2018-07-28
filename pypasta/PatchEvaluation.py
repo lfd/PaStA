@@ -213,8 +213,9 @@ class EvaluationResult(dict):
                 clustering.tag(cand)
 
         # Convert the dictionary of evaluation results to a sorted list,
-        # sorted by its SimRating
-        sorted_er = list(self.items())
+        # sorted by its SimRating. First, get all items, but filter for
+        # relevant items with at leas one comparison result
+        sorted_er = [x for x in self.items() if len(x[1])]
         sorted_er.sort(key=lambda x: x[1][0][1])
 
         filtered_er = dict()
