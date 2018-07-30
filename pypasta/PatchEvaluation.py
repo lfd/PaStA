@@ -466,7 +466,7 @@ def _evaluate_commit_pair_helper(thresholds, lhs_commit_hash, rhs_commit_hash):
 def _evaluation_helper(thresholds, l_r, verbose=False):
     left, right = l_r
     if verbose:
-        print('Comparing 1 commit hash against %d commit hashes' % len(right))
+        print('Comparing 1 patch against %d patches' % len(right))
 
     f = functools.partial(_evaluate_commit_pair_helper, thresholds, left)
     results = list(map(f, right))
@@ -593,7 +593,7 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
 
     processes = int(cpu_count() * cpu_factor)
 
-    log.info('Comparing %d commit hashes against %d commit hashes'
+    log.info('Comparing %d patches against %d patches'
           % (len(original_hashes), len(candidate_hashes)))
 
     # Bind thresholds to evaluation
