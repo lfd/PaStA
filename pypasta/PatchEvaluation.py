@@ -602,7 +602,10 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
         log.info('%s reduced %d comparisons down to %d. (factor: %0.2f)' %
                  (name, original, pre, factor))
 
-    processes = int(cpu_count() * cpu_factor)
+    if cpu_factor == 0:
+        parallelise = False
+    else:
+        processes = int(cpu_count() * cpu_factor)
 
     log.info('Comparing %d patches against %d patches'
           % (len(original_hashes), len(candidate_hashes)))
