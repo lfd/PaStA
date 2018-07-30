@@ -25,7 +25,8 @@ log = getLogger(__name__[-15:])
 
 class Thresholds:
     def __init__(self, autoaccept, interactive, diff_lines_ratio,
-                 heading, filename, message_diff_weight):
+                 heading, filename, message_diff_weight,
+                 author_date_interval):
         """
         :param autoaccept: Auto accept threshold. Ratings with at least this
                threshold will automatically be accepted.
@@ -39,6 +40,10 @@ class Thresholds:
                (files in a repo may move).
         :param message_diff_weight: heuristic factor of message rating to diff
                rating
+        :param author_date_interval: Used for preevaluation: Two patches will only
+               be considered for comparison, if the difference of their
+               author_dates is within patch_time_window days. A value of 0
+               means infinite days.
         """
 
         # t_a
@@ -51,8 +56,10 @@ class Thresholds:
         self.filename = filename
         # w
         self.message_diff_weight = message_diff_weight
-
+        # dlr
         self.diff_lines_ratio = diff_lines_ratio
+        # ptw
+        self.author_date_interval = author_date_interval
 
 
 class Config:
@@ -146,7 +153,8 @@ class Config:
                                      float(pasta.get('DIFF_LINES_RATIO')),
                                      float(pasta.get('HEADING_THRESHOLD')),
                                      float(pasta.get('FILENAME_THRESHOLD')),
-                                     float(pasta.get('MESSAGE_DIFF_WEIGHT')))
+                                     float(pasta.get('MESSAGE_DIFF_WEIGHT')),
+                                     int(pasta.get('AUTHOR_DATE_INTERVAL')))
 
         self.patch_stack_definition = \
             PatchStackDefinition.parse_definition_file(self)

@@ -63,6 +63,10 @@ def ripup(config, prog, argv):
                         default=config.thresholds.filename, type=float,
                         help='Minimum filename similarity '
                              '(default: %(default)s)')
+    parser.add_argument('-adi', dest='thres_adi', metavar='days', type=int,
+                        default=config.thresholds.author_date_interval,
+                        help='Author date interval (default: %(default)s)')
+
 
     args = parser.parse_args(argv)
     representatives = args.reps
@@ -73,7 +77,8 @@ def ripup(config, prog, argv):
                                    args.thres_diff_lines,
                                    args.thres_heading,
                                    args.thres_filename,
-                                   args.weight)
+                                   args.weight,
+                                   args.adi)
 
     f_patch_groups, patch_groups = config.load_patch_groups(args.mbox, True)
 

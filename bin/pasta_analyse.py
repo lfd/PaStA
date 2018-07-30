@@ -100,6 +100,9 @@ def analyse(config, prog, argv):
     parser.add_argument('-dlr', dest='thres_diff_lines', metavar='threshold',
                         type=float, default=config.thresholds.diff_lines_ratio,
                         help='Diff lines ratio threshold (default: %(default)s)')
+    parser.add_argument('-adi', dest='thres_adi', metavar='days', type=int,
+                        default=config.thresholds.author_date_interval,
+                        help='Author date interval (default: %(default)s)')
 
     parser.add_argument('-er', dest='er_filename', metavar='filename',
                         default=config.f_evaluation_result,
@@ -145,6 +148,7 @@ def analyse(config, prog, argv):
     config.thresholds.heading = args.thres_heading
     config.thresholds.filename = args.thres_filename
     config.thresholds.diff_lines_ratio = args.thres_diff_lines
+    config.thresholds.author_date_interval = args.thres_adi
 
     repo = config.repo
     mbox = args.mbox

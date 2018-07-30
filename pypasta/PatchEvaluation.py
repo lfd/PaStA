@@ -523,6 +523,16 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
                     this_right_hashes |= right_files[affect]
             # no comparisons against each other
             this_right_hashes.discard(left_hash)
+
+            # respect author_date_interval. Only consider patches for
+            # comparison that have at max a temporal author_date
+            # distance of author_date_interval days
+            left_author_date = repo[left_hash].author_date
+            if thresholds.author_date_interval:
+               this_right_hashes = {
+                    x for x in this_right_hashes
+                    if abs((repo[x].author_date - left_author_date).days) <
+                       thresholds.author_date_interval}
             if len(this_right_hashes):
                 preeval_result[left_hash] = this_right_hashes
         return preeval_result
