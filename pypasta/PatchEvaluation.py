@@ -196,7 +196,7 @@ class EvaluationResult(dict):
         return ret
 
     def interactive_rating(self, repo, clustering, thresholds,
-                           respect_commitdate=False, enable_pager=False):
+                           respect_commitdate, enable_pager):
         already_false_positive = 0
         already_detected = 0
         auto_accepted = 0
