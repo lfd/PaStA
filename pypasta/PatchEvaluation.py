@@ -195,8 +195,8 @@ class EvaluationResult(dict):
 
         return ret
 
-    def interactive_rating(self, repo, equivalence_class,
-                           thresholds, respect_commitdate=False, enable_pager=False):
+    def interactive_rating(self, repo, clustering, thresholds,
+                           respect_commitdate=False, enable_pager=False):
         already_false_positive = 0
         already_detected = 0
         auto_accepted = 0
@@ -208,9 +208,9 @@ class EvaluationResult(dict):
         skipped_by_commit_date = 0
 
         def accept(orig, cand):
-            equivalence_class.insert(orig, cand)
+            clustering.insert(orig, cand)
             if self.eval_type == EvaluationType.Upstream:
-                equivalence_class.tag(cand)
+                clustering.tag(cand)
 
         # Convert the dictionary of evaluation results to a sorted list,
         # sorted by its SimRating
@@ -231,13 +231,13 @@ class EvaluationResult(dict):
                     continue
 
                 # check if those two patches are already related
-                if equivalence_class.is_related(orig_commit_hash,
-                                                cand_commit_hash):
+                if clustering.is_related(orig_commit_hash,
+                                         cand_commit_hash):
                     already_detected += 1
                     continue
 
                 # expensive check, so put it at the bottom
-                if self.fp.is_false_positive(equivalence_class,
+                if self.fp.is_false_positive(clustering,
                                              orig_commit_hash,
                                              cand_commit_hash):
                     already_false_positive += 1
@@ -286,7 +286,7 @@ class EvaluationResult(dict):
             log.info('Continue with interactive rating? Y/n')
             yns = getch()
             if yns.lower() == 'n':
-                equivalence_class.optimize()
+                clustering.optimize()
                 return
 
         halt_save = False
@@ -296,7 +296,7 @@ class EvaluationResult(dict):
 
             for cand, rating in cands:
                 # check if those two patches are already related
-                if equivalence_class.is_related(orig, cand):
+                if clustering.is_related(orig, cand):
                     continue
 
                 show_commits(repo, orig, cand, enable_pager)
@@ -312,7 +312,7 @@ class EvaluationResult(dict):
                     accept(orig, cand)
                     accepted += 1
                 elif yns == 'n':
-                    self.fp.mark(equivalence_class, orig, cand)
+                    self.fp.mark(clustering, orig, cand)
                     declined += 1
                 elif yns == 's':
                     skipped += 1
@@ -322,7 +322,7 @@ class EvaluationResult(dict):
                     halt_save = True
                     break
 
-        equivalence_class.optimize()
+        clustering.optimize()
 
         log.info('Final stats:')
         log.info(' Interactive Accepted: %d' % accepted)
