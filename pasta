@@ -35,6 +35,7 @@ from bin.pasta_mbox_prepare import mbox_prepare
 from bin.pasta_optimise_cluster import optimise_cluster
 from bin.pasta_rate import rate
 from bin.pasta_ripup import ripup
+from bin.pasta_show_cluster import show_cluster
 from bin.pasta_statistics import statistics
 from bin.pasta_compare_stacks import compare_stacks
 from bin.pasta_patch_descriptions import patch_descriptions
@@ -71,6 +72,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  mbox_prepare\n'
           '  optimise_cluster\n'
           '  rate\n'
+          '  show_cluster\n'
           '  statistics\n'
           '  compare_stacks\n'
           '  compare_clusters\n'
@@ -138,6 +140,8 @@ def main(argv):
         return patch_descriptions(config, sub, argv)
     elif sub == 'ripup':
         return ripup(config, sub, argv)
+    elif sub == 'show_cluster':
+        return show_cluster(config, sub, argv)
     elif sub == 'upstream_history':
         return pasta_upstream_history(config, sub, argv)
     elif sub == 'upstream_duration':
