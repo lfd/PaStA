@@ -27,37 +27,48 @@ repo = None
 def get_youngest(repo, commits, commit_date):
     commits = list(commits)
     youngest = commits[0]
+    oldest = commits[0]
 
     if len(commits) == 1:
-        return youngest
+        return oldest, youngest
 
     if commit_date:
         for commit in commits[1:]:
             if repo[youngest].commit_date > repo[commit].commit_date:
                 youngest = commit
+            if repo[oldest].commit_date < repo[commit].commit_date:
+                oldest = commit
     else:
         for commit in commits[1:]:
             if repo[youngest].author_date > repo[commit].author_date:
                 youngest = commit
+            if repo[oldest].author_date < repo[commit].author_date:
+                oldest = commit
 
-    return youngest
+    return oldest, youngest
 
 
 def upstream_duration_of_group(group):
+    def ymd(dt):
+        return dt.strftime('%Y-%m-%d')
+
     untagged, tagged = group
 
     # get youngest mail and youngest upstream commit
-    youngest_mail = get_youngest(repo, untagged, False)
-    youngest_upstream = get_youngest(repo, tagged, True)
+    oldest_mail, youngest_mail = get_youngest(repo, untagged, False)
+    _, youngest_upstream = get_youngest(repo, tagged, True)
 
+    oldest_mail_date = repo[oldest_mail].author_date
     youngest_mail_date = repo[youngest_mail].author_date
+
     youngest_upstream_date = repo[youngest_upstream].commit_date
 
     delta = youngest_upstream_date - youngest_mail_date
 
     delta = delta.days
 
-    return youngest_upstream, len(untagged), len(tagged), delta
+    return youngest_upstream, ymd(youngest_mail_date), ymd(oldest_mail_date), \
+           ymd(youngest_upstream_date), len(untagged), len(tagged), delta
 
 
 def upstream_duration(config, prog, argv):
@@ -91,9 +102,9 @@ def upstream_duration(config, prog, argv):
 
     # save raw results
     with open(config.f_upstream_duration, 'w') as f:
-        f.write('rep num_equiv num_up dur\n')
+        f.write('rep first_submission last_submission integration num_equiv num_up dur\n')
         for line in result:
-            f.write('%s %d %d %d\n' % line)
+            f.write('%s %s %s %s %d %d %d\n' % line)
 
 
 if __name__ == '__main__':
