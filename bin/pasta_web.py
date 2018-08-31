@@ -111,7 +111,12 @@ def mbox_reverse():
 
 @app.route('/mbox', methods=['GET', 'POST'])
 def mbox():
-    lookup_form = CommitForm(csrf_enabled=False)
+    if request.method == 'POST':
+        arguments = request.form
+    else:
+        arguments = request.args
+
+    lookup_form = CommitForm(arguments, csrf_enabled=False)
     repo = config.repo
 
     def render_mbox(base=None, history=None):
@@ -122,7 +127,7 @@ def mbox():
                                base=base,
                                history=history)
 
-    if not lookup_form.validate_on_submit():
+    if not lookup_form.validate():
         return render_mbox()
 
     patch = repo[lookup_form.id.data]
