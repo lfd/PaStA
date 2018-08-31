@@ -45,9 +45,8 @@ patch_groups_mbox = None
 
 
 class CommitForm(FlaskForm):
-    commit_hash = StringField('Commit Hash or Message-ID',
-                              validators=[InputRequired(),
-                                          Length(min=12, max=120)])
+    id = StringField('Commit Hash or Message-ID',
+                     validators=[InputRequired(), Length(min=12, max=120)])
 
     def __init__(self, *args, **kwargs):
         FlaskForm.__init__(self, *args, **kwargs)
@@ -56,8 +55,8 @@ class CommitForm(FlaskForm):
         if not FlaskForm.validate(self):
             return False
 
-        if self.commit_hash.data not in config.repo:
-            self.commit_hash.errors.append('Commit hash or message not found')
+        if self.id.data not in config.repo:
+            self.id.errors.append('Commit hash or message not found')
             return False
 
         return True
@@ -126,11 +125,11 @@ def mbox():
     if not lookup_form.validate_on_submit():
         return render_mbox()
 
-    commit = repo[lookup_form.commit_hash.data]
-    id = commit.commit_hash
+    patch = repo[lookup_form.id.data]
+    id = patch.commit_hash
 
     if id not in patch_groups_mbox:
-        return render_mbox(commit)
+        return render_mbox(patch)
 
     elements = patch_groups_mbox.get_tagged(id) | patch_groups_mbox.get_untagged(id)
 
@@ -156,7 +155,7 @@ def mbox():
         date = date.strftime('%Y-%m-%d')
         history.append((element_id, date, message, found, element_id == id))
 
-    return render_mbox(commit, history)
+    return render_mbox(patch, history)
 
 
 def web(c, prog, argv):

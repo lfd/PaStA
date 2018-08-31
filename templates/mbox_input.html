@@ -5,7 +5,7 @@
     <div class="row">
         <form method="POST" action="{{ url_for('mbox') }}">
             <d1>
-                {{ wtf.form_field(form.commit_hash) }}
+                {{ wtf.form_field(form.id) }}
                 <input class="btn btn-primary" type="submit" value="Forward lookup">
             </d1>
         </form>
