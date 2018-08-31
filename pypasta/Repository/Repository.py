@@ -60,8 +60,10 @@ class Commit(MessageDiff):
 
         author_name = fix_encoding(commit.author.raw_name)
 
-        super(Commit, self).__init__(message, diff, author_name,
-                                     commit.author.email, author_date)
+        content = message, None, diff
+
+        super(Commit, self).__init__(content, author_name, commit.author.email,
+                                     author_date)
 
     def format_message(self):
         custom = ['Committer:  %s <%s>' %

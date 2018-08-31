@@ -43,11 +43,13 @@ class MessageDiff:
                                 r')',
                                 re.IGNORECASE)
 
-    def __init__(self, message, diff, author_name, author_email, author_date,
+    def __init__(self, content, author_name, author_email, author_date,
                  snip_header=False):
         self.author = author_name
         self.author_email = author_email
         self.author_date = author_date
+
+        message, self.annotation, diff = content
         self.raw_message = message
 
         # Split by linebreaks and filter empty lines

@@ -69,7 +69,7 @@ class PatchMail(MessageDiff):
             payload = payload.decode(charset, errors='ignore')
 
         # MAY RAISE AN ERROR, FORBID RETURN NULL
-        msg, diff = parse_payload(payload)
+        msg, annotation, diff = parse_payload(payload)
 
         # reconstruct commit message
         subject = self.mail_subject
@@ -85,7 +85,9 @@ class PatchMail(MessageDiff):
             author_name = match.group(1)
             author_email = match.group(2)
 
-        super(PatchMail, self).__init__(msg, diff, author_name, author_email,
+        content = msg, annotation, diff
+
+        super(PatchMail, self).__init__(content, author_name, author_email,
                                         date, snip_header=True)
 
     def format_message(self):
@@ -100,22 +102,28 @@ def parse_single_message(mail):
 
     mail = mail.splitlines()
 
-    valid = False
-
     message = []
-    patch = []
+    patch = None
+    annotation = None
 
     for line in mail:
-        if line.startswith('diff ') or line.startswith('--- a/'):
-            valid = True
+        if patch is None and \
+                (line.startswith('diff ') or line.startswith('--- a/')):
+            patch = list()
+        elif annotation is None and patch is None and line.startswith('---'):
+            annotation = list()
+            # Skip this line, we're not interested in the --- line.
+            continue
 
-        if valid:
+        if patch is not None:
             patch.append(line)
+        elif annotation is not None:
+            annotation.append(line)
         else:
             message.append(line)
 
-    if valid:
-        return message, patch
+    if patch:
+        return message, annotation, patch
 
     return None
 
@@ -143,6 +151,10 @@ def parse_list(payload):
 
 
 def parse_payload(payload):
+    def strip_trailing_newlines(string):
+        if string is not None and len(string) and string[-1] == '':
+            string.pop()
+
     if isinstance(payload, list):
         retval = parse_list(payload)
     elif isinstance(payload, str):
@@ -153,23 +165,13 @@ def parse_payload(payload):
     if retval is None:
         raise TypeError('Unable to split mail to msg and diff')
 
-    msg, diff = retval
+    msg, annotation, diff = retval
 
     # Remove last line of message if empty
-    while len(msg) and msg[-1] == '':
-        msg.pop()
+    strip_trailing_newlines(msg)
+    strip_trailing_newlines(annotation)
 
-    # Strip Diffstats
-    diffstat_start = None
-    for index, line in enumerate(msg):
-        if diffstat_start is None and line == '---':
-            diffstat_start = index
-        elif not (len(line) and line[0] == ' '):
-                diffstat_start = None
-    if diffstat_start:
-        msg = msg[0:diffstat_start]
-
-    return msg, diff
+    return msg, annotation, diff
 
 
 class Mbox:
