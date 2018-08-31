@@ -36,7 +36,6 @@ from wtforms.validators import InputRequired, Length
 log = getLogger(__name__[-15:])
 
 app = Flask(__name__, template_folder=os.path.join(os.getcwd(), 'templates'))
-app.config['SECRET_KEY'] = 'foobar'
 Bootstrap(app)
 
 nav = Nav()
@@ -113,7 +112,7 @@ def mbox_reverse():
 
 @app.route('/mbox', methods=['GET', 'POST'])
 def mbox():
-    lookup_form = CommitForm()
+    lookup_form = CommitForm(csrf_enabled=False)
     repo = config.repo
 
     def render_mbox(base=None, history=None):

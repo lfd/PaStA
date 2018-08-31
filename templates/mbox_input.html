@@ -6,7 +6,6 @@
         <form method="POST" action="{{ url_for('mbox') }}">
             <d1>
                 {{ wtf.form_field(form.commit_hash) }}
-                {{ form.csrf_token }}
                 <input class="btn btn-primary" type="submit" value="Forward lookup">
             </d1>
         </form>
