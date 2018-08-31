@@ -65,17 +65,6 @@ class MessageDiff:
         if filtered:
             message = filtered
 
-        def snips(line):
-            return '-------' in line or '--8<--' in line
-
-        self.header = []
-        if snip_header:
-            if any(snips(line) for line in message[0:4]):
-                line = message.pop(0)
-                while not snips(line):
-                    self.header.append(line)
-                    line = message.pop(0)
-                self.header.append(line)
         self.message = message
 
         # is a revert message?
