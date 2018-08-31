@@ -125,8 +125,13 @@ def pager(text, enable_pager=True):
 
 def show_commit(repo, hash, enable_pager=True):
     commit = repo[hash]
-    message = commit.format_message() + commit.diff.raw
-    pager('\n'.join(message), enable_pager)
+    content = commit.format_message()
+    if commit.annotation is not None:
+        content.append('---')
+        content += commit.annotation
+    content.append('')
+    content += commit.diff.raw
+    pager('\n'.join(content), enable_pager)
 
 
 def show_commits(repo, left_hash, right_hash, enable_pager=True):
@@ -149,6 +154,9 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
     left_message = left_commit.format_message()
     right_message = right_commit.format_message()
 
+    left_annotation = left_commit.annotation
+    right_annotation = right_commit.annotation
+
     left_diff, left_footer = left_commit.diff.split_footer()
     right_diff, right_footer = right_commit.diff.split_footer()
 
@@ -164,6 +172,9 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
 
     text = []
     text += side_by_side(left_message, right_message, split_length) + separator
+    if left_annotation or right_annotation:
+        text += side_by_side(left_annotation or [], right_annotation or [],
+                             split_length) + separator
     text += side_by_side(left_diff, right_diff, split_length) + separator
     text += side_by_side(left_footer, right_footer, split_length) + separator
     pager('\n'.join(text), enable_pager)
