@@ -88,7 +88,7 @@ class PatchMail(MessageDiff):
         content = msg, annotation, diff
 
         super(PatchMail, self).__init__(content, author_name, author_email,
-                                        date, snip_header=True)
+                                        date)
 
     def format_message(self):
         custom = ['Mail Subject: %s' % self.subject]
