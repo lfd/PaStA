@@ -12,7 +12,6 @@ the COPYING file in the top-level directory.
 
 import datetime
 import email
-import mailbox
 import os
 import quopri
 import re
@@ -30,7 +29,8 @@ PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
 
 class PatchMail(MessageDiff):
     def __init__(self, filename):
-        mail = mailbox.mbox(filename, create=False)[0]
+        with open(filename, 'rb') as f:
+            mail = email.message_from_binary_file(f)
 
         # Simply name it commit_hash, otherwise we would have to refactor
         # tons of code.
