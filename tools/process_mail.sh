@@ -41,6 +41,11 @@ function get_date {
 
 ID=$(cat -v $MAIL | grep -i "^Message-ID:" | head -n 1 |
      sed -e 's/Message-ID:\s*\(.*\)/\1/i' -e 's/\s*$//')
+if [ "$ID" = "" ]
+then
+	echo "Unable to parse Message ID for $MAIL"
+	exit -1
+fi
 MD5=$(echo -en $ID | md5sum | awk '{ print $1 }')
 
 # Try to get a valid mail date
