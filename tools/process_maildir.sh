@@ -28,5 +28,8 @@ LISTS=${3}/lists
 mkdir -p $BASEDIR || die "Unable to create basedir"
 
 find ${MAILDIR} -type f -print0 | xargs -0 -P $(nproc) -n 1 ./process_mail.sh ${LISTNAME} ${BASEDIR}
+if [ $? -ne 0 ]; then
+	exit 1
+fi
 
 sort -u $LISTS -o $LISTS

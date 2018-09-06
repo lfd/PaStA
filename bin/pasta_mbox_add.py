@@ -55,9 +55,12 @@ def mbox_add(config, prog, argv):
     log.info('Processing Mailbox')
     cwd = os.getcwd()
     os.chdir(os.path.join(cwd, 'tools'))
-    call([processor, listname, filename, config.d_mbox])
+    ret = call([processor, listname, filename, config.d_mbox])
     os.chdir(cwd)
-    log.info('  ↪ done')
+    if ret == 0:
+        log.info('  ↪ done')
+    else:
+        log.error('Mail processor failed!')
 
 
 if __name__ == '__main__':

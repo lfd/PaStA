@@ -43,8 +43,7 @@ ID=$(cat -v $MAIL | grep -i "^Message-ID:" | head -n 1 |
      sed -e 's/Message-ID:\s*\(.*\)/\1/i' -e 's/\s*$//')
 if [ "$ID" = "" ]
 then
-	echo "Unable to parse Message ID for $MAIL"
-	exit -1
+	die "Unable to parse Message ID for $MAIL"
 fi
 MD5=$(echo -en $ID | md5sum | awk '{ print $1 }')
 
@@ -67,9 +66,7 @@ DSTDIR="${BASEDIR}/${DATE}"
 DSTFILE="${DSTDIR}/${MD5}"
 [ -d $DSTDIR ] || mkdir -p $DSTDIR
 
-if [ -f $DSTFILE ]; then
-	die "File for $ID already exists. Duplicate entry?"
-else
+if [ ! -f $DSTFILE ]; then
 	cp $MAIL $DSTFILE
 fi
 
