@@ -3,7 +3,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2017
+Copyright (c) OTH Regensburg, 2017-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -25,7 +25,7 @@ from pypasta import *
 log = getLogger(__name__[-15:])
 
 
-def mbox_prepare(config, prog, argv):
+def mbox_add(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Prepare mailbox')
 
@@ -53,4 +53,4 @@ def mbox_prepare(config, prog, argv):
 
 if __name__ == '__main__':
     config = Config(sys.argv[1])
-    mbox_prepare(config, sys.argv[0], sys.argv[2:])
+    mbox_add(config, sys.argv[0], sys.argv[2:])

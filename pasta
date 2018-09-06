@@ -31,7 +31,7 @@ from bin.pasta_cache import cache
 from bin.pasta_check_connectivity import check_connectivity
 from bin.pasta_compare import compare
 from bin.pasta_compare_clusters import compare_clusters
-from bin.pasta_mbox_prepare import mbox_prepare
+from bin.pasta_mbox_add import mbox_add
 from bin.pasta_optimise_cluster import optimise_cluster
 from bin.pasta_rate import rate
 from bin.pasta_ripup import ripup
@@ -69,7 +69,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  cache\n'
           '  check_connectivity\n'
           '  compare\n'
-          '  mbox_prepare\n'
+          '  mbox_add\n'
           '  optimise_cluster\n'
           '  rate\n'
           '  show_cluster\n'
@@ -128,8 +128,8 @@ def main(argv):
         return check_connectivity(config, sub, argv)
     elif sub == 'compare':
         return compare(config, sub, argv)
-    elif sub == 'mbox_prepare':
-        return mbox_prepare(config, sub, argv)
+    elif sub == 'mbox_add':
+        return mbox_add(config, sub, argv)
     elif sub == 'rate':
         return rate(config, sub, argv)
     elif sub == 'statistics':
