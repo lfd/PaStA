@@ -26,6 +26,6 @@ BASEDIR=${3}
 LISTS=${3}/lists
 mkdir -p $BASEDIR || die "Unable to create basedir"
 
-formail -n $(nproc) -s <${2} ./process_mail.sh ${LISTNAME} ${BASEDIR}
+formail -n $(nproc) -s <${2} ./process_mail_pipe.sh ${LISTNAME} ${BASEDIR}
 
 sort -u $LISTS -o $LISTS

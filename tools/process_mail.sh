@@ -12,18 +12,16 @@
 
 LISTNAME=$1
 BASEDIR=$2
-TMP=$(mktemp)
-cat /dev/stdin > $TMP
+MAIL=$3
 
 function die {
 	echo "$@" 1>&2
-	rm -- "$TMP"
 	exit 1
 }
 
 function get_date {
 	local HEADER=$1
-	local DATE=$(cat $TMP | grep "^${HEADER}:" | head -n 1 |
+	local DATE=$(cat $MAIL | grep "^${HEADER}:" | head -n 1 |
 		     sed -e "s/${HEADER}:\s*//")
 	local YEAR=$(date -d "${DATE}" "+%Y")
 
@@ -41,7 +39,7 @@ function get_date {
 	return 0
 }
 
-ID=$(cat -v $TMP | grep -i "^Message-ID:" | head -n 1 |
+ID=$(cat -v $MAIL | grep -i "^Message-ID:" | head -n 1 |
      sed -e 's/Message-ID:\s*\(.*\)/\1/i' -e 's/\s*$//')
 MD5=$(echo -en $ID | md5sum | awk '{ print $1 }')
 
@@ -67,7 +65,7 @@ DSTFILE="${DSTDIR}/${MD5}"
 if [ -f $DSTFILE ]; then
 	die "File for $ID already exists. Duplicate entry?"
 else
-	mv $TMP $DSTFILE
+	cp $MAIL $DSTFILE
 fi
 
 # no lock required, echo will write atomatically when writing short lines
