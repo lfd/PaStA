@@ -14,6 +14,10 @@ LISTNAME=$1
 BASEDIR=$2
 MAIL=$3
 
+LISTS=${BASEDIR}/lists
+INVALID=${BASEDIR}/invalid
+INDEX=${BASEDIR}/index
+
 function die {
 	echo "$@" 1>&2
 	exit 1
@@ -60,7 +64,7 @@ if (($R > 0)); then
 	echo "Success."
 fi
 
-echo "$ID $LISTNAME" >> ${BASEDIR}/lists
+echo "$ID $LISTNAME" >> ${LISTS}
 
 DSTDIR="${BASEDIR}/${DATE}"
 DSTFILE="${DSTDIR}/${MD5}"
@@ -71,4 +75,4 @@ if [ ! -f $DSTFILE ]; then
 fi
 
 # no lock required, echo will write atomatically when writing short lines
-echo "$DATE $ID $MD5" >> ${BASEDIR}/index
+echo "$DATE $ID $MD5" >> ${INDEX}
