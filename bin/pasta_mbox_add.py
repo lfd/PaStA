@@ -33,29 +33,19 @@ def mbox_add(config, prog, argv):
                         help='List name')
     parser.add_argument('filename', metavar='filename', type=str,
                         help='Mailbox filename / Maildir directory')
-    parser.add_argument('-maildir', dest='maildir', action='store_true',
-                        default=False,
-                        help='filename is a maildir, not a mailbox')
 
     args = parser.parse_args(argv)
     filename = os.path.realpath(args.filename)
     listname = args.listname
 
-    if args.maildir:
-        processor = './process_maildir.sh'
-        if not os.path.isdir(filename):
-            log.error('not a direcotry: %s' % filename)
-            quit(-1)
-    else:
-        processor = './process_mailbox.sh'
-        if not os.path.isfile(filename):
-            log.error('does not exist: %s' % filename)
-            quit(-1)
+    if not os.path.exists(filename):
+        log.error('not a file or direcotry: %s' % filename)
+        quit(-1)
 
-    log.info('Processing Mailbox')
+    log.info('Processing Mailbox / Maildir')
     cwd = os.getcwd()
     os.chdir(os.path.join(cwd, 'tools'))
-    ret = call([processor, listname, filename, config.d_mbox])
+    ret = call(['./process_mailbox_maildir.sh', listname, filename, config.d_mbox])
     os.chdir(cwd)
     if ret == 0:
         log.info('  ↪ done')

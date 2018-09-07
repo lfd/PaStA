@@ -22,13 +22,24 @@ if [ "$#" -ne 3 ]; then
 fi
 
 LISTNAME=${1}
+VICTIM=${2}
 BASEDIR=${3}
 LISTS=${BASEDIR}/lists
 INDEX=${BASEDIR}/index
 
 mkdir -p $BASEDIR || die "Unable to create basedir"
 
-formail -n $(nproc) -s <${2} ./process_mail_pipe.sh ${LISTNAME} ${BASEDIR}
+if [ -d ${VICTIM} ]; then
+	find ${VICTIM} -type f -print0 | \
+		xargs -0 -P $(nproc) -n 1 \
+			./process_mail.sh ${LISTNAME} ${BASEDIR}
+elif [ -f ${VICTIM} ]; then
+	formail -n $(nproc) -s <${VICTIM} ./process_mail_pipe.sh ${LISTNAME} ${BASEDIR}
+else
+	echo "${VICTIM} is not a file or directory"
+	exit 1
+fi
+
 if [ $? -ne 0 ]; then
 	exit 1
 fi
