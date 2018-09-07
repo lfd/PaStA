@@ -23,7 +23,9 @@ fi
 
 LISTNAME=${1}
 BASEDIR=${3}
-LISTS=${3}/lists
+LISTS=${BASEDIR}/lists
+INDEX=${BASEDIR}/index
+
 mkdir -p $BASEDIR || die "Unable to create basedir"
 
 formail -n $(nproc) -s <${2} ./process_mail_pipe.sh ${LISTNAME} ${BASEDIR}
@@ -32,3 +34,4 @@ if [ $? -ne 0 ]; then
 fi
 
 sort -u $LISTS -o $LISTS
+sort -u $INDEX -o $INDEX

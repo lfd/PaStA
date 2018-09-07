@@ -24,7 +24,9 @@ fi
 LISTNAME=${1}
 MAILDIR=${2}
 BASEDIR=${3}
-LISTS=${3}/lists
+LISTS=${BASEDIR}/lists
+INDEX=${BASEDIR}/index
+
 mkdir -p $BASEDIR || die "Unable to create basedir"
 
 find ${MAILDIR} -type f -print0 | xargs -0 -P $(nproc) -n 1 ./process_mail.sh ${LISTNAME} ${BASEDIR}
@@ -33,3 +35,4 @@ if [ $? -ne 0 ]; then
 fi
 
 sort -u $LISTS -o $LISTS
+sort -u $INDEX -o $INDEX
