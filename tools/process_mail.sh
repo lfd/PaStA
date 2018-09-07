@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Copyright (c) OTH Regensburg, 2017
+# Copyright (c) OTH Regensburg, 2017-2018
 #
 # Author:
-#   Ralf Ramsauer <ralf.ramsauer@othr.de>
+#   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 #
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
@@ -64,15 +64,19 @@ if (($R > 0)); then
 	echo "Success."
 fi
 
+# no lock required, echo will write atomatically when writing short lines
 echo "$ID $LISTNAME" >> ${LISTS}
 
 DSTDIR="${BASEDIR}/${DATE}"
 DSTFILE="${DSTDIR}/${MD5}"
 [ -d $DSTDIR ] || mkdir -p $DSTDIR
 
+# check if the mail itself already exists
 if [ ! -f $DSTFILE ]; then
 	cp $MAIL $DSTFILE
 fi
 
-# no lock required, echo will write atomatically when writing short lines
-echo "$DATE $ID $MD5" >> ${INDEX}
+# check if the mail is already indexed
+if [ ! -f ${INDEX} ] || ! grep -q "${MD5}" ${INDEX}; then
+       echo "$DATE $ID $MD5" >> ${INDEX}
+fi
