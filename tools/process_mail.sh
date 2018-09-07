@@ -77,6 +77,6 @@ if [ ! -f $DSTFILE ]; then
 fi
 
 # check if the mail is already indexed
-if [ ! -f ${INDEX} ] || ! grep -q "${MD5}" ${INDEX}; then
+if ! grep -q "${MD5}" ${INDEX} ${INVALID}; then
        echo "$DATE $ID $MD5" >> ${INDEX}
 fi

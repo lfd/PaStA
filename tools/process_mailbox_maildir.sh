@@ -26,8 +26,10 @@ VICTIM=${2}
 BASEDIR=${3}
 LISTS=${BASEDIR}/lists
 INDEX=${BASEDIR}/index
+INVALID=${BASEDIR}/invalid
 
 mkdir -p $BASEDIR || die "Unable to create basedir"
+touch ${LISTS} ${INDEX} ${INVALID}
 
 if [ -d ${VICTIM} ]; then
 	find ${VICTIM} -type f -print0 | \
