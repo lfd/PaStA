@@ -172,7 +172,7 @@ def web(c, prog, argv):
                                                     must_exist=True)
 
     nav.init_app(app)
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    app.run(debug=True, host='0.0.0.0', port=8080, use_reloader=False)
 
 
 if __name__ == '__main__':
