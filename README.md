@@ -29,15 +29,13 @@ Requirements
   - flask-bootstrap
   - flask-nav
 
-For simple and painless installation without messing up your system's
-installation, PaStA provides a pipenv configuration file for a virtual python
-environment:
-
+On Ubuntu 18.04 LTS as reference distro, those dependencies can easily
+installed with:
 ```
-pip3 install --local pipenv
-cd PaStA
-pipenv install
-pipenv shell
+# apt install python3-sklearn-lib python3-git python3-pygit2 \
+              python3-fuzzywuzzy python3-flaskext.wtf python3-pip \
+              git procmail
+$ pip3 install --user flask-bootstrap flask-nav
 ```
 
 Getting started
