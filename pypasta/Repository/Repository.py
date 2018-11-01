@@ -239,5 +239,5 @@ class Repository:
             self.mbox = Mbox(d_mbox)
         except Exception as e:
             log.error('Unable to load mailbox: %s' % str(e))
-            log.error('Did you forget to run \'pasta mbox_prepare\'?')
+            log.error('Did you forget to run \'pasta mbox_add\'?')
             quit(-1)

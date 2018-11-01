@@ -178,7 +178,7 @@ is compared against all 'upstream' commits (master branch).
 
 1. Set active configuration
 2. Get dump of a mailing list in Unix-Mbox format. (e.g. by using sinntp)
-3. Run `./pasta mbox_prepare list-name filename
+3. Run `./pasta mbox_add list-name filename
 4. Repeat step 3 for multiple times to parse multiple lists
 5. Run `./pasta cache -create mbox`
 6. Run `./pasta analyse -mbox init`
