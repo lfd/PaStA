@@ -59,7 +59,7 @@ log = logging.getLogger('PaStA')
 def usage(me, exit_code=errno.EINVAL):
     file = sys.stdout
     if exit_code != 0:
-        file =sys.stderr
+        file = sys.stderr
 
     print('PaStA - The Patch Stack Analysis (PaStA %s)\n'
           '\n'
@@ -72,6 +72,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  mbox_add\n'
           '  optimise_cluster\n'
           '  rate\n'
+          '  select\n'
           '  show_cluster\n'
           '  statistics\n'
           '  compare_stacks\n'
@@ -115,6 +116,8 @@ def main(argv):
         return compare_clusters(sub, argv)
     if sub == 'optimise_cluster':
         return optimise_cluster(sub, argv)
+    if sub == 'select':
+        return Config.select_config(argv[0])
 
     config = Config(config)
 

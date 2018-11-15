@@ -40,8 +40,8 @@ $ pip3 install --user flask-bootstrap flask-nav
 
 Getting started
 ---------------
-- Select the project to analyse by linking the config:
-  `ln -sf resources/PreemptRT/PreemptRT.conf ./config`
+- Select the active project configuration
+  `./pasta select linux`
 - Run PaStA `./pasta -h`
 
 Running PaStA

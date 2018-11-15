@@ -73,8 +73,7 @@ class Config:
     BLACKLIST_LOCATION = join(D_COMMON, 'blacklists')
 
     def __init__(self, project):
-        self._project_root = realpath(Config.D_PROJECT_ROOT % project)
-        self._config_file = join(self._project_root, 'config')
+        self._project_root, self._config_file = Config.get_config_dir_file(project)
 
         if not isfile(Config.DEFAULT_CONFIG):
             raise FileNotFoundError('Default config file \'%s\' not found' %
@@ -178,6 +177,26 @@ class Config:
         patch_groups = Cluster.from_file(f_patch_groups, must_exist=must_exist)
 
         return f_patch_groups, patch_groups
+
+    @staticmethod
+    def get_config_dir_file(project):
+        project_root = realpath(Config.D_PROJECT_ROOT % project)
+        config_file = join(project_root, 'config')
+
+        return project_root, config_file
+
+    @staticmethod
+    def select_config(project):
+        _, config_file = Config.get_config_dir_file(project)
+
+        if not isfile(config_file):
+            log.error('Unable to select %s: configuration missing' % project)
+            return -1
+
+        with open('./config', 'w') as config_select:
+            config_select.write('%s\n' % project)
+
+        log.info('Successfully set active configuration: %s' % project)
 
     @staticmethod
     def fail_result_not_exists(filename):
