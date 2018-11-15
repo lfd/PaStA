@@ -66,21 +66,25 @@ class Config:
     D_RESOURCES = 'resources'
     D_COMMON = join(D_RESOURCES, 'common')
 
+    D_PROJECT_ROOT = join(D_RESOURCES, '%s')
+
     # Configuration file containing default parameters
     DEFAULT_CONFIG = join(D_COMMON, 'default.cfg')
     BLACKLIST_LOCATION = join(D_COMMON, 'blacklists')
 
-    def __init__(self, config_file):
-        self._project_root = dirname(realpath(config_file))
-        self._config_file = config_file
+    def __init__(self, project):
+        self._project_root = realpath(Config.D_PROJECT_ROOT % project)
+        self._config_file = join(self._project_root, 'config')
 
         if not isfile(Config.DEFAULT_CONFIG):
             raise FileNotFoundError('Default config file \'%s\' not found' %
                                     Config.DEFAULT_CONFIG)
 
-        if not isfile(config_file):
+        if not isfile(self._config_file):
             raise FileNotFoundError('Config file \'%s\' not found' %
-                                    config_file)
+                                    project)
+        else:
+            log.info('Active configuration: %s' % project)
 
         cfg = configparser.ConfigParser()
         cfg.read([Config.DEFAULT_CONFIG, self._config_file])
