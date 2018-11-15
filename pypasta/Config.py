@@ -63,10 +63,12 @@ class Thresholds:
 
 
 class Config:
+    D_RESOURCES = 'resources'
+    D_COMMON = join(D_RESOURCES, 'common')
 
     # Configuration file containing default parameters
-    DEFAULT_CONFIG = 'resources/common/default.cfg'
-    BLACKLIST_LOCATION = 'resources/common/blacklists'
+    DEFAULT_CONFIG = join(D_COMMON, 'default.cfg')
+    BLACKLIST_LOCATION = join(D_COMMON, 'blacklists')
 
     def __init__(self, config_file):
         self._project_root = dirname(realpath(config_file))
