@@ -186,7 +186,7 @@ class PatchStackDefinition:
         """
 
         if not os.path.isfile(config.f_patch_stack_definition):
-            log.warning('No patch stack definition given')
+            log.warning('Missing patch stack definition: assuming empty')
             return PatchStackDefinition([])
 
         csv.register_dialect('patchstack', delimiter=' ',

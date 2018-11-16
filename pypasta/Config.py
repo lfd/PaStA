@@ -199,8 +199,9 @@ class Config:
 
         self.upstream_hashes = upstream
 
-        self.patch_stack_definition = \
-            PatchStackDefinition.parse_definition_file(self)
+        if self._mode == Config.Mode.PATCHSTACK:
+            self.patch_stack_definition = \
+                PatchStackDefinition.parse_definition_file(self)
 
     def load_patch_groups(self, is_mbox, must_exist=False, f_patch_groups=None):
         if f_patch_groups is None:
