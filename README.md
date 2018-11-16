@@ -176,21 +176,21 @@ formats. After all potential patches have been detected, PaStA will save those
 patches in a commit cache file. This file can be used for further analysis and
 is compared against all 'upstream' commits (master branch).
 
-1. Set active configuration
+1. `./pasta select linux`
 2. Get dump of a mailing list in Unix-Mbox format. (e.g. by using sinntp)
 3. Run `./pasta mbox_add list-name filename
 4. Repeat step 3 for multiple times to parse multiple lists
 5. Run `./pasta cache -create mbox`
-6. Run `./pasta analyse -mbox init`
+6. Run `./pasta analyse init`
 
 To compare all mails on the list against each other:
 
-7. Run `./pasta analyse -mbox rep`
+7. Run `./pasta analyse rep`
 8. Run `./pasta rate`
 
 To compare all mails on the list against upstream:
 
-7. Run `./pasta analyse -mbox upstream`
+7. Run `./pasta analyse upstream`
 8. Run `./pasta rate`
 
 9. Your result will be stored in `resources/[project]/resources/similar-mailbox`

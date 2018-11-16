@@ -3,7 +3,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -112,10 +112,6 @@ def analyse(config, prog, argv):
                         default=1.0, help='CPU factor for parallelisation '
                                         '(default: %(default)s)')
 
-    # boolean switch to chose mailbox analysis
-    parser.add_argument('-mbox', dest='mbox', default=False,
-                        action='store_true')
-
     # choose analysis mode
     parser.add_argument('mode', default='succ',
                         choices=['init', 'succ', 'rep', 'upstream'],
@@ -151,7 +147,7 @@ def analyse(config, prog, argv):
     config.thresholds.author_date_interval = args.thres_adi
 
     repo = config.repo
-    mbox = args.mbox
+    mbox = config.mode == Config.Mode.MBOX
     mode = args.mode
 
     f_patch_groups, patch_groups = config.load_patch_groups(mbox,

@@ -126,7 +126,7 @@ for upstream in [False, True]:
 			else:
 				mode = 'rep'
 
-			call(['./pasta', 'analyse', '-mbox', mode, '-tf', '%0.2f' % tf, '-th', '%0.2f' % th, '-er', destination])
+			call(['./pasta', 'analyse', mode, '-tf', '%0.2f' % tf, '-th', '%0.2f' % th, '-er', destination])
 			call(['rm', lock])
 
 #### RATE PHASE BEGINS HERE ######
