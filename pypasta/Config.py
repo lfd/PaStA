@@ -12,7 +12,8 @@ the COPYING file in the top-level directory.
 
 import configparser
 
-from os.path import join, dirname, realpath, isfile, isdir
+from enum import Enum
+from os.path import join, realpath, isfile, isdir
 from os import makedirs
 from logging import getLogger
 
@@ -73,6 +74,10 @@ class Config:
     DEFAULT_CONFIG = join(D_COMMON, 'default.cfg')
     BLACKLIST_LOCATION = join(D_COMMON, 'blacklists')
 
+    class Mode(Enum):
+        MBOX = "mbox"
+        PATCHSTACK = "patchstack"
+
     def __init__(self, project):
         self._project_root, self._config_file = Config.get_config_dir_file(project)
 
@@ -94,6 +99,8 @@ class Config:
         self.project_name = pasta.get('PROJECT_NAME')
         if not self.project_name:
             raise RuntimeError('Project name not found')
+
+        self._mode = Config.Mode(pasta.get('MODE'))
 
         self.repo_location = pasta.get('REPO')
         if not self.repo_location:
@@ -239,3 +246,7 @@ class Config:
     @property
     def psd(self):
         return self.patch_stack_definition
+
+    @property
+    def mode(self):
+        return self._mode
