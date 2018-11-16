@@ -20,18 +20,18 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
 from pypasta import *
 
 
-def parse_choices(choices):
+def parse_choices(config, choices):
     stack = upstream = mbox = False
 
     if choices:
-        if choices == 'mbox':
-            mbox = True
-        elif choices == 'stack':
-            stack = True
-        elif choices == 'upstream':
+        if choices == 'downstream' or choices == 'all':
+            if config.mode == Config.Mode.MBOX:
+                mbox = True
+            elif config.mode == Config.Mode.PATCHSTACK:
+                stack = True
+
+        if choices == 'upstream' or choices == 'all':
             upstream = True
-        else:
-            mbox = stack = upstream = True
 
     return stack, upstream, mbox
 
@@ -45,19 +45,18 @@ def cache(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='create commit cache')
 
-    choices = ['mbox', 'stack', 'upstream', 'all']
+    choices = ['downstream', 'upstream', 'all']
     parser.add_argument('-create', metavar='create', default=None,
                         choices=choices,
-                        help='create cache for commits on patch stacks, '
-                             'upstream commits, mailbox or all')
+                        help='create cache for commits on patch stacks or '
+                             'mailboxes (downstream) and upstream commits')
     parser.add_argument('-clear', metavar='clear', default=None, choices=choices)
 
     args = parser.parse_args(argv)
-
     repo = config.repo
 
-    create_stack, create_upstream, create_mbox = parse_choices(args.create)
-    clear_stack, clear_upstream, clear_mbox = parse_choices(args.clear)
+    create_stack, create_upstream, create_mbox = parse_choices(config, args.create)
+    clear_stack, clear_upstream, clear_mbox = parse_choices(config, args.clear)
 
     if clear_stack:
         remove_if_exist(config.f_ccache_stack)
