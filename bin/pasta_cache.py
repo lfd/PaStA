@@ -54,7 +54,6 @@ def cache(config, prog, argv):
 
     args = parser.parse_args(argv)
 
-    psd = config.psd
     repo = config.repo
 
     create_stack, create_upstream, create_mbox = parse_choices(args.create)
@@ -69,12 +68,12 @@ def cache(config, prog, argv):
 
     if create_stack:
         repo.load_ccache(config.f_ccache_stack)
-        repo.cache_commits(psd.commits_on_stacks)
+        repo.cache_commits(config.psd.commits_on_stacks)
         repo.export_ccache(config.f_ccache_stack)
         repo.clear_commit_cache()
     if create_upstream:
         repo.load_ccache(config.f_ccache_upstream)
-        repo.cache_commits(psd.upstream_hashes)
+        repo.cache_commits(config.upstream_hashes)
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if create_mbox:

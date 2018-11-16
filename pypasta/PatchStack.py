@@ -74,13 +74,12 @@ class PatchStack:
 class PatchStackDefinition:
     HEADER_NAME_REGEX = re.compile(r'## (.*)')
 
-    def __init__(self, patch_stack_groups, upstream_hashes):
+    def __init__(self, patch_stack_groups):
         # List containing all patch stacks, grouped in major versions
         self.patch_stack_groups = patch_stack_groups
-        # Set containing all upstream commit hashes
-        self._upstream_hashes = upstream_hashes
 
-        # Bidirectional map: each PatchStack is assigned to an identifying number et vice versa
+        # Bidirectional map: each PatchStack is assigned to an identifying
+        # number et vice versa
         self._stack_version_to_int = {}
 
         # This dict is used to map a commit hash to a patch stack
@@ -179,40 +178,6 @@ class PatchStackDefinition:
                 yield patch_stack
 
     @staticmethod
-    def _get_upstream_hashes(config):
-        repo = config.repo
-
-        # check if upstream commit hashes are existent. If not, create them
-        upstream = None
-        if os.path.isfile(config.f_upstream_hashes):
-            upstream = load_commit_hashes(config.f_upstream_hashes)
-
-            # check if upstream range in the config file is in sync
-            if not upstream or upstream.pop(0) != config.upstream_range:
-                # set upstream to None if inconsistencies are detected.
-                # upstream commit hash file will be renewed in the next step.
-                upstream = None
-
-        if not upstream:
-            log.info('Renewing upstream commit hash file')
-            upstream = repo.get_commithash_range(config.upstream_range)
-            persist_commit_hashes(config.f_upstream_hashes,
-                                  [config.upstream_range] + upstream)
-            log.info('  ↪ done')
-
-        if config.upstream_blacklist:
-            log.debug('Loading upstream blacklist')
-            blacklist = load_commit_hashes(config.upstream_blacklist,
-                                           ordered=False)
-            # filter blacklistes commit hashes
-            log.debug('  Excluding %d commits from upstream commit list'
-                      % len(blacklist))
-            upstream = [x for x in upstream if x not in blacklist]
-            log.debug('  ↪ done')
-
-        return upstream
-
-    @staticmethod
     def parse_definition_file(config):
         """
         Parses the patch stack definition file
@@ -220,11 +185,9 @@ class PatchStackDefinition:
         :return: PatchStackDefinition
         """
 
-        upstream = PatchStackDefinition._get_upstream_hashes(config)
-
         if not os.path.isfile(config.f_patch_stack_definition):
             log.warning('No patch stack definition given')
-            return PatchStackDefinition([], upstream)
+            return PatchStackDefinition([])
 
         csv.register_dialect('patchstack', delimiter=' ',
                              quoting=csv.QUOTE_NONE)
@@ -291,4 +254,4 @@ class PatchStackDefinition:
             patch_stack_groups.append((group_name, this_group))
 
         # Create patch stack list
-        return PatchStackDefinition(patch_stack_groups, upstream)
+        return PatchStackDefinition(patch_stack_groups)

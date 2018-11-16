@@ -254,7 +254,7 @@ def analyse(config, prog, argv):
             if args.upstream_range is not None:
                 candidates = set(repo.get_commithash_range(args.upstream_range))
             else:
-                candidates = set(config.psd.upstream_hashes)
+                candidates = set(config.upstream_hashes)
 
             repo.load_ccache(config.f_ccache_upstream, must_exist=False)
 

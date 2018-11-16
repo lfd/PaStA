@@ -19,6 +19,7 @@ from logging import getLogger
 from .Cluster import Cluster
 from .Repository import Repository
 from .PatchStack import PatchStackDefinition
+from .Util import load_commit_hashes, persist_commit_hashes
 
 log = getLogger(__name__[-15:])
 
@@ -160,6 +161,36 @@ class Config:
                                      float(pasta.get('FILENAME_THRESHOLD')),
                                      float(pasta.get('MESSAGE_DIFF_WEIGHT')),
                                      int(pasta.get('AUTHOR_DATE_INTERVAL')))
+
+        # check if upstream commit hashes are existent. If not, create them
+        upstream = None
+        if isfile(self.f_upstream_hashes):
+            upstream = load_commit_hashes(self.f_upstream_hashes)
+
+            # check if upstream range in the config file is in sync
+            if not upstream or upstream.pop(0) != self.upstream_range:
+                # set upstream to None if inconsistencies are detected.
+                # upstream commit hash file will be renewed in the next step.
+                upstream = None
+
+        if not upstream:
+            log.info('Renewing upstream commit hash file')
+            upstream = self.repo.get_commithash_range(self.upstream_range)
+            persist_commit_hashes(self.f_upstream_hashes,
+                                  [self.upstream_range] + upstream)
+            log.info('  ↪ done')
+
+        if self.upstream_blacklist:
+            log.debug('Loading upstream blacklist')
+            blacklist = load_commit_hashes(self.upstream_blacklist,
+                                           ordered=False)
+            # filter blacklistes commit hashes
+            log.debug('  Excluding %d commits from upstream commit list'
+                      % len(blacklist))
+            upstream = [x for x in upstream if x not in blacklist]
+            log.debug('  ↪ done')
+
+        self.upstream_hashes = upstream
 
         self.patch_stack_definition = \
             PatchStackDefinition.parse_definition_file(self)
