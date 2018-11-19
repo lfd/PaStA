@@ -49,12 +49,14 @@ function parse_date {
 	return 0
 }
 
-ID=$(cat -v $MAIL | grep -i "^Message-ID:" | head -n 1 |
-     sed -e 's/Message-ID:\s*\(<.*>\).*/\1/i')
-if [ "$ID" = "" ]
-then
-	die "Unable to parse Message ID for $MAIL"
+ID=$(formail -x "Message-id" -c < $MAIL | tail -n 1 | sed -e 's/.*\(<.*>\).*/\1/i')
+whitespace_pattern=" |'"
+if [ "$ID" = "" ]; then
+	die "Unable to parse Message ID for ${MAIL}: empty Message-ID"
+elif [[ "$ID" =~ $whitespace_pattern ]]; then
+	die "Uable to parse Message ID for ${MAIL}: contains whitespaces"
 fi
+
 MD5=$(echo -en $ID | md5sum | awk '{ print $1 }')
 
 # Try to get a valid mail date
