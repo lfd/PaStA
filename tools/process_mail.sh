@@ -27,6 +27,11 @@ function get_date {
 	local HEADER=$1
 	local DATE=$(cat $MAIL | grep "^${HEADER}:" | head -n 1 |
 		     sed -e "s/${HEADER}:\s*//")
+
+	if [ "$DATE" == "" ]; then
+		return 1
+	fi
+
 	local YEAR=$(date -d "${DATE}" "+%Y")
 
 	if [ "$YEAR" == "" ]; then
