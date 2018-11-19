@@ -11,9 +11,10 @@ the COPYING file in the top-level directory.
 """
 
 import configparser
+import json
 
 from enum import Enum
-from os.path import join, realpath, isfile, isdir
+from os.path import join, realpath, isfile, isdir, isabs
 from os import makedirs
 from logging import getLogger
 
@@ -202,12 +203,20 @@ class Config:
 
             mbox = cfg['MBOX']
             mbox_raw = cfg['MBOX_RAW']
+            mbox_pub_in = cfg['MBOX_GIT_PUBLIC_INBOX']
 
             # mailbox parameters
             self.mbox_mindate = mbox.get('MBOX_MINDATE')
             self.mbox_maxdate = mbox.get('MBOX_MAXDATE')
 
             self.mbox_raw = list(mbox_raw.items())
+            self.mbox_git_public_inbox = list()
+
+            for listname, inboxes in list(mbox_pub_in.items()):
+                for inbox in json.loads(inboxes):
+                    if not isabs(inbox):
+                        inbox = join(self._project_root, inbox)
+                    self.mbox_git_public_inbox.append((listname, inbox))
 
     def load_patch_groups(self, is_mbox, must_exist=False, f_patch_groups=None):
         if f_patch_groups is None:
