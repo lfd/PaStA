@@ -23,16 +23,17 @@ function die {
 	exit 1
 }
 
-function get_date {
-	local HEADER=$1
-	local DATE=$(cat $MAIL | grep "^${HEADER}:" | head -n 1 |
-		     sed -e "s/${HEADER}:\s*//")
+function parse_date {
+	local DATE=$1
 
 	if [ "$DATE" == "" ]; then
 		return 1
 	fi
 
-	local YEAR=$(date -d "${DATE}" "+%Y")
+	local YEAR=$(date -d "${DATE}" "+%Y" 2> /dev/null)
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
 
 	if [ "$YEAR" == "" ]; then
 		return 1
@@ -57,16 +58,23 @@ fi
 MD5=$(echo -en $ID | md5sum | awk '{ print $1 }')
 
 # Try to get a valid mail date
-DATE=$(get_date Date)
-R=$?
-if (($R > 0)); then
-	echo "Invalid Date (Error: $R, ID: $ID)"
-	echo "Fall back to NNTP date..."
-	DATE=$(get_date NNTP-Posting-Date)
-	if (($? > 0)); then
-		die "Nope, I'm sorry. No way to parse this mail."
-	fi
-	echo "Success."
+DATE_HDR=$(formail -x Date < $MAIL | tail -n 1)
+DATE=$(parse_date "$DATE_HDR")
+if [ "$DATE" == "" ]; then
+	DATE_HDR=$(echo $DATE_HDR | sed -e 's/\(.*\)\s\(.*\)\.\(.*\)\.\(.*\)\s\(.*\)/\1 \2:\3:\4 \5/g')
+	DATE=$(parse_date "$DATE_HDR")
+fi
+if [ "$DATE" == "" ]; then
+	DATE_HDR=$(formail -x NNTP-Posting-Date < $MAIL | tail -n 1)
+	DATE=$(parse_date "$DATE_HDR")
+fi
+# last chance, try to used the Received field
+if [ "$DATE" == "" ]; then
+	DATE_HDR=$(formail -x Received -c < $MAIL | tail -n 1 | sed -e 's/.*;\s*\(.*\)/\1/')
+	DATE=$(parse_date "$DATE_HDR")
+fi
+if [ "$DATE" == "" ]; then
+	die "Nope, I'm sorry. No way to parse this mail: $MAIL"
 fi
 
 # no lock required, echo will write atomatically when writing short lines
