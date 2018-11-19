@@ -15,5 +15,8 @@ TMP=$(mktemp)
 cat /dev/stdin > $TMP
 ./process_mail.sh $LISTNAME $BASEDIR $TMP
 RET=$?
-rm $TMP
+
+if [ $RET -eq 0 ]; then
+	rm $TMP
+fi
 exit $RET
