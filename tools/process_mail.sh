@@ -44,7 +44,7 @@ function get_date {
 }
 
 ID=$(cat -v $MAIL | grep -i "^Message-ID:" | head -n 1 |
-     sed -e 's/Message-ID:\s*\(.*\)/\1/i' -e 's/\s*$//')
+     sed -e 's/Message-ID:\s*\(<.*>\).*/\1/i')
 if [ "$ID" = "" ]
 then
 	die "Unable to parse Message ID for $MAIL"
