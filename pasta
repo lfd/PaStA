@@ -132,7 +132,7 @@ def main(argv):
     elif sub == 'compare':
         return compare(config, sub, argv)
     elif sub == 'mbox_add':
-        return mbox_add(config, sub, argv)
+        return mbox_add(config)
     elif sub == 'rate':
         return rate(config, sub, argv)
     elif sub == 'statistics':

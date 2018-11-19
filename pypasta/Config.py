@@ -128,7 +128,6 @@ class Config:
             makedirs(self.d_stack_hashes)
 
         self.f_upstream_hashes = join(self.d_stack_hashes, 'upstream')
-        self.d_mbox = path('MBOX')
 
         # commit hash blacklist
         self.upstream_blacklist = pasta.get('UPSTREAM_BLACKLIST')
@@ -151,10 +150,6 @@ class Config:
 
         # R location
         self.R_resources = path('R_RESOURCES')
-
-        # mailbox parameters
-        self.mbox_mindate = pasta.get('MBOX_MINDATE')
-        self.mbox_maxdate = pasta.get('MBOX_MAXDATE')
 
         if self.upstream_blacklist:
             self.upstream_blacklist = join(Config.BLACKLIST_LOCATION,
@@ -202,6 +197,17 @@ class Config:
         if self._mode == Config.Mode.PATCHSTACK:
             self.patch_stack_definition = \
                 PatchStackDefinition.parse_definition_file(self)
+        elif self._mode == Config.Mode.MBOX:
+            self.d_mbox = path('MBOX')
+
+            mbox = cfg['MBOX']
+            mbox_raw = cfg['MBOX_RAW']
+
+            # mailbox parameters
+            self.mbox_mindate = mbox.get('MBOX_MINDATE')
+            self.mbox_maxdate = mbox.get('MBOX_MAXDATE')
+
+            self.mbox_raw = list(mbox_raw.items())
 
     def load_patch_groups(self, is_mbox, must_exist=False, f_patch_groups=None):
         if f_patch_groups is None:
