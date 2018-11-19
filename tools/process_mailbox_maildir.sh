@@ -8,10 +8,7 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-function die {
-	echo "$@" 1>&2
-	exit -1;
-}
+. ./global.env
 
 if [ "$#" -ne 3 ]; then
 	echo "Usage: $0 listname mailbox_file destination_directory"
@@ -20,16 +17,6 @@ if [ "$#" -ne 3 ]; then
 	echo "files, placed into date-separated subdirectories."
 	exit 1
 fi
-
-LISTNAME=${1}
-VICTIM=${2}
-BASEDIR=${3}
-LISTS=${BASEDIR}/lists
-INDEX=${BASEDIR}/index
-INVALID=${BASEDIR}/invalid
-
-mkdir -p $BASEDIR || die "Unable to create basedir"
-touch ${LISTS} ${INDEX} ${INVALID}
 
 if [ -d ${VICTIM} ]; then
 	find ${VICTIM} -type f -print0 | \
@@ -46,5 +33,4 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-sort -u $LISTS -o $LISTS
-sort -u $INDEX -o $INDEX
+sort_lists
