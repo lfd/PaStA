@@ -3,7 +3,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -15,9 +15,14 @@ the COPYING file in the top-level directory.
 import os
 import sys
 
+from logging import getLogger
+from subprocess import call
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 '..')))
 from pypasta import *
+
+log = getLogger(__name__[-15:])
 
 
 def parse_choices(config, choices):
@@ -41,19 +46,52 @@ def remove_if_exist(filename):
         os.remove(filename)
 
 
-def cache(config, prog, argv):
+def mail_processor(config, iter, message, processor):
+    for listname, target in iter:
+        if not os.path.exists(target):
+            log.error('not a file or directory: %s' % target)
+            quit(-1)
+
+        log.info(message + ' %s' % listname)
+        cwd = os.getcwd()
+        os.chdir(os.path.join(cwd, 'tools'))
+        ret = call([processor, listname, target, config.d_mbox])
+        os.chdir(cwd)
+        if ret == 0:
+            log.info('  ↪ done')
+        else:
+            log.error('Mail processor failed!')
+
+
+def sync(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
-                                     description='create commit cache')
+                                     description='Manage PaStA\'s resources')
 
     choices = ['downstream', 'upstream', 'all']
     parser.add_argument('-create', metavar='create', default=None,
                         choices=choices,
                         help='create cache for commits on patch stacks or '
-                             'mailboxes (downstream) and upstream commits')
-    parser.add_argument('-clear', metavar='clear', default=None, choices=choices)
+                             'mailboxes (downstream) and upstream commits. '
+                             'Possibilities: downstream / upstream / all')
+    parser.add_argument('-clear', metavar='clear', default=None,
+                        choices=choices,
+                        help='Invalidates cache. Usage same as create')
+    parser.add_argument('-mbox', action='store_true', default=False,
+                        help='synchronise mailboxes before creating caches')
 
     args = parser.parse_args(argv)
     repo = config.repo
+
+    if args.mbox and config.mode == Config.Mode.MBOX:
+        mail_processor(config, config.mbox_raw, 'Processing raw mailing list',
+                       './process_mailbox_maildir.sh')
+
+        mail_processor(config, config.mbox_git_public_inbox,
+                       'Processing GIT public inbox',
+                       './process_git_public_inbox.sh')
+
+    if args.clear is None and args.create is None:
+        args.create = 'all'
 
     create_stack, create_upstream, create_mbox = parse_choices(config, args.create)
     clear_stack, clear_upstream, clear_mbox = parse_choices(config, args.clear)
@@ -86,4 +124,4 @@ def cache(config, prog, argv):
 
 if __name__ == '__main__':
     config = Config(sys.argv[1])
-    cache(config, sys.argv[0], sys.argv[2:])
+    sync(config, sys.argv[0], sys.argv[2:])

@@ -47,7 +47,7 @@ Getting started
 Running PaStA
 -------------
 
-### PaStA Cache
+### PaStA's caches
 Many projects contain thousands of commits. It is time-consuming to determine
 and load commits. To increase overall performance, PaStA persists lists of
 commit hashes and creates pkl-based commit caches. Those lists will be created
@@ -56,10 +56,8 @@ updates those lists.
 
 The commit cache has to be created manually:
 ```
-$ ./pasta cache -create stack # Creates cache file for commits on the patch stacks
-$ ./pasta cache -create upstream # Create cache file for upstream commits
-$ ./pasta cache -create mbox # Create cache file for mail boxes (see below)
-$ ./pasta cache -create all # Create all caches
+$ ./pasta sync # Creates cache file for commits on the patch stacks
+$ ./pasta sync -mbox # Update / synchronise mailboxes before creating caches
 ```
 
 ### Detecting and grouping similar patches
