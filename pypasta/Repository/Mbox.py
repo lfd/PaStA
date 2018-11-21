@@ -173,48 +173,33 @@ def parse_payload(payload):
     return msg, annotation, diff
 
 
-class Mbox:
-    def __init__(self, config):
-        self.d_mbox = config.d_mbox
-        self.f_mbox_lists = os.path.join(self.d_mbox, 'lists')
+def load_file(filename, must_exist=True):
+    if not os.path.isfile(filename) and must_exist is False:
+        return []
+
+    with open(filename) as f:
+        f = f.read().split('\n')
+
+    while len(f) and not f[-1]:
+        f.pop()
+
+    f = [tuple(x.split(' ')) for x in f]
+
+    return f
+
+
+class MboxRaw:
+    def __init__(self, d_mbox):
+        self.d_mbox = d_mbox
         self.f_mbox_index = os.path.join(self.d_mbox, 'index')
-        self.f_mbox_invalid = os.path.join(self.d_mbox, 'invalid')
 
         log.info('Loading Mailbox')
-        lists = dict()
-        for message_id, list_name in Mbox._load_file(self.f_mbox_lists):
-            if message_id not in lists:
-                lists[message_id] = set()
-            lists[message_id].add(list_name)
-        log.info('  ↪ loaded mail-to-list mappings: %s mappings' % len(lists))
-
-        self.index = Mbox._load_index(self.f_mbox_index, lists)
+        self.index = {x[1]: (datetime.datetime.strptime(x[0], "%Y/%m/%d"),
+                             x[0], x[2]) for x in load_file(self.f_mbox_index)}
         log.info('  ↪ loaded mail index: found %d mails', len(self.index))
-        self.invalid = Mbox._load_index(self.f_mbox_invalid, lists, False)
-        log.info('  ↪ loaded invalid mail index: found %d invalid mails'
-                 % len(self.invalid))
-
-    @staticmethod
-    def _load_index(filename, lists, must_exist=True):
-        content = Mbox._load_file(filename, must_exist)
-        return {x[1]: (datetime.datetime.strptime(x[0], "%Y/%m/%d"),
-                       x[0], x[2], lists[x[1]]) for x in content}
-
-    @staticmethod
-    def _load_file(filename, must_exist=True):
-        if not os.path.isfile(filename) and must_exist is False:
-            return []
-
-        with open(filename) as f:
-            f = f.read().split('\n')
-            # last element is empty
-            f.pop()
-        f = [tuple(x.split(' ')) for x in f]
-
-        return f
 
     def __getitem__(self, message_id):
-        _, date_str, md5, _ = self.index[message_id]
+        _, date_str, md5 = self.index[message_id]
         filename = os.path.join(self.d_mbox, date_str, md5)
         with open(filename, 'rb') as f:
             return PatchMail(f.read())
@@ -226,26 +211,45 @@ class Mbox:
         if time_window:
             return [x[0] for x in self.index.items()
                     if time_window[0] <= x[1][0] <= time_window[1]]
-        else:
-            return self.index.keys()
+
+        return self.index.keys()
+
+
+class Mbox:
+    def __init__(self, config):
+        self.f_mbox_invalid = os.path.join(config.d_mbox, 'invalid')
+        self.f_mbox_lists = os.path.join(config.d_mbox, 'lists')
+
+        self.lists = dict()
+        for message_id, list_name in load_file(self.f_mbox_lists):
+            if message_id not in self.lists:
+                self.lists[message_id] = set()
+            self.lists[message_id].add(list_name)
+        log.info('  ↪ loaded mail-to-list mappings: %s mappings' %
+                 len(self.lists))
+
+        self.invalid = set([x[0] for x in
+                            load_file(self.f_mbox_invalid, must_exist=False)])
+        log.info('  ↪ loaded invalid mail index: found %d invalid mails'
+                 % len(self.invalid))
+
+        self.mbox_raw = MboxRaw(config.d_mbox)
+
+    def __getitem__(self, message_id):
+        return self.mbox_raw[message_id]
+
+    def __contains__(self, item):
+        return item in self.mbox_raw
+
+    def message_ids(self, time_window=None):
+        ids = self.mbox_raw.message_ids(time_window)
+        return ids - self.invalid
 
     def get_lists(self, message_id):
-        return self.index[message_id][3]
+        return self.lists[message_id]
 
     def invalidate(self, invalid):
-        def write_index(filename, foo):
-            with open(filename, 'w') as f:
-                ret = ['%s %s %s' % (x[1][1], x[0], x[1][2]) for x in foo]
-                ret = '\n'.join(ret) + '\n'
-                f.write(ret)
+        self.invalid |= set(invalid)
 
-        for message_id in invalid:
-            self.invalid[message_id] = self.index.pop(message_id)
-
-        invalid = sorted(self.invalid.items())
-        valid = sorted(self.index.items())
-
-        if len(valid):
-            write_index(self.f_mbox_index, valid)
-        if len(invalid):
-            write_index(self.f_mbox_invalid, invalid)
+        with open(self.f_mbox_invalid, 'w') as f:
+            f.write('\n'.join(sorted(self.invalid)) + '\n')
