@@ -226,10 +226,16 @@ class Repository:
         # preserve order
         return list(reversed(inserted_cherries))
 
-    def register_mailbox(self, config):
-        try:
+    def mbox_register(self, config):
+        if not self.mbox:
             self.mbox = Mbox(config)
-        except Exception as e:
-            log.error('Unable to load mailbox: %s' % str(e))
-            log.error('Did you forget to run \'pasta mbox_add\'?')
-            quit(-1)
+
+    def mbox_update(self, config):
+        self.mbox_register(config)
+        self.mbox.update()
+
+        # The mbox doesn't track changes after an update. The easiest
+        # workaround is to reload the whole instance.
+        del self.mbox
+        self.mbox = None
+        self.mbox_register(config)

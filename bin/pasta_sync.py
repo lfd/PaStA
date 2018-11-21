@@ -16,7 +16,6 @@ import os
 import sys
 
 from logging import getLogger
-from subprocess import call
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 '..')))
@@ -46,23 +45,6 @@ def remove_if_exist(filename):
         os.remove(filename)
 
 
-def mail_processor(config, iter, message, processor):
-    for listname, target in iter:
-        if not os.path.exists(target):
-            log.error('not a file or directory: %s' % target)
-            quit(-1)
-
-        log.info(message + ' %s' % listname)
-        cwd = os.getcwd()
-        os.chdir(os.path.join(cwd, 'tools'))
-        ret = call([processor, listname, target, config.d_mbox])
-        os.chdir(cwd)
-        if ret == 0:
-            log.info('  ↪ done')
-        else:
-            log.error('Mail processor failed!')
-
-
 def sync(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Manage PaStA\'s resources')
@@ -88,12 +70,7 @@ def sync(config, prog, argv):
     config.load_upstream_hashes(force_reload=True)
 
     if args.mbox and config.mode == Config.Mode.MBOX:
-        mail_processor(config, config.mbox_raw, 'Processing raw mailing list',
-                       './process_mailbox_maildir.sh')
-
-        mail_processor(config, config.mbox_git_public_inbox,
-                       'Processing GIT public inbox',
-                       './process_git_public_inbox.sh')
+        config.repo.mbox_update(config)
 
     if args.clear is None and args.create is None:
         args.create = 'all'
@@ -119,7 +96,7 @@ def sync(config, prog, argv):
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if create_mbox:
-        config.repo.register_mailbox(config)
+        config.repo.mbox_register(config)
 
         repo.load_ccache(config.f_ccache_mbox)
         repo.cache_commits(repo.mbox.message_ids())

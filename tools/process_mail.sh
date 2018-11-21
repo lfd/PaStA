@@ -14,9 +14,7 @@ LISTNAME=$1
 BASEDIR=$2
 MAIL=$3
 
-LISTS=${BASEDIR}/lists
-INVALID=${BASEDIR}/invalid
-INDEX=${BASEDIR}/index
+INDEX=${BASEDIR}/index.raw.${LISTNAME}
 
 function die {
 	echo "$@" 1>&2
@@ -80,8 +78,6 @@ if [ "$DATE" == "" ]; then
 fi
 
 # no lock required, echo will write atomatically when writing short lines
-echo "$ID $LISTNAME" >> ${LISTS}
-
 DSTDIR="${BASEDIR}/${DATE}"
 DSTFILE="${DSTDIR}/${MD5}"
 [ -d $DSTDIR ] || mkdir -p $DSTDIR
@@ -91,7 +87,4 @@ if [ ! -f $DSTFILE ]; then
 	cp $MAIL $DSTFILE
 fi
 
-# check if the mail is already indexed
-if ! grep -q "${MD5}" ${INDEX} ${INVALID}; then
-       echo "$DATE $ID $MD5" >> ${INDEX}
-fi
+echo "$DATE $ID $MD5" >> ${INDEX}
