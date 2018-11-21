@@ -28,9 +28,8 @@ PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
 
 
 class PatchMail(MessageDiff):
-    def __init__(self, filename):
-        with open(filename, 'rb') as f:
-            mail = email.message_from_binary_file(f)
+    def __init__(self, content):
+        mail = email.message_from_bytes(content)
 
         # Simply name it commit_hash, otherwise we would have to refactor
         # tons of code.
@@ -216,7 +215,9 @@ class Mbox:
 
     def __getitem__(self, message_id):
         _, date_str, md5, _ = self.index[message_id]
-        return os.path.join(self.d_mbox, date_str, md5)
+        filename = os.path.join(self.d_mbox, date_str, md5)
+        with open(filename, 'rb') as f:
+            return PatchMail(f.read())
 
     def __contains__(self, item):
         return item in self.index

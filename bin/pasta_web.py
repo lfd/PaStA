@@ -90,6 +90,7 @@ def view():
     commit = config.repo[id]
 
     if isinstance(commit, PatchMail):
+        # FIXIT, broken!
         filename = config.repo.mbox[id]
         with open(filename, 'rb') as f:
             return Response(f.read(), mimetype='text/plain')

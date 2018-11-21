@@ -94,7 +94,7 @@ class Repository:
         # check if the victim is an email
         try:
             if commit_hash[0] == '<':
-                return PatchMail(self.mbox[commit_hash])
+                return self.mbox[commit_hash]
             else:
                 return Commit(self.repo, commit_hash)
         except Exception as e:
