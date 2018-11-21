@@ -82,6 +82,11 @@ def sync(config, prog, argv):
     args = parser.parse_args(argv)
     repo = config.repo
 
+    # Update upstream
+    log.info('Fetching and syncing upstream repository')
+    repo.repo.remotes['origin'].fetch()
+    config.load_upstream_hashes(force_reload=True)
+
     if args.mbox and config.mode == Config.Mode.MBOX:
         mail_processor(config, config.mbox_raw, 'Processing raw mailing list',
                        './process_mailbox_maildir.sh')

@@ -165,35 +165,8 @@ class Config:
                                      float(pasta.get('MESSAGE_DIFF_WEIGHT')),
                                      int(pasta.get('AUTHOR_DATE_INTERVAL')))
 
-        # check if upstream commit hashes are existent. If not, create them
-        upstream = None
-        if isfile(self.f_upstream_hashes):
-            upstream = load_commit_hashes(self.f_upstream_hashes)
-
-            # check if upstream range in the config file is in sync
-            if not upstream or upstream.pop(0) != self.upstream_range:
-                # set upstream to None if inconsistencies are detected.
-                # upstream commit hash file will be renewed in the next step.
-                upstream = None
-
-        if not upstream:
-            log.info('Renewing upstream commit hash file')
-            upstream = self.repo.get_commithash_range(self.upstream_range)
-            persist_commit_hashes(self.f_upstream_hashes,
-                                  [self.upstream_range] + upstream)
-            log.info('  ↪ done')
-
-        if self.upstream_blacklist:
-            log.debug('Loading upstream blacklist')
-            blacklist = load_commit_hashes(self.upstream_blacklist,
-                                           ordered=False)
-            # filter blacklistes commit hashes
-            log.debug('  Excluding %d commits from upstream commit list'
-                      % len(blacklist))
-            upstream = [x for x in upstream if x not in blacklist]
-            log.debug('  ↪ done')
-
-        self.upstream_hashes = upstream
+        self.upstream_hashes = None
+        self.load_upstream_hashes()
 
         if self._mode == Config.Mode.PATCHSTACK:
             self.patch_stack_definition = \
@@ -231,6 +204,38 @@ class Config:
         patch_groups = Cluster.from_file(f_patch_groups, must_exist=must_exist)
 
         return f_patch_groups, patch_groups
+
+    def load_upstream_hashes(self, force_reload=False):
+        # check if upstream commit hashes are existent. If not, create them
+        upstream = None
+        if isfile(self.f_upstream_hashes):
+            upstream = load_commit_hashes(self.f_upstream_hashes)
+
+            # check if upstream range in the config file is in sync
+            if not upstream or upstream.pop(0) != self.upstream_range or \
+               force_reload:
+                # set upstream to None if inconsistencies are detected.
+                # upstream commit hash file will be renewed in the next step.
+                upstream = None
+
+        if not upstream:
+            log.info('Renewing upstream commit hash file')
+            upstream = self.repo.get_commithash_range(self.upstream_range)
+            persist_commit_hashes(self.f_upstream_hashes,
+                                  [self.upstream_range] + upstream)
+            log.info('  ↪ done')
+
+        if self.upstream_blacklist:
+            log.debug('Loading upstream blacklist')
+            blacklist = load_commit_hashes(self.upstream_blacklist,
+                                           ordered=False)
+            # filter blacklistes commit hashes
+            log.debug('  Excluding %d commits from upstream commit list'
+                      % len(blacklist))
+            upstream = [x for x in upstream if x not in blacklist]
+            log.debug('  ↪ done')
+
+        self.upstream_hashes = upstream
 
     @staticmethod
     def get_config_dir_file(project):
