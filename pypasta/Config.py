@@ -187,8 +187,6 @@ class Config:
 
             for listname, inboxes in list(mbox_pub_in.items()):
                 for inbox in json.loads(inboxes):
-                    if not isabs(inbox):
-                        inbox = join(self._project_root, inbox)
                     self.mbox_git_public_inbox.append((listname, inbox))
 
     @property
@@ -199,7 +197,7 @@ class Config:
         if f_patch_groups is None:
             f_patch_groups = self.f_pasta_result
             if is_mbox:
-                self.repo.register_mailbox(self)
+                self.repo.mbox_register(self)
                 f_patch_groups = self.f_mbox_result
 
         if must_exist:

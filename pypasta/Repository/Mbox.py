@@ -12,14 +12,18 @@ the COPYING file in the top-level directory.
 
 import datetime
 import email
+import git
 import os
+import pygit2
 import quopri
 import re
 
 from email.charset import CHARSETS
 from logging import getLogger
+from subprocess import call
 
 from .MessageDiff import MessageDiff
+from ..Util import get_commit_hash_range
 
 log = getLogger(__name__[-15:])
 
@@ -28,9 +32,7 @@ PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
 
 
 class PatchMail(MessageDiff):
-    def __init__(self, content):
-        mail = email.message_from_bytes(content)
-
+    def __init__(self, mail):
         # Simply name it commit_hash, otherwise we would have to refactor
         # tons of code.
         self.commit_hash = mail['Message-ID']
@@ -188,62 +190,200 @@ def load_file(filename, must_exist=True):
     return f
 
 
-class MboxRaw:
+def load_index(filename):
+    return {message_id: (datetime.datetime.strptime(date, "%Y/%m/%d"), date,
+                         location)
+            for (date, message_id, location) in load_file(filename, must_exist=False)}
+
+
+class MailContainer:
+    def message_ids(self, time_window=None):
+        if time_window:
+            return {x[0] for x in self.index.items()
+                    if time_window[0] <= x[1][0] <= time_window[1]}
+
+        return set(self.index.keys())
+
+    def __contains__(self, message_id):
+        return message_id in self.index
+
+
+class PubInbox(MailContainer):
+    MESSAGE_ID_REGEX = re.compile(r'.*(<.*>).*')
+
+    def __init__(self, d_mbox, d_repo, listname):
+        self.d_repo = d_repo
+
+        inbox_name = os.path.basename(d_repo)
+        f_index = os.path.join(d_mbox, 'index.pubin.%s' % inbox_name)
+        self.f_index = f_index
+        self.repo = pygit2.Repository(d_repo)
+        self.index = load_index(self.f_index)
+
+        log.info('  ↪ loaded mail index for %s from %s: found %d mails' %
+                 (listname, inbox_name, len(self.index)))
+
+    def get_mail(self, commit):
+        blob = self.repo[commit].tree['m'].hex
+        return email.message_from_bytes(self.repo[blob].data)
+
+    def __getitem__(self, message_id):
+        mail = self.get_mail(self.index[message_id][2])
+        return PatchMail(mail)
+
+    def update(self):
+        repo = git.Repo(self.d_repo)
+        for remote in repo.remotes:
+            remote.fetch()
+        self.repo = pygit2.Repository(self.d_repo)
+
+        known_hashes = {hash for (_, _, hash) in self.index.values()}
+        hashes = set(get_commit_hash_range(self.d_repo, 'origin/master'))
+
+        hashes = hashes - known_hashes
+        log.info('Updating %d emails' % len(hashes))
+
+        for hash in hashes:
+            mail = self.get_mail(hash)
+
+            message_id = mail['Message-ID'].replace(' ', '').strip()
+            match = PubInbox.MESSAGE_ID_REGEX.match(message_id)
+            if not match:
+                log.warning('Unable to parse Message ID: %s' % message_id)
+                continue
+
+            message_id = match.group(1)
+
+            if message_id in self.index:
+                log.warning('Duplicate Message id %s. Skipping' % message_id)
+                continue
+
+            date = mail['Date']
+            try:
+                date = email.utils.parsedate_to_datetime(date)
+            except Exception as e:
+                log.warning('Unable to parse datetime %s of %s (%s)' % (date, message_id, hash))
+                continue
+
+            format_date = date.strftime('%04Y/%m/%d')
+
+            self.index[message_id] = date, format_date, hash
+
+        with open(self.f_index, 'w') as f:
+            index = ['%s %s %s' % (format_date, message_id, commit)
+                     for (message_id, (date, format_date, commit))
+                     in self.index.items()]
+            index.sort()
+            f.write('\n'.join(index) + '\n')
+
+
+class MboxRaw(MailContainer):
     def __init__(self, d_mbox):
         self.d_mbox = d_mbox
-        self.f_mbox_index = os.path.join(self.d_mbox, 'index')
+        self.index = {}
+        self.lists = {}
+        self.raw_mboxes = []
 
-        log.info('Loading Mailbox')
-        self.index = {x[1]: (datetime.datetime.strptime(x[0], "%Y/%m/%d"),
-                             x[0], x[2]) for x in load_file(self.f_mbox_index)}
-        log.info('  ↪ loaded mail index: found %d mails', len(self.index))
+    def add_mbox(self, listname, f_mbox_raw):
+        self.raw_mboxes.append((listname, f_mbox_raw))
+        f_mbox_index = os.path.join(self.d_mbox, 'index.raw.%s' % listname)
+        index = load_index(f_mbox_index)
+        log.info('  ↪ loaded mail index for %s: found %d mails' % (listname, len(index)))
+        self.index = {**self.index, **index}
+        return set(index.keys())
+
+    def update(self):
+        for listname, f_mbox_raw in self.raw_mboxes:
+            if not os.path.exists(f_mbox_raw):
+                log.error('not a file or directory: %s' % f_mbox_raw)
+                quit(-1)
+
+            log.info('Processing raw mailbox %s' % listname)
+            cwd = os.getcwd()
+            os.chdir(os.path.join(cwd, 'tools'))
+            ret = call(['./process_mailbox_maildir.sh', listname, f_mbox_raw, self.d_mbox])
+            os.chdir(cwd)
+            if ret == 0:
+                log.info('  ↪ done')
+            else:
+                log.error('Mail processor failed!')
 
     def __getitem__(self, message_id):
         _, date_str, md5 = self.index[message_id]
         filename = os.path.join(self.d_mbox, date_str, md5)
         with open(filename, 'rb') as f:
-            return PatchMail(f.read())
-
-    def __contains__(self, item):
-        return item in self.index
-
-    def message_ids(self, time_window=None):
-        if time_window:
-            return [x[0] for x in self.index.items()
-                    if time_window[0] <= x[1][0] <= time_window[1]]
-
-        return self.index.keys()
+            mail = email.message_from_bytes(f.read())
+            return PatchMail(mail)
 
 
 class Mbox:
     def __init__(self, config):
         self.f_mbox_invalid = os.path.join(config.d_mbox, 'invalid')
-        self.f_mbox_lists = os.path.join(config.d_mbox, 'lists')
-
         self.lists = dict()
-        for message_id, list_name in load_file(self.f_mbox_lists):
-            if message_id not in self.lists:
-                self.lists[message_id] = set()
-            self.lists[message_id].add(list_name)
-        log.info('  ↪ loaded mail-to-list mappings: %s mappings' %
-                 len(self.lists))
 
         self.invalid = set([x[0] for x in
                             load_file(self.f_mbox_invalid, must_exist=False)])
         log.info('  ↪ loaded invalid mail index: found %d invalid mails'
                  % len(self.invalid))
 
+        if len(config.mbox_raw):
+            log.info('Loading raw mailboxes...')
         self.mbox_raw = MboxRaw(config.d_mbox)
+        for listname, f_mbox_raw in config.mbox_raw:
+            message_ids = self.mbox_raw.add_mbox(listname, f_mbox_raw)
+            for message_id in message_ids:
+                self.add_mail_to_list(message_id, listname)
+
+        self.pub_in = []
+        self.pub_in_index = dict()
+        if len(config.mbox_git_public_inbox):
+            log.info('Loading public inboxes')
+        for listname, d_repo in config.mbox_git_public_inbox:
+            if not os.path.isabs(d_repo):
+                d_repo = os.path.join(config.project_root, d_repo)
+
+            idx = len(self.pub_in)
+            inbox = PubInbox(config.d_mbox, d_repo, listname)
+            for message_id in inbox.message_ids():
+                self.pub_in_index[message_id] = idx
+                self.add_mail_to_list(message_id, listname)
+
+            self.pub_in.append(inbox)
+
+    def add_mail_to_list(self, message_id, list):
+        if message_id not in self.lists:
+            self.lists[message_id] = set()
+        self.lists[message_id].add(list)
 
     def __getitem__(self, message_id):
+        if message_id in self.pub_in_index:
+            idx = self.pub_in_index[message_id]
+            pub_in = self.pub_in[idx]
+            return pub_in[message_id]
+
         return self.mbox_raw[message_id]
 
-    def __contains__(self, item):
-        return item in self.mbox_raw
+    def __contains__(self, message_id):
+        if message_id in self.pub_in_index:
+            return True
+
+        return message_id in self.mbox_raw
 
     def message_ids(self, time_window=None):
-        ids = self.mbox_raw.message_ids(time_window)
+        ids = set()
+
+        for pub in self.pub_in:
+            ids |= pub.message_ids(time_window)
+
+        ids |= self.mbox_raw.message_ids(time_window)
+
         return ids - self.invalid
+
+    def update(self):
+        self.mbox_raw.update()
+
+        for pub in self.pub_in:
+            pub.update()
 
     def get_lists(self, message_id):
         return self.lists[message_id]
