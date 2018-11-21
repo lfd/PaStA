@@ -226,9 +226,9 @@ class Repository:
         # preserve order
         return list(reversed(inserted_cherries))
 
-    def register_mailbox(self, d_mbox):
+    def register_mailbox(self, config):
         try:
-            self.mbox = Mbox(d_mbox)
+            self.mbox = Mbox(config)
         except Exception as e:
             log.error('Unable to load mailbox: %s' % str(e))
             log.error('Did you forget to run \'pasta mbox_add\'?')

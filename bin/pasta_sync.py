@@ -119,7 +119,7 @@ def sync(config, prog, argv):
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if create_mbox:
-        config.repo.register_mailbox(config.d_mbox)
+        config.repo.register_mailbox(config)
 
         repo.load_ccache(config.f_ccache_mbox)
         repo.cache_commits(repo.mbox.message_ids())
