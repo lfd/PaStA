@@ -191,6 +191,10 @@ class Config:
                         inbox = join(self._project_root, inbox)
                     self.mbox_git_public_inbox.append((listname, inbox))
 
+    @property
+    def project_root(self):
+        return self._project_root
+
     def load_patch_groups(self, is_mbox, must_exist=False, f_patch_groups=None):
         if f_patch_groups is None:
             f_patch_groups = self.f_pasta_result
