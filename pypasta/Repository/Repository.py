@@ -210,7 +210,7 @@ class Repository:
         """
         Gets all commithashes within a certain range
         Usage: get_commithash_range('v2.0..v2.1')
-               get_commithash_ranse('v3.0')
+               get_commithash_range('v3.0')
         """
 
         # we use git.Repo, as pygit doesn't support this nifty log functionality
