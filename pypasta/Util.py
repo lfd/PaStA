@@ -11,6 +11,7 @@ the COPYING file in the top-level directory.
 """
 
 import argparse
+import git
 import termios
 import tty
 import shutil
@@ -20,9 +21,19 @@ import sys
 from datetime import datetime
 from logging import getLogger
 
-from .Cluster import Cluster
-
 log = getLogger(__name__[-15:])
+
+
+def get_commit_hash_range(d_repo, range):
+        """
+        Gets all commithashes within a certain range
+        Usage: get_commithash_range(dir, 'v2.0..v2.1')
+               get_commithash_range(dir, 'v3.0')
+        """
+
+        # we use git.Repo, as pygit doesn't support this nifty log functionality
+        repo = git.Repo(d_repo)
+        return repo.git.log('--pretty=format:%H', range).splitlines()
 
 
 def get_date_selector(repo, patch_stack_definition, selector):

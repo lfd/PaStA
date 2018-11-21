@@ -21,7 +21,7 @@ from multiprocessing import Pool, cpu_count
 
 from .MessageDiff import MessageDiff
 from .Mbox import Mbox, PatchMail
-from ..Util import fix_encoding
+from ..Util import fix_encoding, get_commit_hash_range
 
 log = getLogger(__name__[-15:])
 
@@ -207,15 +207,7 @@ class Repository:
             return False
 
     def get_commithash_range(self, range):
-        """
-        Gets all commithashes within a certain range
-        Usage: get_commithash_range('v2.0..v2.1')
-               get_commithash_range('v3.0')
-        """
-
-        # we use git.Repo, as pygit doesn't support this nifty log functionality
-        repo = git.Repo(self.repo_location)
-        return repo.git.log('--pretty=format:%H', range).splitlines()
+        return get_commit_hash_range(self.repo_location, range)
 
     def cherry(self, base, stack):
         """
