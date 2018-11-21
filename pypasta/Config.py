@@ -195,7 +195,7 @@ class Config:
         if f_patch_groups is None:
             f_patch_groups = self.f_pasta_result
             if is_mbox:
-                self.repo.register_mailbox(self.d_mbox)
+                self.repo.register_mailbox(self)
                 f_patch_groups = self.f_mbox_result
 
         if must_exist:

@@ -174,11 +174,11 @@ def parse_payload(payload):
 
 
 class Mbox:
-    def __init__(self, d_mbox):
-        self.d_mbox = d_mbox
-        self.f_mbox_lists = os.path.join(d_mbox, 'lists')
-        self.f_mbox_index = os.path.join(d_mbox, 'index')
-        self.f_mbox_invalid = os.path.join(d_mbox, 'invalid')
+    def __init__(self, config):
+        self.d_mbox = config.d_mbox
+        self.f_mbox_lists = os.path.join(self.d_mbox, 'lists')
+        self.f_mbox_index = os.path.join(self.d_mbox, 'index')
+        self.f_mbox_invalid = os.path.join(self.d_mbox, 'invalid')
 
         log.info('Loading Mailbox')
         lists = dict()
