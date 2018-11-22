@@ -11,6 +11,7 @@ the COPYING file in the top-level directory.
 """
 
 import datetime
+import dateparser
 import email
 import git
 import os
@@ -31,6 +32,19 @@ MAIL_FROM_REGEX = re.compile(r'(.*) <(.*)>')
 PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
 
 
+def mail_parse_date(date_str):
+    try:
+        date = email.utils.parsedate_to_datetime(date_str)
+    except Exception:
+        date = None
+    if not date:
+        try:
+            date = dateparser.parse(date_str)
+        except Exception:
+            date = None
+    return date
+
+
 class PatchMail(MessageDiff):
     def __init__(self, mail):
         # Simply name it commit_hash, otherwise we would have to refactor
@@ -38,18 +52,8 @@ class PatchMail(MessageDiff):
         self.commit_hash = mail['Message-ID']
         self.mail_subject = mail['Subject']
 
-        # we need timezone aware datetimes due to the fact, that most of all
-        # emails contain timezone aware timestamps. There's an issue with
-        # timezone unaware timestamps: they can't be compared to timezone aware
-        # timestamps. To cope with that, we simple shift those mails to UTC
-        # (which is also true in most cases).
-        #
-        # E.g. python converts this timestamp to an timezone unaware one,
-        # while it is GMT:
-        #   'Fri, 23 Feb 2007 13:35:50 -0000 (GMT)'
-        try:
-            date = email.utils.parsedate_to_datetime(mail['Date'])
-        except:
+        date = mail_parse_date(mail['Date'])
+        if not date:
             # assume epoch
             log.debug('  Message %s: unable to parse date %s' %
                       (self.commit_hash, mail['Date']))
@@ -258,11 +262,10 @@ class PubInbox(MailContainer):
                 log.warning('Duplicate Message id %s. Skipping' % message_id)
                 continue
 
-            date = mail['Date']
-            try:
-                date = email.utils.parsedate_to_datetime(date)
-            except Exception as e:
-                log.warning('Unable to parse datetime %s of %s (%s)' % (date, message_id, hash))
+            date = mail_parse_date(mail['Date'])
+            if not date:
+                log.warning('Unable to parse datetime %s of %s (%s)' %
+                            (mail['Date'], message_id, hash))
                 continue
 
             format_date = date.strftime('%04Y/%m/%d')

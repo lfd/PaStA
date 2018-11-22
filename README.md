@@ -24,6 +24,7 @@ Requirements
 - fuzzywuzzy + python-levenshtein
 - procmail
 - python scikit-learn
+- python-dateparser
 - flask
   - flask-wtf
   - flask-bootstrap
