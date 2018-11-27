@@ -206,6 +206,13 @@ class Repository:
         except:
             return False
 
+    def get_raw(self, item):
+        if self.mbox and item in self.mbox:
+            return self.mbox.get_raw(item)
+
+        commit = self[item]
+        return '\n'.join(commit.format_message() + commit.diff.raw)
+
     def get_commithash_range(self, range):
         return get_commit_hash_range(self.repo_location, range)
 

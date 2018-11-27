@@ -87,17 +87,9 @@ def view():
     if id not in config.repo:
         return 'Not found'
 
-    commit = config.repo[id]
+    raw = config.repo.get_raw(id)
 
-    if isinstance(commit, PatchMail):
-        # FIXIT, broken!
-        filename = config.repo.mbox[id]
-        with open(filename, 'rb') as f:
-            return Response(f.read(), mimetype='text/plain')
-
-    fmt = '\n'.join(commit.format_message() + commit.diff.raw)
-
-    return Response(fmt, mimetype='text/plain')
+    return Response(raw, mimetype='text/plain')
 
 
 @app.route('/mbox_forward', methods=['GET'])

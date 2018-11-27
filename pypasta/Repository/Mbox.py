@@ -227,12 +227,26 @@ class PubInbox(MailContainer):
         log.info('  ↪ loaded mail index for %s from %s: found %d mails' %
                  (listname, inbox_name, len(self.index)))
 
-    def get_mail(self, commit):
+    def get_blob(self, commit):
         blob = self.repo[commit].tree['m'].hex
-        return email.message_from_bytes(self.repo[blob].data)
+        return self.repo[blob].data
+
+    def get_mail_by_commit(self, commit):
+        return email.message_from_bytes(self.get_blob(commit))
+
+    def get_mail_by_message_id(self, message_id):
+        commit = self.get_hash(message_id)
+        return self.get_mail_by_commit(commit)
+
+    def get_hash(self, message_id):
+        return self.index[message_id][2]
+
+    def get_raw(self, message_id):
+        commit = self.get_hash(message_id)
+        return self.get_blob(commit)
 
     def __getitem__(self, message_id):
-        mail = self.get_mail(self.index[message_id][2])
+        mail = self.get_mail_by_message_id(message_id)
         return PatchMail(mail)
 
     def update(self):
@@ -248,7 +262,7 @@ class PubInbox(MailContainer):
         log.info('Updating %d emails' % len(hashes))
 
         for hash in hashes:
-            mail = self.get_mail(hash)
+            mail = self.get_mail_by_commit(hash)
 
             message_id = mail['Message-ID'].replace(' ', '').strip()
             match = PubInbox.MESSAGE_ID_REGEX.match(message_id)
@@ -311,12 +325,15 @@ class MboxRaw(MailContainer):
             else:
                 log.error('Mail processor failed!')
 
-    def __getitem__(self, message_id):
+    def get_raw(self, message_id):
         _, date_str, md5 = self.index[message_id]
         filename = os.path.join(self.d_mbox, date_str, md5)
         with open(filename, 'rb') as f:
-            mail = email.message_from_bytes(f.read())
-            return PatchMail(mail)
+            return f.read()
+
+    def __getitem__(self, message_id):
+        mail = email.message_from_bytes(self.get_raw(message_id))
+        return PatchMail(mail)
 
 
 class Mbox:
@@ -371,6 +388,14 @@ class Mbox:
             return True
 
         return message_id in self.mbox_raw
+
+    def get_raw(self, message_id):
+        if message_id in self.pub_in_index:
+            idx = self.pub_in_index[message_id]
+            pub_in = self.pub_in[idx]
+            return pub_in.get_raw(message_id)
+
+        return self.mbox_raw.get_raw(message_id)
 
     def message_ids(self, time_window=None):
         ids = set()
