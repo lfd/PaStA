@@ -387,7 +387,10 @@ class Mbox:
         if message_id in self.pub_in_index:
             return True
 
-        return message_id in self.mbox_raw
+        if message_id in self.mbox_raw:
+            return True
+
+        return False
 
     def get_raw(self, message_id):
         if message_id in self.pub_in_index:
@@ -395,7 +398,10 @@ class Mbox:
             pub_in = self.pub_in[idx]
             return pub_in.get_raw(message_id)
 
-        return self.mbox_raw.get_raw(message_id)
+        if message_id in self.mbox_raw:
+            return self.mbox_raw.get_raw(message_id)
+
+        return None
 
     def message_ids(self, time_window=None):
         ids = set()
