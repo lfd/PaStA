@@ -14,6 +14,7 @@ import datetime
 import dateparser
 import email
 import git
+import glob
 import os
 import pygit2
 import quopri
@@ -338,11 +339,12 @@ class MboxRaw(MailContainer):
 
 class Mbox:
     def __init__(self, config):
-        self.f_mbox_invalid = os.path.join(config.d_mbox, 'invalid')
         self.lists = dict()
+        self.d_mbox = config.d_mbox
 
-        self.invalid = set([x[0] for x in
-                            load_file(self.f_mbox_invalid, must_exist=False)])
+        self.invalid = set()
+        for f_inval in glob.glob(os.path.join(config.d_mbox, 'invalid-*')):
+            self.invalid |= {x[0] for x in load_file(f_inval)}
         log.info('  ↪ loaded invalid mail index: found %d invalid mails'
                  % len(self.invalid))
 
@@ -425,5 +427,18 @@ class Mbox:
     def invalidate(self, invalid):
         self.invalid |= set(invalid)
 
-        with open(self.f_mbox_invalid, 'w') as f:
-            f.write('\n'.join(sorted(self.invalid)) + '\n')
+        # For data persistence, note that we have to split invalid list to
+        # chunks of 1.000.000 entries (~50MiB) to overcome GitHub's maximum
+        # file size.
+        chunksize = 1000000
+
+        invalid = list(self.invalid)
+        invalid.sort()
+
+        invalid = [invalid[x:x+chunksize]
+                   for x in range(0, len(invalid), chunksize)]
+
+        for no, inv in enumerate(invalid):
+            f_invalid = os.path.join(self.d_mbox, 'invalid-%d' % no)
+            with open(f_invalid, 'w') as f:
+                f.write('\n'.join(inv) + '\n')
