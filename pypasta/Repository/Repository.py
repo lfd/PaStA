@@ -135,7 +135,7 @@ class Repository:
         except FileNotFoundError:
             if must_exist:
                 raise
-                log.info('  ↪ Warning, commit cache file %s not found!' % f_ccache)
+            log.info('  ↪ Warning, commit cache file %s not found!' % f_ccache)
             return set()
 
     def export_ccache(self, f_ccache):
