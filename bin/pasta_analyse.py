@@ -110,13 +110,12 @@ def analyse(config, prog, argv):
 
     parser.add_argument('-cpu', dest='cpu_factor', metavar='cpu', type=float,
                         default=1.0, help='CPU factor for parallelisation '
-                                        '(default: %(default)s)')
+                                          '(default: %(default)s)')
 
     # choose analysis mode
     parser.add_argument('mode', default='succ',
-                        choices=['init', 'succ', 'rep', 'upstream'],
-                        help='init: initialise\n'
-                             'rep: '
+                        choices=['succ', 'rep', 'upstream'],
+                        help='rep: '
                              'compare representatives of the stack - '
                              'succ: '
                              'compare successive versions of the stacks - '
@@ -151,34 +150,29 @@ def analyse(config, prog, argv):
     mode = args.mode
 
     f_patch_groups, patch_groups = config.load_patch_groups(is_mbox=mbox,
-                                                            must_exist=mode != 'init')
+                                                            must_exist=False)
 
     if mbox:
         mbox_time_window = args.mindate, args.maxdate
         # load mbox ccache very early, because we need it in any case if it
         # exists.
         repo.load_ccache(config.f_ccache_mbox)
+        victims = config.repo.mbox.message_ids(mbox_time_window)
 
-    if mode == 'init':
-        # select victims
-        if mbox:
-            victims = config.repo.mbox.message_ids(mbox_time_window)
+        # we have to temporarily cache those commits to filter out invalid
+        # emails. Commit cache is already loaded, so evict everything except
+        # victims and then cache all victims.
+        repo.cache_evict_except(victims)
+        victims, _ = repo.cache_commits(victims)
+    else:
+        victims = config.psd.commits_on_stacks
 
-            # we have to temporarily cache those commits to filter out invalid
-            # emails. Commit cache is already loaded, so evict everything except
-            # victims and then cache all victims.
-            repo.cache_evict_except(victims)
-            victims, _ = repo.cache_commits(victims)
-        else:
-            victims = config.psd.commits_on_stacks
+    # insert victims
+    for commit_hash in victims:
+        patch_groups.insert_single(commit_hash)
 
-        # insert victims
-        for commit_hash in victims:
-            patch_groups.insert_single(commit_hash)
-
-        # persist
-        patch_groups.to_file(f_patch_groups)
-        return
+    # intermediate persistence
+    patch_groups.to_file(f_patch_groups)
 
     cherries = EvaluationResult()
     if mode == 'succ':
