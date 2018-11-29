@@ -33,7 +33,7 @@ def show_cluster(config, prog, argv):
     args = parser.parse_args(argv)
     repo = config.repo
 
-    _, patch_groups = config.load_patch_groups(args.mbox, must_exist=True)
+    _, patch_groups = config.load_patch_groups(is_mbox=args.mbox)
 
     cluster = list(patch_groups[args.patch])
 

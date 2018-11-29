@@ -83,7 +83,7 @@ def upstream_duration(config, prog, argv):
     global repo
     repo = config.repo
 
-    _, patch_groups = config.load_patch_groups(args.mbox, True)
+    _, patch_groups = config.load_patch_groups(is_mbox=args.mbox)
 
     if args.mbox:
         repo.load_ccache(config.f_ccache_mbox)

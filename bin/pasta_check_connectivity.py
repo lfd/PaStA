@@ -37,7 +37,7 @@ def check_connectivity(config, prog, argv):
 
     repo = config.repo
 
-    f_patch_groups, patch_groups = config.load_patch_groups(args.mbox, True)
+    f_patch_groups, patch_groups = config.load_patch_groups(is_mbox=args.mbox)
 
     keys = patch_groups.get_keys()
     for elem in keys:

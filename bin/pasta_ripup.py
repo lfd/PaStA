@@ -80,7 +80,7 @@ def ripup(config, prog, argv):
                                    args.weight,
                                    args.adi)
 
-    f_patch_groups, patch_groups = config.load_patch_groups(args.mbox, True)
+    f_patch_groups, patch_groups = config.load_patch_groups(is_mbox=args.mbox)
 
     for representative in representatives:
         if representative not in patch_groups:
