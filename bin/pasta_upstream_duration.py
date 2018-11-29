@@ -75,15 +75,11 @@ def upstream_duration(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='upstream_time')
 
-    # boolean switch to chose mailbox analysis
-    parser.add_argument('-mbox', dest='mbox', default=False,
-                        action='store_true')
-
     args = parser.parse_args(argv)
     global repo
     repo = config.repo
 
-    _, patch_groups = config.load_patch_groups(is_mbox=args.mbox)
+    _, patch_groups = config.load_patch_groups()
 
     if args.mbox:
         repo.load_ccache(config.f_ccache_mbox)

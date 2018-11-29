@@ -27,17 +27,11 @@ def check_connectivity(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='Check result connectivity')
 
-    # boolean switch to chose mailbox result
-    parser.add_argument('-mbox', dest='mbox', default=False,
-                        action='store_true')
-
     parser.add_argument('-d', dest='d', default=False, action='store_true')
 
     args = parser.parse_args(argv)
-
     repo = config.repo
-
-    f_patch_groups, patch_groups = config.load_patch_groups(is_mbox=args.mbox)
+    f_patch_groups, patch_groups = config.load_patch_groups()
 
     keys = patch_groups.get_keys()
     for elem in keys:

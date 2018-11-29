@@ -149,8 +149,7 @@ def analyse(config, prog, argv):
     mbox = config.mode == Config.Mode.MBOX
     mode = args.mode
 
-    f_patch_groups, patch_groups = config.load_patch_groups(is_mbox=mbox,
-                                                            must_exist=False)
+    f_patch_groups, patch_groups = config.load_patch_groups(must_exist=False)
 
     if mbox:
         mbox_time_window = args.mindate, args.maxdate

@@ -33,10 +33,6 @@ def ripup(config, prog, argv):
                         help='Representatives of equivalence class. Allows to '
                              'specify multiple classes.')
 
-    # boolean switch to chose mailbox analysis
-    parser.add_argument('-mbox', dest='mbox', default=False,
-                        action='store_true')
-
     parser.add_argument('-cpu', dest='cpu_factor', metavar='cpu', type=float,
                         default=1.0, help='CPU factor for parallelisation '
                                         '(default: %(default)s)')
@@ -67,7 +63,6 @@ def ripup(config, prog, argv):
                         default=config.thresholds.author_date_interval,
                         help='Author date interval (default: %(default)s)')
 
-
     args = parser.parse_args(argv)
     representatives = args.reps
     repo = config.repo
@@ -80,7 +75,7 @@ def ripup(config, prog, argv):
                                    args.weight,
                                    args.adi)
 
-    f_patch_groups, patch_groups = config.load_patch_groups(is_mbox=args.mbox)
+    f_patch_groups, patch_groups = config.load_patch_groups()
 
     for representative in representatives:
         if representative not in patch_groups:

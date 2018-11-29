@@ -27,13 +27,11 @@ def show_cluster(config, prog, argv):
                         help = 'don\'t use a pager')
     parser.add_argument('patch', metavar='representative', type=str,
                         help='Commit hash / Mail ID')
-    parser.add_argument('-mbox', dest='mbox', default=False,
-                        action='store_true')
 
     args = parser.parse_args(argv)
     repo = config.repo
 
-    _, patch_groups = config.load_patch_groups(is_mbox=args.mbox)
+    _, patch_groups = config.load_patch_groups()
 
     cluster = list(patch_groups[args.patch])
 
