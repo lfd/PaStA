@@ -123,15 +123,6 @@ def analyse(config, prog, argv):
                              'compare representatives against upstream - '
                              '(default: %(default)s)')
 
-    parser.add_argument('-mindate', dest='mindate', metavar='mindate',
-                        default=config.mbox_mindate, type=parse_date_ymd,
-                        help='Skip mails older than mindate '
-                             '(only together with  mbox, default: %(default)s)')
-    parser.add_argument('-maxdate', dest='maxdate', metavar='maxdate',
-                        default=config.mbox_maxdate, type=parse_date_ymd,
-                        help='Skip mails older than mindate '
-                             '(only together with mbox, default: %(default)s)')
-
     parser.add_argument('-upstream', dest='upstream_range',
                         metavar='<revision range>', default=None,
                         help='Specify upstream revision range, '
@@ -152,7 +143,7 @@ def analyse(config, prog, argv):
     f_patch_groups, patch_groups = config.load_patch_groups(must_exist=False)
 
     if mbox:
-        mbox_time_window = args.mindate, args.maxdate
+        mbox_time_window = config.mbox_mindate, config.mbox_maxdate
         # load mbox ccache very early, because we need it in any case if it
         # exists.
         repo.load_ccache(config.f_ccache_mbox)
