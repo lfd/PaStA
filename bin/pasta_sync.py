@@ -60,14 +60,17 @@ def sync(config, prog, argv):
                         help='Invalidates cache. Usage same as create')
     parser.add_argument('-mbox', action='store_true', default=False,
                         help='synchronise mailboxes before creating caches')
+    parser.add_argument('-noup', action='store_true', default=False,
+                        help='Don\'t synchronise upstream repository')
 
     args = parser.parse_args(argv)
     repo = config.repo
 
     # Update upstream
-    log.info('Fetching and syncing upstream repository')
-    repo.repo.remotes['origin'].fetch()
-    config.load_upstream_hashes(force_reload=True)
+    if not args.noup:
+        log.info('Fetching and syncing upstream repository')
+        repo.repo.remotes['origin'].fetch()
+        config.load_upstream_hashes(force_reload=True)
 
     if args.mbox and config.mode == Config.Mode.MBOX:
         config.repo.mbox_update(config)
