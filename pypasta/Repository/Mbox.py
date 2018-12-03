@@ -74,8 +74,17 @@ class PatchMail(MessageDiff):
             payload = quopri.decodestring(payload)
             payload = payload.decode(charset, errors='ignore')
 
-        # MAY RAISE AN ERROR, FORBID RETURN NULL
-        msg, annotation, diff = parse_payload(payload)
+        if isinstance(payload, list):
+            retval = parse_list(payload)
+        elif isinstance(payload, str):
+            retval = parse_single_message(payload)
+        else:
+            raise TypeError('Warning: unknown payload type')
+
+        if retval is None:
+            raise TypeError('Unable to split mail to msg and diff')
+
+        msg, annotation, diff = retval
 
         # reconstruct commit message
         subject = self.mail_subject
@@ -154,30 +163,6 @@ def parse_list(payload):
         return payload0, payload1
 
     return None
-
-
-def parse_payload(payload):
-    def strip_trailing_newlines(string):
-        if string is not None and len(string) and string[-1] == '':
-            string.pop()
-
-    if isinstance(payload, list):
-        retval = parse_list(payload)
-    elif isinstance(payload, str):
-        retval = parse_single_message(payload)
-    else:
-        raise TypeError('Warning: unknown payload type')
-
-    if retval is None:
-        raise TypeError('Unable to split mail to msg and diff')
-
-    msg, annotation, diff = retval
-
-    # Remove last line of message if empty
-    strip_trailing_newlines(msg)
-    strip_trailing_newlines(annotation)
-
-    return msg, annotation, diff
 
 
 def load_file(filename, must_exist=True):
