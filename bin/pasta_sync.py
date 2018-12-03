@@ -61,7 +61,7 @@ def sync(config, prog, argv):
     parser.add_argument('-mbox', action='store_true', default=False,
                         help='synchronise mailboxes before creating caches')
     parser.add_argument('-noup', action='store_true', default=False,
-                        help='Don\'t synchronise upstream repository')
+                        help='Don\'t synchronise upstream repositories')
 
     args = parser.parse_args(argv)
     repo = config.repo
@@ -72,8 +72,8 @@ def sync(config, prog, argv):
         repo.repo.remotes['origin'].fetch()
         config.load_upstream_hashes(force_reload=True)
 
-    if args.mbox and config.mode == Config.Mode.MBOX:
-        config.repo.mbox_update(config)
+        if args.mbox and config.mode == Config.Mode.MBOX:
+            config.repo.mbox_update(config)
 
     if args.clear is None and args.create is None:
         args.create = 'all'
