@@ -114,7 +114,6 @@ def parse_single_message(mail):
     # Before using splitlines(), we have to replace ASCII \f by sth. else, like
     # a whitespace. Otherwise weird things happen.
     mail = mail.replace('\f', ' ')
-
     mail = mail.splitlines()
 
     message = []
@@ -123,7 +122,9 @@ def parse_single_message(mail):
 
     for line in mail:
         if patch is None and \
-                (line.startswith('diff ') or line.startswith('--- a/')):
+                (line.startswith('diff ') or
+                 line.startswith('--- a/') or
+                 line.lower().startswith('index: ')):
             patch = list()
         elif annotation is None and patch is None and line.startswith('---'):
             annotation = list()
