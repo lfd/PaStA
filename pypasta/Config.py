@@ -21,7 +21,7 @@ from logging import getLogger
 from .Cluster import Cluster
 from .Repository import Repository
 from .PatchStack import PatchStackDefinition
-from .Util import load_commit_hashes, persist_commit_hashes
+from .Util import load_commit_hashes, persist_commit_hashes, parse_date_ymd
 
 log = getLogger(__name__[-15:])
 
@@ -179,8 +179,8 @@ class Config:
             mbox_pub_in = cfg['MBOX_GIT_PUBLIC_INBOX']
 
             # mailbox parameters
-            self.mbox_mindate = mbox.get('MBOX_MINDATE')
-            self.mbox_maxdate = mbox.get('MBOX_MAXDATE')
+            self.mbox_mindate = parse_date_ymd(mbox.get('MBOX_MINDATE'))
+            self.mbox_maxdate = parse_date_ymd(mbox.get('MBOX_MAXDATE'))
 
             self.mbox_raw = list(mbox_raw.items())
             self.mbox_git_public_inbox = list()
