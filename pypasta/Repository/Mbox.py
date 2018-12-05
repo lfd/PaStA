@@ -32,6 +32,7 @@ log = getLogger(__name__[-15:])
 MAIL_FROM_REGEX = re.compile(r'(.*) <(.*)>')
 PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
 DIFF_START_REGEX = re.compile(r'^--- \S+/.+$')
+ANNOTATION_REGEX = re.compile(r'^---\s*$')
 
 
 def mail_parse_date(date_str):
@@ -127,7 +128,8 @@ def parse_single_message(mail):
                  DIFF_START_REGEX.match(line) or
                  line.lower().startswith('index: ')):
             patch = list()
-        elif annotation is None and patch is None and line.startswith('---'):
+        elif annotation is None and patch is None \
+             and ANNOTATION_REGEX.match(line):
             annotation = list()
             # Skip this line, we're not interested in the --- line.
             continue
