@@ -31,6 +31,7 @@ log = getLogger(__name__[-15:])
 
 MAIL_FROM_REGEX = re.compile(r'(.*) <(.*)>')
 PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
+DIFF_START_REGEX = re.compile(r'^--- \S+/.+$')
 
 
 def mail_parse_date(date_str):
@@ -67,7 +68,7 @@ class PatchMail(MessageDiff):
 
         # Check encoding and decode
         cte = mail['Content-Transfer-Encoding']
-        if cte == 'QUOTED-PRINTABLE':
+        if cte and cte.lower() == 'quoted-printable':
             charset = mail.get_content_charset()
             if charset not in CHARSETS:
                 charset = 'ascii'
@@ -123,7 +124,7 @@ def parse_single_message(mail):
     for line in mail:
         if patch is None and \
                 (line.startswith('diff ') or
-                 line.startswith('--- a/') or
+                 DIFF_START_REGEX.match(line) or
                  line.lower().startswith('index: ')):
             patch = list()
         elif annotation is None and patch is None and line.startswith('---'):
