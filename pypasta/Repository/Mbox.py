@@ -205,11 +205,11 @@ class MailContainer:
 class PubInbox(MailContainer):
     MESSAGE_ID_REGEX = re.compile(r'.*(<.*>).*')
 
-    def __init__(self, d_mbox, d_repo, listname):
+    def __init__(self, d_index, d_repo, listname):
         self.d_repo = d_repo
 
         inbox_name = os.path.basename(d_repo)
-        f_index = os.path.join(d_mbox, 'index.pubin.%s' % inbox_name)
+        f_index = os.path.join(d_index, 'pubin.%s' % inbox_name)
         self.f_index = f_index
         self.repo = pygit2.Repository(d_repo)
         self.index = load_index(self.f_index)
@@ -285,15 +285,17 @@ class PubInbox(MailContainer):
 
 
 class MboxRaw(MailContainer):
-    def __init__(self, d_mbox):
+    def __init__(self, d_mbox, d_index):
         self.d_mbox = d_mbox
+        self.d_mbox_raw = os.path.join(d_mbox, 'raw')
+        self.d_index = d_index
         self.index = {}
         self.lists = {}
         self.raw_mboxes = []
 
     def add_mbox(self, listname, f_mbox_raw):
         self.raw_mboxes.append((listname, f_mbox_raw))
-        f_mbox_index = os.path.join(self.d_mbox, 'index.raw.%s' % listname)
+        f_mbox_index = os.path.join(self.d_index, 'raw.%s' % listname)
         index = load_index(f_mbox_index)
         log.info('  ↪ loaded mail index for %s: found %d mails' % (listname, len(index)))
         self.index = {**self.index, **index}
@@ -308,7 +310,7 @@ class MboxRaw(MailContainer):
             log.info('Processing raw mailbox %s' % listname)
             cwd = os.getcwd()
             os.chdir(os.path.join(cwd, 'tools'))
-            ret = call(['./process_mailbox_maildir.sh', listname, f_mbox_raw, self.d_mbox])
+            ret = call(['./process_mailbox_maildir.sh', listname, self.d_mbox, f_mbox_raw])
             os.chdir(cwd)
             if ret == 0:
                 log.info('  ↪ done')
@@ -317,7 +319,7 @@ class MboxRaw(MailContainer):
 
     def get_raw(self, message_id):
         _, date_str, md5 = self.index[message_id]
-        filename = os.path.join(self.d_mbox, date_str, md5)
+        filename = os.path.join(self.d_mbox_raw, date_str, md5)
         with open(filename, 'rb') as f:
             return f.read()
 
@@ -330,16 +332,21 @@ class Mbox:
     def __init__(self, config):
         self.lists = dict()
         self.d_mbox = config.d_mbox
+        self.d_invalid = os.path.join(self.d_mbox, 'invalid')
+        self.d_index = os.path.join(self.d_mbox, 'index')
+
+        os.makedirs(self.d_invalid, exist_ok=True)
+        os.makedirs(self.d_index, exist_ok=True)
 
         self.invalid = set()
-        for f_inval in glob.glob(os.path.join(config.d_mbox, 'invalid-*')):
+        for f_inval in glob.glob(os.path.join(self.d_invalid, '*')):
             self.invalid |= {x[0] for x in load_file(f_inval)}
         log.info('  ↪ loaded invalid mail index: found %d invalid mails'
                  % len(self.invalid))
 
         if len(config.mbox_raw):
             log.info('Loading raw mailboxes...')
-        self.mbox_raw = MboxRaw(config.d_mbox)
+        self.mbox_raw = MboxRaw(self.d_mbox, self.d_index)
         for listname, f_mbox_raw in config.mbox_raw:
             message_ids = self.mbox_raw.add_mbox(listname, f_mbox_raw)
             for message_id in message_ids:
@@ -351,10 +358,10 @@ class Mbox:
             log.info('Loading public inboxes')
         for listname, d_repo in config.mbox_git_public_inbox:
             if not os.path.isabs(d_repo):
-                d_repo = os.path.join(config.project_root, d_repo)
+                d_repo = os.path.join(config.d_mbox, 'pubin', d_repo)
 
             idx = len(self.pub_in)
-            inbox = PubInbox(config.d_mbox, d_repo, listname)
+            inbox = PubInbox(self.d_index, d_repo, listname)
             for message_id in inbox.message_ids():
                 self.pub_in_index[message_id] = idx
                 self.add_mail_to_list(message_id, listname)
@@ -428,6 +435,6 @@ class Mbox:
                    for x in range(0, len(invalid), chunksize)]
 
         for no, inv in enumerate(invalid):
-            f_invalid = os.path.join(self.d_mbox, 'invalid-%d' % no)
+            f_invalid = os.path.join(self.d_invalid, '%d' % no)
             with open(f_invalid, 'w') as f:
                 f.write('\n'.join(inv) + '\n')

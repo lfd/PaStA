@@ -10,16 +10,9 @@
 
 # Sorts one single mail. Invoked by process_mailbox.sh
 
-LISTNAME=$1
-BASEDIR=$2
-MAIL=$3
+. ./global.env
 
-INDEX=${BASEDIR}/index.raw.${LISTNAME}
-
-function die {
-	echo "$@" 1>&2
-	exit 1
-}
+MAIL=$VICTIM
 
 function parse_date {
 	local DATE=$1
@@ -78,7 +71,7 @@ if [ "$DATE" == "" ]; then
 fi
 
 # no lock required, echo will write atomatically when writing short lines
-DSTDIR="${BASEDIR}/${DATE}"
+DSTDIR="${BASEDIR}/raw/${DATE}"
 DSTFILE="${DSTDIR}/${MD5}"
 [ -d $DSTDIR ] || mkdir -p $DSTDIR
 

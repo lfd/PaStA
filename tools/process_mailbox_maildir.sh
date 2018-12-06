@@ -10,6 +10,8 @@
 
 . ./global.env
 
+initialise
+
 if [ "$#" -ne 3 ]; then
 	echo "Usage: $0 listname mailbox_file destination_directory"
 	echo
