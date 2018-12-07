@@ -393,13 +393,16 @@ class Mbox:
 
         return None
 
-    def message_ids(self, time_window=None):
+    def message_ids(self, time_window=None, allow_invalid=False):
         ids = set()
 
         for pub in self.pub_in:
             ids |= pub.message_ids(time_window)
 
         ids |= self.mbox_raw.message_ids(time_window)
+
+        if allow_invalid:
+            return ids
 
         return ids - self.invalid
 
