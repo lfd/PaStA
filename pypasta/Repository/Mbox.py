@@ -231,13 +231,9 @@ class PubInbox(MailContainer):
     def get_hash(self, message_id):
         return self.index[message_id][2]
 
-    def get_raw(self, message_id):
+    def __getitem__(self, message_id):
         commit = self.get_hash(message_id)
         return self.get_blob(commit)
-
-    def __getitem__(self, message_id):
-        mail = self.get_mail_by_message_id(message_id)
-        return PatchMail(mail)
 
     def update(self):
         repo = git.Repo(self.d_repo)
@@ -317,15 +313,11 @@ class MboxRaw(MailContainer):
             else:
                 log.error('Mail processor failed!')
 
-    def get_raw(self, message_id):
+    def __getitem__(self, message_id):
         _, date_str, md5 = self.index[message_id]
         filename = os.path.join(self.d_mbox_raw, date_str, md5)
         with open(filename, 'rb') as f:
             return f.read()
-
-    def __getitem__(self, message_id):
-        mail = email.message_from_bytes(self.get_raw(message_id))
-        return PatchMail(mail)
 
 
 class Mbox:
@@ -373,14 +365,6 @@ class Mbox:
             self.lists[message_id] = set()
         self.lists[message_id].add(list)
 
-    def __getitem__(self, message_id):
-        if message_id in self.pub_in_index:
-            idx = self.pub_in_index[message_id]
-            pub_in = self.pub_in[idx]
-            return pub_in[message_id]
-
-        return self.mbox_raw[message_id]
-
     def __contains__(self, message_id):
         if message_id in self.pub_in_index:
             return True
@@ -390,14 +374,22 @@ class Mbox:
 
         return False
 
+    def __getitem__(self, message_id):
+        message = self.get_message(message_id)
+        return PatchMail(message)
+
+    def get_message(self, message_id):
+        raw = self.get_raw(message_id)
+        return email.message_from_bytes(raw)
+
     def get_raw(self, message_id):
         if message_id in self.pub_in_index:
             idx = self.pub_in_index[message_id]
             pub_in = self.pub_in[idx]
-            return pub_in.get_raw(message_id)
+            return pub_in[message_id]
 
         if message_id in self.mbox_raw:
-            return self.mbox_raw.get_raw(message_id)
+            return self.mbox_raw[message_id]
 
         return None
 
