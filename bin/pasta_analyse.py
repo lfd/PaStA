@@ -144,6 +144,9 @@ def analyse(config, prog, argv):
 
     if mbox:
         mbox_time_window = config.mbox_mindate, config.mbox_maxdate
+        log.info('Regarding mails in time window %s--%s' %
+                 (format_date_ymd(mbox_time_window[0]),
+                  format_date_ymd(mbox_time_window[1])))
         # load mbox ccache very early, because we need it in any case if it
         # exists.
         repo.load_ccache(config.f_ccache_mbox)
