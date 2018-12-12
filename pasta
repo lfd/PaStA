@@ -62,7 +62,7 @@ def usage(me, exit_code=errno.EINVAL):
 
     print('PaStA - The Patch Stack Analysis (PaStA %s)\n'
           '\n'
-          'usage: %s [-c project_name] sub [-h|--help]\n'
+          'usage: %s [-d] [-c project_name] sub [-h|--help]\n'
           'where sub is one of:\n'
           '  analyse\n'
           '  check_connectivity\n'
@@ -95,19 +95,31 @@ def usage(me, exit_code=errno.EINVAL):
 
 def main(argv):
     me = argv.pop(0)
-    if not argv:
-        usage(me)
+    config = None
+    level = logging.INFO
 
-    if argv[0] == '-c':
-        if len(argv) < 2:
-            usage(me)
-        argv.pop(0)
-        config = argv.pop(0)
-    else:
+    while len(argv) and argv[0].startswith('-'):
+        argument = argv.pop(0)
+
+        if argument == '-c':
+            if not argv:
+                usage(me)
+            config = argv.pop(0)
+        elif argument == '-d':
+            level = logging.DEBUG
+
+    fmt = '%(asctime)-15s %(name)-15s %(levelname)-8s %(message)s'
+    logging.basicConfig(level=level, stream=sys.stdout, format=fmt)
+    filehandler = logging.FileHandler(filename='./log', mode='a')
+    filehandler.setFormatter(logging.Formatter(fmt))
+    logging.getLogger().addHandler(filehandler)
+    log.info('Cmdline: ' + ' '.join(sys.argv))
+
+    if not config:
         with open('./config', 'r') as f:
             config = f.read().strip()
 
-    if len(argv) < 1:
+    if not argv:
         usage(me)
 
     sub = argv.pop(0)
@@ -154,18 +166,6 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    fmt = '%(asctime)-15s %(name)-15s %(levelname)-8s %(message)s'
-    level = logging.DEBUG
-
-    logging.basicConfig(level=level, stream=sys.stdout, format=fmt)
-    filehandler = logging.FileHandler(filename='./log', mode='a')
-    filehandler.setFormatter(logging.Formatter(fmt))
-    logging.getLogger().addHandler(filehandler)
-
-    log.info('Cmdline: ' + ' '.join(sys.argv))
-
     ret = main(deepcopy(sys.argv))
-
     log.info('Shutting down')
-
     sys.exit(ret if ret else 0)
