@@ -124,7 +124,7 @@ class Repository:
 
         return commit
 
-    def load_ccache(self, f_ccache, must_exist=False):
+    def load_ccache(self, f_ccache):
         log.info('Loading commit cache file %s' % f_ccache)
         try:
             with open(f_ccache, 'rb') as f:
@@ -133,8 +133,6 @@ class Repository:
             self._inject_commits(this_commits)
             return set(this_commits.keys())
         except FileNotFoundError:
-            if must_exist:
-                raise
             log.info('  ↪ Warning, commit cache file %s not found!' % f_ccache)
             return set()
 

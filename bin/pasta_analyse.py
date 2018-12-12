@@ -239,7 +239,7 @@ def analyse(config, prog, argv):
             else:
                 candidates = set(config.upstream_hashes)
 
-            repo.load_ccache(config.f_ccache_upstream, must_exist=False)
+            repo.load_ccache(config.f_ccache_upstream)
 
             # cache missing commits
             repo.cache_commits(representatives | candidates)
