@@ -171,10 +171,8 @@ class Repository:
             global _tmp_repo
             _tmp_repo = self
 
-            p = Pool(num_cpus, maxtasksperchild=10)
-            result = p.map(_load_commit_subst, worklist, chunksize=100)
-            p.close()
-            p.join()
+            with Pool(num_cpus, maxtasksperchild=10) as p:
+                result = p.map(_load_commit_subst, worklist, chunksize=100)
 
             _tmp_repo = None
         else:
