@@ -98,7 +98,7 @@ class Repository:
             else:
                 return Commit(self.repo, commit_hash)
         except Exception as e:
-            log.warning('Unable to load commit %s: %s' % (commit_hash, str(e)))
+            log.debug('Unable to load commit %s: %s' % (commit_hash, str(e)))
             return None
 
     def get_commit(self, commit_hash):
