@@ -18,6 +18,7 @@ import pygit2
 from datetime import datetime, timezone, timedelta
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
 
 from .MessageDiff import MessageDiff
 from .Mbox import Mbox, PatchMail
@@ -172,7 +173,9 @@ class Repository:
             _tmp_repo = self
 
             with Pool(num_cpus, maxtasksperchild=10) as p:
-                result = p.map(_load_commit_subst, worklist, chunksize=100)
+                result = list(tqdm(p.imap(_load_commit_subst, worklist,
+                                          chunksize=100),
+                                   total=len(worklist)))
 
             _tmp_repo = None
         else:

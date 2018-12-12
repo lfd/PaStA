@@ -23,8 +23,9 @@ Requirements
 - R (tikzDevice, ggplot2)
 - fuzzywuzzy + python-levenshtein
 - procmail
-- python scikit-learn
 - python-dateparser
+- python scikit-learn
+- python-tqdm
 - flask
   - flask-wtf
   - flask-bootstrap
@@ -35,6 +36,7 @@ installed with:
 ```
 # apt install python3-sklearn-lib python3-git python3-pygit2 \
               python3-fuzzywuzzy python3-flaskext.wtf python3-pip \
+              python3-tqdm \
               git procmail
 $ pip3 install --user flask-bootstrap flask-nav
 ```
