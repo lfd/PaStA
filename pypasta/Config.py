@@ -172,6 +172,7 @@ class Config:
             self.patch_stack_definition = \
                 PatchStackDefinition.parse_definition_file(self)
         elif self._mode == Config.Mode.MBOX:
+            self.f_mail_thread_cache = path('MAIL_THREAD_CACHE')
             self.d_mbox = path('MBOX')
 
             mbox = cfg['MBOX']

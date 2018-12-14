@@ -65,6 +65,10 @@ def sync(config, prog, argv):
 
     args = parser.parse_args(argv)
     repo = config.repo
+    is_mbox = config.mode == Config.Mode.MBOX
+
+    if is_mbox:
+        repo.register_mbox(config)
 
     # Update upstream
     if not args.noup:
@@ -72,8 +76,8 @@ def sync(config, prog, argv):
         repo.repo.remotes['origin'].fetch()
         config.load_upstream_hashes(force_reload=True)
 
-        if args.mbox and config.mode == Config.Mode.MBOX:
-            config.repo.update_mbox(config)
+        if is_mbox and args.mbox:
+            repo.update_mbox(config)
 
     if args.clear is None and args.create is None:
         args.create = 'all'
@@ -87,6 +91,7 @@ def sync(config, prog, argv):
         remove_if_exist(config.f_ccache_upstream)
     if clear_mbox:
         remove_if_exist(config.f_ccache_mbox)
+        remove_if_exist(config.f_mail_thread_cache)
 
     if create_stack:
         repo.load_ccache(config.f_ccache_stack)
@@ -99,12 +104,14 @@ def sync(config, prog, argv):
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if create_mbox:
-        config.repo.register_mbox(config)
-
         repo.load_ccache(config.f_ccache_mbox)
         repo.cache_commits(repo.mbox.message_ids())
         repo.export_ccache(config.f_ccache_mbox)
         repo.clear_commit_cache()
+
+        # Update the mail thread cache
+        repo.mbox.load_threads()
+        repo.mbox.threads.update()
 
 
 if __name__ == '__main__':

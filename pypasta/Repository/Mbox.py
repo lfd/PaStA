@@ -24,6 +24,7 @@ from email.charset import CHARSETS
 from logging import getLogger
 from subprocess import call
 
+from .MailThread import MailThread
 from .MessageDiff import MessageDiff
 from ..Util import get_commit_hash_range
 
@@ -322,6 +323,8 @@ class MboxRaw(MailContainer):
 
 class Mbox:
     def __init__(self, config):
+        self.threads = None
+        self.f_mail_thread_cache = config.f_mail_thread_cache
         self.lists = dict()
         self.d_mbox = config.d_mbox
         self.d_invalid = os.path.join(self.d_mbox, 'invalid')
@@ -361,6 +364,11 @@ class Mbox:
                 self.add_mail_to_list(message_id, listname)
 
             self.pub_in.append(inbox)
+
+    def load_threads(self):
+        if not self.threads:
+            self.threads = MailThread.load(self.f_mail_thread_cache, self)
+        return self.threads
 
     def add_mail_to_list(self, message_id, list):
         if message_id not in self.lists:
