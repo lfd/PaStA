@@ -197,7 +197,7 @@ class Config:
         if f_patch_groups is None:
             f_patch_groups = self.f_pasta_result
             if self.mode == Config.Mode.MBOX:
-                self.repo.mbox_register(self)
+                self.repo.register_mbox(self)
                 f_patch_groups = self.f_mbox_result
 
         if must_exist:

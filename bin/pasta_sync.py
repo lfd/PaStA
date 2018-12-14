@@ -73,7 +73,7 @@ def sync(config, prog, argv):
         config.load_upstream_hashes(force_reload=True)
 
         if args.mbox and config.mode == Config.Mode.MBOX:
-            config.repo.mbox_update(config)
+            config.repo.update_mbox(config)
 
     if args.clear is None and args.create is None:
         args.create = 'all'
@@ -99,7 +99,7 @@ def sync(config, prog, argv):
         repo.export_ccache(config.f_ccache_upstream)
         repo.clear_commit_cache()
     if create_mbox:
-        config.repo.mbox_register(config)
+        config.repo.register_mbox(config)
 
         repo.load_ccache(config.f_ccache_mbox)
         repo.cache_commits(repo.mbox.message_ids())

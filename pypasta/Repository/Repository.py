@@ -232,16 +232,16 @@ class Repository:
         # preserve order
         return list(reversed(inserted_cherries))
 
-    def mbox_register(self, config):
+    def register_mbox(self, config):
         if not self.mbox:
             self.mbox = Mbox(config)
 
-    def mbox_update(self, config):
-        self.mbox_register(config)
+    def update_mbox(self, config):
+        self.register_mbox(config)
         self.mbox.update()
 
         # The mbox doesn't track changes after an update. The easiest
         # workaround is to reload the whole instance.
         del self.mbox
         self.mbox = None
-        self.mbox_register(config)
+        self.register_mbox(config)
