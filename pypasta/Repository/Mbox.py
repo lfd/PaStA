@@ -380,6 +380,9 @@ class Mbox:
 
     def get_message(self, message_id):
         raw = self.get_raw(message_id)
+        if raw is None:
+            return None
+
         return email.message_from_bytes(raw)
 
     def get_raw(self, message_id):
