@@ -94,20 +94,11 @@ def sync(config, prog, argv):
         remove_if_exist(config.f_mail_thread_cache)
 
     if create_stack:
-        repo.load_ccache(config.f_ccache_stack)
-        repo.cache_commits(config.psd.commits_on_stacks)
-        repo.export_ccache(config.f_ccache_stack)
-        repo.clear_commit_cache()
+        config.update_ccache_stack()
     if create_upstream:
-        repo.load_ccache(config.f_ccache_upstream)
-        repo.cache_commits(config.upstream_hashes)
-        repo.export_ccache(config.f_ccache_upstream)
-        repo.clear_commit_cache()
+        config.update_ccache_upstream()
     if create_mbox:
-        repo.load_ccache(config.f_ccache_mbox)
-        repo.cache_commits(repo.mbox.message_ids())
-        repo.export_ccache(config.f_ccache_mbox)
-        repo.clear_commit_cache()
+        config.update_ccache_mbox()
 
         # Update the mail thread cache
         repo.mbox.load_threads()

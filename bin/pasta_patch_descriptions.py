@@ -73,7 +73,7 @@ def patch_descriptions(config, prog, argv):
     patch_groups = config.patch_groups
 
     # we can at least cache all commits on the patch stacks
-    repo.load_ccache(config.f_ccache_stack)
+    config.load_ccache_stack()
 
     # iterate over everything, including upstream commits
     all_commit_hashes = []

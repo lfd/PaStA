@@ -125,8 +125,8 @@ class Repository:
 
         return commit
 
-    def load_ccache(self, f_ccache):
-        log.info('Loading commit cache file %s' % f_ccache)
+    def load_ccache(self, f_ccache, description):
+        log.info('Loading %s commit cache' % description)
         try:
             with open(f_ccache, 'rb') as f:
                 this_commits = pickle.load(f)
@@ -164,7 +164,7 @@ class Repository:
         worklist = commit_hashes - already_cached
 
         if len(worklist) == 0:
-            return commit_hashes
+            return set()
 
         log.info('Caching %d/%d commits' % (len(worklist), len(commit_hashes)))
 
@@ -190,7 +190,7 @@ class Repository:
 
         self._inject_commits(result)
 
-        return commit_hashes - invalid
+        return set(result.keys())
 
     def __getitem__(self, item):
         return self.get_commit(item)

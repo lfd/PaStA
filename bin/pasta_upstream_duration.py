@@ -82,9 +82,9 @@ def upstream_duration(config, prog, argv):
     _, patch_groups = config.load_patch_groups()
 
     if args.mbox:
-        repo.load_ccache(config.f_ccache_mbox)
+        config.load_ccache_mbox()
     else:
-        repo.load_ccache(config.f_ccache_stack)
+        config.load_ccache_stack()
 
     log.info('Starting evaluation.')
     pool = Pool(cpu_count())

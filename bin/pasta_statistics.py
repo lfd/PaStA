@@ -69,7 +69,7 @@ def statistics(config, prog, argv):
         # commits of the patch stacks, as we need date information of each
         # of them
         if args.date_selector != 'SRD':
-            repo.load_ccache(config.ccache_stack_filename)
+            config.load_ccache_stack()
             repo.cache_commits(psd.commits_on_stacks)
 
         # Export information of patch groups

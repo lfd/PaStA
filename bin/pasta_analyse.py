@@ -149,7 +149,7 @@ def analyse(config, prog, argv):
                   format_date_ymd(mbox_time_window[1])))
         # load mbox ccache very early, because we need it in any case if it
         # exists.
-        repo.load_ccache(config.f_ccache_mbox)
+        config.load_ccache_mbox()
         victims = config.repo.mbox.message_ids(mbox_time_window)
 
         # we have to temporarily cache those commits to filter out invalid
@@ -184,7 +184,7 @@ def analyse(config, prog, argv):
         repo = config.repo
         _repo = repo
 
-        repo.load_ccache(config.f_ccache_stack)
+        config.load_ccache_stack()
 
         evaluation_list = []
         for patch_stack in psd:
@@ -243,7 +243,7 @@ def analyse(config, prog, argv):
             else:
                 candidates = set(config.upstream_hashes)
 
-            repo.load_ccache(config.f_ccache_upstream)
+            config.load_ccache_upstream()
 
             # cache missing commits
             repo.cache_commits(representatives | candidates)

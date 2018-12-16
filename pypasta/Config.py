@@ -194,6 +194,36 @@ class Config:
     def project_root(self):
         return self._project_root
 
+    def load_ccache_upstream(self):
+        self.repo.load_ccache(self.f_ccache_upstream)
+
+    def load_ccache_stack(self):
+        self.repo.load_ccache(self.f_ccache_stack)
+
+    def load_ccache_mbox(self):
+        self.repo.load_ccache(self.f_ccache_mbox)
+
+    def _update_ccache(self, f_ccache, commits, desc):
+        repo = self.repo
+        repo.clear_commit_cache()
+        repo.load_ccache(f_ccache, desc)
+        cached = repo.cache_commits(commits)
+        if cached:
+            repo.export_ccache(f_ccache)
+        repo.clear_commit_cache()
+
+    def update_ccache_upstream(self):
+        self._update_ccache(self.f_ccache_upstream, self.upstream_hashes,
+                            'upstream')
+
+    def update_ccache_mbox(self):
+        self._update_ccache(self.f_ccache_mbox, self.repo.mbox.message_ids(),
+                            'mbox')
+
+    def update_ccache_stack(self):
+        self._update_ccache(self.f_ccache_stack, self.psd.commits_on_stacks,
+                            'stack')
+
     def load_patch_groups(self, must_exist=True, f_patch_groups=None):
         if f_patch_groups is None:
             f_patch_groups = self.f_pasta_result
