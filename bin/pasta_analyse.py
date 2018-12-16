@@ -156,7 +156,11 @@ def analyse(config, prog, argv):
         # emails. Commit cache is already loaded, so evict everything except
         # victims and then cache all victims.
         repo.cache_evict_except(victims)
-        victims, _ = repo.cache_commits(victims)
+        repo.cache_commits(victims)
+
+        # we might have loaded invalid emails, so reload the victim list once more.
+        victims = config.repo.mbox.message_ids(mbox_time_window)
+        print(len(victims))
     else:
         victims = config.psd.commits_on_stacks
 

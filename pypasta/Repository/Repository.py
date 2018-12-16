@@ -164,7 +164,7 @@ class Repository:
         worklist = commit_hashes - already_cached
 
         if len(worklist) == 0:
-            return commit_hashes, set()
+            return commit_hashes
 
         log.info('Caching %d/%d commits' % (len(worklist), len(commit_hashes)))
 
@@ -189,9 +189,8 @@ class Repository:
             self.mbox.invalidate(invalid_mail)
 
         self._inject_commits(result)
-        log.info('  ↪ done')
 
-        return commit_hashes - invalid, invalid
+        return commit_hashes - invalid
 
     def __getitem__(self, item):
         return self.get_commit(item)

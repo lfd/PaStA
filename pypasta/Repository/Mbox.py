@@ -327,6 +327,8 @@ class Mbox:
         self.d_invalid = os.path.join(self.d_mbox, 'invalid')
         self.d_index = os.path.join(self.d_mbox, 'index')
 
+        log.info('Loading mailbox subsystem')
+
         os.makedirs(self.d_invalid, exist_ok=True)
         os.makedirs(self.d_index, exist_ok=True)
 
