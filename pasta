@@ -97,6 +97,7 @@ def main(argv):
     me = argv.pop(0)
     config = None
     level = logging.INFO
+    debug = False
 
     while len(argv) and argv[0].startswith('-'):
         argument = argv.pop(0)
@@ -107,6 +108,7 @@ def main(argv):
             config = argv.pop(0)
         elif argument == '-d':
             level = logging.DEBUG
+            debug = True
 
     fmt = '%(asctime)-15s %(name)-15s %(levelname)-8s %(message)s'
     logging.basicConfig(level=level, stream=sys.stdout, format=fmt)
@@ -130,7 +132,7 @@ def main(argv):
     if sub == 'select':
         return Config.select_config(argv[0])
 
-    config = Config(config)
+    config = Config(config, debug)
 
     if sub == '-h' or sub == '--help':
         usage(me, 0)

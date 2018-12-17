@@ -79,7 +79,8 @@ class Config:
         MBOX = "mbox"
         PATCHSTACK = "patchstack"
 
-    def __init__(self, project):
+    def __init__(self, project, debug):
+        self.debug = debug
         self._project_root, self._config_file = Config.get_config_dir_file(project)
 
         if not isfile(Config.DEFAULT_CONFIG):
