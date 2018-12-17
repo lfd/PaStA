@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
@@ -204,8 +202,3 @@ def compare_clusters(prog, argv):
                 f.write("fm: %0.3f\n" % fm)
 
     return 0
-
-
-if __name__ == '__main__':
-    ret = compare_clusters(sys.argv[0], sys.argv[1:])
-    sys.exit(ret)

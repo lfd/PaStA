@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
@@ -45,8 +43,3 @@ def check_connectivity(config, prog, argv):
     if args.d:
         patch_groups.optimize()
         patch_groups.to_file(f_patch_groups)
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    check_connectivity(config, sys.argv[0], sys.argv[2:])

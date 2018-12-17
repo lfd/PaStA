@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -76,8 +74,3 @@ def rate(config, prog, argv):
 
     patch_groups.to_file(f_patch_groups)
     evaluation_result.fp.to_file(config.d_false_positives)
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    rate(config, sys.argv[0], sys.argv[2:])

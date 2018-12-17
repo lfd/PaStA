@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -95,7 +93,3 @@ def statistics(config, prog, argv):
               upstream_filename,
               occurrence_filename,
               diffstat_filename])
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    statistics(config, sys.argv[0], sys.argv[2:])

@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@othr.de>
@@ -140,7 +138,3 @@ def compare_stacks(config, prog, argv):
         stack_to = psd.get_stack_by_name(args.versions[1])
         print('\nComparing %s -> %s' % (stack_from, stack_to))
         compare_stack_against_stack(repo, patch_groups, date_selector, stack_from, stack_to, verbosity=args.verbose)
-
-if __name__ == '__main__':
-    config = sys.argv[1]
-    compare_stacks(config, sys.argv[0], sys.argv[2:])

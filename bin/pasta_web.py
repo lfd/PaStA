@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2017
+Copyright (c) OTH Regensburg, 2017-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -165,8 +163,3 @@ def web(c, prog, argv):
 
     nav.init_app(app)
     app.run(debug=True, host='0.0.0.0', port=8080, use_reloader=False)
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    web(config, sys.argv[0], sys.argv[2:])

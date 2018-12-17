@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2017
+Copyright (c) OTH Regensburg, 2017-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -101,8 +99,3 @@ def upstream_duration(config, prog, argv):
         f.write('rep first_submission last_submission integration num_equiv num_up dur\n')
         for line in result:
             f.write('%s %s %s %s %d %d %d\n' % line)
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    upstream_duration(config, sys.argv[0], sys.argv[2:])

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
@@ -271,8 +269,3 @@ def analyse(config, prog, argv):
 
     evaluation_result.merge(cherries)
     evaluation_result.to_file(args.er_filename)
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    analyse(config, sys.argv[0], sys.argv[2:])

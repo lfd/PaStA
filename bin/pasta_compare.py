@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -61,8 +59,3 @@ def compare(config, prog, argv):
         else:
             print('Not related')
         getch()
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    compare(config, sys.argv[0], sys.argv[2:])

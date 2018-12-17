@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -101,8 +99,3 @@ def patch_descriptions(config, prog, argv):
         for commit_hash, info in all_description.items():
             f.write('%s %s %s %s %s\n' % (commit_hash, info[0], info[1], info[2], info[3]))
         log.info('  ↪ done')
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    patch_descriptions(config, sys.argv[0], sys.argv[2:])

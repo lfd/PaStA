@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
@@ -54,8 +52,3 @@ def show_cluster(config, prog, argv):
         else:
             print('Not related')
         getch()
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    show_cluster(config, sys.argv[0], sys.argv[2:])

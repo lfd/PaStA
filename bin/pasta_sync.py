@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
@@ -103,8 +101,3 @@ def sync(config, prog, argv):
         # Update the mail thread cache
         repo.mbox.load_threads()
         repo.mbox.threads.update()
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    sync(config, sys.argv[0], sys.argv[2:])

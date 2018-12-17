@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
@@ -29,7 +27,3 @@ def optimise_cluster(prog, argv):
     res = Cluster.from_file(args.eqclass, must_exist=True)
     res.optimize()
     res.to_file(args.eqclass)
-
-
-if __name__ == '__main__':
-    optimise_cluster(sys.argv[0], sys.argv[2:])

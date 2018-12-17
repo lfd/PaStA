@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -66,8 +64,3 @@ def pasta_upstream_history(config, prog, argv):
         print('%d\t- %s (%s)' % (duration.days,
                                  upstream.subject,
                                  upstream.author.encode('utf-8').decode('ascii', 'ignore')))
-
-
-if __name__ == '__main__':
-    config = Config(sys.argv[1])
-    pasta_upstream_history(config, sys.argv[0], sys.argv[1:])
