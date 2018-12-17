@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2018
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -21,7 +21,7 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
 from .MessageDiff import MessageDiff
-from .Mbox import Mbox, PatchMail
+from .Mbox import Mbox
 from ..Util import fix_encoding, get_commit_hash_range
 
 log = getLogger(__name__[-15:])
