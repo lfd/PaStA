@@ -1,0 +1,47 @@
+# Copyright (c) OTH Regensburg, 2017-2018
+#
+# Author:
+#   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+
+FROM ubuntu:18.10
+
+MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt update
+RUN apt -y dist-upgrade
+
+# install PaStA dependencies
+RUN apt install -y python3-sklearn python3-git python3-pygit2 \
+	python3-fuzzywuzzy python3-flaskext.wtf python3-pip \
+	python3-tqdm git procmail wget sudo vim locales
+
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+RUN useradd -m -G sudo -s /bin/bash pasta
+RUN echo "pasta:pasta" | chpasswd
+
+USER pasta
+WORKDIR /home/pasta
+
+# install some more python dependencies that are not provided by Ubuntu's repo
+RUN pip3 install --user dateparser flask-bootstrap flask-nav
+
+# prepare PaStA
+RUN git clone https://github.com/lfd/PaStA.git
+RUN git -C PaStA submodule init
+RUN git -C PaStA submodule update
+RUN git -C PaStA/resources checkout master
+RUN git -C PaStA/resources/ submodule init
+RUN git -C PaStA/resources/ submodule update linux/repo
+
+# workaround to get the latest state of the repository
+ADD https://api.github.com/repos/lfd/PaStA/git/refs/heads/master /dev/null
+RUN git -C PaStA pull
