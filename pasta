@@ -155,7 +155,7 @@ def main(argv):
 
 if __name__ == '__main__':
     fmt = '%(asctime)-15s %(name)-15s %(levelname)-8s %(message)s'
-    level = logging.DEBUG
+    level = logging.INFO
 
     logging.basicConfig(level=level, stream=sys.stdout, format=fmt)
     filehandler = logging.FileHandler(filename='./log', mode='a')
