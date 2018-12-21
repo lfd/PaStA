@@ -184,9 +184,13 @@ class Config:
             self.mbox_mindate = parse_date_ymd(mbox.get('MBOX_MINDATE'))
             self.mbox_maxdate = parse_date_ymd(mbox.get('MBOX_MAXDATE'))
 
-            self.mbox_raw = list(mbox_raw.items())
-            self.mbox_git_public_inbox = list()
+            self.mbox_raw = list()
+            for listname, f_mbox_raw in mbox_raw.items():
+                if not isabs(f_mbox_raw):
+                    f_mbox_raw = join(self.d_mbox, 'raw', f_mbox_raw)
+                self.mbox_raw.append((listname, f_mbox_raw))
 
+            self.mbox_git_public_inbox = list()
             for listname, inboxes in list(mbox_pub_in.items()):
                 for inbox in json.loads(inboxes):
                     self.mbox_git_public_inbox.append((listname, inbox))
