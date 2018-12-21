@@ -196,13 +196,13 @@ class Config:
         return self._project_root
 
     def load_ccache_upstream(self):
-        self.repo.load_ccache(self.f_ccache_upstream)
-
-    def load_ccache_stack(self):
-        self.repo.load_ccache(self.f_ccache_stack)
+        self.repo.load_ccache(self.f_ccache_upstream, 'upstream')
 
     def load_ccache_mbox(self):
-        self.repo.load_ccache(self.f_ccache_mbox)
+        self.repo.load_ccache(self.f_ccache_mbox, 'mbox')
+
+    def load_ccache_stack(self):
+        self.repo.load_ccache(self.f_ccache_stack, 'stack')
 
     def _update_ccache(self, f_ccache, commits, desc):
         repo = self.repo
