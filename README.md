@@ -131,9 +131,10 @@ Creating a new PaStA project
 ### Preparing the repository
 All project-relevant file are located in `resources/PROJECT_NAME/`.
 Default locations inside that directory:
-- `PROJECT_NAME.cfg`: the main configuration file of the project. This file sets
-  the project name, different version ranges and default thresholds.
-- `repo/`: This is the default location of the repository of the project
+- `config`: the main configuration file of the project. This file sets the
+  project name, different version ranges, time windows and default thresholds.
+- `repo/`: This is the default location of the repository of the project. While
+  not strictly required, repos are usually added as git submodules.
 - `resources/patch-stack-definition.dat`: Definition of the patch stacks.
   Lines beginning with **#** are interpreted as comments, lines beginning with
   **##** group major versions of projects. Take a look at existing patch stack
@@ -147,50 +148,56 @@ configuration file:
 ```
 [PaStA]
 PROJECT_NAME = foobar
+MODE = mbox / patchstack
 
-UPSTREAM_MIN = v1.0
-UPSTREAM_MAX = v2.0
+UPSTREAM = v1.0..v2.0
 ```
 
 ### Set active configuration
-For setting the current active project **PaStA**, just create a symbolic link of
-the configuration file to the root directory of **PaStA**. E.g.:
+Use the `select` command to set the active configuration. E.g.:
 ```
-$ ln -sf resources/PreemptRT/PreemptRT.cfg ./config
+$ ./pasta select linux
 ```
 
-All further calls on **PaStA** tools will use this configuration file.
-Other than that, the active configuration can also be chosen by invoking
-**PaStA** with the `-c` option:
+All further calls on **PaStA** tools will use this configuration file. To use a
+specific configuration for a single **PaStA** command, this may be overridden
+with the `-c` command line parameter:
 ```
-$ ./pasta -c PastA-resources/project/project.cfg subcommand ...
+$ ./pasta -c busybox subcommand ...
 ```
 
 PaStA Mailbox Analysis
 ----------------------
 
-**PaStA** is able to map mails from mailboxes (e.g. dumps of mailing lists) to
-commit hashes of repositories. PaStA searches for mails in the mailbox that
-contain patches. Yet, PaStA does not entirely understand all different mail
-formats. After all potential patches have been detected, PaStA will save those
-patches in a commit cache file. This file can be used for further analysis and
-is compared against all 'upstream' commits (master branch).
+**PaStA** is able to map mails from mailboxes (e.g. dumps of mailing lists or
+[public inboxes][1]) to commit hashes of repositories. PaStA searches for mails
+in the mailbox that contain patches. Yet, PaStA does not entirely understand
+all different mail formats. After all potential patches have been detected,
+PaStA will save those patches in a commit cache file. This file can be used for
+further analysis and is compared against all 'upstream' commits (master
+branch).
 
 1. `./pasta select linux`
-2. Get dump of a mailing list in Unix-Mbox format. (e.g. by using sinntp)
-3. Run `./pasta mbox_add list-name filename
-4. Repeat step 3 for multiple times to parse multiple lists
-5. Run `./pasta cache -create mbox`
-6. Run `./pasta analyse init`
+2. Either get mailboxes. PaStA supports raw unix-style mailboxes and public
+   inboxes, and add them to the configuration. Use the linux project
+   configuration as a reference. There are several possibilities to acquire
+   mailbox data:
+   * Use [nntp2mbox][2] on gmane.org
+   * Convert your local maildir
+   * Use public inboxes from [git.kernel.org][3]
+3. Parse mailboxes and create local caches with `./pasta sync -mbox`
 
 To compare all mails on the list against each other:
 
-7. Run `./pasta analyse rep`
-8. Run `./pasta rate`
+4. Run `./pasta analyse rep`
+5. Run `./pasta rate`
 
 To compare all mails on the list against upstream:
 
-7. Run `./pasta analyse upstream`
-8. Run `./pasta rate`
+6. Run `./pasta analyse upstream`
+7. Run `./pasta rate`
+8. Your result will be stored in `resources/[project]/resources/similar-mailbox`
 
-9. Your result will be stored in `resources/[project]/resources/similar-mailbox`
+[1]: https://public-inbox.org/README.html
+[2]: https://github.com/xai/nntp2mbox
+[3]: https://git.kernel.org/pub/scm/public-inbox/
