@@ -13,7 +13,7 @@ the analysis:
 1. Clone the repository
 
 ```
-$ git clone git@github.com:lfd/PaStA.git
+$ git clone https://github.com/lfd/PaStA.git
 $ cd PaStA/docker
 ```
 
@@ -34,7 +34,7 @@ We also provide the dockerfiles to create the docker container from scratch.
 1. Clone the repository
 
 ```
-$ git clone git@github.com:lfd/PaStA.git
+$ git clone https://github.com/lfd/PaStA.git
 $ cd PaStA/docker
 ```
 
