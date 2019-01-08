@@ -48,10 +48,10 @@ that contains all required artifact files and the correct version of our tool.
 $ ./build-icse.sh
 ```
 
-3. Run the container, and attach to it
+3. Start the container, and attach to it
 
 ```
-$ docker run pasta:icse-artifact
+$ docker run -ti pasta:icse-artifact
 ```
 
 4. Run the analysis
