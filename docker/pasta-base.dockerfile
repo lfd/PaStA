@@ -32,7 +32,7 @@ USER pasta
 WORKDIR /home/pasta
 
 # install some more python dependencies that are not provided by Ubuntu's repo
-RUN pip3 install --user dateparser flask-bootstrap flask-nav
+RUN pip3 install --user dateparser flask-bootstrap flask-nav anytree
 
 # prepare PaStA
 RUN git clone https://github.com/lfd/PaStA.git
