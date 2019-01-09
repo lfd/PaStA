@@ -17,7 +17,7 @@ import argparse
 from .Repository import *
 
 # Internal import statements
-from .Config import Config
+from .Config import Config, PygitCredentials
 from .Cluster import Cluster
 from .PatchEvaluation import EvaluationResult, EvaluationType,\
     evaluate_commit_list, SimRating, evaluate_commit_pair

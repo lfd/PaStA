@@ -71,7 +71,8 @@ def sync(config, prog, argv):
     # Update upstream
     if not args.noup:
         log.info('Fetching and syncing upstream repository')
-        repo.repo.remotes['origin'].fetch()
+        repo.repo.remotes['origin'].fetch(callbacks=PygitCredentials())
+
         config.load_upstream_hashes(force_reload=True)
 
         if is_mbox and args.mbox:
