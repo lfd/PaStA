@@ -11,7 +11,6 @@ the COPYING file in the top-level directory.
 """
 
 import configparser
-import json
 import pygit2
 
 from enum import Enum
@@ -201,7 +200,8 @@ class Config:
 
             self.mbox_git_public_inbox = list()
             for listname, inboxes in list(mbox_pub_in.items()):
-                for inbox in json.loads(inboxes):
+                inboxes = [x.strip() for x in inboxes.split(',')]
+                for inbox in inboxes:
                     self.mbox_git_public_inbox.append((listname, inbox))
 
     @property
