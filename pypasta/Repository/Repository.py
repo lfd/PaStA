@@ -149,7 +149,7 @@ class Repository:
             del self.ccache[victim]
         gc.collect()
 
-    def cache_commits(self, commit_hashes, parallelise=True, cpu_factor = 1):
+    def cache_commits(self, commit_hashes, parallelise=True, cpu_factor=1):
         """
         Caches a list of commit hashes
         :param commit_hashes: List of commit hashes
