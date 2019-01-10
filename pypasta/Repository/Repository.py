@@ -164,7 +164,7 @@ class Repository:
         worklist = commit_hashes - already_cached
 
         if len(worklist) == 0:
-            return set()
+            return commit_hashes
 
         log.info('Caching %d/%d commits' % (len(worklist), len(commit_hashes)))
 
@@ -190,7 +190,7 @@ class Repository:
 
         self._inject_commits(result)
 
-        return set(result.keys())
+        return already_cached | set(result.keys())
 
     def __getitem__(self, item):
         return self.get_commit(item)
