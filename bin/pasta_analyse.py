@@ -17,6 +17,7 @@ import sys
 from functools import partial
 from logging import getLogger
 from multiprocessing import cpu_count, Pool
+from time import sleep
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from pypasta import *
@@ -148,7 +149,7 @@ def analyse(config, prog, argv):
         # load mbox ccache very early, because we need it in any case if it
         # exists.
         config.load_ccache_mbox()
-        victims = config.repo.mbox.message_ids(mbox_time_window)
+        victims = repo.mbox.message_ids(mbox_time_window)
 
         # we have to temporarily cache those commits to filter out invalid
         # emails. Commit cache is already loaded, so evict everything except
@@ -156,9 +157,29 @@ def analyse(config, prog, argv):
         repo.cache_evict_except(victims)
         repo.cache_commits(victims)
 
-        # we might have loaded invalid emails, so reload the victim list once more.
-        victims = config.repo.mbox.message_ids(mbox_time_window)
-        print(len(victims))
+        # we might have loaded invalid emails, so reload the victim list once
+        # more. This time, include all patches from the pre-existing (partial)
+        # result, and check if all patches are reachable
+        victims = repo.mbox.message_ids(mbox_time_window) | \
+                  patch_groups.get_untagged()
+
+        # in case of an mbox analysis, we will definitely need all untagged
+        # commit hashes as we need to determine the representative system for
+        # both modes, rep and upstream.
+        available = repo.cache_commits(victims)
+        if available != victims:
+            missing = victims - available
+            log.warning('MAILBOX RESULT CONTAINS %d MESSAGES THAT ARE NOT '
+                        'REACHABLE BY THE MAILBOX CONFIGURATION' % len(missing))
+            log.warning('Those messages will be removed from the result')
+            log.warning('Waiting 5 seconds before starting. Press Ctrl-C to '
+                        'abort.')
+            sleep(5)
+            for miss in missing:
+                patch_groups.remove_key(miss)
+            patch_groups.optimize()
+            victims = available
+        log.info('Cached %d relevant mails' % len(available))
     else:
         victims = config.psd.commits_on_stacks
 
@@ -223,7 +244,6 @@ def analyse(config, prog, argv):
         # The lambda compares two patches of an equivalence class and chooses
         # the one with the later release version
         if mbox:
-            repo.cache_commits(patch_groups.get_untagged())
             representatives = patch_groups.get_representative_system(
                 lambda x, y:
                     repo.get_commit(x).author_date >
