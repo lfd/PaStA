@@ -1,8 +1,8 @@
 STATUS
 ======
 
-We apply for the badge **replicated**. We believe that this badge is justified
-for the following reasons:
+We apply for the badges **reusable**, **available**, and **replicated**. We
+believe that this badge is justified for the following reasons:
 
   * Public availability of the whole project on GitHub
   * GPLv2 open source license
