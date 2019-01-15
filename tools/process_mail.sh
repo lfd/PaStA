@@ -45,7 +45,7 @@ whitespace_pattern=" |'"
 if [ "$ID" = "" ]; then
 	die "Unable to parse Message ID for ${MAIL}: empty Message-ID"
 elif [[ "$ID" =~ $whitespace_pattern ]]; then
-	die "Uable to parse Message ID for ${MAIL}: contains whitespaces"
+	die "Unable to parse Message ID for ${MAIL}: contains whitespaces"
 fi
 
 MD5=$(echo -en $ID | md5sum | awk '{ print $1 }')
