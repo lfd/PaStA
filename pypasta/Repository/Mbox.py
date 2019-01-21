@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -185,10 +185,14 @@ def load_file(filename, must_exist=True):
     return f
 
 
-def load_index(filename):
+def load_index(basename):
+    result = load_file(basename, must_exist=False)
+    for f_index in glob.glob(basename + '.*'):
+        result += load_file(f_index)
+
     return {message_id: (datetime.datetime.strptime(date, "%Y/%m/%d"), date,
                          location)
-            for (date, message_id, location) in load_file(filename, must_exist=False)}
+            for (date, message_id, location) in result}
 
 
 class MailContainer:
