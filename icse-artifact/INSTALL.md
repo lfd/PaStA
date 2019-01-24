@@ -1,8 +1,8 @@
 Installation and Setup
 ======================
 
-For the reproduction of our results, we provide a prepared docker container. If
-desired, the docker container can also be built from scratch, please find the
+To reproduce our results, we provide a prepared docker container. If desired,
+the docker container can also be built from scratch, please find the
 instructions in Section "Docker from scratch". These are the requirements for
 the analysis:
 
@@ -42,7 +42,7 @@ $ cd PaStA/docker
 
 The following command will first create a docker container for PaStA's base
 system, inherit from that image and create a ICSE Artifact specific container
-that contains all required artifact files and the correct version of our tool.
+that contains all required artefact files and the correct version of our tool.
 
 ```
 $ ./build-icse.sh
