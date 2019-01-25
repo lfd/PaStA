@@ -19,9 +19,9 @@ our tool, which underlines functionality and reusability.
 
 Evaluators familiar with basic command line interaction can evaluate our
 artefacts on Linux or Mac OS X. We provide a docker container that can be
-downloaded from our [institutions' website][1], or be built from scratch. This
-makes the artefact evaluation process convenient, yet guarantees full
-replicability from scratch.
+downloaded from our institutions' website (see below), or be built from
+scratch. This makes the artefact evaluation process convenient, yet guarantees
+full replicability from scratch.
 
 ### Artifact Overview
 
@@ -30,7 +30,7 @@ This is the list of artefacts that is required for the analysis:
  * [Linux Kernel mailing list dump of May 2012][3]
  * [Ground Truth][4]
 
-For convenience, these artefacts are bundled in a [prepared docker image][1].
+For convenience, these artefacts are bundled in a [prepared docker image][1] (3.5 GB).
 
 ### Installation and Analysis
 
@@ -66,7 +66,7 @@ conditions of the GPLv2.
 [1]: https://cdn.lfdr.de/PaStA/docker-pasta-icse.tar.gz
 [2]: https://github.com/lfd/PaStA
 [3]: https://cdn.lfdr.de/PaStA/LKML-2012-05.mbox
-[4]: https://github.com/lfd/PaStA-resources/blob/master/linux/resources/2012-05-mbox-result.groundtruth
+[4]: https://raw.githubusercontent.com/lfd/PaStA-resources/master/linux/resources/2012-05-mbox-result.groundtruth
 [5]: INSTALL.md
 [6]: https://github.com/lfd/PaStA/blob/master/tools/all_analyses.sh
 [7]: STATUS.md
