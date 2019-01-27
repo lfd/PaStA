@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) OTH Regensburg, 2017
+# Copyright (c) OTH Regensburg, 2017-2019
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@othr.de>
@@ -13,7 +13,7 @@
 initialise
 
 if [ "$#" -ne 3 ]; then
-	echo "Usage: $0 listname mailbox_file destination_directory"
+	echo "Usage: $0 listname destination_directory mailbox_file"
 	echo
 	echo "This script splits up a mailbox file into seperate mail"
 	echo "files, placed into date-separated subdirectories."
