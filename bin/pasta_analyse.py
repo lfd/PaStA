@@ -141,6 +141,15 @@ def analyse(config, prog, argv):
 
     f_patch_groups, patch_groups = config.load_patch_groups(must_exist=False)
 
+    def fill_result(hashes, tag):
+        for hash in hashes:
+            patch_groups.insert_single(hash)
+            if tag:
+                patch_groups.tag(hash, True)
+
+        # intermediate persistence
+        patch_groups.to_file(f_patch_groups)
+
     if mbox:
         mbox_time_window = config.mbox_mindate, config.mbox_maxdate
         log.info('Regarding mails in time window %s--%s' %
@@ -183,12 +192,7 @@ def analyse(config, prog, argv):
     else:
         victims = config.psd.commits_on_stacks
 
-    # insert victims
-    for commit_hash in victims:
-        patch_groups.insert_single(commit_hash)
-
-    # intermediate persistence
-    patch_groups.to_file(f_patch_groups)
+    fill_result(victims, False)
 
     cherries = EvaluationResult()
     if mode == 'succ':
@@ -260,6 +264,8 @@ def analyse(config, prog, argv):
                 candidates = set(repo.get_commithash_range(args.upstream_range))
             else:
                 candidates = set(config.upstream_hashes)
+
+            fill_result(candidates, True)
 
             config.load_ccache_upstream()
 
