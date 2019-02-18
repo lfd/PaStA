@@ -16,7 +16,7 @@ log = getLogger(__name__[-15:])
 
 
 class Cluster:
-    SEPARATOR = ' => '
+    SEPARATOR = '=>'
 
     def __init__(self):
         self.classes = list()
@@ -123,6 +123,9 @@ class Cluster:
         return new_id
 
     def insert(self, *elems):
+        if len(elems) == 0:
+            return
+
         ids = [self.insert_single(elem) for elem in elems]
 
         # check if all elements are already in the same class
@@ -186,17 +189,28 @@ class Cluster:
 
     def __str__(self):
         retval = str()
+        tagged_visited = set()
 
         untagged_list = [sorted(x) for x in self.iter_untagged()]
         untagged_list.sort()
 
         for untagged in untagged_list:
             tagged = self.get_tagged(untagged[0])
+            tagged_visited |= tagged
             retval += ' '.join(sorted([str(x) for x in untagged]))
             if len(tagged):
-                retval += Cluster.SEPARATOR + \
+                retval += ' ' + Cluster.SEPARATOR + ' ' + \
                           ' '.join(sorted([str(x) for x in tagged]))
             retval += '\n'
+
+        # There may be clusters with upstream candidates only
+        tagged = [x[1] for x in self.iter_tagged_only()]
+        for cluster in tagged:
+            if list(cluster)[0] in tagged_visited:
+                continue
+
+            cluster = ' '.join(sorted([str(x) for x in cluster]))
+            retval += Cluster.SEPARATOR + ' ' + cluster + '\n'
 
         return retval
 
@@ -262,6 +276,9 @@ class Cluster:
 
     @staticmethod
     def from_file(filename, must_exist=False):
+        def split_elements(elems):
+            return list(filter(None, elems.split(' ')))
+
         retval = Cluster()
 
         try:
@@ -277,12 +294,14 @@ class Cluster:
             return retval
 
         content = list(filter(None, content.splitlines()))
-        content = [(lambda x: (x[0].split(' ') if x[0] else [],
-                               x[1].split(' ') if len(x) == 2 else []))
-                   (x.split(Cluster.SEPARATOR))
-                   for x in content]
+        for line in content:
+            line = line.split(Cluster.SEPARATOR)
+            # Append empty tagged list, if not present
+            if len(line) == 1:
+                line.append('')
 
-        for untagged, tagged in content:
+            untagged, tagged = split_elements(line[0]), split_elements(line[1])
+
             retval.insert(*(untagged + tagged))
             for tag in tagged:
                 retval.tag(tag)
