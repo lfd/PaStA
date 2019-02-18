@@ -38,7 +38,7 @@ def compare(config, prog, argv):
     repo = config.repo
 
     if any([x.startswith('<') for x in commits]):
-        repo.register_mbox(config.d_mbox)
+        repo.register_mbox(config)
 
     if len(commits) == 1:
         show_commit(repo, commits[0])
