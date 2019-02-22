@@ -66,16 +66,12 @@ class PatchMail(MessageDiff):
         if date.tzinfo is None:
             date = date.replace(tzinfo=datetime.timezone.utc)
 
-        payload = mail.get_payload()
+        payload = mail.get_payload(decode=True)
+        charset = mail.get_content_charset()
 
-        # Check encoding and decode
-        cte = mail['Content-Transfer-Encoding']
-        if cte and cte.lower() == 'quoted-printable':
-            charset = mail.get_content_charset()
-            if charset not in CHARSETS:
-                charset = 'ascii'
-            payload = quopri.decodestring(payload)
-            payload = payload.decode(charset, errors='ignore')
+        if charset not in CHARSETS:
+           charset = 'ascii'
+        payload = payload.decode(charset, errors='ignore')
 
         if isinstance(payload, list):
             retval = parse_list(payload)
