@@ -253,7 +253,9 @@ class PubInbox(MailContainer):
 
         for hash in hashes:
             mail = self.get_mail_by_commit(hash)
-
+            if not mail['Message-ID']:
+                log.warning('No Message ID in commit %s' % hash)
+                continue
             message_id = mail['Message-ID'].replace(' ', '').strip()
             match = PubInbox.MESSAGE_ID_REGEX.match(message_id)
             if not match:
