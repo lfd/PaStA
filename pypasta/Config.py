@@ -308,7 +308,7 @@ class Config:
     def fail_result_not_exists(filename):
         if not isfile(filename):
             log.error('Result %s not existent' % filename)
-            log.error('Run \'pasta analyse init\' first.')
+            log.error('Run \'pasta analyse ...\' first.')
             quit(-1)
 
     @property

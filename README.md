@@ -71,22 +71,18 @@ phase. After `pasta analyse`, you might want to reuse the results of the
 analysation and run `pasta rate` for several times on the same data set.
 
 The detection phase is split in four steps:
-1. Initialisation of similar patches on the patch stacks
-   ```
-   $ ./pasta analyse init
-   ```
-2. Comparing successive versions on the patch stacks
+1. Comparing successive versions on the patch stacks
    ```
    $ ./pasta analyse stack-succ
    $ ./pasta rate
    ```
-3. For more fine-granular classification, compare representants of existing
+2. For more fine-granular classification, compare representants of existing
    equivalence classes
    ```
    $ ./pasta analyse stack-rep
    $ ./pasta rate
    ```
-4. Once you think you have found all equivalence classes you can find to find
+3. Once you think you have found all equivalence classes you can find to find
    representants of them upstream
    ```
    $ ./pasta analyse upstream
