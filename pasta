@@ -28,6 +28,7 @@ from pypasta import Config
 
 from bin.pasta_analyse import analyse
 from bin.pasta_check_connectivity import check_connectivity
+from bin.pasta_check_mbox import check_mbox
 from bin.pasta_compare import compare
 from bin.pasta_compare_clusters import compare_clusters
 from bin.pasta_optimise_cluster import optimise_cluster
@@ -66,6 +67,7 @@ def usage(me, exit_code=errno.EINVAL):
           'where sub is one of:\n'
           '  analyse\n'
           '  check_connectivity\n'
+          '  check_mbox\n'
           '  compare\n'
           '  optimise_cluster\n'
           '  rate\n'
@@ -139,6 +141,8 @@ def main(argv):
         return analyse(config, sub, argv)
     elif sub == 'check_connectivity':
         return check_connectivity(config, sub, argv)
+    elif sub == 'check_mbox':
+        return check_mbox(config, sub, argv)
     elif sub == 'compare':
         return compare(config, sub, argv)
     elif sub == 'rate':
