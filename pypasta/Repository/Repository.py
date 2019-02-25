@@ -66,6 +66,8 @@ class Commit(MessageDiff):
         super(Commit, self).__init__(content, author_name, commit.author.email,
                                      author_date)
 
+        self._is_merge_commit = len(commit.parents) > 1
+
     def format_message(self):
         custom = ['Committer:  %s <%s>' %
                   (self.committer, self.committer_email),
