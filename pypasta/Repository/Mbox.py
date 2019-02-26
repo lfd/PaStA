@@ -119,6 +119,9 @@ def parse_single_message(mail):
     patch = None
     annotation = None
 
+    if mail[0].startswith('--'):
+        mail.pop(0)
+
     for line in mail:
         if patch is None and \
                 (line.startswith('diff ') or
