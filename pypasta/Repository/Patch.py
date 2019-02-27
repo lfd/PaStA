@@ -148,7 +148,7 @@ class Diff:
 
             return diff, footer
 
-        return self.raw, []
+        return self.raw.copy(), []
 
     @staticmethod
     def get_filename(a, b):
