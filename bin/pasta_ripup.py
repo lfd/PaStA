@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2018
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -64,6 +64,7 @@ def ripup(config, prog, argv):
     args = parser.parse_args(argv)
     representatives = args.reps
     repo = config.repo
+    mbox = config.mode == Config.Mode.MBOX
 
     config.thresholds = Thresholds(args.thres_accept,
                                    args.thres_interactive,
@@ -71,7 +72,7 @@ def ripup(config, prog, argv):
                                    args.thres_heading,
                                    args.thres_filename,
                                    args.weight,
-                                   args.adi)
+                                   args.thres_adi)
 
     f_patch_groups, patch_groups = config.load_patch_groups()
 
@@ -83,9 +84,8 @@ def ripup(config, prog, argv):
         elems = patch_groups.ripup_cluster(representative)
 
         evaluation_result = evaluate_commit_list(repo, config.thresholds,
-                                                 args.mbox,
+                                                 mbox,
                                                  EvaluationType.PatchStack,
-                                                 patch_groups,
                                                  elems, elems,
                                                  parallelise=False,
                                                  verbose=True,
