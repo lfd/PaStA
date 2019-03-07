@@ -102,7 +102,7 @@ class PatchComposition:
         upstream = get_first_upstream(repo, patch_groups, commit)
 
         first_stack_occurence = min(map(date_selector, commits_in_class))
-        upstream_commit_date = repo[upstream].commit_date
+        upstream_commit_date = repo[upstream].commit.date
 
         delta = upstream_commit_date - first_stack_occurence
 

@@ -20,7 +20,7 @@ from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
-from .MessageDiff import MessageDiff
+from .MessageDiff import MessageDiff, Signature
 from .Mbox import Mbox
 from ..Util import fix_encoding, get_commit_hash_range
 
@@ -35,10 +35,16 @@ class Commit(MessageDiff):
         commit = repo[commit_hash]
 
         auth_tz = timezone(timedelta(minutes=commit.author.offset))
-        commit_tz = timezone(timedelta(minutes=commit.commit_time_offset))
-
         author_date = datetime.fromtimestamp(commit.author.time, auth_tz)
+
+        author = Signature(fix_encoding(commit.author.raw_name),
+                           commit.author.email, author_date)
+
+        commit_tz = timezone(timedelta(minutes=commit.commit_time_offset))
         commit_date = datetime.fromtimestamp(commit.commit_time, commit_tz)
+
+        self.committer = Signature(fix_encoding(commit.committer.raw_name),
+                                   commit.committer.email, commit_date)
 
         # default: diff is empty. This filters merge commits and commits with no
         # parents
@@ -49,27 +55,20 @@ class Commit(MessageDiff):
             if not diff:
                 diff = ''
 
-        self.committer = fix_encoding(commit.committer.raw_name)
-        self.committer_email = commit.committer.email
-        self.commit_date = commit_date
-
         # split message and diff at newlines
         message = fix_encoding(commit.raw_message).split('\n')
         diff = diff.split('\n')
 
-        author_name = fix_encoding(commit.author.raw_name)
-
         content = message, None, diff
 
-        super(Commit, self).__init__(commit.hex, content, author_name,
-                                     commit.author.email, author_date)
+        super(Commit, self).__init__(commit.hex, content, author)
 
         self._is_merge_commit = len(commit.parents) > 1
 
     def format_message(self):
         custom = ['Committer:  %s <%s>' %
-                  (self.committer, self.committer_email),
-                  'CommitDate: %s' % self.commit_date]
+                  (self.committer.name, self.committer.email),
+                  'CommitDate: %s' % self.committer.date]
         return super(Commit, self).format_message(custom)
 
 

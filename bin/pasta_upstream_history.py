@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2018
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -22,7 +22,7 @@ def upstream_duration(repo, date_selector, patch_groups, rep):
     upstream = get_first_upstream(repo, patch_groups, rep)
 
     first_stack_relase = min(map(lambda x: date_selector(x), group))
-    upstream_date = repo[upstream].commit_date
+    upstream_date = repo[upstream].commit.date
 
     delta = first_stack_relase - upstream_date
     return delta

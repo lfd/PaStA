@@ -247,7 +247,7 @@ class EvaluationResult(dict):
                 if respect_commitdate:
                     l = repo[orig_commit_hash]
                     r = repo[cand_commit_hash]
-                    if l.commit_date > r.commit_date:
+                    if l.commit.date > r.commit.date:
                         skipped_by_commit_date += 1
                         continue
 
@@ -528,11 +528,11 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
             # respect author_date_interval. Only consider patches for
             # comparison that have at max a temporal author_date
             # distance of author_date_interval days
-            left_author_date = repo[left_hash].author_date
+            left_author_date = repo[left_hash].author.date
             if thresholds.author_date_interval:
                this_right_hashes = {
                     x for x in this_right_hashes
-                    if abs((repo[x].author_date - left_author_date).days) <
+                    if abs((repo[x].author.date - left_author_date).days) <
                        thresholds.author_date_interval}
             if len(this_right_hashes):
                 preeval_result[left_hash] = this_right_hashes

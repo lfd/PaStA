@@ -42,9 +42,9 @@ def get_date_selector(repo, patch_stack_definition, selector):
         date_selector = lambda x: patch_stack_definition.get_stack_of_commit(x).stack_release_date
     # Date selector "Commit Date"
     elif selector == 'CD':
-        date_selector = lambda x: repo[x].commit_date
+        date_selector = lambda x: repo[x].commit.date
     elif selector == 'AD':
-        date_selector = lambda x: repo[x].author_date
+        date_selector = lambda x: repo[x].author.date
     else:
         raise NotImplementedError('Unknown date selector: ' % selector)
     return date_selector
@@ -194,5 +194,5 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
 def get_first_upstream(repo, patch_groups, commit):
     tags = patch_groups.get_tagged(commit)
     if tags:
-        return min(tags, key=lambda x: repo[x].commit_date)
+        return min(tags, key=lambda x: repo[x].commit.date)
     return None

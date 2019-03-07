@@ -14,6 +14,13 @@ import re
 from .Patch import Diff
 
 
+class Signature:
+    def __init__(self, name, email, date):
+        self.name = name
+        self.email = email
+        self.date = date
+
+
 class MessageDiff:
     """
     An abstract class that consists of a message, and a diff.
@@ -43,12 +50,9 @@ class MessageDiff:
                                 r')',
                                 re.IGNORECASE)
 
-    def __init__(self, identifier, content, author_name, author_email,
-                 author_date):
+    def __init__(self, identifier, content, author):
         self.identifier = identifier
-        self.author = author_name
-        self.author_email = author_email
-        self.author_date = author_date
+        self.author = author
 
         message, self.annotation, diff = content
         self.raw_message = message
@@ -81,8 +85,8 @@ class MessageDiff:
 
         message = ['%s %s' % (type, self.identifier),
                    'Author:     %s <%s>' %
-                   (self.author, self.author_email),
-                   'AuthorDate: %s' % self.author_date]
+                   (self.author.name, self.author.email),
+                   'AuthorDate: %s' % self.author.date]
         message += custom + [''] + self.raw_message
 
         return message

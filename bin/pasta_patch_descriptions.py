@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2018
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -55,7 +55,7 @@ def describe_commit(commit):
 
     release_date = format_date_ymd(release_date)
     author_date = format_date_ymd(commit.author_date)
-    commit_date = format_date_ymd(commit.commit_date)
+    commit_date = format_date_ymd(commit.commit.date)
     return commit_hash, (branch_name, author_date, commit_date, release_date)
 
 

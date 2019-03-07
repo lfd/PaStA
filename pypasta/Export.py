@@ -124,7 +124,7 @@ class Export:
 
                 upstream.write('%d %s %s %s\n' % (cntr,
                                                   commit.identifier,
-                                                  format_date_ymd(commit.commit_date),
+                                                  format_date_ymd(commit.commit.date),
                                                   format_date_ymd(first_stack_occurence)))
 
             # Patch occurrence

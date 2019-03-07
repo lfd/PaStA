@@ -133,8 +133,8 @@ def mbox():
     elements = {repo.get_commit(x) for x in elements}
     # sort them by author_date
     elements = sorted(elements,
-                      key=lambda x: x.author_date if isinstance(x, PatchMail)
-                                    else x.commit_date,
+                      key=lambda x: x.author.date if isinstance(x, PatchMail)
+                                    else x.commit.date,
                       reverse=True)
 
     history = []
@@ -142,11 +142,11 @@ def mbox():
         element_id = element.identifier
         if isinstance(element, PatchMail):
             message = element.mail_subject
-            date = element.author_date
+            date = element.author.date
             found = sorted(config.repo.mbox.get_lists(element_id))
         else:
             message = '%s ("%s")' % (element_id[0:12], element.subject)
-            date = element.commit_date
+            date = element.commit.date
             found = ['Repository']
         date = date.strftime('%Y-%m-%d')
         history.append((element_id, date, message, found, element_id == id))

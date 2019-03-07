@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2018
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -250,8 +250,8 @@ def analyse(config, prog, argv):
         if mbox:
             representatives = patch_groups.get_representative_system(
                 lambda x, y:
-                    repo.get_commit(x).author_date >
-                    repo.get_commit(y).author_date)
+                    repo.get_commit(x).author.date >
+                    repo.get_commit(y).author.date)
         else:
             representatives = patch_groups.get_representative_system(
                 lambda x, y: config.psd.is_stack_version_greater(

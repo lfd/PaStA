@@ -24,7 +24,7 @@ from logging import getLogger
 from subprocess import call
 
 from .MailThread import MailThread
-from .MessageDiff import MessageDiff
+from .MessageDiff import MessageDiff, Signature
 from ..Util import get_commit_hash_range
 
 log = getLogger(__name__[-15:])
@@ -53,6 +53,7 @@ class PatchMail(MessageDiff):
         identifier = mail['Message-ID']
         self.mail_subject = mail['Subject']
 
+        # Get informations on the author
         date = mail_parse_date(mail['Date'])
         if not date:
             # assume epoch
@@ -63,6 +64,16 @@ class PatchMail(MessageDiff):
         if date.tzinfo is None:
             date = date.replace(tzinfo=datetime.timezone.utc)
 
+        author_name = mail['From']
+        author_email = ''
+        match = MAIL_FROM_REGEX.match(author_name)
+        if match:
+            author_name = match.group(1)
+            author_email = match.group(2)
+
+        author = Signature(author_name, author_email, date)
+
+        # Get the patch payload
         payload = mail.get_payload(decode=True)
         charset = mail.get_content_charset()
 
@@ -89,17 +100,9 @@ class PatchMail(MessageDiff):
             subject = match.group(1)
         msg = [subject, ''] + msg
 
-        author_name = mail['From']
-        author_email = ''
-        match = MAIL_FROM_REGEX.match(author_name)
-        if match:
-            author_name = match.group(1)
-            author_email = match.group(2)
-
         content = msg, annotation, diff
 
-        super(PatchMail, self).__init__(identifier, content, author_name,
-                                        author_email, date)
+        super(PatchMail, self).__init__(identifier, content, author)
 
     def format_message(self):
         custom = ['Mail Subject: %s' % self.subject]

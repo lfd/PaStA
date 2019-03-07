@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2017-2018
+Copyright (c) OTH Regensburg, 2017-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -32,9 +32,9 @@ def get_youngest(repo, commits, commit_date):
 
     if commit_date:
         for commit in commits[1:]:
-            if repo[youngest].commit_date > repo[commit].commit_date:
+            if repo[youngest].commit.date > repo[commit].commit.date:
                 youngest = commit
-            if repo[oldest].commit_date < repo[commit].commit_date:
+            if repo[oldest].commit.date < repo[commit].commit.date:
                 oldest = commit
     else:
         for commit in commits[1:]:
@@ -59,7 +59,7 @@ def upstream_duration_of_group(group):
     oldest_mail_date = repo[oldest_mail].author_date
     youngest_mail_date = repo[youngest_mail].author_date
 
-    youngest_upstream_date = repo[youngest_upstream].commit_date
+    youngest_upstream_date = repo[youngest_upstream].commit.date
 
     delta = youngest_upstream_date - youngest_mail_date
 
