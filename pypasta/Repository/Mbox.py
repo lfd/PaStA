@@ -17,7 +17,6 @@ import git
 import glob
 import os
 import pygit2
-import quopri
 import re
 
 from email.charset import CHARSETS
