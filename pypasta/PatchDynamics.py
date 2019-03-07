@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -12,6 +12,7 @@ the COPYING file in the top-level directory.
 from functools import partial
 
 from .Util import get_first_upstream
+
 
 class PatchFlow:
     def __init__(self, invariant, dropped, new):

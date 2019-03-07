@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2018
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@othr.de>
@@ -40,15 +40,15 @@ def print_flow(repo, commits, destinations=None, verbosity=0, indent=4):
         commit = repo[commit]
 
         sys.stdout.write(' ' * indent)
-        sys.stdout.write(commit.commit_hash)
+        sys.stdout.write(commit.identifier)
         if verbosity > 1:
             sys.stdout.write(' : %s (%s)' % (commit.subject, commit.author))
         sys.stdout.write('\n')
         if verbosity > 2 and destinations:
-            dsts = [repo[x] for x in destinations[commit.commit_hash]]
+            dsts = [repo[x] for x in destinations[commit.identifier]]
             for dst in dsts:
                 sys.stdout.write(' ' * (indent+2))
-                sys.stdout.write('|-> %s ' % dst.commit_hash)
+                sys.stdout.write('|-> %s ' % dst.identifier)
                 if verbosity > 3:
                     sys.stdout.write('%s (%s)' % (dst.subject, dst.author))
                 sys.stdout.write('\n')

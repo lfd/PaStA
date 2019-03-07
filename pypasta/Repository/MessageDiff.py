@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -43,7 +43,9 @@ class MessageDiff:
                                 r')',
                                 re.IGNORECASE)
 
-    def __init__(self, content, author_name, author_email, author_date):
+    def __init__(self, identifier, content, author_name, author_email,
+                 author_date):
+        self.identifier = identifier
         self.author = author_name
         self.author_email = author_email
         self.author_date = author_date
@@ -75,7 +77,9 @@ class MessageDiff:
         self.diff = Diff(diff)
 
     def format_message(self, custom):
-        message = ['Commit:     %s' % self.commit_hash,
+        type = 'Commit:    ' if self.identifier[0] != '<' else 'Message-ID:'
+
+        message = ['%s %s' % (type, self.identifier),
                    'Author:     %s <%s>' %
                    (self.author, self.author_email),
                    'AuthorDate: %s' % self.author_date]

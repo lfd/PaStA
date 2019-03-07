@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2018
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -49,8 +49,6 @@ class Commit(MessageDiff):
             if not diff:
                 diff = ''
 
-        self.commit_hash = commit.hex
-
         self.committer = fix_encoding(commit.committer.raw_name)
         self.committer_email = commit.committer.email
         self.commit_date = commit_date
@@ -63,8 +61,8 @@ class Commit(MessageDiff):
 
         content = message, None, diff
 
-        super(Commit, self).__init__(content, author_name, commit.author.email,
-                                     author_date)
+        super(Commit, self).__init__(commit.hex, content, author_name,
+                                     commit.author.email, author_date)
 
         self._is_merge_commit = len(commit.parents) > 1
 
@@ -93,37 +91,37 @@ class Repository:
     def clear_commit_cache(self):
         self.ccache.clear()
 
-    def _load_commit(self, commit_hash):
+    def _load_commit(self, identifier):
         # check if the victim is an email
         try:
-            if commit_hash[0] == '<':
-                return self.mbox[commit_hash]
+            if identifier[0] == '<':
+                return self.mbox[identifier]
             else:
-                return Commit(self.repo, commit_hash)
+                return Commit(self.repo, identifier)
         except Exception as e:
-            log.debug('Unable to load commit %s: %s' % (commit_hash, str(e)))
+            log.debug('Unable to load commit %s: %s' % (identifier, str(e)))
             return None
 
-    def get_commit(self, commit_hash):
+    def get_commit(self, identifier):
         """
-        Return a particular commit
-        :param commit_hash: commit hash
+        Get a particular commit
+        :param identifier: Commit Hash or Message ID
         :return: Commit object
         """
 
         # simply return commit if it is already cached
-        if commit_hash in self.ccache:
-            return self.ccache[commit_hash]
+        if identifier in self.ccache:
+            return self.ccache[identifier]
 
         # cache and return if it is not yet cached
-        commit = self._load_commit(commit_hash)
+        commit = self._load_commit(identifier)
         if commit is None:
-            raise KeyError('Commit or Mail not found: %s' % commit_hash)
+            raise KeyError('Commit or Mail not found: %s' % identifier)
 
         # store commit in local cache
-        # use commit.commit_hash instead of commit_hash, because commit_hash
+        # use commit.identifier instead of identifier, because commit_hash
         # might be abbreviated.
-        self.ccache[commit.commit_hash] = commit
+        self.ccache[commit.identifier] = commit
 
         return commit
 
@@ -151,10 +149,10 @@ class Repository:
             del self.ccache[victim]
         gc.collect()
 
-    def cache_commits(self, commit_hashes, parallelise=True, cpu_factor=1):
+    def cache_commits(self, identifiers, parallelise=True, cpu_factor=1):
         """
         Caches a list of commit hashes
-        :param commit_hashes: List of commit hashes
+        :param identifiers: List of identifiers
         :param parallelise: parallelise
         """
         num_cpus = int(cpu_factor * cpu_count())
@@ -162,13 +160,13 @@ class Repository:
         if num_cpus <= 1:
             parallelise = False
         already_cached = set(self.ccache.keys())
-        commit_hashes = set(commit_hashes)
-        worklist = commit_hashes - already_cached
+        identifiers = set(identifiers)
+        worklist = identifiers - already_cached
 
         if len(worklist) == 0:
-            return commit_hashes
+            return identifiers
 
-        log.info('Caching %d/%d commits' % (len(worklist), len(commit_hashes)))
+        log.info('Caching %d/%d commits' % (len(worklist), len(identifiers)))
 
         if parallelise:
             global _tmp_repo

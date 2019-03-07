@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -123,7 +123,7 @@ class Export:
                 first_stack_occurence = min(map(date_selector, group))
 
                 upstream.write('%d %s %s %s\n' % (cntr,
-                                                  commit.commit_hash,
+                                                  commit.identifier,
                                                   format_date_ymd(commit.commit_date),
                                                   format_date_ymd(first_stack_occurence)))
 

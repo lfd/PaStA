@@ -51,16 +51,14 @@ def mail_parse_date(date_str):
 
 class PatchMail(MessageDiff):
     def __init__(self, mail):
-        # Simply name it commit_hash, otherwise we would have to refactor
-        # tons of code.
-        self.commit_hash = mail['Message-ID']
+        identifier = mail['Message-ID']
         self.mail_subject = mail['Subject']
 
         date = mail_parse_date(mail['Date'])
         if not date:
             # assume epoch
             log.debug('  Message %s: unable to parse date %s' %
-                      (self.commit_hash, mail['Date']))
+                      (identifier, mail['Date']))
             date = datetime.datetime.utcfromtimestamp(0)
 
         if date.tzinfo is None:
@@ -101,8 +99,8 @@ class PatchMail(MessageDiff):
 
         content = msg, annotation, diff
 
-        super(PatchMail, self).__init__(content, author_name, author_email,
-                                        date)
+        super(PatchMail, self).__init__(identifier, content, author_name,
+                                        author_email, date)
 
     def format_message(self):
         custom = ['Mail Subject: %s' % self.subject]

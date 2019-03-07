@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2017-2018
+Copyright (c) OTH Regensburg, 2017-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -122,7 +122,7 @@ def mbox():
         return render_mbox()
 
     patch = repo[lookup_form.id.data]
-    id = patch.commit_hash
+    id = patch.identifier
 
     if id not in patch_groups_mbox:
         return render_mbox(patch)
@@ -139,7 +139,7 @@ def mbox():
 
     history = []
     for element in elements:
-        element_id = element.commit_hash
+        element_id = element.identifier
         if isinstance(element, PatchMail):
             message = element.mail_subject
             date = element.author_date
