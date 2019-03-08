@@ -31,20 +31,18 @@ _tmp_repo = None
 
 
 class Commit(MessageDiff):
+    @staticmethod
+    def get_signature(pygit_person):
+        tz = timezone(timedelta(minutes=pygit_person.offset))
+        date = datetime.fromtimestamp(pygit_person.time, tz)
+
+        return Signature(fix_encoding(pygit_person.raw_name), pygit_person.email, date)
+
     def __init__(self, repo, commit_hash):
         commit = repo[commit_hash]
 
-        auth_tz = timezone(timedelta(minutes=commit.author.offset))
-        author_date = datetime.fromtimestamp(commit.author.time, auth_tz)
-
-        author = Signature(fix_encoding(commit.author.raw_name),
-                           commit.author.email, author_date)
-
-        commit_tz = timezone(timedelta(minutes=commit.commit_time_offset))
-        commit_date = datetime.fromtimestamp(commit.commit_time, commit_tz)
-
-        self.committer = Signature(fix_encoding(commit.committer.raw_name),
-                                   commit.committer.email, commit_date)
+        author = Commit.get_signature(commit.author)
+        self.committer = Commit.get_signature(commit.committer)
 
         # default: diff is empty. This filters merge commits and commits with no
         # parents
