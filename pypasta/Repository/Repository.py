@@ -48,7 +48,9 @@ class Commit(MessageDiff):
         # parents
         diff = ''
         if len(commit.parents) == 1:
-            diff = repo.diff(commit.parents[0], commit).patch
+            diff = repo.diff(commit.parents[0], commit)
+            diff.find_similar()
+            diff = diff.patch
             # there may be empty commits
             if not diff:
                 diff = ''
