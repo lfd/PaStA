@@ -46,7 +46,9 @@ class Diff:
     def __init__(self, diff):
         # we pop from the list until it is empty. Copy it first, to prevent its
         # deletion
-        self.raw = list(diff)
+        diff = diff.copy()
+
+        self.raw = diff.copy()
         self.patches = {}
         self.affected = set()
 
