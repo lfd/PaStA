@@ -395,9 +395,22 @@ def rate_diffs(thresholds, l_diff, r_diff):
             return 100
         return fuzz.token_sort_ratio(left, right)
 
+    def get_patch(diff, filename):
+        patch = diff.patches[filename]
+        return patch.similarity, patch.hunks
+
     for l_filename, r_filename in filename_compare:
-        l_hunks = l_diff.patches[l_filename]
-        r_hunks = r_diff.patches[r_filename]
+        l_similarity, l_hunks = get_patch(l_diff, l_filename)
+        r_similarity, r_hunks = get_patch(r_diff, r_filename)
+
+        # This is the case, if the file was moved without any further change. No
+        # further comparisons required.
+        if l_similarity == 100 and r_similarity == 100:
+            levenshteins.append(100)
+            continue
+
+        if l_similarity == r_similarity and l_similarity != 0:
+            levenshteins.append(100)
 
         levenshtein = []
         hunk_compare = best_string_mapping(thresholds.heading,

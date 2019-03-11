@@ -1,10 +1,10 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
-  Ralf Ramsauer <ralf.ramsauer@othr.de>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
@@ -23,10 +23,16 @@ class Hunk:
         self.deletions += other.deletions
         self.context += other.context
 
+class Patch:
+    def __init__(self, similarity=0, hunks=None):
+        self.similarity = similarity
+        if hunks:
+            self.hunks = hunks
+        else:
+            self.hunks = {}
+
 
 class Diff:
-    DIFF_SELECTOR_REGEX = re.compile(r'^[-\+@]')
-
     # The two-line unified diff headers
     FILE_SEPARATOR_MINUS_REGEX = re.compile(r'^--- ([^\s]+).*$')
     #r'^--- (?P<filename>[^\t\n]+)(?:\t(?P<timestamp>[^\n]+))?')
@@ -38,45 +44,82 @@ class Diff:
     # Hunks inside a file
     HUNK_REGEX = re.compile(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?\ @@[ ]?(.*)')
 
+    SIMILARITY_INDEX_REGEX = re.compile(r'^similarity index (\d+)\%$')
+    RENAME_REGEX = re.compile(r'^(rename|copy) (from|to) (.*)$')
+
     LINE_IDENTIFIER_INSERTION = '+'
     LINE_IDENTIFIER_DELETION = '-'
     LINE_IDENTIFIER_CONTEXT = ' '
     LINE_IDENTIFIER_NEWLINE = '\\'
 
     def __init__(self, diff):
+        def insert_file(filenames, similarity):
+            self.affected |= set(filenames)
+            if filenames not in self.patches:
+                self.patches[filenames] = Patch(similarity=similarity)
+
         # we pop from the list until it is empty. Copy it first, to prevent its
         # deletion
         diff = diff.copy()
 
         self.raw = diff.copy()
+
+        # patches store patches of files
+        #  key: (filename,) or (old_filename, new_filename)
+        #  value: Patch()
         self.patches = {}
+
+        # Set of all filenames that were affected by this diff
         self.affected = set()
 
-        # Calculate diff_lines
-        self.lines = len(list(
-            filter(lambda x: Diff.DIFF_SELECTOR_REGEX.match(x), diff)))
+        self.lines = 0
 
         # Check if we understand the diff format
         if diff and Diff.EXCLUDE_CC_REGEX.match(diff[0]):
             return
 
+        # We need at least three lines for any kind of reasonable patch
         while len(diff):
             self.footer = len(diff)
 
-            # Consume till the first occurence of '--- '
+            # We are either looking for a line beginning with '---' or
+            # a similarity index
+            similarity = 0
             while len(diff):
-                minus = diff.pop(0)
-                if Diff.FILE_SEPARATOR_MINUS_REGEX.match(minus):
+                line = diff.pop(0)
+
+                match = Diff.FILE_SEPARATOR_MINUS_REGEX.match(line)
+                if match:
+                    minus = match.group(1)
+                    plus = Diff.FILE_SEPARATOR_PLUS_REGEX.match(diff.pop(0)).group(1)
+                    filenames = Diff.get_filename(minus, plus)
                     break
+
+                match = Diff.SIMILARITY_INDEX_REGEX.match(line)
+                if match:
+                    if len(diff) < 2:
+                        print('ERROR')
+
+                    similarity = int(match.group(1))
+
+                    # Only consume the next two lines if the similarity is 100.
+                    # If the similarity is not 100, then hunks _must_ follow.
+                    if similarity == 100:
+                        minus = Diff.RENAME_REGEX.match(diff.pop(0)).group(3)
+                        plus= Diff.RENAME_REGEX.match(diff.pop(0)).group(3)
+
+                        # In case we parse the 'rename from/to' lines, we must
+                        # not sanitise the filenames and strip away anything
+                        filenames = minus, plus
+
+                        break
+
+            if similarity == 100:
+                insert_file(filenames, 100)
+                continue
+
             if len(diff) == 0:
                 break
-
-            self.footer = 0
-            minus = Diff.FILE_SEPARATOR_MINUS_REGEX.match(minus).group(1)
-            plus = Diff.FILE_SEPARATOR_PLUS_REGEX.match(diff.pop(0)).group(
-                1)
-
-            filename = Diff.get_filename(minus, plus)
 
             while len(diff) and Diff.HUNK_REGEX.match(diff[0]):
                 hunk = Diff.HUNK_REGEX.match(diff.pop(0))
@@ -108,6 +151,12 @@ class Diff:
                     if line == '':
                         identifier = ' '
                         payload = ''
+                    elif line[0] == '\t': # we have to deal with shitty MUAs
+                        identifier = ' '
+                        payload = line
+                    elif line[0].isspace(): # we might have UTF-8 spaces...
+                        identifier = ' '
+                        payload = line[1:]
                     else:
                         identifier = line[0]
                         payload = line[1:]
@@ -115,16 +164,20 @@ class Diff:
                     if identifier == Diff.LINE_IDENTIFIER_INSERTION:
                         insertions.append(payload)
                         add_cntr += 1
+                        self.lines += 1
                     elif identifier == Diff.LINE_IDENTIFIER_DELETION:
                         deletions.append(payload)
                         del_cntr += 1
+                        self.lines += 1
                     elif identifier == Diff.LINE_IDENTIFIER_CONTEXT:
                         context.append(payload)
                         add_cntr += 1
                         del_cntr += 1
-                    elif identifier != Diff.LINE_IDENTIFIER_NEWLINE:  # '\ No new line' statements
-                        add_cntr += 1
-                        del_cntr += 1
+                    elif identifier == Diff.LINE_IDENTIFIER_NEWLINE:  # '\ No new line' statements
+                        continue
+                    else:
+                        # We simply ignore these lines.
+                        continue
 
                 # remove empty lines
                 insertions = list(filter(None, insertions))
@@ -133,15 +186,16 @@ class Diff:
 
                 h = Hunk(insertions, deletions, context)
 
-                if filename not in self.patches:
-                    self.patches[filename] = {}
-                if hunk_heading not in self.patches[filename]:
-                    self.patches[filename][hunk_heading] = Hunk()
+                insert_file(filenames, similarity)
+
+                if hunk_heading not in self.patches[filenames].hunks:
+                    self.patches[filenames].hunks[hunk_heading] = Hunk()
 
                 # hunks may occur twice or more often
-                self.patches[filename][hunk_heading].merge(h)
+                self.patches[filenames].hunks[hunk_heading].merge(h)
 
-        self.affected = set(self.patches.keys())
+        self.affected.discard('/dev/null')
+        self.footer = len(diff)
 
     def split_footer(self):
         if self.footer > 0:
@@ -157,47 +211,21 @@ class Diff:
         """
         get_filename: Determine the filename of a diff of a file
         """
+        def sanitise_filename(filename):
+            if filename == '/dev/null':
+                return filename
+
+            if '/' in filename:
+                filename = filename.split('/', 1)[1]
+
+            return filename
+
         # chomp preceeding a/'s and b/'s
-        if a.startswith('a/'):
-            a = a[2:]
-        if b.startswith('b/'):
-            b = b[2:]
+        a = sanitise_filename(a)
+        b = sanitise_filename(b)
 
+        # no move - we modify the file in place
         if a == b:
-            return a
-        elif a == '/dev/null' and b != '/dev/null':
-            return b
-        elif b == '/dev/null' and a != '/dev/null':
-            return a
+            return a,
 
-        # If everything else fails, try to drop everything before the first '/'
-        a = a.split('/', 1)[1]
-        b = b.split('/', 1)[1]
-        if a == b:
-            return a
-
-        # If it still fails, return the longest common suffix
-        a_sfx = a[-len(b):]
-        b_sfx = b[-len(a):]
-        while a_sfx != b_sfx:
-            a_sfx = a_sfx[1:]
-            b_sfx = b_sfx[1:]
-
-        # This makes only sense, if we have a few characters left
-        if len(a_sfx) > 3:
-            return a_sfx
-
-        # Still not working? Ok, take the longest common prefix
-        min_len = min(len(a), len(b))
-        a_pfx = a[0:min_len]
-        b_pfx = b[0:min_len]
-        while a_pfx != b_pfx:
-            a_pfx = a_pfx[0:-1]
-            b_pfx = b_pfx[0:-1]
-
-        # This makes only sense, if we have a few characters left
-        if len(a_pfx) > 3:
-            return a_pfx
-
-        # Fail, if we're still not able to parse
-        raise ValueError('Unable to parse tuple %s <-> %s' % (a, b))
+        return a, b
