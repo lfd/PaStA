@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -429,11 +429,14 @@ def evaluate_patch_pair(thresholds, lhs, rhs):
     left_message, left_diff = lhs
     right_message, right_diff = rhs
 
-    left_diff_lines = left_diff.lines
-    right_diff_lines = right_diff.lines
+    max_lines = max(left_diff.lines, right_diff.lines)
+    min_lines = min(left_diff.lines, right_diff.lines)
 
-    diff_lines_ratio = min(left_diff_lines, right_diff_lines) / \
-                       max(left_diff_lines, right_diff_lines)
+    # prevent division by zero
+    diff_lines_ratio = 1
+    if max_lines != 0:
+        diff_lines_ratio = min_lines / max_lines
+
     if diff_lines_ratio < thresholds.diff_lines_ratio:
         return SimRating(0, 0, diff_lines_ratio)
 
