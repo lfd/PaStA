@@ -559,8 +559,13 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
         right_hashes = set()
         for right_file in dsts:
             right_hashes |= set(right_files[right_file])
+
         for left_hash in left_hashes:
             left = repo[left_hash]
+
+            if left_hash not in preeval_result:
+                preeval_result[left_hash] = set()
+
             for right_hash in right_hashes:
                 right = repo[right_hash]
                 # don't compare revert patches
@@ -573,9 +578,10 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
                 if right_hash in preeval_result and left_hash in preeval_result[right_hash]:
                     continue
                 # insert result
-                if left_hash not in preeval_result:
-                    preeval_result[left_hash] = set()
-                preeval_result[left_hash] |= set([right_hash])
+                preeval_result[left_hash].add(right_hash)
+
+    # filter for empty entries
+    preeval_result = {k: v for k, v in preeval_result.items() if len(v)}
 
     return preeval_result
 
