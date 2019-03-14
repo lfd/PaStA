@@ -355,17 +355,14 @@ class Mbox:
                 self.add_mail_to_list(message_id, listname)
 
         self.pub_in = []
-        self.pub_in_index = dict()
         if len(config.mbox_git_public_inbox):
             log.info('Loading public inboxes')
         for listname, d_repo in config.mbox_git_public_inbox:
             if not os.path.isabs(d_repo):
                 d_repo = os.path.join(config.d_mbox, 'pubin', d_repo)
 
-            idx = len(self.pub_in)
             inbox = PubInbox(self.d_index, d_repo, listname)
             for message_id in inbox.message_ids():
-                self.pub_in_index[message_id] = idx
                 self.add_mail_to_list(message_id, listname)
 
             self.pub_in.append(inbox)
@@ -381,8 +378,9 @@ class Mbox:
         self.lists[message_id].add(list)
 
     def __contains__(self, message_id):
-        if message_id in self.pub_in_index:
-            return True
+        for public_inbox in self.pub_in:
+            if message_id in public_inbox:
+                return True
 
         if message_id in self.mbox_raw:
             return True
@@ -401,10 +399,9 @@ class Mbox:
         return email.message_from_bytes(raw)
 
     def get_raw(self, message_id):
-        if message_id in self.pub_in_index:
-            idx = self.pub_in_index[message_id]
-            pub_in = self.pub_in[idx]
-            return pub_in[message_id]
+        for public_inbox in self.pub_in:
+            if message_id in public_inbox:
+                return public_inbox[message_id]
 
         if message_id in self.mbox_raw:
             return self.mbox_raw[message_id]
