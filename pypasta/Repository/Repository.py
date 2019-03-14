@@ -171,9 +171,9 @@ class Repository:
             global _tmp_repo
             _tmp_repo = self
 
-            with Pool(num_cpus, maxtasksperchild=10) as p:
+            with Pool(num_cpus, maxtasksperchild=100) as p:
                 result = list(tqdm(p.imap(_load_commit_subst, worklist,
-                                          chunksize=100),
+                                          chunksize=1000),
                                    total=len(worklist)))
 
             _tmp_repo = None
