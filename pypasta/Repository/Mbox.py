@@ -388,25 +388,37 @@ class Mbox:
         return False
 
     def __getitem__(self, message_id):
-        message = self.get_message(message_id)
-        return PatchMail(message)
+        messages = self.get_messages(message_id)
+        exception = None
 
-    def get_message(self, message_id):
-        raw = self.get_raw(message_id)
-        if raw is None:
-            return None
+        if len(messages) == 0:
+            raise KeyError('Message not found')
 
-        return email.message_from_bytes(raw)
+        for message in messages:
+            try:
+                patch = PatchMail(message)
+                return patch
+            except Exception as e:
+                exception = e
 
-    def get_raw(self, message_id):
+        raise exception
+
+    def get_messages(self, message_id):
+        raws = self.get_raws(message_id)
+
+        return [email.message_from_bytes(raw) for raw in raws]
+
+    def get_raws(self, message_id):
+        raws = list()
+
         for public_inbox in self.pub_in:
             if message_id in public_inbox:
-                return public_inbox[message_id]
+                raws.append(public_inbox[message_id])
 
         if message_id in self.mbox_raw:
-            return self.mbox_raw[message_id]
+            raws.append(self.mbox_raw[message_id])
 
-        return None
+        return raws
 
     def message_ids(self, time_window=None, allow_invalid=False):
         ids = set()

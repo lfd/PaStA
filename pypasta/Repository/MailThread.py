@@ -46,12 +46,18 @@ def sanitise_header(message, header):
 
 
 def get_irts(id):
-    message = _mbox.get_message(id)
+    messages = _mbox.get_messages(id)
     ret = None
+    irt = set()
+    ids = set()
 
-    irt = sanitise_header(message, 'in-reply-to') - \
-          sanitise_header(message, 'message-id')
-    if irt:
+    for message in messages:
+        irt |= sanitise_header(message, 'in-reply-to')
+        ids |= sanitise_header(message, 'message-id')
+
+    irt -= ids
+
+    if len(irt):
         ret = set(irt)
 
     return id, ret
@@ -129,13 +135,14 @@ class MailThread:
 
     def pretty_print(self, thread):
         for pre, fill, node in RenderTree(thread):
-            message = self.mbox.get_message(node.name)
+            message = self.mbox.get_messages(node.name)[0]
             print("%.20s\t\t%s%s" % (message['From'], pre, node.name))
 
     def get_parent(self, message_id, visited):
         # visited tracks visited mails, used to eliminate cycles
         visited.add(message_id)
-        message = self.mbox.get_message(message_id)
+        # FIXME respect non-unique message ids
+        message = self.mbox.get_messages(message_id)[0]
         if message is None:
             return message_id
 
