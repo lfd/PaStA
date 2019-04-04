@@ -209,7 +209,10 @@ class MailContainer:
 class PubInbox(MailContainer):
     MESSAGE_ID_REGEX = re.compile(r'.*(<.*>).*')
 
-    def __init__(self, d_index, d_repo, listname):
+    def __init__(self, d_mbox, d_index, d_repo, listname):
+        if not os.path.isabs(d_repo):
+            d_repo = os.path.join(d_mbox, 'pubin', d_repo)
+
         self.d_repo = d_repo
 
         inbox_name = os.path.basename(d_repo)
@@ -358,10 +361,7 @@ class Mbox:
         if len(config.mbox_git_public_inbox):
             log.info('Loading public inboxes')
         for listname, d_repo in config.mbox_git_public_inbox:
-            if not os.path.isabs(d_repo):
-                d_repo = os.path.join(config.d_mbox, 'pubin', d_repo)
-
-            inbox = PubInbox(self.d_index, d_repo, listname)
+            inbox = PubInbox(config.d_mbox, self.d_index, d_repo, listname)
             for message_id in inbox.message_ids():
                 self.add_mail_to_list(message_id, listname)
 
