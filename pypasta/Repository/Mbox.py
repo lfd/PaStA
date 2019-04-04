@@ -186,8 +186,6 @@ def load_file(filename, must_exist=True):
 
 def load_index(basename):
     result = load_file(basename, must_exist=False)
-    for f_index in glob.glob(basename + '.*'):
-        result += load_file(f_index)
 
     return {message_id: (datetime.datetime.strptime(date, "%Y/%m/%d"), date,
                          location)
@@ -209,20 +207,16 @@ class MailContainer:
 class PubInbox(MailContainer):
     MESSAGE_ID_REGEX = re.compile(r'.*(<.*>).*')
 
-    def __init__(self, d_mbox, d_index, d_repo, listname):
-        inbox_name = d_repo.replace('/', '.')
-        self.f_index = os.path.join(d_index, 'pubin.%s' % inbox_name)
-
-        if not os.path.isabs(d_repo):
-            d_repo = os.path.join(d_mbox, 'pubin', d_repo)
-
+    def __init__(self, listname, d_repo, f_index):
+        self.listname = listname
+        self.f_index = f_index
         self.d_repo = d_repo
 
         self.repo = pygit2.Repository(d_repo)
         self.index = load_index(self.f_index)
 
-        log.info('  ↪ loaded mail index for %s from %s: found %d mails' %
-                 (listname, inbox_name, len(self.index)))
+        log.info('  ↪ loaded mail index for %s: found %d mails' %
+                 (listname, len(self.index)))
 
     def get_blob(self, commit):
         blob = self.repo[commit].tree['m'].hex
@@ -243,6 +237,7 @@ class PubInbox(MailContainer):
         return self.get_blob(commit)
 
     def update(self):
+        log.info('Update list %s' % self.listname)
         repo = git.Repo(self.d_repo)
         for remote in repo.remotes:
             remote.fetch()
@@ -360,12 +355,25 @@ class Mbox:
         self.pub_in = []
         if len(config.mbox_git_public_inbox):
             log.info('Loading public inboxes')
-        for listname, d_repo in config.mbox_git_public_inbox:
-            inbox = PubInbox(config.d_mbox, self.d_index, d_repo, listname)
-            for message_id in inbox.message_ids():
-                self.add_mail_to_list(message_id, listname)
+        for host, mailinglists in config.mbox_git_public_inbox:
+            for mailinglist in mailinglists:
+                shard = 0
+                while True:
+                    d_repo = os.path.join(config.d_mbox, 'pubin', host,
+                                          mailinglist, '%u.git' % shard)
+                    f_index = os.path.join(config.d_mbox, 'index', 'pubin',
+                                           host, mailinglist, '%u' % shard)
+                    listname = '%s.%s.%u' % (host, mailinglist, shard)
 
-            self.pub_in.append(inbox)
+                    if os.path.isdir(d_repo):
+                        inbox = PubInbox(listname, d_repo, f_index)
+                        for message_id in inbox.message_ids():
+                            self.add_mail_to_list(message_id, mailinglist)
+                        self.pub_in.append(inbox)
+                    else:
+                        break
+
+                    shard += 1
 
     def load_threads(self):
         if not self.threads:

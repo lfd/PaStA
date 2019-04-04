@@ -211,12 +211,9 @@ class Config:
                 self.mbox_raw.append((listname, f_mbox_raw))
 
             self.mbox_git_public_inbox = list()
-            for listname, inboxes in list(mbox_pub_in.items()):
-                if isinstance(inboxes, str):
-                    inboxes = [inboxes]
-
-                for inbox in inboxes:
-                    self.mbox_git_public_inbox.append((listname, inbox))
+            for host, mailinglists in mbox_pub_in.items():
+                mailinglists = mailinglists['lists']
+                self.mbox_git_public_inbox.append((host, mailinglists))
 
     @property
     def project_root(self):
