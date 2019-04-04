@@ -210,14 +210,14 @@ class PubInbox(MailContainer):
     MESSAGE_ID_REGEX = re.compile(r'.*(<.*>).*')
 
     def __init__(self, d_mbox, d_index, d_repo, listname):
+        inbox_name = d_repo.replace('/', '.')
+        self.f_index = os.path.join(d_index, 'pubin.%s' % inbox_name)
+
         if not os.path.isabs(d_repo):
             d_repo = os.path.join(d_mbox, 'pubin', d_repo)
 
         self.d_repo = d_repo
 
-        inbox_name = os.path.basename(d_repo)
-        f_index = os.path.join(d_index, 'pubin.%s' % inbox_name)
-        self.f_index = f_index
         self.repo = pygit2.Repository(d_repo)
         self.index = load_index(self.f_index)
 
