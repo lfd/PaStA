@@ -371,6 +371,10 @@ class Mbox:
                             self.add_mail_to_list(message_id, mailinglist)
                         self.pub_in.append(inbox)
                     else:
+                        if shard == 0:
+                            log.error('Unable to find shard 0 of list %s' %
+                                      listname)
+                            quit()
                         break
 
                     shard += 1
