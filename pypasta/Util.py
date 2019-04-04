@@ -11,6 +11,7 @@ the COPYING file in the top-level directory.
 """
 
 import argparse
+import datetime
 import git
 import termios
 import tty
@@ -18,7 +19,6 @@ import shutil
 import subprocess
 import sys
 
-from datetime import datetime
 from logging import getLogger
 
 log = getLogger(__name__[-15:])
@@ -93,8 +93,11 @@ def format_date_ymd(dt):
 
 
 def parse_date_ymd(ymd):
+    if isinstance(ymd, datetime.date):
+        return datetime.datetime.combine(ymd, datetime.datetime.min.time())
+
     try:
-        return datetime.strptime(ymd, "%Y-%m-%d")
+        return datetime.datetime.strptime(ymd, "%Y-%m-%d")
     except ValueError:
         raise argparse.ArgumentTypeError("Not a valid date: '%s'" % ymd)
 

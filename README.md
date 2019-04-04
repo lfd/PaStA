@@ -25,6 +25,7 @@ Requirements
 - procmail
 - python-dateparser
 - python scikit-learn
+- python-toml
 - python-tqdm
 - flask
   - flask-wtf

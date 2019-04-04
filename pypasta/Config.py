@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -10,8 +10,8 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-import configparser
 import pygit2
+import toml
 
 from enum import Enum
 from os.path import join, realpath, isfile, isdir, isabs
@@ -73,6 +73,16 @@ class PygitCredentials(pygit2.RemoteCallbacks):
             return None
 
 
+def merge_dicts(default_cfg, cfg):
+    for key in default_cfg.keys():
+        if key not in cfg:
+            cfg[key] = default_cfg[key]
+        elif type(default_cfg[key]) == dict:
+            merge_dicts(default_cfg[key], cfg[key])
+        elif key not in cfg:
+            cfg[key] = default_cfg[key]
+
+
 class Config:
     D_RESOURCES = 'resources'
     D_COMMON = join(D_RESOURCES, 'common')
@@ -101,8 +111,13 @@ class Config:
         else:
             log.info('Active configuration: %s' % project)
 
-        cfg = configparser.ConfigParser()
-        cfg.read([Config.DEFAULT_CONFIG, self._config_file])
+
+        default_cfg = toml.load(Config.DEFAULT_CONFIG)
+        cfg = toml.load(self._config_file)
+
+        # Merge configs
+        merge_dicts(default_cfg, cfg)
+
         pasta = cfg['PaStA']
 
         # Obligatory values
@@ -110,7 +125,7 @@ class Config:
         if not self.project_name:
             raise RuntimeError('Project name not found')
 
-        self._mode = Config.Mode(pasta.get('MODE'))
+        self._mode = Config.Mode(pasta['MODE'])
 
         self.repo_location = pasta.get('REPO')
         if not self.repo_location:
@@ -123,11 +138,8 @@ class Config:
             raise RuntimeError('Please provide a valid upstream range in your '
                                'config')
 
-        def option(name):
-            return pasta.get(name)
-
         def path(name):
-            return join(self._project_root, option(name))
+            return join(self._project_root, pasta[name])
 
         # parse locations, those will fallback to default values
         self.f_patch_stack_definition = path('PATCH_STACK_DEFINITION')
@@ -184,13 +196,13 @@ class Config:
             self.f_mail_thread_cache = path('MAIL_THREAD_CACHE')
             self.d_mbox = path('MBOX')
 
-            mbox = cfg['MBOX']
-            mbox_raw = cfg['MBOX_RAW']
-            mbox_pub_in = cfg['MBOX_GIT_PUBLIC_INBOX']
+            mbox = cfg['mbox']
+            mbox_raw = mbox['raw']
+            mbox_pub_in = mbox['pubin']
 
             # mailbox parameters
-            self.mbox_mindate = parse_date_ymd(mbox.get('MBOX_MINDATE'))
-            self.mbox_maxdate = parse_date_ymd(mbox.get('MBOX_MAXDATE'))
+            self.mbox_mindate = parse_date_ymd(mbox['MBOX_MINDATE'])
+            self.mbox_maxdate = parse_date_ymd(mbox['MBOX_MAXDATE'])
 
             self.mbox_raw = list()
             for listname, f_mbox_raw in mbox_raw.items():
@@ -200,7 +212,9 @@ class Config:
 
             self.mbox_git_public_inbox = list()
             for listname, inboxes in list(mbox_pub_in.items()):
-                inboxes = [x.strip() for x in inboxes.split(',')]
+                if isinstance(inboxes, str):
+                    inboxes = [inboxes]
+
                 for inbox in inboxes:
                     self.mbox_git_public_inbox.append((listname, inbox))
 

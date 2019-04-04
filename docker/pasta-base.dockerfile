@@ -18,7 +18,7 @@ RUN apt -y dist-upgrade
 # install PaStA dependencies
 RUN apt install -y python3-sklearn python3-git python3-pygit2 \
 	python3-fuzzywuzzy python3-flaskext.wtf python3-pip \
-	python3-tqdm git procmail wget sudo vim locales
+	python3-toml python3-tqdm git procmail wget sudo vim locales
 
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
