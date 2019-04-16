@@ -39,9 +39,12 @@ RUN git clone https://github.com/lfd/PaStA.git
 RUN git -C PaStA submodule init
 RUN git -C PaStA submodule update
 RUN git -C PaStA/resources checkout master
-RUN git -C PaStA/resources/ submodule init
-RUN git -C PaStA/resources/ submodule update linux/repo
 
 # workaround to get the latest state of the repository
 ADD https://api.github.com/repos/lfd/PaStA/git/refs/heads/master /dev/null
 RUN git -C PaStA pull
+
+ADD https://api.github.com/repos/lfd/PaStA-resources/git/refs/heads/master /dev/null
+RUN git -C PaStA/resources pull
+
+RUN git -C PaStA/resources submodule init
