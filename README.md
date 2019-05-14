@@ -74,13 +74,13 @@ analysation and run `pasta rate` for several times on the same data set.
 The detection phase is split in four steps:
 1. Comparing successive versions on the patch stacks
    ```
-   $ ./pasta analyse stack-succ
+   $ ./pasta analyse succ
    $ ./pasta rate
    ```
 2. For more fine-granular classification, compare representants of existing
    equivalence classes
    ```
-   $ ./pasta analyse stack-rep
+   $ ./pasta analyse rep
    $ ./pasta rate
    ```
 3. Once you think you have found all equivalence classes you can find to find
