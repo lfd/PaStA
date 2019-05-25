@@ -326,7 +326,7 @@ class EvaluationResult(dict):
         clustering.optimize()
 
         log.info('Final stats:')
-        log.info(' Interactive Accepted: %d' % accepted)
+        log.info(' Interactive accepted: %d' % accepted)
         log.info(' Interactive declined: %d' % declined)
         log.info(' Skipped: %d' % skipped)
 
