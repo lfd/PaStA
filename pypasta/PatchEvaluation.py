@@ -326,8 +326,8 @@ class EvaluationResult(dict):
         clustering.optimize()
 
         log.info('Final stats:')
-        log.info(' Interactive Accepted: %d' % accepted)
-        log.info(' Interactive declined: %d' % declined)
+        log.info(' Interactively accepted: %d' % accepted)
+        log.info(' Interactively declined: %d' % declined)
         log.info(' Skipped: %d' % skipped)
 
 
@@ -636,7 +636,7 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
     f_eval = functools.partial(_evaluation_helper, thresholds, verbose=verbose)
 
     if verbose:
-        log.info('Running preevaluation.')
+        log.info('Running preevaluation...')
     preeval_result = preevaluate_commit_list(repo, thresholds,
                                              original_hashes, candidate_hashes,
                                              parallelise=parallelise)
