@@ -205,7 +205,7 @@ class Repository:
 
     def get_raw(self, item):
         if self.mbox and item in self.mbox:
-            return self.mbox.get_raw(item)
+            return self.mbox.get_raws(item)
 
         commit = self[item]
         return '\n'.join(commit.format_message() + commit.diff.raw)
