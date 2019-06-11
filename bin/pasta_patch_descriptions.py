@@ -66,16 +66,17 @@ def patch_descriptions(config, prog, argv):
     global _config
     _config = config
 
+    # !FIXME This code is not aligned with current API
     # similar patch groups
     config.fail_no_patch_groups()
-    patch_groups = config.patch_groups
+    cluster = config.patch_groups
 
     # we can at least cache all commits on the patch stacks
     config.load_ccache_stack()
 
     # iterate over everything, including upstream commits
     all_commit_hashes = []
-    for i in patch_groups:
+    for i in cluster:
         all_commit_hashes += i
 
     # now cache everything

@@ -39,7 +39,7 @@ Bootstrap(app)
 nav = Nav()
 
 config = None
-patch_groups_mbox = None
+cluster = None
 
 
 class CommitForm(FlaskForm):
@@ -124,10 +124,10 @@ def mbox():
     patch = repo[lookup_form.id.data]
     id = patch.identifier
 
-    if id not in patch_groups_mbox:
+    if id not in cluster:
         return render_mbox(patch)
 
-    elements = patch_groups_mbox.get_tagged(id) | patch_groups_mbox.get_untagged(id)
+    elements = cluster.get_tagged(id) | cluster.get_untagged(id)
 
     # convert ids to commit objects
     elements = {repo.get_commit(x) for x in elements}
@@ -156,10 +156,10 @@ def mbox():
 
 def web(c, prog, argv):
     global config
-    global patch_groups_mbox
+    global cluster
     config = c
 
-    _, patch_groups_mbox = config.load_patch_groups()
+    _, cluster = config.load_cluster()
 
     nav.init_app(app)
     app.run(debug=c.debug, host='127.0.0.1', port=8080, use_reloader=False)

@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2018
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -31,11 +31,12 @@ def statistics(config, prog, argv):
     parser.set_defaults(R=True)
     args = parser.parse_args(argv)
 
+    # !FIXME Not aligned with current API
     config.fail_no_patch_groups()
     psd = config.psd
     repo = config.repo
 
-    patch_groups = config.patch_groups
+    cluster = config.patch_groups
 
     r_resources = args.r_resources
     if not os.path.exists(r_resources):
@@ -75,7 +76,7 @@ def statistics(config, prog, argv):
         export.patch_groups(upstream_filename,
                             patches_filename,
                             occurrence_filename,
-                            patch_groups, date_selector)
+                            cluster, date_selector)
 
         # Export diffstat (cloccount across patch stack releases)
         print('Exporting diffstats...')

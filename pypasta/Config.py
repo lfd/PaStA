@@ -158,8 +158,10 @@ class Config:
         # analysis results
         self.d_false_positives = path('FALSE_POSTITIVES')
 
-        self.f_pasta_result = path('PASTA_RESULT')
-        self.f_mbox_result = path('MBOX_RESULT')
+        if self._mode == Config.Mode.MBOX:
+            self.f_cluster = path('MBOX_RESULT')
+        else:
+            self.f_cluter = path('PASTA_RESULT')
 
         self.f_commit_description = path('COMMIT_DESCRIPTION')
 
@@ -250,19 +252,26 @@ class Config:
         self._update_ccache(self.f_ccache_stack, self.psd.commits_on_stacks,
                             'stack')
 
-    def load_patch_groups(self, must_exist=True, f_patch_groups=None):
-        if f_patch_groups is None:
-            f_patch_groups = self.f_pasta_result
-            if self.mode == Config.Mode.MBOX:
-                self.repo.register_mbox(self)
-                f_patch_groups = self.f_mbox_result
+    # load_cluster loads a cluster. If must_exist is True, then the cluster must
+    # exist. If must_exist is False, then an empty cluster will be returned, if
+    # the file is not existent.
+    #
+    # If the filename of the cluster is not provided, it will use the default
+    # filename of the configuration. In any case, this routine returns the tuple
+    # of the cluster filename and the cluster itself.
+    def load_cluster(self, must_exist=True, f_cluster=None):
+        if f_cluster is None:
+            f_cluster = self.f_cluster
 
         if must_exist:
-            Config.fail_result_not_exists(f_patch_groups)
+            Config.fail_result_not_exists(f_cluster)
 
-        patch_groups = Cluster.from_file(f_patch_groups, must_exist=must_exist)
+        if self.mode == Config.Mode.MBOX:
+            self.repo.register_mbox(self)
 
-        return f_patch_groups, patch_groups
+        cluster = Cluster.from_file(f_cluster, must_exist=must_exist)
+
+        return f_cluster, cluster
 
     def load_upstream_hashes(self, force_reload=False):
         # check if upstream commit hashes are existent. If not, create them

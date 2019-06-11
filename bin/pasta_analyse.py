@@ -139,16 +139,16 @@ def analyse(config, prog, argv):
     mbox = config.mode == Config.Mode.MBOX
     mode = args.mode
 
-    f_patch_groups, patch_groups = config.load_patch_groups(must_exist=False)
+    f_cluster, cluster = config.load_cluster(must_exist=False)
 
     def fill_result(hashes, tag):
         for hash in hashes:
-            patch_groups.insert_single(hash)
+            cluster.insert_single(hash)
             if tag:
-                patch_groups.tag(hash, True)
+                cluster.tag(hash, True)
 
         # intermediate persistence
-        patch_groups.to_file(f_patch_groups)
+        cluster.to_file(f_cluster)
 
     if mbox:
         mbox_time_window = config.mbox_mindate, config.mbox_maxdate
@@ -170,7 +170,7 @@ def analyse(config, prog, argv):
         # more. This time, include all patches from the pre-existing (partial)
         # result, and check if all patches are reachable
         victims = repo.mbox.message_ids(mbox_time_window) | \
-                  patch_groups.get_untagged()
+                  cluster.get_untagged()
 
         # in case of an mbox analysis, we will definitely need all untagged
         # commit hashes as we need to determine the representative system for
@@ -185,8 +185,8 @@ def analyse(config, prog, argv):
                         'abort.')
             sleep(5)
             for miss in missing:
-                patch_groups.remove_key(miss)
-            patch_groups.optimize()
+                cluster.remove_key(miss)
+            cluster.optimize()
             victims = available
         log.info('Cached %d relevant mails' % len(available))
     else:
@@ -248,12 +248,12 @@ def analyse(config, prog, argv):
         # The lambda compares two patches of an equivalence class and chooses
         # the one with the later release version
         if mbox:
-            representatives = patch_groups.get_representative_system(
+            representatives = cluster.get_representative_system(
                 lambda x, y:
                     repo.get_commit(x).author.date >
                     repo.get_commit(y).author.date)
         else:
-            representatives = patch_groups.get_representative_system(
+            representatives = cluster.get_representative_system(
                 lambda x, y: config.psd.is_stack_version_greater(
                     config.psd.get_stack_of_commit(x),
                     config.psd.get_stack_of_commit(y)))

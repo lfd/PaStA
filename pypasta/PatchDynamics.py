@@ -26,10 +26,10 @@ class PatchFlow:
         self.new = new
 
     @staticmethod
-    def compare_stack_releases(patch_groups, stack_a, stack_b):
+    def compare_stack_releases(cluster, stack_a, stack_b):
         """
         Returns the flow of Patches between two arbitrary releases of the stack
-        :param patch_groups: patch groups
+        :param cluster: patch groups
         :param stack_a: "from"
         :param stack_b: "to"
         :return: PatchFlow object
@@ -37,7 +37,7 @@ class PatchFlow:
 
         def commit_hashes_to_group_ids(commit_hahes):
             retval = dict()
-            for id, commit_hash in map(lambda x: (patch_groups.get_equivalence_id(x), x), commit_hahes):
+            for id, commit_hash in map(lambda x: (cluster.get_equivalence_id(x), x), commit_hahes):
                 if id not in retval:
                     retval[id] = list()
                 retval[id].append(commit_hash)
@@ -83,23 +83,23 @@ class PatchComposition:
         self.none = none
 
     @staticmethod
-    def is_forwardport(repo, patch_groups, date_selector, commit):
+    def is_forwardport(repo, cluster, date_selector, commit):
         """
         Given a commit hash on the patch stack, is_forwardport returns True,
         if the commit is a forward port, False, if it is a backport and None if
         it has no upstream candidate
         :param repo: Repository
-        :param patch_groups: patch groups
+        :param cluster: patch groups
         :param date_selector: date_selector
         :param commit: commit on the patch stack
         :return:
         """
-        upstream = patch_groups.get_tagged(commit)
+        upstream = cluster.get_tagged(commit)
         if not upstream:
             return None
 
-        commits_in_class = patch_groups.get_untagged(commit)
-        upstream = get_first_upstream(repo, patch_groups, commit)
+        commits_in_class = cluster.get_untagged(commit)
+        upstream = get_first_upstream(repo, cluster, commit)
 
         first_stack_occurence = min(map(date_selector, commits_in_class))
         upstream_commit_date = repo[upstream].committer.date
@@ -112,10 +112,10 @@ class PatchComposition:
             return True
 
     @staticmethod
-    def from_commits(repo, patch_groups, date_selector, commits):
+    def from_commits(repo, cluster, date_selector, commits):
         # bind parameters to function
         classifier = partial(PatchComposition.is_forwardport,
-                             repo, patch_groups, date_selector)
+                             repo, cluster, date_selector)
         description = [(lambda x: (x, classifier(x)))(x) for x in commits]
 
         forwardports = [x[0] for x in description if x[1] is True]

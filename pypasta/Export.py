@@ -93,7 +93,7 @@ class Export:
                     f.write('%s %s\n' % (version_group, stack.stack_version))
 
     def patch_groups(self, f_upstream, f_patches, f_occurrence,
-                     patch_groups, date_selector):
+                     cluster, date_selector):
         psd = self.psd
         upstream = open(f_upstream, 'w')
         patches = open(f_patches, 'w')
@@ -105,7 +105,7 @@ class Export:
         occurrence.write('PatchGroup OldestVersion LatestVersion FirstReleasedIn LastReleasedIn\n')
 
         cntr = 0
-        for group in patch_groups.iter_untagged():
+        for group in cluster.iter_untagged():
             group = list(group)
             cntr += 1
 
@@ -117,7 +117,7 @@ class Export:
                 patches.write('%d %s %s %s\n' % (cntr, patch, stack_version, base_version))
 
             # optional: write upstream information
-            commit = get_first_upstream(self.repo, patch_groups, group[0])
+            commit = get_first_upstream(self.repo, cluster, group[0])
             if commit:
                 commit = self.repo[commit]
                 first_stack_occurence = min(map(date_selector, group))

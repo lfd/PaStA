@@ -77,7 +77,7 @@ def upstream_duration(config, prog, argv):
     global repo
     repo = config.repo
 
-    _, patch_groups = config.load_patch_groups()
+    _, cluster = config.load_cluster()
 
     if args.mbox:
         config.load_ccache_mbox()
@@ -86,7 +86,7 @@ def upstream_duration(config, prog, argv):
 
     log.info('Starting evaluation.')
     pool = Pool(cpu_count())
-    result = pool.map(upstream_duration_of_group, patch_groups.iter_tagged_only())
+    result = pool.map(upstream_duration_of_group, cluster.iter_tagged_only())
     pool.close()
     pool.join()
     log.info('  ↪ done.')

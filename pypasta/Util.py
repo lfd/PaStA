@@ -194,8 +194,8 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
     pager('\n'.join(text), enable_pager)
 
 
-def get_first_upstream(repo, patch_groups, commit):
-    tags = patch_groups.get_tagged(commit)
+def get_first_upstream(repo, cluster, commit):
+    tags = cluster.get_tagged(commit)
     if tags:
         return min(tags, key=lambda x: repo[x].committer.date)
     return None

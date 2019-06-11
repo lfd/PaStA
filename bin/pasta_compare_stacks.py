@@ -54,17 +54,17 @@ def print_flow(repo, commits, destinations=None, verbosity=0, indent=4):
                 sys.stdout.write('\n')
 
 
-def print_upstream(repo, patch_groups, x, verbosity, indent=4):
-    print_flow(repo, x, [(x, patch_groups.get_tagged(x)) for x in x],
+def print_upstream(repo, cluster, x, verbosity, indent=4):
+    print_flow(repo, x, [(x, cluster.get_tagged(x)) for x in x],
                verbosity=verbosity, indent=indent)
 
 
-def compare_stack_against_stack(repo, patch_groups, date_selector, stack_from, stack_to, verbosity=0):
-    my_print_upstream = partial(print_upstream, repo, patch_groups, verbosity=verbosity)
+def compare_stack_against_stack(repo, cluster, date_selector, stack_from, stack_to, verbosity=0):
+    my_print_upstream = partial(print_upstream, repo, cluster, verbosity=verbosity)
 
-    flow = PatchFlow.compare_stack_releases(patch_groups, stack_from, stack_to)
+    flow = PatchFlow.compare_stack_releases(cluster, stack_from, stack_to)
     print('Invariant: %d' % len(flow.invariant))
-    composition = PatchComposition.from_commits(repo, patch_groups, date_selector, [x[0] for x in flow.invariant])
+    composition = PatchComposition.from_commits(repo, cluster, date_selector, [x[0] for x in flow.invariant])
     print('  just invariant: %d' % len(composition.none))
     print_flow(repo, composition.none, flow.invariant, verbosity)
     print('  still backports: %d' % len(composition.backports))
@@ -73,7 +73,7 @@ def compare_stack_against_stack(repo, patch_groups, date_selector, stack_from, s
     print_flow(repo, composition.forwardports, flow.invariant, verbosity)
 
     print('Dropped: %d' % len(flow.dropped))
-    composition = PatchComposition.from_commits(repo, patch_groups, date_selector, flow.dropped)
+    composition = PatchComposition.from_commits(repo, cluster, date_selector, flow.dropped)
     print('  just dropped: %d' % len(composition.none))
     print_flow(repo, composition.none, verbosity=verbosity)
     print('  no longer needed, as patches were backports: %d' % len(composition.backports))
@@ -82,7 +82,7 @@ def compare_stack_against_stack(repo, patch_groups, date_selector, stack_from, s
     my_print_upstream(composition.forwardports)
 
     print('New: %d' % len(flow.new))
-    composition = PatchComposition.from_commits(repo, patch_groups, date_selector, flow.new)
+    composition = PatchComposition.from_commits(repo, cluster, date_selector, flow.new)
     print('  just new: %d' % len(composition.none))
     print_flow(repo, composition.none, verbosity=verbosity)
     print('  backports: %d' % len(composition.backports))
@@ -92,7 +92,7 @@ def compare_stack_against_stack(repo, patch_groups, date_selector, stack_from, s
 
     print('\n-----\n')
     print('In sum, %s consists of:' % stack_to)
-    composition = PatchComposition.from_commits(repo, patch_groups, date_selector, stack_to.commit_hashes)
+    composition = PatchComposition.from_commits(repo, cluster, date_selector, stack_to.commit_hashes)
     print('  %d backports' % len(composition.backports))
     my_print_upstream(composition.backports)
     print('  %d future forwardports' % len(composition.forwardports))
@@ -101,10 +101,10 @@ def compare_stack_against_stack(repo, patch_groups, date_selector, stack_from, s
     print_flow(repo, composition.none, verbosity=verbosity)
 
 
-def compare_stack_against_upstream(repo, patch_groups, date_selector, stack, verbosity=0):
-    my_print_upstream = partial(print_upstream, repo, patch_groups, verbosity=verbosity, indent=2)
+def compare_stack_against_upstream(repo, cluster, date_selector, stack, verbosity=0):
+    my_print_upstream = partial(print_upstream, repo, cluster, verbosity=verbosity, indent=2)
 
-    composition = PatchComposition.from_commits(repo, patch_groups, date_selector, stack.commit_hashes)
+    composition = PatchComposition.from_commits(repo, cluster, date_selector, stack.commit_hashes)
     print('%d backports went upstream' % len(composition.backports))
     my_print_upstream(composition.backports)
     print('%d forwardports went upstream' % len(composition.forwardports))
@@ -123,18 +123,19 @@ def compare_stacks(config, prog, argv):
     parser.set_defaults(R=True)
     args = parser.parse_args(argv)
 
+    # !FIXME This code is not aligned with current API
     config.fail_no_patch_groups()
     psd = config.psd
     repo = config.repo
-    patch_groups = config.patch_groups
+    cluster = config.patch_groups
     date_selector = get_date_selector(repo, psd, args.date_selector)
 
     stack_from = psd.get_stack_by_name(args.versions[0])
 
     if args.versions[1] == 'upstream':
         print('If you would now rebase %s to master, then:' % stack_from)
-        compare_stack_against_upstream(repo, patch_groups, date_selector, stack_from, verbosity=args.verbose)
+        compare_stack_against_upstream(repo, cluster, date_selector, stack_from, verbosity=args.verbose)
     else:
         stack_to = psd.get_stack_by_name(args.versions[1])
         print('\nComparing %s -> %s' % (stack_from, stack_to))
-        compare_stack_against_stack(repo, patch_groups, date_selector, stack_from, stack_to, verbosity=args.verbose)
+        compare_stack_against_stack(repo, cluster, date_selector, stack_from, stack_to, verbosity=args.verbose)

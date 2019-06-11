@@ -60,17 +60,16 @@ def rate(config, prog, argv):
     evaluation_result = EvaluationResult.from_file(args.er_filename,
                                                    config.d_false_positives)
 
-    f_patch_groups, patch_groups = \
-        config.load_patch_groups(f_patch_groups=args.pg_filename)
+    f_cluster, cluster = config.load_cluster(f_cluster=args.pg_filename)
 
     log.info('Starting %s rating for %s analysis' %
              (('mailbox' if evaluation_result.is_mbox else 'patch stack'),
               evaluation_result.eval_type.name))
 
-    evaluation_result.interactive_rating(repo, patch_groups,
+    evaluation_result.interactive_rating(repo, cluster,
                                          config.thresholds,
                                          args.resp_commit_date,
                                          args.enable_pager)
 
-    patch_groups.to_file(f_patch_groups)
+    cluster.to_file(f_cluster)
     evaluation_result.fp.to_file(config.d_false_positives)

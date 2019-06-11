@@ -74,14 +74,14 @@ def ripup(config, prog, argv):
                                    args.weight,
                                    args.thres_adi)
 
-    f_patch_groups, patch_groups = config.load_patch_groups()
+    f_cluster, cluster = config.load_cluster()
 
     for representative in representatives:
-        if representative not in patch_groups:
+        if representative not in cluster:
             log.error('Not found in any patch group: %s' % representative)
             continue
 
-        elems = patch_groups.ripup_cluster(representative)
+        elems = cluster.ripup_cluster(representative)
 
         evaluation_result = evaluate_commit_list(repo, config.thresholds,
                                                  mbox,
@@ -92,7 +92,7 @@ def ripup(config, prog, argv):
                                                  cpu_factor=args.cpu_factor)
 
         evaluation_result.load_fp(config.d_false_positives, False)
-        evaluation_result.interactive_rating(repo, patch_groups,
+        evaluation_result.interactive_rating(repo, cluster,
                                              config.thresholds, False, True)
         evaluation_result.fp.to_file(config.d_false_positives)
-        patch_groups.to_file(f_patch_groups)
+        cluster.to_file(f_cluster)

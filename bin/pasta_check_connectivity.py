@@ -29,17 +29,17 @@ def check_connectivity(config, prog, argv):
 
     args = parser.parse_args(argv)
     repo = config.repo
-    f_patch_groups, patch_groups = config.load_patch_groups()
+    f_cluster, cluster = config.load_cluster()
 
-    keys = patch_groups.get_keys()
+    keys = cluster.get_keys()
     for elem in keys:
         if elem not in repo:
             if args.d:
                 log.info('Woof woof, removing: %s' % elem)
-                patch_groups.remove_key(elem)
+                cluster.remove_key(elem)
             else:
                 log.info('Woof woof, not reachable: %s' % elem)
 
     if args.d:
-        patch_groups.optimize()
-        patch_groups.to_file(f_patch_groups)
+        cluster.optimize()
+        cluster.to_file(f_cluster)

@@ -29,9 +29,9 @@ def show_cluster(config, prog, argv):
     args = parser.parse_args(argv)
     repo = config.repo
 
-    _, patch_groups = config.load_patch_groups()
+    _, cluster = config.load_cluster()
 
-    cluster = list(patch_groups[args.patch])
+    cluster = list(cluster[args.patch])
 
     if len(cluster) == 1:
         show_commit(repo, cluster[0])
