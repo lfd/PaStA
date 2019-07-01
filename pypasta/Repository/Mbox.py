@@ -219,11 +219,18 @@ class PubInbox(MailContainer):
                  (listname, len(self.index)))
 
     def get_blob(self, commit):
+        if 'm' not in self.repo[commit].tree:
+            return None
+
         blob = self.repo[commit].tree['m'].hex
         return self.repo[blob].data
 
     def get_mail_by_commit(self, commit):
-        return email.message_from_bytes(self.get_blob(commit))
+        blob = self.get_blob(commit)
+        if not blob:
+            return None
+
+        return email.message_from_bytes(blob)
 
     def get_mail_by_message_id(self, message_id):
         commit = self.get_hash(message_id)
@@ -251,6 +258,10 @@ class PubInbox(MailContainer):
 
         for hash in hashes:
             mail = self.get_mail_by_commit(hash)
+            if not mail:
+                log.warning('No email behind commit %s' % hash)
+                continue
+
             if not mail['Message-ID']:
                 log.warning('No Message ID in commit %s' % hash)
                 continue
