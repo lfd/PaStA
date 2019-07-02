@@ -185,18 +185,27 @@ def load_file(filename, must_exist=True):
 
 
 def load_index(basename):
-    result = load_file(basename, must_exist=False)
+    entries = load_file(basename, must_exist=False)
+    ret = dict()
 
-    return {message_id: (datetime.datetime.strptime(date, "%Y/%m/%d"), date,
-                         location)
-            for (date, message_id, location) in result}
+    for (date, message_id, location) in entries:
+        dtime = datetime.datetime.strptime(date, '%Y/%m/%d')
+
+        if message_id not in ret:
+            ret[message_id] = list()
+
+        ret[message_id].append((dtime, date, location))
+
+    return ret
 
 
 class MailContainer:
     def message_ids(self, time_window=None):
         if time_window:
-            return {x[0] for x in self.index.items()
-                    if time_window[0] <= x[1][0] <= time_window[1]}
+            return {x[0] for x in self.index.items() if
+                    any(map(
+                        lambda date: time_window[0] <= date <= time_window[1],
+                        [y[0] for y in x[1]]))}
 
         return set(self.index.keys())
 
@@ -232,16 +241,16 @@ class PubInbox(MailContainer):
 
         return email.message_from_bytes(blob)
 
-    def get_mail_by_message_id(self, message_id):
-        commit = self.get_hash(message_id)
-        return self.get_mail_by_commit(commit)
+    def get_mails_by_message_id(self, message_id):
+        commits = self.get_hashes(message_id)
+        return [self.get_mail_by_commit(commit) for commit in commits]
 
-    def get_hash(self, message_id):
-        return self.index[message_id][2]
+    def get_hashes(self, message_id):
+        return [x[2] for x in self.index[message_id]]
 
     def __getitem__(self, message_id):
-        commit = self.get_hash(message_id)
-        return self.get_blob(commit)
+        commits = self.get_hashes(message_id)
+        return [self.get_blob(commit) for commit in commits]
 
     def update(self):
         log.info('Update list %s' % self.listname)
@@ -250,7 +259,10 @@ class PubInbox(MailContainer):
             remote.fetch()
         self.repo = pygit2.Repository(self.d_repo)
 
-        known_hashes = {hash for (_, _, hash) in self.index.values()}
+        known_hashes = set()
+        for entry in self.index.values():
+            known_hashes |= {x[2] for x in entry}
+
         hashes = set(get_commit_hash_range(self.d_repo, 'origin/master'))
 
         hashes = hashes - known_hashes
@@ -273,10 +285,6 @@ class PubInbox(MailContainer):
 
             message_id = match.group(1)
 
-            if message_id in self.index:
-                log.warning('Duplicate Message id %s. Skipping' % message_id)
-                continue
-
             date = mail_parse_date(mail['Date'])
             if not date:
                 log.warning('Unable to parse datetime %s of %s (%s)' %
@@ -285,12 +293,15 @@ class PubInbox(MailContainer):
 
             format_date = date.strftime('%04Y/%m/%d')
 
-            self.index[message_id] = date, format_date, hash
+            if message_id not in self.index:
+                self.index[message_id] = list()
+            self.index[message_id].append((date, format_date, hash))
 
         with open(self.f_index, 'w') as f:
-            index = ['%s %s %s' % (format_date, message_id, commit)
-                     for (message_id, (date, format_date, commit))
-                     in self.index.items()]
+            index = list()
+            for message_id, candidates in self.index.items():
+                for date, format_date, commit in candidates:
+                    index.append('%s %s %s' % (format_date, message_id, commit))
             index.sort()
             f.write('\n'.join(index) + '\n')
 
@@ -329,10 +340,14 @@ class MboxRaw(MailContainer):
                 log.error('Mail processor failed!')
 
     def __getitem__(self, message_id):
-        _, date_str, md5 = self.index[message_id]
-        filename = os.path.join(self.d_mbox_raw, date_str, md5)
-        with open(filename, 'rb') as f:
-            return f.read()
+        ret = list()
+
+        for _, date_str, md5 in self.index[message_id]:
+            filename = os.path.join(self.d_mbox_raw, date_str, md5)
+            with open(filename, 'rb') as f:
+                ret.append(f.read())
+
+        return ret
 
 
 class Mbox:
@@ -436,10 +451,10 @@ class Mbox:
 
         for public_inbox in self.pub_in:
             if message_id in public_inbox:
-                raws.append(public_inbox[message_id])
+                raws += public_inbox[message_id]
 
         if message_id in self.mbox_raw:
-            raws.append(self.mbox_raw[message_id])
+            raws += self.mbox_raw[message_id]
 
         return raws
 
