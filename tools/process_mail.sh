@@ -48,7 +48,7 @@ elif [[ "$ID" =~ $whitespace_pattern ]]; then
 	die "Unable to parse Message ID for ${MAIL}: contains whitespaces"
 fi
 
-MD5=$(echo -en $ID | md5sum | awk '{ print $1 }')
+MD5=$(md5sum $MAIL | awk '{ print $1 }')
 
 # Try to get a valid mail date
 DATE_HDR=$(formail -x Date < $MAIL | tail -n 1)
