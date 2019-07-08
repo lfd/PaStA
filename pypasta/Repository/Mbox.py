@@ -277,13 +277,14 @@ class PubInbox(MailContainer):
             if not mail['Message-ID']:
                 log.warning('No Message ID in commit %s' % hash)
                 continue
-            message_id = mail['Message-ID'].replace(' ', '').strip()
+            message_id = mail['Message-ID']
+            message_id = ''.join(message_id.split())
             match = PubInbox.MESSAGE_ID_REGEX.match(message_id)
-            if not match:
+            if match:
+                message_id = match.group(1)
+            else:
                 log.warning('Unable to parse Message ID: %s' % message_id)
                 continue
-
-            message_id = match.group(1)
 
             date = mail_parse_date(mail['Date'])
             if not date:
