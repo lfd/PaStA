@@ -195,7 +195,6 @@ class Diff:
                 self.patches[filenames].hunks[hunk_heading].merge(h)
 
         self.affected.discard('/dev/null')
-        self.footer = len(diff)
 
     def split_footer(self):
         if self.footer > 0:
