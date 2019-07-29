@@ -14,6 +14,7 @@ import gc
 import git
 import pickle
 import pygit2
+import re
 
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
@@ -76,11 +77,28 @@ def _load_commit_subst(commit_hash):
 
 
 class Repository:
+    REGEX_TAGS = re.compile('^refs/tags')
+
     def __init__(self, repo_location):
         self.repo_location = repo_location
         self.ccache = {}
         self.repo = pygit2.Repository(repo_location)
         self.mbox = None
+
+        self.tags = list()
+        tag_refs = filter(lambda r: self.REGEX_TAGS.match(r),
+                          self.repo.listall_references())
+        for tag_ref in tag_refs:
+            tag = tag_ref[len('refs/tags/'):]
+            ref = self.repo.lookup_reference(tag_ref)
+            tagger = self.repo[ref.target].tagger
+            if tagger is None:
+                continue
+
+            dt = pygit2_signature_to_datetime(tagger)
+            self.tags.append((tag, dt))
+
+        self.tags.sort(key=lambda x: x[1])
 
     def _inject_commits(self, commit_dict):
         for key, val in commit_dict.items():
