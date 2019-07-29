@@ -24,6 +24,13 @@ from logging import getLogger
 log = getLogger(__name__[-15:])
 
 
+def pygit2_signature_to_datetime(signature):
+    tz = datetime.timezone(datetime.timedelta(minutes=signature.offset))
+    dt = datetime.datetime.fromtimestamp(signature.time, tz)
+
+    return dt
+
+
 def get_commit_hash_range(d_repo, range):
         """
         Gets all commithashes within a certain range

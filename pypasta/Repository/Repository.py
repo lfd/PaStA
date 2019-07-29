@@ -15,14 +15,14 @@ import git
 import pickle
 import pygit2
 
-from datetime import datetime, timezone, timedelta
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
 from .MessageDiff import MessageDiff, Signature
 from .Mbox import Mbox
-from ..Util import fix_encoding, get_commit_hash_range
+from ..Util import fix_encoding, get_commit_hash_range,\
+                   pygit2_signature_to_datetime
 
 log = getLogger(__name__[-15:])
 
@@ -33,10 +33,9 @@ _tmp_repo = None
 class Commit(MessageDiff):
     @staticmethod
     def get_signature(pygit_person):
-        tz = timezone(timedelta(minutes=pygit_person.offset))
-        date = datetime.fromtimestamp(pygit_person.time, tz)
-
-        return Signature(fix_encoding(pygit_person.raw_name), pygit_person.email, date)
+        return Signature(fix_encoding(pygit_person.raw_name),
+                         pygit_person.email,
+                         pygit2_signature_to_datetime(pygit_person))
 
     def __init__(self, repo, commit_hash):
         commit = repo[commit_hash]
