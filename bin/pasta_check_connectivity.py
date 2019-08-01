@@ -36,7 +36,7 @@ def check_connectivity(config, prog, argv):
         if elem not in repo:
             if args.d:
                 log.info('Woof woof, removing: %s' % elem)
-                cluster.remove_key(elem)
+                cluster.remove_element(elem)
             else:
                 log.info('Woof woof, not reachable: %s' % elem)
 

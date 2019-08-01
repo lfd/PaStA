@@ -48,14 +48,9 @@ class Cluster:
             self.lookup.pop(elem)
 
         for elem in elems:
-            self.insert_single(elem)
+            self.insert_element(elem)
 
         return elems
-
-    def remove_key(self, key):
-        self.upstream.discard(key)
-        id = self.lookup.pop(key)
-        self.clusters[id].remove(key)
 
     def is_related(self, *elems):
         """
@@ -68,7 +63,15 @@ class Cluster:
 
         return len(ids) == 1
 
-    def insert_single(self, elem):
+    def remove_element(self, elem):
+        """
+        Remove a single element from its cluster
+        """
+        self.upstream.discard(elem)
+        id = self.lookup.pop(elem)
+        self.clusters[id].remove(elem)
+
+    def insert_element(self, elem):
         """
         Assigns elem to a new cluster. Returns the new ID of the cluster. If
         elem is already existent and assigned to a cluster, do nothing but
@@ -83,13 +86,13 @@ class Cluster:
 
         return id
 
-    def _merge_ids(self, *ids):
+    def _merge_clusters(self, *ids):
         new_class = set()
         new_id = min(ids)
 
         for id in ids:
-            for elem in self.clusters[id]:
-                self.lookup[elem] = new_id
+            for key in self.clusters[id]:
+                self.lookup[key] = new_id
             new_class |= self.clusters[id]
             self.clusters[id] = set()
 
@@ -102,16 +105,19 @@ class Cluster:
         return new_id
 
     def insert(self, *elems):
+        """
+        Create a new cluster with elements elems.
+        """
         if len(elems) == 0:
             return
 
-        ids = [self.insert_single(elem) for elem in elems]
+        ids = [self.insert_element(elem) for elem in elems]
 
         # check if all elements are already in the same class
         if len(set(ids)) == 1:
             return ids[0]
 
-        return self._merge_ids(*ids)
+        return self._merge_clusters(*ids)
 
     def get_equivalence_id(self, key):
         return self.lookup[key]

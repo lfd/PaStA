@@ -143,7 +143,7 @@ def analyse(config, prog, argv):
 
     def fill_result(hashes, tag):
         for hash in hashes:
-            cluster.insert_single(hash)
+            cluster.insert_element(hash)
             if tag:
                 cluster.tag(hash, True)
 
@@ -185,7 +185,7 @@ def analyse(config, prog, argv):
                         'abort.')
             sleep(5)
             for miss in missing:
-                cluster.remove_key(miss)
+                cluster.remove_element(miss)
             cluster.optimize()
             victims = available
         log.info('Cached %d relevant mails' % len(available))

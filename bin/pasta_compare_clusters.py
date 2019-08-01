@@ -119,8 +119,8 @@ def compare_clusters(prog, argv):
                  (len(identical), sum([len(x) for x in identical])))
         for cluster in identical:
             for element in cluster:
-                ground_truth.remove_key(element)
-                prediction.remove_key(element)
+                ground_truth.remove_element(element)
+                prediction.remove_element(element)
         ground_truth.optimize()
         prediction.optimize()
 
@@ -133,13 +133,13 @@ def compare_clusters(prog, argv):
 
     missing = ground_truth_keys - prediction_keys
     log.info('%d keys missing in prediction' % len(missing))
-    for key in missing:
-        prediction.insert_single(key)
+    for elem in missing:
+        prediction.insert_element(elem)
 
     missing = prediction_keys - ground_truth_keys
     log.info('%d keys missing in ground truth' % len(missing))
-    for key in missing:
-        ground_truth.insert_single(key)
+    for elem in missing:
+        ground_truth.insert_element(elem)
 
     gt = list(sorted(ground_truth.lookup.items()))
     t = list(sorted(prediction.lookup.items()))
