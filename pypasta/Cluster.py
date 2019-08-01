@@ -68,20 +68,6 @@ class Cluster:
 
         return len(ids) == 1
 
-    def is_unrelated(self, *elems):
-        """
-        Returns True, if _all_ elements are in their own class
-        """
-        num_elems = len(elems)
-        ids = [self.lookup.get(x, None) for x in elems]
-        num_elems -= ids.count(None)
-        ids = set(ids)
-        ids.discard(None)
-
-        if len(ids) == num_elems:
-            return True
-        return False
-
     def insert_single(self, elem):
         """
         Assigns elem to a new cluster. Returns the new ID of the cluster. If
