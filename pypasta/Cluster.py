@@ -135,14 +135,15 @@ class Cluster:
         """
         return set(self.lookup.keys())
 
-    def get_cluster(self, key):
+    def get_cluster(self, elem):
         """
-        Given a key, this function returns all elements of the cluster as a set.
+        Given elem, this function returns all elements of the cluster as a set.
         This includes both, upstram and downstream.
         """
-        if key not in self:
+        if elem not in self:
             return None
-        return self.clusters[self.lookup[key]].copy()
+        id = self.get_cluster_id(elem)
+        return self.clusters[id].copy()
 
     def get_upstream(self, elem=None):
         """
@@ -163,11 +164,7 @@ class Cluster:
         return set(self.lookup.keys()) - self.upstream
 
     def __getitem__(self, item):
-        if item in self.lookup:
-            id = self.get_cluster_id(item)
-            return self.clusters[id]
-
-        return None
+        return self.get_cluster(item)
 
     def __len__(self):
         return len(self.clusters)
