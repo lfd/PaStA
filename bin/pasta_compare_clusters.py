@@ -92,8 +92,8 @@ def compare_clusters(prog, argv):
     # https://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-clustering-1.html
 
     if args.test:
-        ground_truth = Cluster()
-        prediction = Cluster()
+        ground_truth = Clustering()
+        prediction = Clustering()
 
         prediction.insert(0,1,2,3,4,5)
         prediction.insert(6,7,8,9,10,11)
@@ -103,8 +103,8 @@ def compare_clusters(prog, argv):
         ground_truth.insert(1, 7, 8, 9, 11)
         ground_truth.insert(10,13,15,16)
     else:
-        ground_truth = Cluster.from_file(args.classes[0], must_exist=True)
-        prediction = Cluster.from_file(args.classes[1], must_exist=True)
+        ground_truth = Clustering.from_file(args.classes[0], must_exist=True)
+        prediction = Clustering.from_file(args.classes[1], must_exist=True)
 
     # remove identical clusters, if desired
     if args.remove_identical:

@@ -60,7 +60,7 @@ def rate(config, prog, argv):
     evaluation_result = EvaluationResult.from_file(args.er_filename,
                                                    config.d_false_positives)
 
-    f_cluster, cluster = config.load_cluster(f_cluster=args.pg_filename)
+    f_cluster, cluster = config.load_cluster(f_clustering=args.pg_filename)
 
     log.info('Starting %s rating for %s analysis' %
              (('mailbox' if evaluation_result.is_mbox else 'patch stack'),

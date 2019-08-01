@@ -15,7 +15,7 @@ from logging import getLogger
 log = getLogger(__name__[-15:])
 
 
-class Cluster:
+class Clustering:
     SEPARATOR = '=>'
 
     def __init__(self):
@@ -183,11 +183,11 @@ class Cluster:
         for downstreams, upstreams in downstream_list:
             retval += ' '.join(downstreams)
             if len(upstreams):
-                retval += ' %s %s' % (Cluster.SEPARATOR, ' '.join(upstreams))
+                retval += ' %s %s' % (Clustering.SEPARATOR, ' '.join(upstreams))
             retval += '\n'
 
         for upstreams in upstream_list:
-            retval += '%s %s\n' % (Cluster.SEPARATOR, ' '.join(upstreams))
+            retval += '%s %s\n' % (Clustering.SEPARATOR, ' '.join(upstreams))
 
         return retval
 
@@ -252,7 +252,7 @@ class Cluster:
         def split_elements(elems):
             return list(filter(None, elems.split(' ')))
 
-        retval = Cluster()
+        retval = Clustering()
 
         try:
             with open(filename, 'r') as f:
@@ -268,7 +268,7 @@ class Cluster:
 
         content = list(filter(None, content.splitlines()))
         for line in content:
-            line = line.split(Cluster.SEPARATOR)
+            line = line.split(Clustering.SEPARATOR)
             # Append empty upstream list, if not present
             if len(line) == 1:
                 line.append('')

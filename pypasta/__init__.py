@@ -18,7 +18,7 @@ from .Repository import *
 
 # Internal import statements
 from .Config import Config, PygitCredentials
-from .Cluster import Cluster
+from .Clustering import Clustering
 from .PatchEvaluation import EvaluationResult, EvaluationType,\
     evaluate_commit_list, SimRating, evaluate_commit_pair
 from .Config import Thresholds

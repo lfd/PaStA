@@ -18,7 +18,7 @@ from os.path import join, realpath, isfile, isdir, isabs
 from os import makedirs
 from logging import getLogger
 
-from .Cluster import Cluster
+from .Clustering import Clustering
 from .Repository import Repository
 from .PatchStack import PatchStackDefinition
 from .Util import load_commit_hashes, persist_commit_hashes, parse_date_ymd
@@ -159,7 +159,7 @@ class Config:
         self.d_false_positives = path('FALSE_POSTITIVES')
 
         if self._mode == Config.Mode.MBOX:
-            self.f_cluster = path('MBOX_RESULT')
+            self.f_clustering = path('MBOX_RESULT')
         else:
             self.f_cluter = path('PASTA_RESULT')
 
@@ -259,19 +259,19 @@ class Config:
     # If the filename of the cluster is not provided, it will use the default
     # filename of the configuration. In any case, this routine returns the tuple
     # of the cluster filename and the cluster itself.
-    def load_cluster(self, must_exist=True, f_cluster=None):
-        if f_cluster is None:
-            f_cluster = self.f_cluster
+    def load_cluster(self, must_exist=True, f_clustering=None):
+        if f_clustering is None:
+            f_clustering = self.f_clustering
 
         if must_exist:
-            Config.fail_result_not_exists(f_cluster)
+            Config.fail_result_not_exists(f_clustering)
 
         if self.mode == Config.Mode.MBOX:
             self.repo.register_mbox(self)
 
-        cluster = Cluster.from_file(f_cluster, must_exist=must_exist)
+        cluster = Clustering.from_file(f_clustering, must_exist=must_exist)
 
-        return f_cluster, cluster
+        return f_clustering, cluster
 
     def load_upstream_hashes(self, force_reload=False):
         # check if upstream commit hashes are existent. If not, create them

@@ -24,6 +24,6 @@ def optimise_cluster(prog, argv):
 
     args = parser.parse_args(argv)
 
-    res = Cluster.from_file(args.eqclass, must_exist=True)
+    res = Clustering.from_file(args.eqclass, must_exist=True)
     res.optimize()
     res.to_file(args.eqclass)
