@@ -21,7 +21,7 @@ class Cluster:
     def __init__(self):
         self.classes = list()
         self.lookup = dict()
-        self.tags = set()
+        self.upstream = set()
 
     def optimize(self):
         # get optimized list by filtering orphaned elements
@@ -53,7 +53,7 @@ class Cluster:
         return elems
 
     def remove_key(self, key):
-        self.tags.discard(key)
+        self.upstream.discard(key)
         id = self.lookup.pop(key)
         self.classes[id].remove(key)
 
@@ -139,12 +139,12 @@ class Cluster:
 
     def tag(self, key, tag=True):
         if tag is True:
-            self.tags.add(key)
+            self.upstream.add(key)
         else:
-            self.tags.discard(key)
+            self.upstream.discard(key)
 
     def has_tag(self, key):
-        return key in self.tags
+        return key in self.upstream
 
     def get_keys(self):
         return set(self.lookup.keys())
@@ -164,8 +164,8 @@ class Cluster:
         If key is not specified, this function returns all tags.
         """
         if key:
-            return self.tags.intersection(self.classes[self.lookup[key]])
-        return self.tags
+            return self.upstream.intersection(self.classes[self.lookup[key]])
+        return self.upstream
 
     def get_untagged(self, key=None):
         """
@@ -174,8 +174,8 @@ class Cluster:
         If key is not specified, this function returns all untagged.
         """
         if key:
-            return self.classes[self.lookup[key]] - self.tags
-        return set(self.lookup.keys()) - self.tags
+            return self.classes[self.lookup[key]] - self.upstream
+        return set(self.lookup.keys()) - self.upstream
 
     def __getitem__(self, item):
         if item in self.lookup:
@@ -250,7 +250,7 @@ class Cluster:
     def iter_untagged(self):
         # iterate over all classes, but return untagged items only
         for elem in self.classes:
-            untagged = elem - self.tags
+            untagged = elem - self.upstream
             if not untagged:
                 continue
             yield untagged
@@ -259,7 +259,7 @@ class Cluster:
         # iterate only over classes that are tagged, and return both:
         # tagged and untagged
         for group in self: # calls self.__iter__()
-            tagged = group & self.tags
+            tagged = group & self.upstream
             if len(tagged) == 0:
                 continue
             untagged = group - tagged
