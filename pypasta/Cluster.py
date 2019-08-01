@@ -19,19 +19,19 @@ class Cluster:
     SEPARATOR = '=>'
 
     def __init__(self):
-        self.classes = list()
+        self.clusters = list()
         self.lookup = dict()
         self.upstream = set()
 
     def optimize(self):
         # get optimized list by filtering orphaned elements
-        self.classes = list(filter(None, self.classes))
+        self.clusters = list(filter(None, self.clusters))
 
         # reset lookup table
         self.lookup = dict()
 
         # recreate the lookup dictionary
-        for i, keylist in enumerate(self.classes):
+        for i, keylist in enumerate(self.clusters):
             for key in keylist:
                 self.lookup[key] = i
 
@@ -43,7 +43,7 @@ class Cluster:
         """
         id = self.lookup[representative]
 
-        elems = self.classes.pop(id)
+        elems = self.clusters.pop(id)
         for elem in elems:
             self.lookup.pop(elem)
 
@@ -55,7 +55,7 @@ class Cluster:
     def remove_key(self, key):
         self.upstream.discard(key)
         id = self.lookup.pop(key)
-        self.classes[id].remove(key)
+        self.clusters[id].remove(key)
 
     def remove_single_element_clusters(self):
         single_element_clusters = set()
@@ -98,8 +98,8 @@ class Cluster:
         if elem in self.lookup:
             return self.lookup[elem]
 
-        self.classes.append(set([elem]))
-        id = len(self.classes) - 1
+        self.clusters.append(set([elem]))
+        id = len(self.clusters) - 1
         self.lookup[elem] = id
 
         return id
@@ -109,16 +109,16 @@ class Cluster:
         new_id = min(ids)
 
         for id in ids:
-            for elem in self.classes[id]:
+            for elem in self.clusters[id]:
                 self.lookup[elem] = new_id
-            new_class |= self.classes[id]
-            self.classes[id] = set()
+            new_class |= self.clusters[id]
+            self.clusters[id] = set()
 
-        self.classes[new_id] = new_class
+        self.clusters[new_id] = new_class
 
         # truncate empty trailing list elements
-        while not self.classes[-1]:
-            self.classes.pop()
+        while not self.clusters[-1]:
+            self.clusters.pop()
 
         return new_id
 
@@ -155,7 +155,7 @@ class Cluster:
         """
         if key not in self:
             return None
-        return self.classes[self.lookup[key]].copy()
+        return self.clusters[self.lookup[key]].copy()
 
     def get_tagged(self, key=None):
         """
@@ -164,7 +164,7 @@ class Cluster:
         If key is not specified, this function returns all tags.
         """
         if key:
-            return self.upstream.intersection(self.classes[self.lookup[key]])
+            return self.upstream.intersection(self.clusters[self.lookup[key]])
         return self.upstream
 
     def get_untagged(self, key=None):
@@ -174,18 +174,18 @@ class Cluster:
         If key is not specified, this function returns all untagged.
         """
         if key:
-            return self.classes[self.lookup[key]] - self.upstream
+            return self.clusters[self.lookup[key]] - self.upstream
         return set(self.lookup.keys()) - self.upstream
 
     def __getitem__(self, item):
         if item in self.lookup:
             id = self.get_equivalence_id(item)
-            return self.classes[id]
+            return self.clusters[id]
 
         return None
 
     def __len__(self):
-        return len(self.classes)
+        return len(self.clusters)
 
     def __str__(self):
         retval = str()
@@ -242,14 +242,14 @@ class Cluster:
 
     def __iter__(self):
         # iterate over all classes, and return all items
-        for elem in self.classes:
+        for elem in self.clusters:
             if not elem:
                 continue
             yield elem
 
     def iter_untagged(self):
         # iterate over all classes, but return untagged items only
-        for elem in self.classes:
+        for elem in self.clusters:
             untagged = elem - self.upstream
             if not untagged:
                 continue
