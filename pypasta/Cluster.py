@@ -200,7 +200,10 @@ class Cluster:
                                  equivalence class
         """
         retval = set()
-        for cluster in self.iter_downstream():
+        for cluster, _ in self.iter_split():
+            if len(cluster) == 0:
+                continue
+
             cluster = list(cluster)
             if not cluster:
                 continue
@@ -235,14 +238,6 @@ class Cluster:
             if len(downstream) == 0 and len(upstream) == 0:
                 continue
             yield downstream, upstream
-
-    def iter_downstream(self):
-        # iterate over all classes, but return untagged items only
-        for elem in self.clusters:
-            untagged = elem - self.upstream
-            if not untagged:
-                continue
-            yield untagged
 
     def iter_tagged_only(self):
         # iterate only over classes that are tagged, and return both:
