@@ -119,7 +119,7 @@ class Cluster:
 
         return self._merge_clusters(*ids)
 
-    def get_equivalence_id(self, key):
+    def get_cluster_id(self, key):
         return self.lookup[key]
 
     def tag(self, key, tag=True):
@@ -165,7 +165,7 @@ class Cluster:
 
     def __getitem__(self, item):
         if item in self.lookup:
-            id = self.get_equivalence_id(item)
+            id = self.get_cluster_id(item)
             return self.clusters[id]
 
         return None

@@ -37,7 +37,7 @@ class PatchFlow:
 
         def commit_hashes_to_group_ids(commit_hahes):
             retval = dict()
-            for id, commit_hash in map(lambda x: (cluster.get_equivalence_id(x), x), commit_hahes):
+            for id, commit_hash in map(lambda x: (cluster.get_cluster_id(x), x), commit_hahes):
                 if id not in retval:
                     retval[id] = list()
                 retval[id].append(commit_hash)
