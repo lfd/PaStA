@@ -128,9 +128,6 @@ class Cluster:
         else:
             self.upstream.discard(key)
 
-    def has_tag(self, key):
-        return key in self.upstream
-
     def get_keys(self):
         return set(self.lookup.keys())
 
