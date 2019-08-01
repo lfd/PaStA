@@ -90,8 +90,8 @@ class FalsePositives:
         self._false_positives[origin].add(destination)
 
     def is_false_positive(self, equivalence_class, origin, destination):
-        alt_origin = list(equivalence_class.get_untagged(origin) &\
-                     self._false_positives.keys())
+        alt_origin = list(equivalence_class.get_downstream(origin) & \
+                          self._false_positives.keys())
 
         if len(alt_origin) == 0:
             return False

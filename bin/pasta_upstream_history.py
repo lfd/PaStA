@@ -18,7 +18,7 @@ from pypasta import *
 
 
 def upstream_duration(repo, date_selector, cluster, rep):
-    group = cluster.get_untagged(rep)
+    group = cluster.get_downstream(rep)
     upstream = get_first_upstream(repo, cluster, rep)
 
     first_stack_relase = min(map(lambda x: date_selector(x), group))
@@ -49,7 +49,7 @@ def pasta_upstream_history(config, prog, argv):
     groups_with_upstream = set()
     for group in cluster:
         rep = list(group)[0]
-        if cluster.get_tagged(rep):
+        if cluster.get_upstream(rep):
             groups_with_upstream.add(rep)
 
 

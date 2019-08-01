@@ -144,24 +144,22 @@ class Cluster:
             return None
         return self.clusters[self.lookup[key]].copy()
 
-    def get_tagged(self, key=None):
+    def get_upstream(self, elem=None):
         """
-        Returns all tagged entries that are related to key.
-
-        If key is not specified, this function returns all tags.
+        Returns all upstream entries that are related to elem. If elem is not
+        specified, this function returns all upstream patches.
         """
-        if key:
-            return self.upstream.intersection(self.clusters[self.lookup[key]])
+        if elem:
+            return self.upstream.intersection(self.clusters[self.lookup[elem]])
         return self.upstream
 
-    def get_untagged(self, key=None):
+    def get_downstream(self, elem=None):
         """
-        Returns all untagged entries that are related to key.
-
-        If key is not specified, this function returns all untagged.
+        Returns all untagged entries that are related to key. If elem is not
+        specified, this function returns all downstream patches.
         """
-        if key:
-            return self.clusters[self.lookup[key]] - self.upstream
+        if elem:
+            return self.clusters[self.lookup[elem]] - self.upstream
         return set(self.lookup.keys()) - self.upstream
 
     def __getitem__(self, item):
@@ -182,7 +180,7 @@ class Cluster:
         untagged_list.sort()
 
         for untagged in untagged_list:
-            tagged = self.get_tagged(untagged[0])
+            tagged = self.get_upstream(untagged[0])
             tagged_visited |= tagged
             retval += ' '.join(sorted([str(x) for x in untagged]))
             if len(tagged):

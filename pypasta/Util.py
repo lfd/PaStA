@@ -202,7 +202,7 @@ def show_commits(repo, left_hash, right_hash, enable_pager=True):
 
 
 def get_first_upstream(repo, cluster, commit):
-    tags = cluster.get_tagged(commit)
+    tags = cluster.get_upstream(commit)
     if tags:
         return min(tags, key=lambda x: repo[x].committer.date)
     return None

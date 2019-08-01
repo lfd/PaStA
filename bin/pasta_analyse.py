@@ -170,7 +170,7 @@ def analyse(config, prog, argv):
         # more. This time, include all patches from the pre-existing (partial)
         # result, and check if all patches are reachable
         victims = repo.mbox.message_ids(mbox_time_window) | \
-                  cluster.get_untagged()
+                  cluster.get_downstream()
 
         # in case of an mbox analysis, we will definitely need all untagged
         # commit hashes as we need to determine the representative system for

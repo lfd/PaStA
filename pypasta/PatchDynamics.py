@@ -94,11 +94,11 @@ class PatchComposition:
         :param commit: commit on the patch stack
         :return:
         """
-        upstream = cluster.get_tagged(commit)
+        upstream = cluster.get_upstream(commit)
         if not upstream:
             return None
 
-        commits_in_class = cluster.get_untagged(commit)
+        commits_in_class = cluster.get_downstream(commit)
         upstream = get_first_upstream(repo, cluster, commit)
 
         first_stack_occurence = min(map(date_selector, commits_in_class))

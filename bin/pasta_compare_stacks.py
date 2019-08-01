@@ -55,7 +55,7 @@ def print_flow(repo, commits, destinations=None, verbosity=0, indent=4):
 
 
 def print_upstream(repo, cluster, x, verbosity, indent=4):
-    print_flow(repo, x, [(x, cluster.get_tagged(x)) for x in x],
+    print_flow(repo, x, [(x, cluster.get_upstream(x)) for x in x],
                verbosity=verbosity, indent=indent)
 
 

@@ -83,7 +83,7 @@ def check_mbox(config, prog, argv):
             not_found.append(commit_hash)
             continue
 
-        mails = cluster.get_untagged(commit_hash)
+        mails = cluster.get_downstream(commit_hash)
         if len(mails) == 0:
             not_found.append(commit_hash)
             continue
@@ -101,7 +101,7 @@ def check_mbox(config, prog, argv):
     if args.verbose:
         for detected in found:
             shortlog(repo, detected)
-            for message_id in cluster.get_untagged(detected):
+            for message_id in cluster.get_downstream(detected):
                 shortlog(repo, message_id, '  -> ')
 
     log.info('Commit hashes with no mapped Message-Id:')
