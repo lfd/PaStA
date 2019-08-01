@@ -59,7 +59,7 @@ class Cluster:
 
     def is_related(self, *elems):
         """
-        Returns True, if _all_ elements are in the same equivalence class
+        Returns True, if _all_ elements are in the same cluster
         """
         ids = {self.lookup.get(x, None) for x in elems}
 
@@ -83,6 +83,11 @@ class Cluster:
         return False
 
     def insert_single(self, elem):
+        """
+        Assigns elem to a new cluster. Returns the new ID of the cluster. If
+        elem is already existent and assigned to a cluster, do nothing but
+        return the ID of the cluster.
+        """
         if elem in self.lookup:
             return self.lookup[elem]
 
@@ -139,7 +144,8 @@ class Cluster:
 
     def get_cluster(self, key):
         """
-        Given a key, this function returns all elements of the cluster as a set
+        Given a key, this function returns all elements of the cluster as a set.
+        This includes both, upstram and downstream.
         """
         if key not in self:
             return None
