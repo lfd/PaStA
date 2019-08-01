@@ -25,11 +25,10 @@ from subprocess import call
 
 from .MailThread import MailThread
 from .MessageDiff import MessageDiff, Signature
-from ..Util import get_commit_hash_range
+from ..Util import get_commit_hash_range, parse_mail_from
 
 log = getLogger(__name__[-15:])
 
-MAIL_FROM_REGEX = re.compile(r'(.*) <(.*)>')
 PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
 DIFF_START_REGEX = re.compile(r'^--- \S+/.+$')
 ANNOTATION_REGEX = re.compile(r'^---\s*$')
@@ -64,13 +63,7 @@ class PatchMail(MessageDiff):
         if date.tzinfo is None:
             date = date.replace(tzinfo=datetime.timezone.utc)
 
-        author_name = mail['From']
-        author_email = ''
-        match = MAIL_FROM_REGEX.match(author_name)
-        if match:
-            author_name = match.group(1)
-            author_email = match.group(2)
-
+        author_name, author_email = parse_mail_from(mail)
         author = Signature(author_name, author_email, date)
 
         # Get the patch payload

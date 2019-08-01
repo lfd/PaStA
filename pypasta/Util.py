@@ -13,6 +13,7 @@ the COPYING file in the top-level directory.
 import argparse
 import datetime
 import git
+import re
 import termios
 import tty
 import shutil
@@ -23,12 +24,25 @@ from logging import getLogger
 
 log = getLogger(__name__[-15:])
 
+MAIL_FROM_REGEX = re.compile(r'([^<]+)\s*<([^>]+)>')
+
 
 def pygit2_signature_to_datetime(signature):
     tz = datetime.timezone(datetime.timedelta(minutes=signature.offset))
     dt = datetime.datetime.fromtimestamp(signature.time, tz)
 
     return dt
+
+
+def parse_mail_from(mail):
+    name = str(mail['From'])
+    email = ''
+    match = MAIL_FROM_REGEX.match(name)
+    if match:
+        name = match.group(1)
+        email = match.group(2)
+
+    return name, email
 
 
 def get_commit_hash_range(d_repo, range):
