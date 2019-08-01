@@ -105,7 +105,7 @@ class Export:
         occurrence.write('PatchGroup OldestVersion LatestVersion FirstReleasedIn LastReleasedIn\n')
 
         cntr = 0
-        for group in cluster.iter_untagged():
+        for group in cluster.iter_downstream():
             group = list(group)
             cntr += 1
 

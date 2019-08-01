@@ -173,7 +173,7 @@ class Cluster:
         retval = str()
         upstream_visited = set()
 
-        downstream_list = [sorted(x) for x in self.iter_untagged()]
+        downstream_list = [sorted(x) for x in self.iter_downstream()]
         downstream_list.sort()
 
         for patch in downstream_list:
@@ -205,17 +205,17 @@ class Cluster:
                                  equivalence class
         """
         retval = set()
-        for equivclass in self.iter_untagged():
-            equivclass = list(equivclass)
-            if not equivclass:
+        for cluster in self.iter_downstream():
+            cluster = list(cluster)
+            if not cluster:
                 continue
 
-            if len(equivclass) == 1:
-                retval.add(equivclass[0])
+            if len(cluster) == 1:
+                retval.add(cluster[0])
                 continue
 
-            rep = equivclass[0]
-            for element in equivclass[1:]:
+            rep = cluster[0]
+            for element in cluster[1:]:
                 if compare_function(element, rep):
                     rep = element
             retval.add(rep)
@@ -229,7 +229,7 @@ class Cluster:
                 continue
             yield elem
 
-    def iter_untagged(self):
+    def iter_downstream(self):
         # iterate over all classes, but return untagged items only
         for elem in self.clusters:
             untagged = elem - self.upstream
