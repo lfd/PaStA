@@ -171,28 +171,23 @@ class Cluster:
 
     def __str__(self):
         retval = str()
-        upstream_visited = set()
 
-        downstream_list = [sorted(x) for x in self.iter_downstream()]
-        downstream_list.sort()
+        cluster_list = [(sorted(downstream), sorted(upstream)) for
+                        downstream, upstream in self.iter_split()]
 
-        for patch in downstream_list:
-            upstream = self.get_upstream(patch[0])
-            upstream_visited |= upstream
-            retval += ' '.join(sorted([str(x) for x in patch]))
-            if len(upstream):
-                retval += ' ' + Cluster.SEPARATOR + ' ' + \
-                          ' '.join(sorted([str(x) for x in upstream]))
+        downstream_list = sorted(filter(lambda x: len(x[0]), cluster_list))
+        upstream_list = sorted(
+                            [x[1] for x in
+                             filter(lambda x: len(x[0]) == 0, cluster_list)])
+
+        for downstreams, upstreams in downstream_list:
+            retval += ' '.join(downstreams)
+            if len(upstreams):
+                retval += ' %s %s' % (Cluster.SEPARATOR, ' '.join(upstreams))
             retval += '\n'
 
-        # There may be clusters with upstream candidates only
-        upstream = [x[1] for x in self.iter_tagged_only()]
-        for cluster in upstream:
-            if list(cluster)[0] in upstream_visited:
-                continue
-
-            cluster = ' '.join(sorted([str(x) for x in cluster]))
-            retval += Cluster.SEPARATOR + ' ' + cluster + '\n'
+        for upstreams in upstream_list:
+            retval += '%s %s\n' % (Cluster.SEPARATOR, ' '.join(upstreams))
 
         return retval
 
@@ -228,6 +223,18 @@ class Cluster:
             if not elem:
                 continue
             yield elem
+
+    def iter_split(self):
+        """
+        Iterate over all clusters. Per cluster, return a tuple of
+        (downstream, upstream) patches
+        """
+        for cluster in self.clusters:
+            downstream = cluster - self.upstream
+            upstream = cluster & self.upstream
+            if len(downstream) == 0 and len(upstream) == 0:
+                continue
+            yield downstream, upstream
 
     def iter_downstream(self):
         # iterate over all classes, but return untagged items only
