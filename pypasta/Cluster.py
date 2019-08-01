@@ -128,7 +128,11 @@ class Cluster:
         else:
             self.upstream.discard(key)
 
-    def get_keys(self):
+    def get_all_elements(self):
+        """
+        Returns all elements as a set. This includes both, upstream and
+        downstream.
+        """
         return set(self.lookup.keys())
 
     def get_cluster(self, key):

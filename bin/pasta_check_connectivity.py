@@ -31,7 +31,7 @@ def check_connectivity(config, prog, argv):
     repo = config.repo
     f_cluster, cluster = config.load_cluster()
 
-    keys = cluster.get_keys()
+    keys = cluster.get_all_elements()
     for elem in keys:
         if elem not in repo:
             if args.d:

@@ -23,8 +23,8 @@ log = getLogger(__name__[-15:])
 
 
 def prec_rec(ground_truth, prediction):
-    ground_truth_keys = ground_truth.get_keys()
-    prediction_keys = prediction.get_keys()
+    ground_truth_keys = ground_truth.get_all_elements()
+    prediction_keys = prediction.get_all_elements()
 
     combs = list(combinations(ground_truth_keys | prediction_keys, 2))
     false_positives = 0
@@ -128,8 +128,8 @@ def compare_clusters(prog, argv):
         prec_rec(ground_truth, prediction)
 
     # intermix all keys
-    ground_truth_keys = ground_truth.get_keys()
-    prediction_keys = prediction.get_keys()
+    ground_truth_keys = ground_truth.get_all_elements()
+    prediction_keys = prediction.get_all_elements()
 
     missing = ground_truth_keys - prediction_keys
     log.info('%d keys missing in prediction' % len(missing))
