@@ -122,8 +122,8 @@ class Cluster:
     def get_cluster_id(self, key):
         return self.lookup[key]
 
-    def tag(self, key, tag=True):
-        if tag is True:
+    def mark_upstream(self, key, is_upstream=True):
+        if is_upstream is True:
             self.upstream.add(key)
         else:
             self.upstream.discard(key)
@@ -290,6 +290,6 @@ class Cluster:
 
             retval.insert(*(untagged + tagged))
             for tag in tagged:
-                retval.tag(tag)
+                retval.mark_upstream(tag)
 
         return retval

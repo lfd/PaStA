@@ -145,7 +145,7 @@ def analyse(config, prog, argv):
         for hash in hashes:
             cluster.insert_element(hash)
             if tag:
-                cluster.tag(hash, True)
+                cluster.mark_upstream(hash, True)
 
         # intermediate persistence
         cluster.to_file(f_cluster)

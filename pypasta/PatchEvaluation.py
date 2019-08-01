@@ -210,7 +210,7 @@ class EvaluationResult(dict):
         def accept(orig, cand):
             clustering.insert(orig, cand)
             if self.eval_type == EvaluationType.Upstream:
-                clustering.tag(cand)
+                clustering.mark_upstream(cand)
 
         # Convert the dictionary of evaluation results to a sorted list,
         # sorted by its SimRating. First, get all items, but filter for
