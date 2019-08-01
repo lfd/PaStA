@@ -239,17 +239,6 @@ class Cluster:
                 continue
             yield downstream, upstream
 
-    def iter_tagged_only(self):
-        # iterate only over classes that are tagged, and return both:
-        # tagged and untagged
-        for group in self: # calls self.__iter__()
-            tagged = group & self.upstream
-            if len(tagged) == 0:
-                continue
-            untagged = group - tagged
-
-            yield untagged, tagged
-
     def __contains__(self, item):
         return item in self.lookup
 

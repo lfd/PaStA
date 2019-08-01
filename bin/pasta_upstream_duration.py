@@ -86,7 +86,8 @@ def upstream_duration(config, prog, argv):
 
     log.info('Starting evaluation.')
     pool = Pool(cpu_count())
-    result = pool.map(upstream_duration_of_group, cluster.iter_tagged_only())
+    tagged_only = [(d, u) for d, u in cluster.iter_split() if len(u)]
+    result = pool.map(upstream_duration_of_group, tagged_only)
     pool.close()
     pool.join()
     log.info('  ↪ done.')
