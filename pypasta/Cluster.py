@@ -171,24 +171,24 @@ class Cluster:
 
     def __str__(self):
         retval = str()
-        tagged_visited = set()
+        upstream_visited = set()
 
-        untagged_list = [sorted(x) for x in self.iter_untagged()]
-        untagged_list.sort()
+        downstream_list = [sorted(x) for x in self.iter_untagged()]
+        downstream_list.sort()
 
-        for untagged in untagged_list:
-            tagged = self.get_upstream(untagged[0])
-            tagged_visited |= tagged
-            retval += ' '.join(sorted([str(x) for x in untagged]))
-            if len(tagged):
+        for patch in downstream_list:
+            upstream = self.get_upstream(patch[0])
+            upstream_visited |= upstream
+            retval += ' '.join(sorted([str(x) for x in patch]))
+            if len(upstream):
                 retval += ' ' + Cluster.SEPARATOR + ' ' + \
-                          ' '.join(sorted([str(x) for x in tagged]))
+                          ' '.join(sorted([str(x) for x in upstream]))
             retval += '\n'
 
         # There may be clusters with upstream candidates only
-        tagged = [x[1] for x in self.iter_tagged_only()]
-        for cluster in tagged:
-            if list(cluster)[0] in tagged_visited:
+        upstream = [x[1] for x in self.iter_tagged_only()]
+        for cluster in upstream:
+            if list(cluster)[0] in upstream_visited:
                 continue
 
             cluster = ' '.join(sorted([str(x) for x in cluster]))
