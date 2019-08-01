@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -156,7 +156,7 @@ class Cluster:
 
     def get_downstream(self, elem=None):
         """
-        Returns all untagged entries that are related to key. If elem is not
+        Returns all downstream entries that are related to elem. If elem is not
         specified, this function returns all downstream patches.
         """
         if elem:
@@ -194,7 +194,7 @@ class Cluster:
     def get_representative_system(self, compare_function):
         """
         Return a complete representative system of the equivalence class. Only
-        untagged entries are considered.
+        downstream entries are considered.
 
         :param compare_function: a function that compares two elements of an
                                  equivalence class
@@ -269,14 +269,15 @@ class Cluster:
         content = list(filter(None, content.splitlines()))
         for line in content:
             line = line.split(Cluster.SEPARATOR)
-            # Append empty tagged list, if not present
+            # Append empty upstream list, if not present
             if len(line) == 1:
                 line.append('')
 
-            untagged, tagged = split_elements(line[0]), split_elements(line[1])
+            downstream, upstream = split_elements(line[0]), \
+                                   split_elements(line[1])
 
-            retval.insert(*(untagged + tagged))
-            for tag in tagged:
-                retval.mark_upstream(tag)
+            retval.insert(*(downstream + upstream))
+            for element in upstream:
+                retval.mark_upstream(element)
 
         return retval
