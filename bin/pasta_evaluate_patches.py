@@ -97,6 +97,10 @@ def patch_has_foreign_response(repo, patch):
     author = get_author_of_msg(repo, patch)
 
     for mail in list(LevelOrderIter(thread)):
+        # Beware, the mail might be virtual
+        if mail.name not in repo:
+            continue
+
         this_author = get_author_of_msg(repo, mail.name)
         if this_author != author:
             return True
@@ -117,6 +121,38 @@ def get_authors_in_thread(repo, thread):
 
     return authors
 
+def patch_is_from_bot(patch):
+    author_email = patch.author.email
+
+    if author_email == 'tipbot@zytor.com':
+        return True
+
+    return False
+
+REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL)
+def patch_is_stable_review(repo, patch):
+    # The patch needs to be sent to the stable list
+    if 'stable' not in repo.mbox.get_lists(patch.identifier):
+        return False
+
+    message_flattened = '\n'.join(patch.message).lower()
+
+    if 'review patch' in message_flattened:
+        return True
+
+    if 'upstream commit' in message_flattened:
+        print(patch.identifier)
+        return True
+
+    # Greg uses this if the patch doesn't apply to a stable tree
+    if 'the patch below does not apply to the' in message_flattened:
+        return True
+
+    if REGEX_COMMIT_UPSTREAM.match(message_flattened):
+        return True
+
+    return False
+
 
 def get_ignored(repo, clustering):
     # First, we have to define the term patch. In this analysis, we must only
@@ -129,6 +165,10 @@ def get_ignored(repo, clustering):
     #    In this case, the parent can either be a patch (e.g., a series w/o
     #    cover letter) or not a patch (e.g., parent is a cover letter)
     #
+    # 3. The patch must not be sent from a bot (e.g., tip-bot)
+    #
+    # 4. Ignore stable review patches
+    #
     # All other patches MUST be ignored. Rationale: Maintainers may re-send
     # the patch as a reply of the discussion. Such patches must be ignored.
     # Example: Look at the thread of
@@ -136,12 +176,19 @@ def get_ignored(repo, clustering):
 
     population_not_accepted = 0
     population_accepted = 0
-
     not_upstreamed_patches = list()
+
     for downstream, upstream in clustering.iter_split():
         # Dive into downstream, and check the above-mentioned criteria
         relevant = set()
         for d in downstream:
+            patch = repo[d]
+            if patch_is_from_bot(patch):
+                continue
+
+            if patch_is_stable_review(repo, patch):
+                continue
+
             thread = repo.mbox.threads.get_thread(d)
 
             if thread.name == d or \
@@ -178,13 +225,16 @@ def get_ignored(repo, clustering):
     # ignored_patches will be a dictionary key: patch value: is_ignored
     is_ignored = dict(is_ignored)
 
-    num_ignored_patches = len(list(filter(lambda x: x == True, is_ignored.values())))
+    ignored_patches = [x[0] for x in is_ignored.items() if x[1] == True]
+    num_ignored_patches = len(ignored_patches)
     log.info('Not accepted patches: %u' % population_not_accepted)
     log.info('Accepted patches: %u' % population_accepted)
     log.info('Found %u ignored patches' % num_ignored_patches)
     log.info('Fraction of ignored patched: %0.3f' %
              (num_ignored_patches /
               (population_accepted + population_not_accepted)))
+
+    return ignored_patches
 
 
 def check_wrong_maintainer_patch(patch):
@@ -474,7 +524,11 @@ def evaluate_patches(config, prog, argv):
     """
 
     log.info('Identify ignored patches...')
-    get_ignored(repo, clustering)
+    d_resources = './resources/linux/resources/'
+    ignored_patches = get_ignored(repo, clustering)
+    with open(os.path.join(d_resources, 'ignored_patches'), 'w') as f:
+        f.write('\n'.join(sorted(ignored_patches)) + '\n')
+    quit()
     """
     if 'no-ignored' in argv:
         ignored_patches = None
