@@ -60,6 +60,9 @@ def sync(config, prog, argv):
                         help='synchronise mailboxes before creating caches')
     parser.add_argument('-noup', action='store_true', default=False,
                         help='Don\'t synchronise upstream repositories')
+    parser.add_argument('-nofetch', action='store_true', default=False,
+                        help='Don\'t fetch upstream repositories')
+
 
     args = parser.parse_args(argv)
     repo = config.repo
@@ -70,12 +73,13 @@ def sync(config, prog, argv):
 
     # Update upstream
     if not args.noup:
-        log.info('Fetching and syncing upstream repository')
-        repo.update()
+        if not args.nofetch:
+            log.info('Fetching and syncing upstream repository')
+            repo.update()
         config.load_upstream_hashes(force_reload=True)
 
         if is_mbox and args.mbox:
-            repo.update_mbox(config)
+            repo.update_mbox(config, nofetch=args.nofetch)
 
     if args.clear is None and args.create is None:
         args.create = 'all'

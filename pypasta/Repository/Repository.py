@@ -262,9 +262,9 @@ class Repository:
         if not self.mbox:
             self.mbox = Mbox(config)
 
-    def update_mbox(self, config):
+    def update_mbox(self, config, nofetch):
         self.register_mbox(config)
-        self.mbox.update()
+        self.mbox.update(nofetch)
 
         # The mbox doesn't track changes after an update. The easiest
         # workaround is to reload the whole instance.
