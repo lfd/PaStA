@@ -151,14 +151,13 @@ def analyse(config, prog, argv):
         cluster.to_file(f_cluster)
 
     if mbox:
-        mbox_time_window = config.mbox_mindate, config.mbox_maxdate
         log.info('Regarding mails in time window %s--%s' %
-                 (format_date_ymd(mbox_time_window[0]),
-                  format_date_ymd(mbox_time_window[1])))
+                 (format_date_ymd(config.mbox_mindate),
+                  format_date_ymd(config.mbox_maxdate)))
         # load mbox ccache very early, because we need it in any case if it
         # exists.
         config.load_ccache_mbox()
-        victims = repo.mbox.message_ids(mbox_time_window)
+        victims = repo.mbox.message_ids(config.mbox_time_window)
 
         # we have to temporarily cache those commits to filter out invalid
         # emails. Commit cache is already loaded, so evict everything except
@@ -169,7 +168,7 @@ def analyse(config, prog, argv):
         # we might have loaded invalid emails, so reload the victim list once
         # more. This time, include all patches from the pre-existing (partial)
         # result, and check if all patches are reachable
-        victims = repo.mbox.message_ids(mbox_time_window) | \
+        victims = repo.mbox.message_ids(config.mbox_time_window) | \
                   cluster.get_downstream()
 
         # in case of an mbox analysis, we will definitely need all untagged

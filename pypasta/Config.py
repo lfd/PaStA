@@ -198,6 +198,7 @@ class Config:
             # mailbox parameters
             self.mbox_mindate = parse_date_ymd(mbox['MINDATE'])
             self.mbox_maxdate = parse_date_ymd(mbox['MAXDATE'])
+            self.mbox_time_window = self.mbox_mindate, self.mbox_maxdate
 
             self.mbox_raw = list()
             for listname, f_mbox_raw in mbox_raw.items():
