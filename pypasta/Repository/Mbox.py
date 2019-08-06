@@ -34,8 +34,7 @@ ANNOTATION_REGEX = re.compile(r'^---\s*$')
 
 
 class PatchMail(MessageDiff):
-    def __init__(self, mail):
-        identifier = mail['Message-ID']
+    def __init__(self, mail, identifier):
         self.mail_subject = mail['Subject']
 
         # Get informations on the author
@@ -408,7 +407,7 @@ class Mbox:
 
         for message in messages:
             try:
-                patch = PatchMail(message)
+                patch = PatchMail(message, message_id)
                 return patch
             except Exception as e:
                 exception = e
