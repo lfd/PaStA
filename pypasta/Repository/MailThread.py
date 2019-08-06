@@ -135,8 +135,12 @@ class MailThread:
 
     def pretty_print(self, thread):
         for pre, fill, node in RenderTree(thread):
-            message = self.mbox.get_messages(node.name)[0]
-            print("%.20s\t\t%s%s" % (message['From'], pre, node.name))
+            if node.name in self.mbox:
+                message = self.mbox.get_messages(node.name)[0]
+                print('%.20s\t\t%s%s' % (message['From'], pre, node.name))
+            else: # We may have a virtual email
+                print('%.20s\t\t %s' % ('VIRTUAL EMAIL', node.name))
+
 
     def get_parent(self, message_id, visited):
         # visited tracks visited mails, used to eliminate cycles
@@ -154,9 +158,20 @@ class MailThread:
         if not references:
             return message_id
 
+        virtual_parents = set()
         for reference in references:
-            if reference in self.mbox and reference not in visited:
+            if reference in visited:
+                continue
+            if reference in self.mbox:
                 return self.get_parent(reference, visited)
+            else:
+                virtual_parents.add(reference)
+
+        # We may have more than one virtual parent, but deterministically
+        # return the first one.
+        if len(virtual_parents) > 1:
+            return sorted(virtual_parents)[0]
+
         return message_id
 
     def get_thread(self, message_id):
