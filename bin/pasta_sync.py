@@ -68,7 +68,7 @@ def sync(config, prog, argv):
     repo = config.repo
     is_mbox = config.mode == Config.Mode.MBOX
 
-    if is_mbox:
+    if is_mbox and (args.create in ['downstream', 'all'] or args.mbox):
         repo.register_mbox(config)
 
     # Update upstream
