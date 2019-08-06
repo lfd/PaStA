@@ -65,14 +65,6 @@ class Thresholds:
         self.author_date_interval = author_date_interval
 
 
-class PygitCredentials(pygit2.RemoteCallbacks):
-    def credentials(self, url, username_from_url, allowed_types):
-        if allowed_types & pygit2.credentials.GIT_CREDTYPE_SSH_KEY:
-            return pygit2.KeypairFromAgent(username_from_url)
-        else:
-            return None
-
-
 def merge_dicts(default_cfg, cfg):
     for key in default_cfg.keys():
         if key not in cfg:
