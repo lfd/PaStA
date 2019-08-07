@@ -20,7 +20,7 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
 from pypasta.LinuxMaintainers import LinuxMaintainers
-from pypasta.LinuxPatchCharacteristics import LinuxPatchCharacteristics
+from pypasta.LinuxMailCharacteristics import LinuxMailCharacteristics
 
 log = getLogger(__name__[-15:])
 
@@ -141,17 +141,30 @@ def get_ignored(repo, clustering):
     # Example: Look at the thread of
     #     <20190408072929.952A1441D3B@finisterre.ee.mobilebroadband>
 
+    population_all_patches = 0
     population_not_accepted = 0
     population_accepted = 0
     not_upstreamed_patches = list()
+
+    skipped_bot = 0
+    skipped_stable = 0
+    skipped_not_linux = 0
 
     for downstream, upstream in clustering.iter_split():
         # Dive into downstream, and check the above-mentioned criteria
         relevant = set()
         for d in downstream:
+            population_all_patches += 1
             patch = repo[d]
-            characteristics = LinuxPatchCharacteristics(repo, d)
-            if characteristics.is_from_bot or characteristics.is_stable_review:
+            characteristics = LinuxMailCharacteristics(repo, d)
+            if characteristics.is_from_bot:
+                skipped_bot += 1
+                continue
+            if characteristics.is_stable_review:
+                skipped_stable += 1
+                continue
+            if not characteristics.patches_linux:
+                skipped_not_linux += 1
                 continue
 
             thread = repo.mbox.threads.get_thread(d)
@@ -192,6 +205,11 @@ def get_ignored(repo, clustering):
 
     ignored_patches = [x[0] for x in is_ignored.items() if x[1] == True]
     num_ignored_patches = len(ignored_patches)
+    log.info('All patches: %u' % population_all_patches)
+    log.info('Skipped patches:')
+    log.info('  Bot: %u' % skipped_bot)
+    log.info('  Stable: %u' % skipped_stable)
+    log.info('  Not Linux: %u' % skipped_not_linux)
     log.info('Not accepted patches: %u' % population_not_accepted)
     log.info('Accepted patches: %u' % population_accepted)
     log.info('Found %u ignored patches' % num_ignored_patches)
