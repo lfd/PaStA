@@ -13,8 +13,6 @@ the COPYING file in the top-level directory.
 import os
 import pickle
 import re
-import subprocess
-
 
 from anytree import LevelOrderIter
 from logging import getLogger
@@ -22,6 +20,7 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
 from pypasta.LinuxMaintainers import LinuxMaintainers
+from pypasta.LinuxPatchCharacteristics import LinuxPatchCharacteristics
 
 log = getLogger(__name__[-15:])
 
@@ -121,38 +120,6 @@ def get_authors_in_thread(repo, thread):
 
     return authors
 
-def patch_is_from_bot(patch):
-    author_email = patch.author.email
-
-    if author_email == 'tipbot@zytor.com':
-        return True
-
-    return False
-
-REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL)
-def patch_is_stable_review(repo, patch):
-    # The patch needs to be sent to the stable list
-    if 'stable' not in repo.mbox.get_lists(patch.identifier):
-        return False
-
-    message_flattened = '\n'.join(patch.message).lower()
-
-    if 'review patch' in message_flattened:
-        return True
-
-    if 'upstream commit' in message_flattened:
-        print(patch.identifier)
-        return True
-
-    # Greg uses this if the patch doesn't apply to a stable tree
-    if 'the patch below does not apply to the' in message_flattened:
-        return True
-
-    if REGEX_COMMIT_UPSTREAM.match(message_flattened):
-        return True
-
-    return False
-
 
 def get_ignored(repo, clustering):
     # First, we have to define the term patch. In this analysis, we must only
@@ -183,10 +150,8 @@ def get_ignored(repo, clustering):
         relevant = set()
         for d in downstream:
             patch = repo[d]
-            if patch_is_from_bot(patch):
-                continue
-
-            if patch_is_stable_review(repo, patch):
+            characteristics = LinuxPatchCharacteristics(repo, d)
+            if characteristics.is_from_bot or characteristics.is_stable_review:
                 continue
 
             thread = repo.mbox.threads.get_thread(d)
