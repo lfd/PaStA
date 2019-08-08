@@ -149,47 +149,49 @@ def get_ignored(repo, clustering):
     skipped_bot = 0
     skipped_stable = 0
     skipped_not_linux = 0
+    skipped_not_first_patch = 0
 
     for downstream, upstream in clustering.iter_split():
         # Dive into downstream, and check the above-mentioned criteria
         relevant = set()
         for d in downstream:
+            skip = False
             population_all_patches += 1
-            patch = repo[d]
+
+            if len(upstream):
+                population_accepted += 1
+            else:
+                population_not_accepted += 1
+
             characteristics = LinuxMailCharacteristics(repo, d)
             if characteristics.is_from_bot:
                 skipped_bot += 1
-                continue
+                skip = True
             if characteristics.is_stable_review:
                 skipped_stable += 1
-                continue
+                skip = True
             if not characteristics.patches_linux:
                 skipped_not_linux += 1
+                skip = True
+            if not characteristics.is_first_patch_in_thread:
+                skipped_not_first_patch += 1
+                skip = True
+
+            if skip:
                 continue
 
-            thread = repo.mbox.threads.get_thread(d)
-
-            if thread.name == d or \
-               d in [x.name for x in thread.children]:
-                relevant.add(d)
+            relevant.add(d)
 
         # Nothing left? Skip the cluster.
         if len(relevant) == 0:
             continue
 
-        # For the statistics, we'd like to know how many patches fall in this
-        # category. Even if they were accepted. No need to continue if the patch
-        # was accepted, as it is obvious that it was not ignored. Still, do the
-        # housekeeping.
         if len(upstream):
-            population_accepted += len(relevant)
             continue
 
-        population_not_accepted += len(relevant)
         not_upstreamed_patches.append(relevant)
 
     # If a patch was ignored, only the author will appear
-    not_ignored = set()
     global _repo
     _repo = repo
 
@@ -210,6 +212,7 @@ def get_ignored(repo, clustering):
     log.info('  Bot: %u' % skipped_bot)
     log.info('  Stable: %u' % skipped_stable)
     log.info('  Not Linux: %u' % skipped_not_linux)
+    log.info('  Not first patch in series: %u' % skipped_not_first_patch)
     log.info('Not accepted patches: %u' % population_not_accepted)
     log.info('Accepted patches: %u' % population_accepted)
     log.info('Found %u ignored patches' % num_ignored_patches)
