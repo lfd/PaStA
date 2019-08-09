@@ -18,6 +18,7 @@ from functools import partial
 from logging import getLogger
 from multiprocessing import cpu_count, Pool
 from time import sleep
+from tqdm import tqdm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from pypasta import *
@@ -111,6 +112,10 @@ def analyse(config, prog, argv):
                         default=1.0, help='CPU factor for parallelisation '
                                           '(default: %(default)s)')
 
+    parser.add_argument('-linux', dest='linux', action='store_true',
+                        default=False,
+                        help='Make a Linux kernel specific analysis')
+
     # choose analysis mode
     parser.add_argument('mode', default='succ',
                         choices=['succ', 'rep', 'upstream'],
@@ -187,6 +192,19 @@ def analyse(config, prog, argv):
                 cluster.remove_element(miss)
             cluster.optimize()
             victims = available
+
+        if args.linux:
+            log.info('Searching for non-Linux patches...')
+            repo.mbox.load_threads()
+            characteristic = load_linux_mail_characteristics(repo, victims)
+            linux_patches= {victim for victim in victims if
+                            characteristic[victim].patches_linux}
+            log.info('Will consider only %u/%u patches (%0.3f%%) as Linux'
+                     'patches' % (len(linux_patches), len(victims),
+                     len(linux_patches) * 100.0 / len(victims)))
+            victims = linux_patches
+            repo.cache_evict_except(victims)
+
         log.info('Cached %d relevant mails' % len(available))
     else:
         victims = config.psd.commits_on_stacks

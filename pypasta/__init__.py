@@ -26,3 +26,5 @@ from .Util import format_date_ymd, load_commit_hashes, get_date_selector,\
     getch, show_commit, show_commits, parse_date_ymd, get_first_upstream
 from .PatchDynamics import PatchFlow, PatchComposition
 from .Export import Export
+from .LinuxMailCharacteristics import LinuxMailCharacteristics,\
+    load_linux_mail_characteristics
