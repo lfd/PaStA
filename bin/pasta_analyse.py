@@ -162,6 +162,8 @@ def analyse(config, prog, argv):
         # load mbox ccache very early, because we need it in any case if it
         # exists.
         config.load_ccache_mbox()
+
+    if mbox and mode == 'rep':
         victims = repo.mbox.message_ids(config.mbox_time_window)
 
         # we have to temporarily cache those commits to filter out invalid
@@ -206,10 +208,10 @@ def analyse(config, prog, argv):
             repo.cache_evict_except(victims)
 
         log.info('Cached %d relevant mails' % len(available))
-    else:
+        fill_result(victims, False)
+    elif mode == 'succ':
         victims = config.psd.commits_on_stacks
-
-    fill_result(victims, False)
+        fill_result(victims, False)
 
     cherries = EvaluationResult()
     if mode == 'succ':
