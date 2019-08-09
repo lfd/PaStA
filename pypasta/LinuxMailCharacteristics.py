@@ -12,6 +12,11 @@ the COPYING file in the top-level directory.
 
 import re
 
+from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
+
+_repo = None
+
 
 class LinuxMailCharacteristics:
     REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
@@ -157,3 +162,25 @@ class LinuxMailCharacteristics:
         self.is_from_bot = self._is_from_bot(message)
 
         self._analyse_series(repo, message_id, message)
+
+
+def _load_mail_characteristic(message_id):
+    return message_id, LinuxMailCharacteristics(_repo, message_id)
+
+
+def load_linux_mail_characteristics(repo, message_ids):
+    ret = dict()
+
+    global _repo
+    _repo = repo
+    p = Pool(processes=cpu_count())
+    for message_id, characteristics in \
+        tqdm(p.imap_unordered(_load_mail_characteristic, message_ids),
+                              total=len(message_ids),
+                              desc='Linux Mail Characteristics'):
+        ret[message_id] = characteristics
+    p.close()
+    p.join()
+    _repo = None
+
+    return ret
