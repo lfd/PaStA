@@ -142,9 +142,9 @@ def get_ignored(repo, mail_characteristics, clustering):
     # Example: Look at the thread of
     #     <20190408072929.952A1441D3B@finisterre.ee.mobilebroadband>
 
-    population_all_patches = 0
-    population_not_accepted = 0
-    population_accepted = 0
+    population_all_patches = set()
+    population_not_accepted = set()
+    population_accepted = set()
     not_upstreamed_patches = list()
 
     skipped_bot = 0
@@ -157,12 +157,12 @@ def get_ignored(repo, mail_characteristics, clustering):
         relevant = set()
         for d in downstream:
             skip = False
-            population_all_patches += 1
+            population_all_patches.add(d)
 
             if len(upstream):
-                population_accepted += 1
+                population_accepted.add(d)
             else:
-                population_not_accepted += 1
+                population_not_accepted.add(d)
 
             characteristics = mail_characteristics[d]
             if characteristics.is_from_bot:
@@ -192,34 +192,48 @@ def get_ignored(repo, mail_characteristics, clustering):
 
         not_upstreamed_patches.append(relevant)
 
-    # If a patch was ignored, only the author will appear
+    # For all patches of the population, check if they were ignored
     global _repo
     _repo = repo
 
     p = Pool(cpu_count())
-    not_upstreamed_patches_flattened = {x for cluster in not_upstreamed_patches for x in cluster}
-    is_ignored = p.map(is_single_patch_ignored, tqdm(not_upstreamed_patches_flattened))
+    population_ignored = dict(p.map(is_single_patch_ignored, tqdm(population_all_patches)))
     p.close()
     p.join()
     _repo = None
 
-    # ignored_patches will be a dictionary key: patch value: is_ignored
-    is_ignored = dict(is_ignored)
+    not_upstreamed_patches_flattened = {x for cluster in not_upstreamed_patches for x in cluster}
 
-    ignored_patches = [x[0] for x in is_ignored.items() if x[1] == True]
+    # Calculate ignored patches
+    ignored_patches = {patch for (patch, is_ignored) in population_ignored.items()
+                       if patch in not_upstreamed_patches_flattened and
+                          is_ignored == True}
+
+    # Calculate ignored patches wrt to other patches in the cluster: A patch is
+    # considered as ignored, if all related patches were ignoreed as well
+    ignored_patches_related = {patch for (patch, is_ignored) in
+            population_ignored.items()
+                               if patch in not_upstreamed_patches_flattened and
+                                  False not in [population_ignored[x] for x in clustering.get_downstream(patch)]}
+
     num_ignored_patches = len(ignored_patches)
-    log.info('All patches: %u' % population_all_patches)
+    num_ignored_patches_related = len(ignored_patches_related)
+    log.info('All patches: %u' % len(population_all_patches))
     log.info('Skipped patches:')
     log.info('  Bot: %u' % skipped_bot)
     log.info('  Stable: %u' % skipped_stable)
     log.info('  Not Linux: %u' % skipped_not_linux)
     log.info('  Not first patch in series: %u' % skipped_not_first_patch)
-    log.info('Not accepted patches: %u' % population_not_accepted)
-    log.info('Accepted patches: %u' % population_accepted)
+    log.info('Not accepted patches: %u' % len(population_not_accepted))
+    log.info('Accepted patches: %u' % len(population_accepted))
     log.info('Found %u ignored patches' % num_ignored_patches)
-    log.info('Fraction of ignored patched: %0.3f' %
+    log.info('Fraction of ignored patches: %0.3f' %
              (num_ignored_patches /
-              (population_accepted + population_not_accepted)))
+              (len(population_accepted) + len(population_not_accepted))))
+    log.info('Found %u ignored patches (related)' % num_ignored_patches_related)
+    log.info('Fraction of ignored related patches: %0.3f' %
+            (num_ignored_patches_related /
+             (len(population_accepted) + len(population_not_accepted))))
 
     return ignored_patches
 
