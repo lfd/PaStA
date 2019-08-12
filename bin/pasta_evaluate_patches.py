@@ -426,13 +426,50 @@ def load_pkl_or_execute(filename, command):
     return ret
 
 
+def get_patch_origin(repo, characteristics, messages):
+    # Some primitive statistics. Where do non-linux patches come from?
+    linux_patches = set()
+    non_linux_patches = set()
+
+    for patch in messages - repo.mbox.invalid:
+        characteristic = characteristics[patch]
+        if characteristic.patches_linux:
+            linux_patches.add(patch)
+        else:
+            non_linux_patches.add(patch)
+
+    log.info('%0.3f%% of all patches patch Linux' %
+             (len(linux_patches) / (len(linux_patches) + len(non_linux_patches))))
+
+    def count_lists(patches):
+        # Get the lists where those patches come from
+        patch_origin_count = dict()
+        for patch in patches:
+            lists = repo.mbox.get_lists(patch)
+
+            for list in lists:
+                if list not in patch_origin_count:
+                    patch_origin_count[list] = 0
+                patch_origin_count[list] += 1
+
+        patch_origin_count = sorted(patch_origin_count.items(), key=lambda x: x[1])
+        for listname, count in patch_origin_count:
+            log.info('List: %s\t\t%u' % (listname, count))
+
+    log.info('High freq lists of Linux-only patches')
+    count_lists(linux_patches)
+    log.info('High freq lists of non-Linux patches')
+    count_lists(non_linux_patches)
+    log.info('High freq lists (all emails)')
+    count_lists(messages)
+
+
 def evaluate_patches(config, prog, argv):
     global _stats
 
     if config.mode != config.Mode.MBOX:
         log.error('Only works in Mbox mode!')
         return -1
-
 
     repo = config.repo
     _, clustering = config.load_cluster()
@@ -459,7 +496,13 @@ def evaluate_patches(config, prog, argv):
         patches |= d
         upstream |= u
 
-    mail_characteristics = load_linux_mail_characteristics(repo, patches)
+    all_messages_in_time_window = repo.mbox.message_ids(config.mbox_time_window,
+                                                        allow_invalid=True)
+    characteristics = load_linux_mail_characteristics(repo,
+                                                      all_messages_in_time_window)
+
+    get_patch_origin(repo, characteristics, all_messages_in_time_window)
+
 
     """
     log.info('Assigning patches to tags...')
@@ -514,7 +557,7 @@ def evaluate_patches(config, prog, argv):
 
     log.info('Identify ignored patches...')
     d_resources = './resources/linux/resources/'
-    ignored_patches = get_ignored(repo, mail_characteristics, clustering)
+    ignored_patches = get_ignored(repo, characteristics, clustering)
     with open(os.path.join(d_resources, 'ignored_patches'), 'w') as f:
         f.write('\n'.join(sorted(ignored_patches)) + '\n')
     quit()
