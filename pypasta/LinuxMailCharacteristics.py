@@ -137,7 +137,8 @@ class LinuxMailCharacteristics:
             if message_id == thread.name or \
                message_id in [x.name for x in thread.children]:
                 self.is_first_patch_in_thread = True
-        elif LinuxMailCharacteristics.REGEX_COVER.match(message['Subject']):
+        elif 'Subject' in message and \
+             LinuxMailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
             self.is_cover_letter = True
 
     def __init__(self, repo, message_id):
