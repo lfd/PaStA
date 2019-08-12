@@ -20,7 +20,8 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
 from pypasta.LinuxMaintainers import LinuxMaintainers
-from pypasta.LinuxMailCharacteristics import LinuxMailCharacteristics
+from pypasta.LinuxMailCharacteristics import LinuxMailCharacteristics, \
+    load_linux_mail_characteristics
 
 log = getLogger(__name__[-15:])
 
@@ -121,7 +122,7 @@ def get_authors_in_thread(repo, thread):
     return authors
 
 
-def get_ignored(repo, clustering):
+def get_ignored(repo, mail_characteristics, clustering):
     # First, we have to define the term patch. In this analysis, we must only
     # regard patches that either fulfil rule 1 or 2:
     #
@@ -163,7 +164,7 @@ def get_ignored(repo, clustering):
             else:
                 population_not_accepted += 1
 
-            characteristics = LinuxMailCharacteristics(repo, d)
+            characteristics = mail_characteristics[d]
             if characteristics.is_from_bot:
                 skipped_bot += 1
                 skip = True
@@ -458,6 +459,8 @@ def evaluate_patches(config, prog, argv):
         patches |= d
         upstream |= u
 
+    mail_characteristics = load_linux_mail_characteristics(repo, patches)
+
     """
     log.info('Assigning patches to tags...')
     # Only respect mainline versions. No stable versions like v4.2.3
@@ -511,7 +514,7 @@ def evaluate_patches(config, prog, argv):
 
     log.info('Identify ignored patches...')
     d_resources = './resources/linux/resources/'
-    ignored_patches = get_ignored(repo, clustering)
+    ignored_patches = get_ignored(repo, mail_characteristics, clustering)
     with open(os.path.join(d_resources, 'ignored_patches'), 'w') as f:
         f.write('\n'.join(sorted(ignored_patches)) + '\n')
     quit()
