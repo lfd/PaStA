@@ -30,6 +30,8 @@ _config = None
 _p = None
 _stats = False
 
+d_resources = './resources/linux/resources/'
+
 MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
 
 
@@ -145,7 +147,8 @@ def get_ignored(repo, mail_characteristics, clustering):
     population_all_patches = set()
     population_not_accepted = set()
     population_accepted = set()
-    not_upstreamed_patches = list()
+    not_upstreamed_patches = set()
+    upstreamed_patches = set()
 
     skipped_bot = 0
     skipped_stable = 0
@@ -188,9 +191,9 @@ def get_ignored(repo, mail_characteristics, clustering):
             continue
 
         if len(upstream):
-            continue
-
-        not_upstreamed_patches.append(relevant)
+            upstreamed_patches |= relevant
+        else:
+            not_upstreamed_patches |= relevant
 
     # For all patches of the population, check if they were ignored
     global _repo
@@ -202,26 +205,36 @@ def get_ignored(repo, mail_characteristics, clustering):
     p.join()
     _repo = None
 
-    not_upstreamed_patches_flattened = {x for cluster in not_upstreamed_patches for x in cluster}
+    population_relevant = upstreamed_patches | not_upstreamed_patches
 
     # Calculate ignored patches
     ignored_patches = {patch for (patch, is_ignored) in population_ignored.items()
-                       if patch in not_upstreamed_patches_flattened and
+                       if patch in not_upstreamed_patches and
                           is_ignored == True}
 
     # Calculate ignored patches wrt to other patches in the cluster: A patch is
     # considered as ignored, if all related patches were ignoreed as well
     ignored_patches_related = {patch for (patch, is_ignored) in
             population_ignored.items()
-                               if patch in not_upstreamed_patches_flattened and
+                               if patch in not_upstreamed_patches and
                                   False not in [population_ignored[x] for x in clustering.get_downstream(patch)]}
+
+    # Create a dictionary list-name -> number of overall patches. We can use it
+    # to calculate a per-list fraction of ignored patches
+    num_patches_on_list = dict()
+    for patch in population_relevant:
+        lists = repo.mbox.get_lists(patch)
+        for mlist in lists:
+            if mlist not in num_patches_on_list:
+                num_patches_on_list[mlist] = 0
+            num_patches_on_list[mlist] += 1
 
     num_ignored_patches = len(ignored_patches)
     num_ignored_patches_related = len(ignored_patches_related)
 
     num_population_accepted = len(population_accepted)
     num_population_not_accepted = len(population_not_accepted)
-    num_population_relevant = num_population_accepted + num_population_not_accepted
+    num_population_relevant = len(population_relevant)
 
     log.info('All patches: %u' % len(population_all_patches))
     log.info('Skipped patches:')
@@ -231,6 +244,7 @@ def get_ignored(repo, mail_characteristics, clustering):
     log.info('  Not first patch in series: %u' % skipped_not_first_patch)
     log.info('Not accepted patches: %u' % num_population_not_accepted)
     log.info('Accepted patches: %u' % num_population_accepted)
+    log.info('Num relevant patches: %u' % num_population_relevant)
     log.info('Found %u ignored patches' % num_ignored_patches)
     log.info('Fraction of ignored patches: %0.3f' %
              (num_ignored_patches / num_population_relevant))
@@ -238,11 +252,29 @@ def get_ignored(repo, mail_characteristics, clustering):
     log.info('Fraction of ignored related patches: %0.3f' %
             (num_ignored_patches_related / num_population_relevant))
 
-    count_lists(repo, ignored_patches, 'Highscore lists / ignored patches')
-    count_lists(repo, ignored_patches_related,
-                'Highscore lists / ignored patches (related)')
+    hs_ignored  = count_lists(repo, ignored_patches, 'Highscore lists / ignored patches')
+    hs_ignored_rel = count_lists(repo, ignored_patches_related,
+                                 'Highscore lists / ignored patches (related)')
 
-    return ignored_patches, ignored_patches_related
+    def highscore_fraction(highscore, description):
+        result = dict()
+        for mlist, count in highscore.items():
+            result[mlist] = count / num_patches_on_list[mlist]
+
+        print(description)
+        for mlist, fraction in sorted(result.items(), key = lambda x: x[1]):
+            print('  List %s: %0.3f' % (mlist, fraction))
+
+    highscore_fraction(hs_ignored, 'Highscore fraction ignored patches')
+    highscore_fraction(hs_ignored_rel,
+                       'Highscore fraction ignored patches (related)')
+
+    dump_messages(os.path.join(d_resources, 'ignored_patches'), repo,
+                  ignored_patches)
+    dump_messages(os.path.join(d_resources, 'ignored_patches_related'), repo,
+                  ignored_patches_related)
+    dump_messages(os.path.join(d_resources, 'base'), repo, population_relevant)
+
 
 
 def check_wrong_maintainer_patch(patch):
@@ -459,12 +491,14 @@ def count_lists(repo, patches, description, minimum=50):
                 patch_origin_count[list] = 0
             patch_origin_count[list] += 1
 
-    patch_origin_count = sorted(patch_origin_count.items(), key=lambda x: x[1])
-    for listname, count in patch_origin_count:
+    for listname, count in sorted(patch_origin_count.items(),
+                                  key=lambda x: x[1]):
         if count < minimum:
             continue
 
         log.info('  List: %s\t\t%u' % (listname, count))
+
+    return patch_origin_count
 
 
 def get_patch_origin(repo, characteristics, messages):
@@ -487,9 +521,10 @@ def get_patch_origin(repo, characteristics, messages):
     count_lists(repo, messages, 'High freq lists (all emails)')
 
 
-def dump_sorted(filename, data):
+def dump_messages(filename, repo, messages):
     with open(filename, 'w') as f:
-        f.write('\n'.join(sorted(data)) + '\n')
+        for message in sorted(messages):
+            f.write('%s\t\t\t%s\n' % (message , ' '.join(sorted(repo.mbox.get_lists(message)))))
 
 
 def evaluate_patches(config, prog, argv):
@@ -584,14 +619,7 @@ def evaluate_patches(config, prog, argv):
     """
 
     log.info('Identify ignored patches...')
-    d_resources = './resources/linux/resources/'
-    ignored_patches, ignored_patches_related = \
-        get_ignored(repo, characteristics, clustering)
-
-    dump_sorted(os.path.join(d_resources, 'ignored_patches'), ignored_patches)
-    dump_sorted(os.path.join(d_resources, 'ignored_patches_related'),
-                ignored_patches_related)
-
+    get_ignored(repo, characteristics, clustering)
     quit()
     """
     if 'no-ignored' in argv:
