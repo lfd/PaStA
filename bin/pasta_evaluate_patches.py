@@ -238,7 +238,11 @@ def get_ignored(repo, mail_characteristics, clustering):
     log.info('Fraction of ignored related patches: %0.3f' %
             (num_ignored_patches_related / num_population_relevant))
 
-    return ignored_patches
+    count_lists(repo, ignored_patches, 'Highscore lists / ignored patches')
+    count_lists(repo, ignored_patches_related,
+                'Highscore lists / ignored patches (related)')
+
+    return ignored_patches, ignored_patches_related
 
 
 def check_wrong_maintainer_patch(patch):
@@ -443,7 +447,7 @@ def load_pkl_or_execute(filename, command):
     return ret
 
 
-def count_lists(repo, patches, description):
+def count_lists(repo, patches, description, minimum=50):
     log.info(description)
     # Get the lists where those patches come from
     patch_origin_count = dict()
@@ -457,7 +461,10 @@ def count_lists(repo, patches, description):
 
     patch_origin_count = sorted(patch_origin_count.items(), key=lambda x: x[1])
     for listname, count in patch_origin_count:
-        log.info('List: %s\t\t%u' % (listname, count))
+        if count < minimum:
+            continue
+
+        log.info('  List: %s\t\t%u' % (listname, count))
 
 
 def get_patch_origin(repo, characteristics, messages):
@@ -478,6 +485,11 @@ def get_patch_origin(repo, characteristics, messages):
     count_lists(repo, linux_patches, 'High freq lists of Linux-only patches')
     count_lists(repo, non_linux_patches, 'High freq lists of non-Linux patches')
     count_lists(repo, messages, 'High freq lists (all emails)')
+
+
+def dump_sorted(filename, data):
+    with open(filename, 'w') as f:
+        f.write('\n'.join(sorted(data)) + '\n')
 
 
 def evaluate_patches(config, prog, argv):
@@ -573,9 +585,13 @@ def evaluate_patches(config, prog, argv):
 
     log.info('Identify ignored patches...')
     d_resources = './resources/linux/resources/'
-    ignored_patches = get_ignored(repo, characteristics, clustering)
-    with open(os.path.join(d_resources, 'ignored_patches'), 'w') as f:
-        f.write('\n'.join(sorted(ignored_patches)) + '\n')
+    ignored_patches, ignored_patches_related = \
+        get_ignored(repo, characteristics, clustering)
+
+    dump_sorted(os.path.join(d_resources, 'ignored_patches'), ignored_patches)
+    dump_sorted(os.path.join(d_resources, 'ignored_patches_related'),
+                ignored_patches_related)
+
     quit()
     """
     if 'no-ignored' in argv:
