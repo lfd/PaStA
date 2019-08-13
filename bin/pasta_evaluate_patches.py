@@ -218,22 +218,25 @@ def get_ignored(repo, mail_characteristics, clustering):
 
     num_ignored_patches = len(ignored_patches)
     num_ignored_patches_related = len(ignored_patches_related)
+
+    num_population_accepted = len(population_accepted)
+    num_population_not_accepted = len(population_not_accepted)
+    num_population_relevant = num_population_accepted + num_population_not_accepted
+
     log.info('All patches: %u' % len(population_all_patches))
     log.info('Skipped patches:')
     log.info('  Bot: %u' % skipped_bot)
     log.info('  Stable: %u' % skipped_stable)
     log.info('  Not Linux: %u' % skipped_not_linux)
     log.info('  Not first patch in series: %u' % skipped_not_first_patch)
-    log.info('Not accepted patches: %u' % len(population_not_accepted))
-    log.info('Accepted patches: %u' % len(population_accepted))
+    log.info('Not accepted patches: %u' % num_population_not_accepted)
+    log.info('Accepted patches: %u' % num_population_accepted)
     log.info('Found %u ignored patches' % num_ignored_patches)
     log.info('Fraction of ignored patches: %0.3f' %
-             (num_ignored_patches /
-              (len(population_accepted) + len(population_not_accepted))))
+             (num_ignored_patches / num_population_relevant))
     log.info('Found %u ignored patches (related)' % num_ignored_patches_related)
     log.info('Fraction of ignored related patches: %0.3f' %
-            (num_ignored_patches_related /
-             (len(population_accepted) + len(population_not_accepted))))
+            (num_ignored_patches_related / num_population_relevant))
 
     return ignored_patches
 
