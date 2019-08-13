@@ -440,6 +440,23 @@ def load_pkl_or_execute(filename, command):
     return ret
 
 
+def count_lists(repo, patches, description):
+    log.info(description)
+    # Get the lists where those patches come from
+    patch_origin_count = dict()
+    for patch in patches:
+        lists = repo.mbox.get_lists(patch)
+
+        for list in lists:
+            if list not in patch_origin_count:
+                patch_origin_count[list] = 0
+            patch_origin_count[list] += 1
+
+    patch_origin_count = sorted(patch_origin_count.items(), key=lambda x: x[1])
+    for listname, count in patch_origin_count:
+        log.info('List: %s\t\t%u' % (listname, count))
+
+
 def get_patch_origin(repo, characteristics, messages):
     # Some primitive statistics. Where do non-linux patches come from?
     linux_patches = set()
@@ -455,27 +472,9 @@ def get_patch_origin(repo, characteristics, messages):
     log.info('%0.3f%% of all patches patch Linux' %
              (len(linux_patches) / (len(linux_patches) + len(non_linux_patches))))
 
-    def count_lists(patches):
-        # Get the lists where those patches come from
-        patch_origin_count = dict()
-        for patch in patches:
-            lists = repo.mbox.get_lists(patch)
-
-            for list in lists:
-                if list not in patch_origin_count:
-                    patch_origin_count[list] = 0
-                patch_origin_count[list] += 1
-
-        patch_origin_count = sorted(patch_origin_count.items(), key=lambda x: x[1])
-        for listname, count in patch_origin_count:
-            log.info('List: %s\t\t%u' % (listname, count))
-
-    log.info('High freq lists of Linux-only patches')
-    count_lists(linux_patches)
-    log.info('High freq lists of non-Linux patches')
-    count_lists(non_linux_patches)
-    log.info('High freq lists (all emails)')
-    count_lists(messages)
+    count_lists(repo, linux_patches, 'High freq lists of Linux-only patches')
+    count_lists(repo, non_linux_patches, 'High freq lists of non-Linux patches')
+    count_lists(repo, messages, 'High freq lists (all emails)')
 
 
 def evaluate_patches(config, prog, argv):
