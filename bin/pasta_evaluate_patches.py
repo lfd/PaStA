@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2. See
 the COPYING file in the top-level directory.
 """
 
+import email
 import os
 import pickle
 import re
@@ -28,7 +29,6 @@ log = getLogger(__name__[-15:])
 _repo = None
 _config = None
 _p = None
-_stats = False
 
 d_resources = './resources/linux/resources/'
 
@@ -276,23 +276,19 @@ def get_ignored(repo, mail_characteristics, clustering):
     dump_messages(os.path.join(d_resources, 'base'), repo, population_relevant)
 
 
+def get_recipients(message):
+    recipients = message.get_all('To') + message.get_all('Cc')
+    recipients = {x[1] for x in email.utils.getaddresses(recipients)}
 
-def check_wrong_maintainer_patch(patch):
-    global subsystems
-    msgs = _repo.mbox.get_messages(patch)
-    if not msgs:
-        return False
-    msg = msgs[0]
-    if not msg:
-        return False
+    return recipients
 
-    to = msg['To'] if msg['To'] else ''
-    cc = msg['Cc'] if msg['Cc'] else ''
 
-    recipients = (to + cc).split(',')
-    recipients_clean = []
-    for recipient in recipients:
-        recipients_clean.append(recipient.replace('\n', '').replace(' ', ''))
+def check_wrong_maintainer_patch(repo, maintainer, message_id):
+    message = repo.mbox.get_messages(message_id)[0]
+    patch = repo[message_id]
+
+    recipients = get_recipients(message)
+    subsystems = maintainer.get_subsystems_by_files(patch.diff.affected)
 
     subsystem = subsystems[patch]
     if subsystem is None:
@@ -316,15 +312,30 @@ def check_wrong_maintainer_patch(patch):
     return patch, None
 
 
-def check_wrong_maintainer():
-    global patches
-    global subsystems
+def patch_get_version(patches_by_version, patch):
+    for version, patches in patches_by_version.items():
+        if patch in patches:
+            return version
+    return None
 
-    if subsystems is None:
-        log.warning("Can not check for maintainers, subsystem analysis did not run")
 
-    p = get_pool()
-    return_value = p.map(check_wrong_maintainer_patch, tqdm(patches))
+def check_wrong_maintainer(repo, maintainers_version, patches_by_version,
+                           patches):
+    #global _repo
+    #_repo = repo
+    #p = get_pool()
+    ##return_value = p.map(_check_wrong_maintainer_patch, tqdm(patches))
+    #return_value = list(map(_check_wrong_maintainer_patch, tqdm(patches)))
+    #p.close()
+    #p.join()
+    #_repo = None
+
+    for patch in patches:
+        version = patch_get_version(patches_by_version, patch)
+        maintainer = maintainers_version[version]
+        result = check_wrong_maintainer_patch(repo, maintainer, patch)
+
+
 
     min = set()
     max = set()
@@ -528,8 +539,6 @@ def dump_messages(filename, repo, messages):
 
 
 def evaluate_patches(config, prog, argv):
-    global _stats
-
     if config.mode != config.Mode.MBOX:
         log.error('Only works in Mbox mode!')
         return -1
@@ -541,18 +550,6 @@ def evaluate_patches(config, prog, argv):
     config.load_ccache_mbox()
     repo.mbox.load_threads()
 
-    if 'stats' in argv:
-        _stats = True
-
-    global patches_by_version
-    global subsystems
-    global ignored_patches
-    global wrong_maintainer
-    global process_mails
-    global upstream
-    global patches
-
-    log.info('Loading relevant patches...')
     patches = set()
     upstream = set()
     for d, u in clustering.iter_split():
@@ -567,7 +564,6 @@ def evaluate_patches(config, prog, argv):
     get_patch_origin(repo, characteristics, all_messages_in_time_window)
 
 
-    """
     log.info('Assigning patches to tags...')
     # Only respect mainline versions. No stable versions like v4.2.3
     mainline_tags = list(filter(lambda x: MAINLINE_REGEX.match(x[0]), repo.tags))
@@ -595,6 +591,8 @@ def evaluate_patches(config, prog, argv):
         ret = dict()
 
         tags = {x[0] for x in repo.tags if not x[0].startswith('v2.6')}
+        # WORKAROUND:
+        tags = set(patches_by_version.keys())
 
         global _repo
         _repo = repo
@@ -607,28 +605,23 @@ def evaluate_patches(config, prog, argv):
         _repo = None
         return ret
 
-    maintainers_version = load_pkl_or_execute('resources/linux/resources/maintainers.pkl',
+    maintainers_version = load_pkl_or_execute(os.path.join(d_resources, 'maintainers.pkl'),
                                               load_all_maintainers)
 
-    log.info('Assigning subsystems to patches...')
-    for tag, patches in patches_by_version.items():
-        maintainers = maintainers_version[tag]
-        for patch in patches:
-            files = repo[patch].diff.affected
-            subsystems = maintainers.get_subsystems_by_files(files)
-    """
+    #log.info('Assigning subsystems to patches...')
+    #for tag, patches in patches_by_version.items():
+    #    maintainers = maintainers_version[tag]
+    #    for patch in patches:
+    #        files = repo[patch].diff.affected
+    #        subsystems = maintainers.get_subsystems_by_files(files)
+    #        continue
 
-    log.info('Identify ignored patches...')
-    get_ignored(repo, characteristics, clustering)
+    #log.info('Identify ignored patches...')
+    #get_ignored(repo, characteristics, clustering)
+
+    check_wrong_maintainer(repo, maintainers_version, patches_by_version,
+                           patches)
     quit()
-    """
-    if 'no-ignored' in argv:
-        ignored_patches = None
-    elif 'ignored' in argv or not os.path.isfile('resources/linux/ignored.pkl'):
-        ignored_patches = get_ignored(repo, clustering)
-    else:
-        ignored_patches = pickle.load(open('resources/linux/ignored.pkl', 'rb'))
-    """
 
     log.info('Identify patches sent to wrong maintainers…')  # ####################################### Wrong Maintainer
     if 'no-check-maintainer' in argv:
