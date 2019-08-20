@@ -142,11 +142,14 @@ class LinuxSubsystem:
 
         return False
 
+    def get_maintainers(self):
+        return self.list, self.mail
+
     def __init__(self, entry):
         self.description = list()
 
         self.mail = list()
-        self.list = list()
+        self.list = set()
         self.tree = list()
         self.status = list()
         self.person = list()
@@ -180,7 +183,8 @@ class LinuxSubsystem:
             if type == 'M':
                 self.mail += self.parse_person(value)
             elif type == 'L':
-                self.list.append(value)
+                ml = value.split(' ')[0]
+                self.list.add(ml)
             elif type == 'S':
                 # some nasty cases
                 if value == 'Odd Fixes (e.g., new signatures)':
@@ -240,6 +244,9 @@ class LinuxMaintainers:
             if subsystem.match(filename):
                 subsystems.add(subsystem.description)
         return subsystems
+
+    def get_maintainers(self, subsystem):
+        return self.subsystems[subsystem].get_maintainers()
 
     def __getitem__(self, item):
         return self.subsystems[item]
