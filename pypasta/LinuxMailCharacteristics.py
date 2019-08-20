@@ -62,9 +62,16 @@ class LinuxMailCharacteristics:
     def _is_from_bot(self, message):
         if 'From' not in message:
             return False
+        mail_from = str(message['From'])
+
+        bots = ['broonie@kernel.org', 'lkp@intel.com']
+
+        if 'X-Patchwork-Hint' in message and \
+            message['X-Patchwork-Hint'] == 'ignore':
+            if True in [bot in mail_from for bot in bots]:
+                return True
 
         # The Tip bot
-        mail_from = str(message['From'])
         if 'tipbot@zytor.com' in mail_from or \
            'noreply@ciplatform.org' in mail_from:
             return True
