@@ -290,26 +290,26 @@ def check_wrong_maintainer_patch(repo, maintainer, message_id):
     recipients = get_recipients(message)
     subsystems = maintainer.get_subsystems_by_files(patch.diff.affected)
 
-    subsystem = subsystems[patch]
-    if subsystem is None:
-        return None, None
+    # Ignore THE REST subsystem
+    subsystems.discard('THE REST')
 
-    some = False
-    all = True
+    lists = set()
+    maintainers = set()
 
-    for maintainer in subsystem['maintainers']:
-        if maintainer in recipients_clean:
-            some = True
+    for subsystem in subsystems:
+        s_lists, s_mtrs = maintainer.get_maintainers(subsystem)
+        lists |= s_lists
+        s_mtrs = {x[1] for x in s_mtrs}
+        maintainers |= s_mtrs
 
-    for maintainer in subsystem['maintainers'] | subsystem['supporter'] | subsystem['odd fixer'] | subsystem['reviewer']:
-        if maintainer not in recipients_clean:
-            all = False
+    recipients_should = lists | maintainers
 
-    if all:
-        return None, None
-    if some:
-        return None, patch
-    return patch, None
+    correctly_adressed = recipients & recipients_should
+
+    all = correctly_adressed == recipients_should
+    some = len(correctly_adressed) != 0
+
+    return all, some
 
 
 def patch_get_version(patches_by_version, patch):
@@ -334,8 +334,6 @@ def check_wrong_maintainer(repo, maintainers_version, patches_by_version,
         version = patch_get_version(patches_by_version, patch)
         maintainer = maintainers_version[version]
         result = check_wrong_maintainer_patch(repo, maintainer, patch)
-
-
 
     min = set()
     max = set()
