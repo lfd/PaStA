@@ -277,7 +277,9 @@ def get_ignored(repo, mail_characteristics, clustering):
 
 
 def get_recipients(message):
-    recipients = message.get_all('To') + message.get_all('Cc')
+    recipients = message.get_all('To', []) + message.get_all('Cc', [])
+    # get_all might return Header objects. Convert them all to strings.
+    recipients = [str(x) for x in recipients]
     recipients = {x[1] for x in email.utils.getaddresses(recipients)}
 
     return recipients
