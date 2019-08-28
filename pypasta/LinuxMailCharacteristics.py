@@ -18,7 +18,9 @@ from tqdm import tqdm
 
 _repo = None
 _maintainers_version = None
-_patches_by_version = None
+_mainline_tags = None
+
+MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
 
 
 def get_recipients(message):
@@ -95,11 +97,19 @@ class LinuxMailCharacteristics:
         return False
 
     @staticmethod
-    def patch_get_version(patches_by_version, patch):
-        for version, patches in patches_by_version.items():
-            if patch in patches:
-                return version
-        return None
+    def patch_get_version(patch):
+        author_date = patch.author.date
+        tag = None
+
+        for cand_tag, cand_tag_date in _mainline_tags:
+            if cand_tag_date > author_date:
+                break
+            tag = cand_tag
+
+        if tag is None:
+            raise RuntimeError('No valid tag found for patch %s' % patch.id)
+
+        return tag
 
     def check_maintainer(self, repo, maintainer, message_id):
         message = repo.mbox.get_messages(message_id)[0]
@@ -193,8 +203,7 @@ class LinuxMailCharacteristics:
              LinuxMailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
             self.is_cover_letter = True
 
-    def __init__(self, repo, patches_by_version, maintainers_version,
-                 message_id):
+    def __init__(self, repo, maintainers_version, message_id):
         self.is_stable_review = False
         self.patches_linux = False
         self.is_patch = False
@@ -218,9 +227,8 @@ class LinuxMailCharacteristics:
             self.is_stable_review = self._is_stable_review(lists_of_patch,
                                                            recipients, patch)
 
-            if self.patches_linux and patches_by_version is not None and maintainers_version is not None:
-                self.linux_version = self.patch_get_version(patches_by_version,
-                                                      message_id)
+            if self.patches_linux and maintainers_version is not None:
+                self.linux_version = self.patch_get_version(patch)
                 maintainers = maintainers_version[self.linux_version]
                 self.check_maintainer(repo, maintainers, message_id)
 
@@ -230,18 +238,19 @@ class LinuxMailCharacteristics:
 
 
 def _load_mail_characteristic(message_id):
-    return message_id, LinuxMailCharacteristics(_repo, _patches_by_version,
-                                                _maintainers_version, message_id)
+    return message_id, LinuxMailCharacteristics(_repo, _maintainers_version,
+                                                message_id)
 
 
 def load_linux_mail_characteristics(repo, message_ids,
-                                    patches_by_version=None,
                                     maintainers_version=None):
     ret = dict()
 
-    global _repo, _maintainers_version, _patches_by_version
+    global _mainline_tags
+    _mainline_tags = list(filter(lambda x: MAINLINE_REGEX.match(x[0]), repo.tags))
+
+    global _repo, _maintainers_version
     _maintainers_version = maintainers_version
-    _patches_by_version = patches_by_version
     _repo = repo
     p = Pool(processes=cpu_count())
     for message_id, characteristics in \
@@ -252,7 +261,6 @@ def load_linux_mail_characteristics(repo, message_ids,
     p.close()
     p.join()
     _repo = None
-    _patches_by_version = None
     _maintainers_version = None
 
     return ret
