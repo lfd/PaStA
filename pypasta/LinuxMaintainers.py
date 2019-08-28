@@ -183,8 +183,10 @@ class LinuxSubsystem:
             type, value = match.group(1), match.group(2)
 
             if type == 'M':
+                value = value.lower()
                 self.mail += self.parse_person(value)
             elif type == 'L':
+                value = value.lower()
                 ml = self.EMAIL_LIST_REGEX.findall(value)[0]
                 self.list.add(ml)
             elif type == 'S':
