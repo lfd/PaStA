@@ -112,31 +112,12 @@ class LinuxMailCharacteristics:
 
         return tag
 
-    def check_maintainer(self, repo, maintainer, message_id):
-        message = repo.mbox.get_messages(message_id)[0]
-        patch = repo[message_id]
-
-        recipients = get_recipients(message)
+    def get_maintainer(self, maintainer, patch):
         subsystems = maintainer.get_subsystems_by_files(patch.diff.affected)
-
-        # Ignore THE REST subsystem
-        subsystems.discard('THE REST')
-
-        lists = set()
-        maintainers = set()
-
         for subsystem in subsystems:
-            s_lists, s_mtrs = maintainer.get_maintainers(subsystem)
-            lists |= s_lists
-            s_mtrs = {x[1] for x in s_mtrs}
-            maintainers |= s_mtrs
-
-        recipients_should = lists | maintainers
-
-        correctly_adressed = recipients & recipients_should
-
-        self.maintainers_all = correctly_adressed == recipients_should
-        self.maintainers_some = len(correctly_adressed) != 0
+            s_list, s_mail = maintainer.get_maintainers(subsystem)
+            s_mail = {x[1] for x in s_mail}
+            self.maintainers[subsystem] = s_list, s_mail
 
     @staticmethod
     def _is_stable_review(lists_of_patch, recipients, patch):
@@ -210,13 +191,15 @@ class LinuxMailCharacteristics:
         self.is_patch = False
 
         self.linux_version = None
-        self.maintainers_all = None
-        self.maintainers_some = None
 
         self.is_cover_letter = False
         self.is_first_patch_in_thread = False
 
+        self.maintainers = dict()
+
         message = repo.mbox.get_messages(message_id)[0]
+        self.recipients = get_recipients(message)
+
         lists_of_patch = repo.mbox.get_lists(message_id)
         recipients = LinuxMailCharacteristics.flatten_recipients(message)
 
@@ -231,7 +214,7 @@ class LinuxMailCharacteristics:
             if self.patches_linux and maintainers_version is not None:
                 self.linux_version = self.patch_get_version(patch)
                 maintainers = maintainers_version[self.linux_version]
-                self.check_maintainer(repo, maintainers, message_id)
+                self.get_maintainer(maintainers, patch)
 
         self.is_from_bot = self._is_from_bot(message)
 
