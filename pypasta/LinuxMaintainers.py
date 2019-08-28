@@ -84,6 +84,8 @@ class LinuxSubsystem:
     DESCRIPTOR_REGEX = re.compile(r'([A-Z]):\s*(.*)')
     EMAIL_RAW_REGEX = re.compile('^(\S+@\S+\.\S+)$')
 
+    EMAIL_LIST_REGEX = re.compile(r'([^\s<]+@[^\s>]+)>?')
+
     EMAIL_DEFAULT_RGEX = re.compile(DEF_EMAIL_REGEX)
     EMAIL_MM_REGEX = re.compile('%s\s*%s' % (BRACKET_REGEX, BRACKET_REGEX))
     EMAIL_NMM_REGEX = re.compile('%s\s*%s\s*%s' %
@@ -183,7 +185,7 @@ class LinuxSubsystem:
             if type == 'M':
                 self.mail += self.parse_person(value)
             elif type == 'L':
-                ml = value.split(' ')[0]
+                ml = self.EMAIL_LIST_REGEX.findall(value)[0]
                 self.list.add(ml)
             elif type == 'S':
                 # some nasty cases
