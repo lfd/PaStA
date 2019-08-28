@@ -21,6 +21,7 @@ _maintainers_version = None
 _mainline_tags = None
 
 MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
+VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
 
 
 def get_recipients(message):
@@ -28,7 +29,10 @@ def get_recipients(message):
     recipients = list(filter(None, recipients))
     # get_all might return Header objects. Convert them all to strings.
     recipients = [str(x) for x in recipients]
-    recipients = {x[1] for x in email.utils.getaddresses(recipients)}
+
+    # Only accept valid email addresses
+    recipients = {x[1].lower() for x in email.utils.getaddresses(recipients)
+                  if VALID_EMAIL_REGEX.match(x[1])}
 
     return recipients
 
