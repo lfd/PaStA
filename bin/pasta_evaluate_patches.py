@@ -10,7 +10,6 @@ This work is licensed under the terms of the GNU GPL, version 2. See
 the COPYING file in the top-level directory.
 """
 
-import email
 import os
 import pickle
 import re
@@ -21,8 +20,7 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
 from pypasta.LinuxMaintainers import LinuxMaintainers
-from pypasta.LinuxMailCharacteristics import LinuxMailCharacteristics, \
-    load_linux_mail_characteristics
+from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
 
 log = getLogger(__name__[-15:])
 
@@ -276,86 +274,9 @@ def get_ignored(repo, mail_characteristics, clustering):
     dump_messages(os.path.join(d_resources, 'base'), repo, population_relevant)
 
 
-def get_recipients(message):
-    recipients = message.get_all('To', []) + message.get_all('Cc', [])
-    # get_all might return Header objects. Convert them all to strings.
-    recipients = [str(x) for x in recipients]
-    recipients = {x[1] for x in email.utils.getaddresses(recipients)}
-
-    return recipients
-
-
-def check_wrong_maintainer_patch(repo, maintainer, message_id):
-    message = repo.mbox.get_messages(message_id)[0]
-    patch = repo[message_id]
-
-    recipients = get_recipients(message)
-    subsystems = maintainer.get_subsystems_by_files(patch.diff.affected)
-
-    # Ignore THE REST subsystem
-    subsystems.discard('THE REST')
-
-    lists = set()
-    maintainers = set()
-
-    for subsystem in subsystems:
-        s_lists, s_mtrs = maintainer.get_maintainers(subsystem)
-        lists |= s_lists
-        s_mtrs = {x[1] for x in s_mtrs}
-        maintainers |= s_mtrs
-
-    recipients_should = lists | maintainers
-
-    correctly_adressed = recipients & recipients_should
-
-    all = correctly_adressed == recipients_should
-    some = len(correctly_adressed) != 0
-
-    return all, some
-
-
-def patch_get_version(patches_by_version, patch):
-    for version, patches in patches_by_version.items():
-        if patch in patches:
-            return version
-    return None
-
-
-def check_wrong_maintainer(repo, maintainers_version, patches_by_version,
-                           patches):
-    #global _repo
-    #_repo = repo
-    #p = get_pool()
-    ##return_value = p.map(_check_wrong_maintainer_patch, tqdm(patches))
-    #return_value = list(map(_check_wrong_maintainer_patch, tqdm(patches)))
-    #p.close()
-    #p.join()
-    #_repo = None
-
-    for patch in patches:
-        version = patch_get_version(patches_by_version, patch)
-        maintainer = maintainers_version[version]
-        result = check_wrong_maintainer_patch(repo, maintainer, patch)
-
-    min = set()
-    max = set()
-
-    for res in return_value:
-        min.add(res[0])
-        max.add(res[1])
-
-    try:
-        min.remove(None)
-    except KeyError:
-        pass
-
-    try:
-        max.remove(None)
-    except KeyError:
-        pass
-
-    pickle.dump((min, max), open('resources/linux/check_maintainer.pkl', 'wb'))
-    return min, max
+def check_wrong_maintainer(characteristics, patches):
+    # TBD
+    return
 
 
 def is_patch_process_mail(patch):
@@ -480,12 +401,14 @@ def load_maintainers(tag):
     return tag, m
 
 
-def load_pkl_or_execute(filename, command):
+def load_pkl_or_execute(filename, update_command):
+    ret = None
     if os.path.isfile(filename):
-        return pickle.load(open(filename, 'rb'))
+        ret = pickle.load(open(filename, 'rb'))
 
-    ret = command()
-    pickle.dump(ret, open(filename, 'wb'))
+    ret, changed = update_command(ret)
+    if changed:
+        pickle.dump(ret, open(filename, 'wb'))
 
     return ret
 
@@ -558,11 +481,6 @@ def evaluate_patches(config, prog, argv):
 
     all_messages_in_time_window = repo.mbox.message_ids(config.mbox_time_window,
                                                         allow_invalid=True)
-    characteristics = load_linux_mail_characteristics(repo,
-                                                      all_messages_in_time_window)
-
-    get_patch_origin(repo, characteristics, all_messages_in_time_window)
-
 
     log.info('Assigning patches to tags...')
     # Only respect mainline versions. No stable versions like v4.2.3
@@ -585,14 +503,19 @@ def evaluate_patches(config, prog, argv):
 
         patches_by_version[tag].add(patch)
 
-    log.info('Loading relevant MAINTAINERS files...')
-
-    def load_all_maintainers():
-        ret = dict()
+    def load_all_maintainers(ret):
+        if ret is None:
+            ret = dict()
 
         tags = {x[0] for x in repo.tags if not x[0].startswith('v2.6')}
         # WORKAROUND:
         tags = set(patches_by_version.keys())
+
+        # Only load what's not already cached
+        tags -= ret.keys()
+
+        if len(tags) == 0:
+            return ret, False
 
         global _repo
         _repo = repo
@@ -603,10 +526,33 @@ def evaluate_patches(config, prog, argv):
         p.close()
         p.join()
         _repo = None
-        return ret
 
+        return ret, True
+
+    def load_characteristics(ret):
+        if ret is None:
+            ret = dict()
+
+        missing = all_messages_in_time_window - ret.keys()
+        if len(missing) == 0:
+            return ret, False
+
+        foo = load_linux_mail_characteristics(repo,
+                                              missing,
+                                              patches_by_version,
+                                              maintainers_version)
+
+        return {**ret, **foo}, True
+
+    log.info('Loading/Updating MAINTAINERS...')
     maintainers_version = load_pkl_or_execute(os.path.join(d_resources, 'maintainers.pkl'),
                                               load_all_maintainers)
+
+    log.info('Loading/Updating Linux patch characteristics...')
+    characteristics = load_pkl_or_execute(os.path.join(d_resources, 'characteristics.pkl'),
+                                          load_characteristics)
+
+    get_patch_origin(repo, characteristics, all_messages_in_time_window)
 
     #log.info('Assigning subsystems to patches...')
     #for tag, patches in patches_by_version.items():
@@ -616,20 +562,11 @@ def evaluate_patches(config, prog, argv):
     #        subsystems = maintainers.get_subsystems_by_files(files)
     #        continue
 
-    #log.info('Identify ignored patches...')
-    #get_ignored(repo, characteristics, clustering)
+    log.info('Identify ignored patches...')
+    get_ignored(repo, characteristics, clustering)
 
-    check_wrong_maintainer(repo, maintainers_version, patches_by_version,
-                           patches)
+    check_wrong_maintainer(characteristics, patches)
     quit()
-
-    log.info('Identify patches sent to wrong maintainers…')  # ####################################### Wrong Maintainer
-    if 'no-check-maintainer' in argv:
-        wrong_maintainer = None
-    elif 'check-maintainer' in argv or not os.path.isfile('resources/linux/check_maintainer.pkl'):
-        wrong_maintainer = check_wrong_maintainer()
-    else:
-        wrong_maintainer = pickle.load(open('resources/linux/check_maintainer.pkl', 'rb'))
 
     log.info('Identify process patches (eg. git pull)…')  # ############################################# Process Mails
     if 'no-process-mails' in argv:
