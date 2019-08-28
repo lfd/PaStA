@@ -25,7 +25,7 @@ from subprocess import call
 
 from .MailThread import MailThread
 from .MessageDiff import MessageDiff, Signature
-from ..Util import get_commit_hash_range, parse_mail_from
+from ..Util import get_commit_hash_range
 
 log = getLogger(__name__[-15:])
 
@@ -63,7 +63,8 @@ class PatchMail(MessageDiff):
         if date.tzinfo is None:
             date = date.replace(tzinfo=datetime.timezone.utc)
 
-        author_name, author_email = parse_mail_from(mail)
+        author = str(mail['From'])
+        author_name, author_email = email.utils.parseaddr(author)
         author = Signature(author_name, author_email, date)
 
         # Get the patch payload

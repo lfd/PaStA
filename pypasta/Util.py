@@ -34,17 +34,6 @@ def pygit2_signature_to_datetime(signature):
     return dt
 
 
-def parse_mail_from(mail):
-    name = str(mail['From'])
-    email = ''
-    match = MAIL_FROM_REGEX.match(name)
-    if match:
-        name = match.group(1)
-        email = match.group(2)
-
-    return name, email
-
-
 def get_commit_hash_range(d_repo, range):
         """
         Gets all commithashes within a certain range
