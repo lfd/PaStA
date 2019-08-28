@@ -17,6 +17,8 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
 _repo = None
+_maintainers_version = None
+_patches_by_version = None
 
 
 def get_recipients(message):
@@ -93,6 +95,39 @@ class LinuxMailCharacteristics:
         return False
 
     @staticmethod
+    def patch_get_version(patches_by_version, patch):
+        for version, patches in patches_by_version.items():
+            if patch in patches:
+                return version
+        return None
+
+    def check_maintainer(self, repo, maintainer, message_id):
+        message = repo.mbox.get_messages(message_id)[0]
+        patch = repo[message_id]
+
+        recipients = get_recipients(message)
+        subsystems = maintainer.get_subsystems_by_files(patch.diff.affected)
+
+        # Ignore THE REST subsystem
+        subsystems.discard('THE REST')
+
+        lists = set()
+        maintainers = set()
+
+        for subsystem in subsystems:
+            s_lists, s_mtrs = maintainer.get_maintainers(subsystem)
+            lists |= s_lists
+            s_mtrs = {x[1] for x in s_mtrs}
+            maintainers |= s_mtrs
+
+        recipients_should = lists | maintainers
+
+        correctly_adressed = recipients & recipients_should
+
+        self.maintainers_all = correctly_adressed == recipients_should
+        self.maintainers_some = len(correctly_adressed) != 0
+
+    @staticmethod
     def _is_stable_review(lists_of_patch, recipients, patch):
         # The patch needs to be sent to the stable list
         if not ('stable' in lists_of_patch or \
@@ -158,10 +193,15 @@ class LinuxMailCharacteristics:
              LinuxMailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
             self.is_cover_letter = True
 
-    def __init__(self, repo, message_id):
+    def __init__(self, repo, patches_by_version, maintainers_version,
+                 message_id):
         self.is_stable_review = False
         self.patches_linux = False
         self.is_patch = False
+
+        self.linux_version = None
+        self.maintainers_all = None
+        self.maintainers_some = None
 
         self.is_cover_letter = False
         self.is_first_patch_in_thread = False
@@ -174,8 +214,15 @@ class LinuxMailCharacteristics:
         if message_id in repo and message_id not in repo.mbox.invalid:
             self.is_patch = True
             patch = repo[message_id]
-            self.is_stable_review = self._is_stable_review(lists_of_patch, recipients, patch)
             self.patches_linux = self._patches_linux(patch)
+            self.is_stable_review = self._is_stable_review(lists_of_patch,
+                                                           recipients, patch)
+
+            if self.patches_linux and patches_by_version is not None and maintainers_version is not None:
+                self.linux_version = self.patch_get_version(patches_by_version,
+                                                      message_id)
+                maintainers = maintainers_version[self.linux_version]
+                self.check_maintainer(repo, maintainers, message_id)
 
         self.is_from_bot = self._is_from_bot(message)
 
@@ -183,13 +230,18 @@ class LinuxMailCharacteristics:
 
 
 def _load_mail_characteristic(message_id):
-    return message_id, LinuxMailCharacteristics(_repo, message_id)
+    return message_id, LinuxMailCharacteristics(_repo, _patches_by_version,
+                                                _maintainers_version, message_id)
 
 
-def load_linux_mail_characteristics(repo, message_ids):
+def load_linux_mail_characteristics(repo, message_ids,
+                                    patches_by_version=None,
+                                    maintainers_version=None):
     ret = dict()
 
-    global _repo
+    global _repo, _maintainers_version, _patches_by_version
+    _maintainers_version = maintainers_version
+    _patches_by_version = patches_by_version
     _repo = repo
     p = Pool(processes=cpu_count())
     for message_id, characteristics in \
@@ -200,5 +252,7 @@ def load_linux_mail_characteristics(repo, message_ids):
     p.close()
     p.join()
     _repo = None
+    _patches_by_version = None
+    _maintainers_version = None
 
     return ret
