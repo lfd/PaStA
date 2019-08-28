@@ -10,12 +10,22 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+import email
 import re
 
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
 _repo = None
+
+
+def get_recipients(message):
+    recipients = message.get_all('To', []) + message.get_all('Cc', [])
+    # get_all might return Header objects. Convert them all to strings.
+    recipients = [str(x) for x in recipients]
+    recipients = {x[1] for x in email.utils.getaddresses(recipients)}
+
+    return recipients
 
 
 class LinuxMailCharacteristics:
