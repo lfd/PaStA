@@ -156,6 +156,7 @@ def get_ignored(repo, mail_characteristics, clustering):
     skipped_stable = 0
     skipped_not_linux = 0
     skipped_not_first_patch = 0
+    skipped_process = 0
 
     for downstream, upstream in clustering.iter_split():
         # Dive into downstream, and check the above-mentioned criteria
@@ -181,6 +182,9 @@ def get_ignored(repo, mail_characteristics, clustering):
                 skip = True
             if not characteristics.is_first_patch_in_thread:
                 skipped_not_first_patch += 1
+                skip = True
+            if characteristics.process_mail:
+                skipped_process += 1
                 skip = True
 
             if skip:
@@ -242,6 +246,7 @@ def get_ignored(repo, mail_characteristics, clustering):
     log.info('Skipped patches:')
     log.info('  Bot: %u' % skipped_bot)
     log.info('  Stable: %u' % skipped_stable)
+    log.info('  Process mail: %u' % skipped_process)
     log.info('  Not Linux: %u' % skipped_not_linux)
     log.info('  Not first patch in series: %u' % skipped_not_first_patch)
     log.info('Not accepted patches: %u' % num_population_not_accepted)
@@ -278,9 +283,91 @@ def get_ignored(repo, mail_characteristics, clustering):
     dump_messages(os.path.join(d_resources, 'base'), repo, population_relevant)
 
 
-def check_wrong_maintainer(characteristics, patches):
-    # TBD
-    return
+MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
+
+def check_correct_maintainer_patch(repo, characteristic, message_id):
+    patch = repo[message_id]
+
+    def ignore_tld(address):
+        return MAIL_STRIP_TLD_REGEX.match(address).group(1)
+
+    def ignore_tlds(addresses):
+        return {ignore_tld(address) for address in addresses if address}
+
+    maintainers = characteristic.maintainers
+    recipients = ignore_tlds(characteristic.recipients)
+
+    # The author is always a recipient
+    recipients.add(ignore_tld(patch.author.email))
+
+    has_one_correct_list = False
+    has_maintainer_per_subsystem = True
+    lists_could = set()
+
+    for subsystem, (lists, maintainers, reviewers) in maintainers.items():
+        lists = ignore_tlds(lists)
+
+        # For the moment, let's give maintainers and reviewers the same 'rank'
+        maintainers = ignore_tlds(maintainers) | ignore_tlds(reviewers)
+
+        if subsystem == 'THE REST':
+            continue
+
+        lists_could |= lists
+
+        if len(lists & recipients):
+            has_one_correct_list = True
+
+        if len(maintainers) and len(maintainers & recipients) == 0:
+            has_maintainer_per_subsystem = False
+
+    if len(lists_could) == 0:
+        has_one_correct_list = True
+
+    return has_one_correct_list and has_maintainer_per_subsystem
+
+
+def check_correct_maintainer(repo, characteristics, message_ids):
+    correct_maintainer = dict()
+    sum_lists = dict()
+    sum_correct = dict()
+
+    victims = set()
+    for message_id in message_ids:
+        c = characteristics[message_id]
+        if c.is_first_patch_in_thread and c.patches_linux and \
+           not c.is_stable_review and not c.is_from_bot and not c.process_mail:
+            victims.add(message_id)
+    message_ids = victims
+
+    for message_id in message_ids:
+        lists = repo.mbox.get_lists(message_id)
+        for l in lists:
+            if l not in sum_correct:
+                sum_correct[l] = 0
+            if l not in sum_lists:
+                sum_lists[l] = 0
+            sum_lists[l] += 1
+
+        correct = check_correct_maintainer_patch(repo, characteristics[message_id], message_id)
+        if correct:
+            for l in lists:
+                sum_correct[l] += 1
+        correct_maintainer[message_id] = correct
+
+
+    correct = {message_id for message_id, value in correct_maintainer.items() if value == True}
+    log.info('  Fraction of correctly addressed patches: %0.3f' %
+             (len(correct) / len(message_ids)))
+
+    for l in sum_lists.keys():
+        log.info('  Fraction of correctly addressed patches on %s: %0.3f' %
+                 (l, sum_correct[l] / sum_lists[l]))
+
+    dump_messages(os.path.join(d_resources, 'maintainers_correct'), repo,
+                  correct)
+    dump_messages(os.path.join(d_resources, 'maintainers_incorrect'), repo,
+                  message_ids - correct)
 
 
 def is_patch_process_mail(patch):
@@ -539,7 +626,8 @@ def evaluate_patches(config, prog, argv):
     log.info('Identify ignored patches...')
     get_ignored(repo, characteristics, clustering)
 
-    check_wrong_maintainer(characteristics, patches)
+    log.info('Checking correct maintainers...')
+    check_correct_maintainer(repo, characteristics, patches)
     quit()
 
     log.info('Identify process patches (eg. git pull)…')  # ############################################# Process Mails
