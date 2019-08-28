@@ -29,8 +29,12 @@ _config = None
 _p = None
 
 d_resources = './resources/linux/resources/'
+f_prefix = 'eval_'
+f_suffix = '.pkl'
 
-MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
+
+def f_pkl(fname):
+    return '%s%s%s%s' % (d_resources, f_prefix, fname, f_suffix)
 
 
 def write_cell(file, string):
@@ -402,6 +406,8 @@ def load_maintainers(tag):
 
 
 def load_pkl_or_execute(filename, update_command):
+    filename = f_pkl(filename)
+
     ret = None
     if os.path.isfile(filename):
         ret = pickle.load(open(filename, 'rb'))
@@ -482,34 +488,13 @@ def evaluate_patches(config, prog, argv):
     all_messages_in_time_window = repo.mbox.message_ids(config.mbox_time_window,
                                                         allow_invalid=True)
 
-    log.info('Assigning patches to tags...')
-    # Only respect mainline versions. No stable versions like v4.2.3
-    mainline_tags = list(filter(lambda x: MAINLINE_REGEX.match(x[0]), repo.tags))
-    patches_by_version = dict()
-    for patch in patches:
-        author_date = repo[patch].author.date
-        tag = None
-        for cand_tag, cand_tag_date in mainline_tags:
-            if cand_tag_date > author_date:
-                break
-            tag = cand_tag
-
-        if tag is None:
-            log.error('No tag found for patch %s' % patch)
-            quit(-1)
-
-        if tag not in patches_by_version:
-            patches_by_version[tag] = set()
-
-        patches_by_version[tag].add(patch)
-
     def load_all_maintainers(ret):
         if ret is None:
             ret = dict()
 
         tags = {x[0] for x in repo.tags if not x[0].startswith('v2.6')}
         # WORKAROUND:
-        tags = set(patches_by_version.keys())
+        tags = {x[0] for x in repo.tags if x[0].startswith('v5.')}
 
         # Only load what's not already cached
         tags -= ret.keys()
@@ -539,28 +524,17 @@ def evaluate_patches(config, prog, argv):
 
         foo = load_linux_mail_characteristics(repo,
                                               missing,
-                                              patches_by_version,
                                               maintainers_version)
 
         return {**ret, **foo}, True
 
     log.info('Loading/Updating MAINTAINERS...')
-    maintainers_version = load_pkl_or_execute(os.path.join(d_resources, 'maintainers.pkl'),
-                                              load_all_maintainers)
+    maintainers_version = load_pkl_or_execute('maintainers', load_all_maintainers)
 
     log.info('Loading/Updating Linux patch characteristics...')
-    characteristics = load_pkl_or_execute(os.path.join(d_resources, 'characteristics.pkl'),
-                                          load_characteristics)
+    characteristics = load_pkl_or_execute('characteristics', load_characteristics)
 
     get_patch_origin(repo, characteristics, all_messages_in_time_window)
-
-    #log.info('Assigning subsystems to patches...')
-    #for tag, patches in patches_by_version.items():
-    #    maintainers = maintainers_version[tag]
-    #    for patch in patches:
-    #        files = repo[patch].diff.affected
-    #        subsystems = maintainers.get_subsystems_by_files(files)
-    #        continue
 
     log.info('Identify ignored patches...')
     get_ignored(repo, characteristics, clustering)
