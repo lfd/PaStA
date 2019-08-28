@@ -25,6 +25,7 @@ MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
 
 def get_recipients(message):
     recipients = message.get_all('To', []) + message.get_all('Cc', [])
+    recipients = list(filter(None, recipients))
     # get_all might return Header objects. Convert them all to strings.
     recipients = [str(x) for x in recipients]
     recipients = {x[1] for x in email.utils.getaddresses(recipients)}
