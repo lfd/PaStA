@@ -32,6 +32,8 @@ d_resources = './resources/linux/resources/'
 f_prefix = 'eval_'
 f_suffix = '.pkl'
 
+MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
+
 
 def f_pkl(fname):
     return '%s%s%s%s' % (d_resources, f_prefix, fname, f_suffix)
@@ -283,8 +285,6 @@ def get_ignored(repo, mail_characteristics, clustering):
     dump_messages(os.path.join(d_resources, 'base'), repo, population_relevant)
 
 
-MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
-
 def check_correct_maintainer_patch(repo, characteristic, message_id):
     patch = repo[message_id]
 
@@ -300,31 +300,54 @@ def check_correct_maintainer_patch(repo, characteristic, message_id):
     # The author is always a recipient
     recipients.add(ignore_tld(patch.author.email))
 
+    has_lists = False
+    has_maintainers = False
     has_one_correct_list = False
+    has_one_correct_maintainer = False
     has_maintainer_per_subsystem = True
-    lists_could = set()
+    has_list_per_subsystem = True
 
     for subsystem, (lists, maintainers, reviewers) in maintainers.items():
-        lists = ignore_tlds(lists)
-
-        # For the moment, let's give maintainers and reviewers the same 'rank'
-        maintainers = ignore_tlds(maintainers) | ignore_tlds(reviewers)
-
         if subsystem == 'THE REST':
             continue
 
-        lists_could |= lists
+        lists = ignore_tlds(lists)
+        maintainers = ignore_tlds(maintainers) | ignore_tlds(reviewers)
+
+        if len(lists):
+            has_lists = True
+
+        if len(maintainers):
+            has_maintainers = True
 
         if len(lists & recipients):
             has_one_correct_list = True
 
+        if len(maintainers & recipients):
+            has_one_correct_maintainer = True
+
         if len(maintainers) and len(maintainers & recipients) == 0:
             has_maintainer_per_subsystem = False
 
-    if len(lists_could) == 0:
-        has_one_correct_list = True
+        if len(lists) and len(lists & recipients) == 0:
+            has_list_per_subsystem = False
 
-    return has_one_correct_list and has_maintainer_per_subsystem
+    # Metric: All lists + at least one maintainer per subsystem
+    # needs to be addressed correctly
+    #if (not has_lists or has_list_per_subsystem) and \
+    #   (not has_maintainers or has_maintainer_per_subsystem):
+    #    return True
+
+    # Metric: At least one correct list + at least one correct maintainer
+    #if (not has_lists or has_one_correct_list) and \
+    #   (not has_maintainers or has_one_correct_maintainer):
+    #    return True
+
+    # Metric: One correct list + one maintainer per subsystem
+    if (not has_lists or has_one_correct_list) and has_maintainer_per_subsystem:
+        return True
+
+    return False
 
 
 def check_correct_maintainer(repo, characteristics, message_ids):
