@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2. See
 the COPYING file in the top-level directory.
 """
 
+import email
 import os
 import pickle
 import re
@@ -39,35 +40,11 @@ def f_pkl(fname):
     return '%s%s%s%s' % (d_resources, f_prefix, fname, f_suffix)
 
 
-def get_author_of_msg(repo, msg_id):
-    email = repo.mbox.get_messages(msg_id)[0]
-    return email['From'].lower()
-
-
-def patch_has_foreign_response(repo, patch):
-    thread = repo.mbox.threads.get_thread(patch)
-
-    if len(thread.children) == 0:
-        return False  # If there is no response the check is trivial
-
-    author = get_author_of_msg(repo, patch)
-
-    for mail in list(LevelOrderIter(thread)):
-        # Beware, the mail might be virtual
-        if mail.name not in repo:
-            continue
-
-        this_author = get_author_of_msg(repo, mail.name)
-        if this_author != author:
-            return True
-    return False
-
-
 def is_single_patch_ignored(patch):
     return patch, not patch_has_foreign_response(_repo, patch)
 
 
-def get_ignored(repo, mail_characteristics, clustering):
+def get_ignored(repo, characteristics, clustering):
     # First, we have to define the term patch. In this analysis, we must only
     # regard patches that either fulfil rule 1 or 2:
     #
@@ -111,20 +88,20 @@ def get_ignored(repo, mail_characteristics, clustering):
             else:
                 population_not_accepted.add(d)
 
-            characteristics = mail_characteristics[d]
-            if characteristics.is_from_bot:
+            c = characteristics[d]
+            if c.is_from_bot:
                 skipped_bot += 1
                 skip = True
-            if characteristics.is_stable_review:
+            if c.is_stable_review:
                 skipped_stable += 1
                 skip = True
-            if not characteristics.patches_linux:
+            if not c.patches_linux:
                 skipped_not_linux += 1
                 skip = True
-            if not characteristics.is_first_patch_in_thread:
+            if not c.is_first_patch_in_thread:
                 skipped_not_first_patch += 1
                 skip = True
-            if characteristics.process_mail:
+            if c.process_mail:
                 skipped_process += 1
                 skip = True
 
@@ -143,14 +120,9 @@ def get_ignored(repo, mail_characteristics, clustering):
             not_upstreamed_patches |= relevant
 
     # For all patches of the population, check if they were ignored
-    global _repo
-    _repo = repo
-
-    p = Pool(cpu_count())
-    population_ignored = dict(p.map(is_single_patch_ignored, tqdm(population_all_patches)))
-    p.close()
-    p.join()
-    _repo = None
+    population_ignored = dict()
+    for patch in population_all_patches:
+        population_ignored[patch] = not characteristics[patch].has_foreign_response
 
     population_relevant = upstreamed_patches | not_upstreamed_patches
 
@@ -332,68 +304,41 @@ def check_correct_maintainer(repo, characteristics, message_ids):
                   message_ids - correct)
 
 
-def evaluate_patch(patch):
+def stats_patch(repo, message_id, ignored):
+    message = repo.mbox.get_messages(message_id)[0]
+    author = email.utils.parseaddr(str(message['From'] or ''))
 
-    global tags
-    global patches_by_version
-    global subsystems
-    global ignored_patches
-    global wrong_maintainer
-    global process_mails
-    global threads
-    global upstream
-
-    email = _repo.mbox.get_messages(patch)[0]
-    author = email['From'].replace('\'', '"')
-    thread = threads.get_thread(patch)
+    thread = repo.mbox.threads.get_thread(message_id)
     mail_traffic = sum(1 for _ in LevelOrderIter(thread))
     first_mail_in_thread = thread.name
-    patchobj = _repo[patch]
-
-    to = email['To'] if email['To'] else ''
-    cc = email['Cc'] if email['Cc'] else ''
-
-    recipients = to + cc
-
-    for k in patches_by_version.keys():
-        if patch in patches_by_version[k]:
-            tag = k
-    rc = 'rc' in tag
-
-    if rc:
-        rcv = re.search('-rc[0-9]+', tag).group()[3:]
-        version = re.search('v[0-9]+\.', tag).group() + '%02d' % int(re.search('\.[0-9]+', tag).group()[1:])
-    else:
-        rcv = 0
-        version = re.search('v[0-9]+\.', tag).group() + '%02d' % (
-                int(re.search('\.[0-9]+', tag).group()[1:]) + 1)
-
-    subsystem = subsystems[patch]
+    patch = repo[message_id]
 
     return {
-        'id': patch,
-        'subject': email['Subject'],
+        'subject': str(message['Subject'] or ''),
         'from': author,
-        'ignored': patch in ignored_patches if ignored_patches else None,
-        'upstream': patch in upstream,
-        'wrong maintainer': patch in wrong_maintainer[0] if wrong_maintainer else None,
-        'semi wrong maintainer': patch in wrong_maintainer[1] if wrong_maintainer else None,
-        '#LoC': patchobj.diff.lines,
-        '#Files': len(patchobj.diff.affected),
-        '#recipients without lists': len(re.findall('<', recipients)),
-        '#recipients': len(re.findall('@', recipients)),
-        'timestamp': patchobj.author.date.timestamp(),
-        'after version': tag,
-        'rcv': rcv,
-        'kernel version': version,
+        'ignored': ignored,
+        'upstream': message_id in upstream,
+        'wrong maintainer': message_id in wrong_maintainer[0] if wrong_maintainer else None,
+        'semi wrong maintainer': message_id in wrong_maintainer[1] if wrong_maintainer else None,
+        '#LoC': patch.diff.lines,
+        '#Files': len(patch.diff.affected),
+        'timestamp': patch.author.date.timestamp(),
         'maintainers': subsystem['maintainers'] if subsystem else None,
-        'helping': (subsystem['supporter'] | subsystem['odd fixer'] | subsystem['reviewer']) if subsystem else None,
         'lists': subsystem['lists'] if subsystem else None,
         'subsystems': subsystem['subsystem'] if subsystem else None,
         'mailTraffic': mail_traffic,
         'firstMailInThread': first_mail_in_thread,
-        'process_mail': patch in process_mails if process_mails else None,
+        'process_mail': message_id in process_mails if process_mails else None,
     }
+
+def stats_patches(repo, message_ids, population_ignored):
+    ret = dict()
+
+    for message_id in message_ids:
+        ignored = population_ignored[message_id]
+        ret[message_id] = stats_patch(repo, message_id, ignored)
+
+    return ret
 
 
 def load_maintainers(tag):
@@ -415,7 +360,7 @@ def load_maintainers(tag):
     return tag, m
 
 
-def load_pkl_or_execute(filename, update_command):
+def load_pkl_and_update(filename, update_command):
     filename = f_pkl(filename)
 
     ret = None
@@ -534,15 +479,16 @@ def evaluate_patches(config, prog, argv):
 
         foo = load_linux_mail_characteristics(repo,
                                               missing,
-                                              maintainers_version)
+                                              maintainers_version,
+                                              clustering)
 
         return {**ret, **foo}, True
 
     log.info('Loading/Updating MAINTAINERS...')
-    maintainers_version = load_pkl_or_execute('maintainers', load_all_maintainers)
+    maintainers_version = load_pkl_and_update('maintainers', load_all_maintainers)
 
     log.info('Loading/Updating Linux patch characteristics...')
-    characteristics = load_pkl_or_execute('characteristics', load_characteristics)
+    characteristics = load_pkl_and_update('characteristics', load_characteristics)
 
     get_patch_origin(repo, characteristics, all_messages_in_time_window)
 
@@ -551,6 +497,6 @@ def evaluate_patches(config, prog, argv):
 
     log.info('Checking correct maintainers...')
     check_correct_maintainer(repo, characteristics, patches)
-    quit()
 
-    result = _evaluate_patches()
+    # Actually... We don't need that any longer
+    #result = stats_patches(repo, patches, population_ignored)
