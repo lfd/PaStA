@@ -13,6 +13,7 @@ the COPYING file in the top-level directory.
 import email
 import re
 
+from anytree import LevelOrderIter
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
@@ -99,6 +100,22 @@ class LinuxMailCharacteristics:
         if self.is_next and 'sfr@canb.auug.org.au' in mail_from:
             return True
 
+        return False
+
+    def patch_has_foreign_response(self, repo, patch):
+        thread = repo.mbox.threads.get_thread(patch)
+
+        if len(thread.children) == 0:
+            return False  # If there is no response the check is trivial
+
+        for mail in list(LevelOrderIter(thread)):
+            # Beware, the mail might be virtual
+            if mail.name not in repo:
+                continue
+
+            this_from = repo.mbox.get_messages(mail.name)[0]['From'].lower()
+            if this_from != self.mail_from:
+                return True
         return False
 
     @staticmethod
@@ -194,6 +211,7 @@ class LinuxMailCharacteristics:
         self.is_stable_review = False
         self.patches_linux = False
         self.is_patch = False
+        self.has_foreign_response = None
 
         self.linux_version = None
 
@@ -205,6 +223,8 @@ class LinuxMailCharacteristics:
 
         message = repo.mbox.get_messages(message_id)[0]
         self.recipients = get_recipients(message)
+
+        self.mail_from = message['From'].lower()
 
         lists_of_patch = repo.mbox.get_lists(message_id)
         recipients = LinuxMailCharacteristics.flatten_recipients(message)
@@ -226,6 +246,8 @@ class LinuxMailCharacteristics:
                 self.linux_version = self.patch_get_version(patch)
                 maintainers = maintainers_version[self.linux_version]
                 self.get_maintainer(maintainers, patch)
+
+            self.has_foreign_response = self.patch_has_foreign_response(repo, message_id)
 
         self.is_from_bot = self._is_from_bot(message)
 
