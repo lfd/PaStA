@@ -39,56 +39,6 @@ def f_pkl(fname):
     return '%s%s%s%s' % (d_resources, f_prefix, fname, f_suffix)
 
 
-def write_cell(file, string):
-    string = str(string).replace('\'', '`').replace('"', '`').replace('\n', '|').replace('\t', ' ').replace('=', '-')
-    file.write(string + '\t')
-
-
-def write_dict_list(_list, name):
-    f = open(name, 'w')
-    for k in _list[0].keys():
-        write_cell(f, k)
-    f.write('\n')
-    for data in _list:
-        for k in data.keys():
-            write_cell(f, data[k])
-        f.write('\n')
-
-
-def get_pool():
-    global _p
-    if _p is None:
-        _p = Pool(processes=cpu_count(), maxtasksperchild=10)
-    return _p
-
-
-def is_part_of_patch_set(patch):
-    try:
-        return re.search(r'[0-9]+/[0-9]+\]', _repo[patch].mail_subject) is not None
-    except KeyError:
-        return False
-
-
-def get_patch_set(patch):
-    result = set()
-    result.add(patch)
-    thread = threads.get_thread(patch)
-
-    if thread.children is None:
-        return result
-
-    if not is_part_of_patch_set(patch):
-        return result
-
-    cover = thread  # this only works if
-    result.add(cover.name)
-
-    # get leaves of cover letter
-    for child in cover.children:
-        result.add(child.name)
-    return result
-
-
 def get_author_of_msg(repo, msg_id):
     email = repo.mbox.get_messages(msg_id)[0]
     return email['From'].lower()
@@ -115,17 +65,6 @@ def patch_has_foreign_response(repo, patch):
 
 def is_single_patch_ignored(patch):
     return patch, not patch_has_foreign_response(_repo, patch)
-
-
-def get_authors_in_thread(repo, thread):
-    authors = set()
-
-    authors.add(get_author_of_msg(repo, thread.name))
-
-    for child in thread.children:
-        authors |= get_authors_in_thread(repo, child)
-
-    return authors
 
 
 def get_ignored(repo, mail_characteristics, clustering):
@@ -393,38 +332,6 @@ def check_correct_maintainer(repo, characteristics, message_ids):
                   message_ids - correct)
 
 
-def is_patch_process_mail(patch):
-    try:
-        patch_mail = _repo.mbox[patch]
-    except KeyError:
-        return None
-    subject = patch_mail.mail_subject.lower()
-    if 'linux-next' in subject:
-        return patch
-    if 'git pull' in subject:
-        return patch
-    if 'rfc' in subject:
-        return patch
-    return None
-
-
-def identify_process_mails():
-    global patches
-    p = get_pool()
-    result = p.map(is_patch_process_mail, tqdm(patches))
-
-    if result is None:
-        return None
-    result = set(result)
-    try:
-        result.remove(None)
-    except KeyError:
-        pass
-
-    pickle.dump(result, open('resources/linux/process_mails.pkl', 'wb'))
-    return result
-
-
 def evaluate_patch(patch):
 
     global tags
@@ -487,13 +394,6 @@ def evaluate_patch(patch):
         'firstMailInThread': first_mail_in_thread,
         'process_mail': patch in process_mails if process_mails else None,
     }
-
-
-def _evaluate_patches():
-    p = get_pool()
-    result = p.map(evaluate_patch, tqdm(patches))
-
-    return result
 
 
 def load_maintainers(tag):
@@ -653,20 +553,4 @@ def evaluate_patches(config, prog, argv):
     check_correct_maintainer(repo, characteristics, patches)
     quit()
 
-    log.info('Identify process patches (eg. git pull)…')  # ############################################# Process Mails
-    if 'no-process-mails' in argv:
-        process_mails = None
-    elif 'process-mails' in argv or not os.path.isfile('resources/linux/process_mails.pkl'):
-        process_mails = identify_process_mails()
-    else:
-        process_mails = pickle.load(open('resources/linux/process_mails.pkl', 'rb'))
-
     result = _evaluate_patches()
-
-    write_dict_list(result, 'patch_evaluation.tsv')
-    pickle.dump(result, open('patch_evaluation.pkl', 'wb'))
-
-    log.info("Clean up…")
-    p = get_pool()
-    p.close()
-    p.join()
