@@ -198,6 +198,7 @@ class LinuxMailCharacteristics:
 
         self.is_cover_letter = False
         self.is_first_patch_in_thread = False
+        self.process_mail = False
 
         self.maintainers = dict()
 
@@ -214,6 +215,11 @@ class LinuxMailCharacteristics:
             self.patches_linux = self._patches_linux(patch)
             self.is_stable_review = self._is_stable_review(lists_of_patch,
                                                            recipients, patch)
+
+            if self.patches_linux and 'Subject' in message:
+                processes = ['linux-next', 'git pull', 'rfc']
+                subject = str(message['Subject']).lower()
+                self.process_mail = True in [process in subject for process in processes]
 
             if self.patches_linux and maintainers_version is not None:
                 self.linux_version = self.patch_get_version(patch)
