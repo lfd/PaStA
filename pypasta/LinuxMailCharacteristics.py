@@ -225,6 +225,7 @@ class LinuxMailCharacteristics:
         self.recipients = get_recipients(message)
 
         self.mail_from = message['From'].lower()
+        self.subject = str(message['Subject'] or '')
 
         lists_of_patch = repo.mbox.get_lists(message_id)
         recipients = LinuxMailCharacteristics.flatten_recipients(message)
