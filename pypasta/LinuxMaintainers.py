@@ -145,7 +145,7 @@ class LinuxSubsystem:
         return False
 
     def get_maintainers(self):
-        return self.list, self.mail
+        return self.list, self.mail + self.person, self.reviewers
 
     def __init__(self, entry):
         self.description = list()
@@ -221,7 +221,8 @@ class LinuxSubsystem:
             elif type == 'N':
                 self.regex_patterns.append(value)
             elif type == 'R':
-                self.reviewers.append(value)
+                value = value.lower()
+                self.reviewers += self.parse_person(value)
             elif type == 'B':
                 self.bugs.append(value)
             elif type == 'C':
