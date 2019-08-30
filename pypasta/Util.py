@@ -12,6 +12,8 @@ the COPYING file in the top-level directory.
 
 import argparse
 import datetime
+import dateparser
+import email
 import git
 import re
 import termios
@@ -110,6 +112,27 @@ def parse_date_ymd(ymd):
         return datetime.datetime.strptime(ymd, "%Y-%m-%d")
     except ValueError:
         raise argparse.ArgumentTypeError("Not a valid date: '%s'" % ymd)
+
+
+def mail_parse_date(date_str, assume_epoch=False):
+    try:
+        date = email.utils.parsedate_to_datetime(date_str)
+    except Exception:
+        date = None
+
+    if not date:
+        try:
+            date = dateparser.parse(date_str)
+        except Exception:
+            date = None
+
+    if not date:
+        date = datetime.datetime.utcfromtimestamp(0)
+
+    if date.tzinfo is None:
+        date = date.replace(tzinfo=datetime.timezone.utc)
+
+    return date
 
 
 def getch():

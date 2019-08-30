@@ -11,7 +11,6 @@ the COPYING file in the top-level directory.
 """
 
 import datetime
-import dateparser
 import email
 import git
 import glob
@@ -25,7 +24,7 @@ from subprocess import call
 
 from .MailThread import MailThread
 from .MessageDiff import MessageDiff, Signature
-from ..Util import get_commit_hash_range
+from ..Util import get_commit_hash_range, mail_parse_date
 
 log = getLogger(__name__[-15:])
 
@@ -34,34 +33,13 @@ DIFF_START_REGEX = re.compile(r'^--- \S+/.+$')
 ANNOTATION_REGEX = re.compile(r'^---\s*$')
 
 
-def mail_parse_date(date_str):
-    try:
-        date = email.utils.parsedate_to_datetime(date_str)
-    except Exception:
-        date = None
-    if not date:
-        try:
-            date = dateparser.parse(date_str)
-        except Exception:
-            date = None
-    return date
-
-
 class PatchMail(MessageDiff):
     def __init__(self, mail):
         identifier = mail['Message-ID']
         self.mail_subject = mail['Subject']
 
         # Get informations on the author
-        date = mail_parse_date(mail['Date'])
-        if not date:
-            # assume epoch
-            log.debug('  Message %s: unable to parse date %s' %
-                      (identifier, mail['Date']))
-            date = datetime.datetime.utcfromtimestamp(0)
-
-        if date.tzinfo is None:
-            date = date.replace(tzinfo=datetime.timezone.utc)
+        date = mail_parse_date(mail['Date'], assume_epoch=True)
 
         author = str(mail['From'])
         author_name, author_email = email.utils.parseaddr(author)
