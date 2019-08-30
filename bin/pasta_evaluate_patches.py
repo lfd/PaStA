@@ -40,10 +40,6 @@ def f_pkl(fname):
     return '%s%s%s%s' % (d_resources, f_prefix, fname, f_suffix)
 
 
-def is_single_patch_ignored(patch):
-    return patch, not patch_has_foreign_response(_repo, patch)
-
-
 def get_ignored(repo, characteristics, clustering):
     # First, we have to define the term patch. In this analysis, we must only
     # regard patches that either fulfil rule 1 or 2:
@@ -304,43 +300,6 @@ def check_correct_maintainer(repo, characteristics, message_ids):
                   message_ids - correct)
 
 
-def stats_patch(repo, message_id, ignored):
-    message = repo.mbox.get_messages(message_id)[0]
-    author = email.utils.parseaddr(str(message['From'] or ''))
-
-    thread = repo.mbox.threads.get_thread(message_id)
-    mail_traffic = sum(1 for _ in LevelOrderIter(thread))
-    first_mail_in_thread = thread.name
-    patch = repo[message_id]
-
-    return {
-        'subject': str(message['Subject'] or ''),
-        'from': author,
-        'ignored': ignored,
-        'upstream': message_id in upstream,
-        'wrong maintainer': message_id in wrong_maintainer[0] if wrong_maintainer else None,
-        'semi wrong maintainer': message_id in wrong_maintainer[1] if wrong_maintainer else None,
-        '#LoC': patch.diff.lines,
-        '#Files': len(patch.diff.affected),
-        'timestamp': patch.author.date.timestamp(),
-        'maintainers': subsystem['maintainers'] if subsystem else None,
-        'lists': subsystem['lists'] if subsystem else None,
-        'subsystems': subsystem['subsystem'] if subsystem else None,
-        'mailTraffic': mail_traffic,
-        'firstMailInThread': first_mail_in_thread,
-        'process_mail': message_id in process_mails if process_mails else None,
-    }
-
-def stats_patches(repo, message_ids, population_ignored):
-    ret = dict()
-
-    for message_id in message_ids:
-        ignored = population_ignored[message_id]
-        ret[message_id] = stats_patch(repo, message_id, ignored)
-
-    return ret
-
-
 def load_maintainers(tag):
     pyrepo = _repo.repo
 
@@ -497,6 +456,3 @@ def evaluate_patches(config, prog, argv):
 
     log.info('Checking correct maintainers...')
     check_correct_maintainer(repo, characteristics, patches)
-
-    # Actually... We don't need that any longer
-    #result = stats_patches(repo, patches, population_ignored)
