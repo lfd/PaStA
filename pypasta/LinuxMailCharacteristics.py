@@ -17,6 +17,8 @@ from anytree import LevelOrderIter
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
+from .Util import mail_parse_date
+
 _repo = None
 _maintainers_version = None
 _mainline_tags = None
@@ -228,6 +230,7 @@ class LinuxMailCharacteristics:
 
         self.mail_from = message['From'].lower()
         self.subject = str(message['Subject'] or '')
+        self.date = mail_parse_date(message['Date'])
 
         lists_of_patch = repo.mbox.get_lists(message_id)
         recipients = LinuxMailCharacteristics.flatten_recipients(message)
