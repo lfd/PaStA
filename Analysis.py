@@ -280,9 +280,20 @@ if __name__ == '__main__':
     if False:
         data = []
         for patch, character in load.items():
+            if not character.is_patch or not character.patches_linux or character.is_stable_review or character.is_next:
+                continue
+
+            kv = '' # character.linux_version
+            rc = ''
 
             data.append({
-                'id': patch
+                'id': patch,
+                'from': character.mail_from,
+                'kernel version': kv,
+                'rcv': rc,
+                'upstream': '',
+                'ignored': not (character.upstream or character.has_foreign_response),
+                'time': ''
             })
         patch_data = pd.DataFrame(data)
     else:
