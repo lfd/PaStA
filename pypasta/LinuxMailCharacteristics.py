@@ -28,7 +28,7 @@ MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
 VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
 
 
-def get_recipients(message):
+def email_get_recipients(message):
     recipients = message.get_all('To', []) + message.get_all('Cc', [])
     recipients = list(filter(None, recipients))
     # get_all might return Header objects. Convert them all to strings.
@@ -39,6 +39,10 @@ def get_recipients(message):
                   if VALID_EMAIL_REGEX.match(x[1])}
 
     return recipients
+
+
+def email_get_from(message):
+    return email.utils.parseaddr(str(message['From'] or '').lower())
 
 
 class LinuxMailCharacteristics:
@@ -83,31 +87,30 @@ class LinuxMailCharacteristics:
                  'kunit/']
 
     def _is_from_bot(self, message):
-        if 'From' not in message:
-            return False
-        mail_from = str(message['From'])
-
         bots = ['broonie@kernel.org', 'lkp@intel.com']
 
         if 'X-Patchwork-Hint' in message and \
             message['X-Patchwork-Hint'] == 'ignore':
-            if True in [bot in mail_from for bot in bots]:
+            if True in [bot in self.mail_from[1] for bot in bots]:
                 return True
 
         # The Tip bot
-        if 'tipbot@zytor.com' in mail_from or \
-           'noreply@ciplatform.org' in mail_from:
+        if 'tipbot@zytor.com' in self.mail_from[1] or \
+           'noreply@ciplatform.org' in self.mail_from[1]:
             return True
 
         # Stephen Rothwell's automated emails
-        if self.is_next and 'sfr@canb.auug.org.au' in mail_from:
+        if self.is_next and 'sfr@canb.auug.org.au' in self.mail_from[1]:
             return True
 
         return False
 
-    def patch_has_foreign_response(self, repo, patch):
-        thread = repo.mbox.threads.get_thread(patch)
-
+    def _has_foreign_response(self, repo, thread):
+        """
+        This function will return True, if there's another author in this
+        thread, other than the ORIGINAL author. (NOT the author of this
+        email)
+        """
         if len(thread.children) == 0:
             return False  # If there is no response the check is trivial
 
@@ -116,23 +119,21 @@ class LinuxMailCharacteristics:
             if mail.name not in repo:
                 continue
 
-            this_from = repo.mbox.get_messages(mail.name)[0]['From'].lower()
-            if this_from != self.mail_from:
+            this_email = email_get_from(repo.mbox.get_messages(mail.name)[0])[1]
+            if this_email != self.mail_from[1]:
                 return True
         return False
 
-    @staticmethod
-    def patch_get_version(patch):
-        author_date = patch.author.date
+    def _patch_get_version(self):
         tag = None
 
         for cand_tag, cand_tag_date in _mainline_tags:
-            if cand_tag_date > author_date:
+            if cand_tag_date > self.date:
                 break
             tag = cand_tag
 
         if tag is None:
-            raise RuntimeError('No valid tag found for patch %s' % patch.id)
+            raise RuntimeError('No valid tag found for patch %s' % self.message_id)
 
         return tag
 
@@ -144,11 +145,10 @@ class LinuxMailCharacteristics:
             s_reviewers = {x[1] for x in s_reviewers}
             self.maintainers[subsystem] = s_list, s_maintainer, s_reviewers
 
-    @staticmethod
-    def _is_stable_review(lists_of_patch, recipients, patch):
+    def _is_stable_review(self, patch):
         # The patch needs to be sent to the stable list
-        if not ('stable' in lists_of_patch or \
-           'stable@vger.kernel.org' in recipients):
+        if not ('stable' in self.lists or
+                'stable@vger.kernel.org' in self.recipients):
             return False
 
         message_flattened = '\n'.join(patch.message).lower()
@@ -180,40 +180,29 @@ class LinuxMailCharacteristics:
 
         return True
 
-    @staticmethod
-    def flatten_recipients(message):
-        addresses = str()
-        if 'To' in message:
-            addresses += str(message['To'])
-        if 'Cc' in message:
-            addresses += '\n' + str(message['Cc'])
-        addresses = addresses.replace('\n', ' ')
-        return addresses
-
-    @staticmethod
-    def _is_next(lists_of_patch, recipients):
-        if 'linux-next' in lists_of_patch:
+    def _is_next(self):
+        if 'linux-next' in self.lists:
             return True
 
-        if 'linux-next@vger.kernel.org' in recipients:
+        if 'linux-next@vger.kernel.org' in self.recipients:
             return True
 
         return False
 
-    def _analyse_series(self, repo, message_id, message):
-        thread = repo.mbox.threads.get_thread(message_id)
+    def _analyse_series(self, thread, message):
         if self.is_patch:
-            if message_id == thread.name or \
-               message_id in [x.name for x in thread.children]:
+            if self.message_id == thread.name or \
+               self.message_id in [x.name for x in thread.children]:
                 self.is_first_patch_in_thread = True
         elif 'Subject' in message and \
              LinuxMailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
             self.is_cover_letter = True
 
     def __init__(self, repo, maintainers_version, clustering, message_id):
+        self.message_id = message_id
+        self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
         self.is_stable_review = False
         self.patches_linux = False
-        self.is_patch = False
         self.has_foreign_response = None
         self.is_upstream = None
 
@@ -226,41 +215,41 @@ class LinuxMailCharacteristics:
         self.maintainers = dict()
 
         message = repo.mbox.get_messages(message_id)[0]
-        self.recipients = get_recipients(message)
+        thread = repo.mbox.threads.get_thread(message_id)
+        self.recipients = email_get_recipients(message)
 
-        self.mail_from = message['From'].lower()
-        self.subject = str(message['Subject'] or '')
+        self.mail_from = email_get_from(message)
+        self.subject = str(message['Subject'] or '').lower()
         self.date = mail_parse_date(message['Date'])
 
-        lists_of_patch = repo.mbox.get_lists(message_id)
-        recipients = LinuxMailCharacteristics.flatten_recipients(message)
+        self.lists = repo.mbox.get_lists(message_id)
+        self.is_next = self._is_next()
 
-        self.is_next = self._is_next(lists_of_patch, recipients)
-        if message_id in repo and message_id not in repo.mbox.invalid:
-            self.is_patch = True
+        self.is_from_bot = self._is_from_bot(message)
+        self._analyse_series(thread, message)
+
+        if self.is_patch:
             patch = repo[message_id]
             self.patches_linux = self._patches_linux(patch)
-            self.is_stable_review = self._is_stable_review(lists_of_patch,
-                                                           recipients, patch)
+            self.is_stable_review = self._is_stable_review(patch)
 
-            if self.patches_linux and 'Subject' in message:
-                processes = ['linux-next', 'git pull', 'rfc']
-                subject = str(message['Subject']).lower()
-                self.process_mail = True in [process in subject for process in processes]
-
-            if self.patches_linux and maintainers_version is not None:
-                self.linux_version = self.patch_get_version(patch)
-                maintainers = maintainers_version[self.linux_version]
-                self.get_maintainer(maintainers, patch)
+            # We must only analyse foreign responses of patches if the patch is
+            # the first patch in a thread. Otherwise, we might not be able to
+            # determine the original author of a thread. Reason: That mail
+            # might be missing.
+            if self.is_first_patch_in_thread:
+                self.has_foreign_response = self._has_foreign_response(repo, thread)
 
             if self.patches_linux:
                 self.is_upstream = len(clustering.get_upstream(message_id)) != 0
 
-            self.has_foreign_response = self.patch_has_foreign_response(repo, message_id)
+                processes = ['linux-next', 'git pull', 'rfc']
+                self.process_mail = True in [process in self.subject for process in processes]
 
-        self.is_from_bot = self._is_from_bot(message)
-
-        self._analyse_series(repo, message_id, message)
+                if maintainers_version is not None:
+                    self.linux_version = self._patch_get_version()
+                    maintainers = maintainers_version[self.linux_version]
+                    self.get_maintainer(maintainers, patch)
 
 
 def _load_mail_characteristic(message_id):
