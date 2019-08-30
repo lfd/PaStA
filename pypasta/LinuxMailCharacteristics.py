@@ -20,6 +20,7 @@ from tqdm import tqdm
 _repo = None
 _maintainers_version = None
 _mainline_tags = None
+_clustering = None
 
 MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
 VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
@@ -207,11 +208,12 @@ class LinuxMailCharacteristics:
              LinuxMailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
             self.is_cover_letter = True
 
-    def __init__(self, repo, maintainers_version, message_id):
+    def __init__(self, repo, maintainers_version, clustering, message_id):
         self.is_stable_review = False
         self.patches_linux = False
         self.is_patch = False
         self.has_foreign_response = None
+        self.is_upstream = None
 
         self.linux_version = None
 
@@ -248,6 +250,9 @@ class LinuxMailCharacteristics:
                 maintainers = maintainers_version[self.linux_version]
                 self.get_maintainer(maintainers, patch)
 
+            if self.patches_linux:
+                self.is_upstream = len(clustering.get_upstream(message_id)) != 0
+
             self.has_foreign_response = self.patch_has_foreign_response(repo, message_id)
 
         self.is_from_bot = self._is_from_bot(message)
@@ -257,18 +262,20 @@ class LinuxMailCharacteristics:
 
 def _load_mail_characteristic(message_id):
     return message_id, LinuxMailCharacteristics(_repo, _maintainers_version,
-                                                message_id)
+                                                _clustering, message_id)
 
 
 def load_linux_mail_characteristics(repo, message_ids,
-                                    maintainers_version=None):
+                                    maintainers_version=None,
+                                    clustering=None):
     ret = dict()
 
     global _mainline_tags
     _mainline_tags = list(filter(lambda x: MAINLINE_REGEX.match(x[0]), repo.tags))
 
-    global _repo, _maintainers_version
+    global _repo, _maintainers_version, _clustering
     _maintainers_version = maintainers_version
+    _clustering = clustering
     _repo = repo
     p = Pool(processes=cpu_count())
     for message_id, characteristics in \
@@ -280,5 +287,6 @@ def load_linux_mail_characteristics(repo, message_ids,
     p.join()
     _repo = None
     _maintainers_version = None
+    _clustering = None
 
     return ret
