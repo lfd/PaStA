@@ -115,24 +115,18 @@ def get_ignored(repo, characteristics, clustering):
         else:
             not_upstreamed_patches |= relevant
 
-    # For all patches of the population, check if they were ignored
-    population_ignored = dict()
-    for patch in population_all_patches:
-        population_ignored[patch] = not characteristics[patch].has_foreign_response
-
+    # That's the population that is relevant for this analysis
     population_relevant = upstreamed_patches | not_upstreamed_patches
 
     # Calculate ignored patches
-    ignored_patches = {patch for (patch, is_ignored) in population_ignored.items()
-                       if patch in not_upstreamed_patches and
-                          is_ignored == True}
+    ignored_patches = {patch for patch in not_upstreamed_patches
+                       if characteristics[patch].has_foreign_response == False}
 
     # Calculate ignored patches wrt to other patches in the cluster: A patch is
     # considered as ignored, if all related patches were ignoreed as well
-    ignored_patches_related = {patch for (patch, is_ignored) in
-            population_ignored.items()
-                               if patch in not_upstreamed_patches and
-                                  False not in [population_ignored[x] for x in clustering.get_downstream(patch)]}
+    ignored_patches_related = {patch for patch in ignored_patches
+                               if False not in [characteristics[x].has_foreign_response == False
+                                                for x in clustering.get_downstream(patch)]}
 
     # Create a dictionary list-name -> number of overall patches. We can use it
     # to calculate a per-list fraction of ignored patches
