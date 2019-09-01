@@ -127,8 +127,8 @@ class LinuxSubsystem:
         if '@' not in value:
             return value, ''
 
-        if value == 'Vince Bridgers <vbridgers2013@gmail.com':
-            return 'Vince Bridgers', 'vbridgers2013@gmail.com'
+        if value == 'vince bridgers <vbridgers2013@gmail.com':
+            return 'vince bridgers', 'vbridgers2013@gmail.com'
 
         raise RuntimeError('Unable to parse %s' % value)
 
@@ -213,6 +213,7 @@ class LinuxSubsystem:
             elif type == 'Q':
                 self.patchwork.append(value)
             elif type == 'P':
+                value = value.lower()
                 self.person.append(self.parse_person(value))
             elif type == 'X':
                 self.xfiles.append(value)
