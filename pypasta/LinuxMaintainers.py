@@ -187,6 +187,9 @@ class LinuxSubsystem:
                 self.mail += self.parse_person(value)
             elif type == 'L':
                 value = value.lower()
+                # We have some lists that are no email adresses. Skip them
+                if value.startswith('http://'):
+                    continue
                 ml = self.EMAIL_LIST_REGEX.findall(value)[0]
                 self.list.add(ml)
             elif type == 'S':
