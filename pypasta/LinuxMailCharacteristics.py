@@ -352,12 +352,11 @@ def load_linux_mail_characteristics(repo, message_ids,
     _maintainers_version = maintainers_version
     _clustering = clustering
     _repo = repo
-    p = Pool(processes=cpu_count())
-    for message_id, characteristics in \
-        tqdm(p.imap_unordered(_load_mail_characteristic, message_ids),
-                              total=len(message_ids),
-                              desc='Linux Mail Characteristics'):
-        ret[message_id] = characteristics
+    p = Pool(processes=int(cpu_count()), maxtasksperchild=1)
+
+    ret = p.map(_load_mail_characteristic, message_ids, chunksize=1000)
+    ret = dict(ret)
+    print('Done')
     p.close()
     p.join()
     _repo = None
