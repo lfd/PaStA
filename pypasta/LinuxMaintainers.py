@@ -39,6 +39,8 @@ class Matcher:
             if regex.match(filename):
                 return True
 
+        return False
+
     def __init__(self, files):
         # Walk over files, look for wildcard entries and convert them to proper
         # python regexes
