@@ -190,7 +190,11 @@ def check_correct_maintainer_patch(repo, characteristic, message_id):
     patch = repo[message_id]
 
     def ignore_tld(address):
-        return MAIL_STRIP_TLD_REGEX.match(address).group(1)
+        match = MAIL_STRIP_TLD_REGEX.match(address)
+        if match:
+            return match.group(1)
+
+        return address
 
     def ignore_tlds(addresses):
         return {ignore_tld(address) for address in addresses if address}
@@ -401,8 +405,9 @@ def evaluate_patches(config, prog, argv):
             ret = dict()
 
         tags = {x[0] for x in repo.tags if not x[0].startswith('v2.6')}
+        tags |= {x[0] for x in repo.tags if x[0].startswith('v2.6.39')}
         # WORKAROUND:
-        tags = {x[0] for x in repo.tags if x[0].startswith('v5.')}
+        #tags = {x[0] for x in repo.tags if x[0].startswith('v5.')}
 
         # Only load what's not already cached
         tags -= ret.keys()
