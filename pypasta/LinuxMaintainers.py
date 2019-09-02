@@ -113,7 +113,7 @@ class LinuxSubsystem:
 
         match = LinuxSubsystem.EMAIL_NMM_REGEX.match(value)
         if match:
-            raise NotImplementedError('IMPLEMENT ME' % value)
+            raise NotImplementedError('IMPLEMENT ME %s' % value)
 
         match = LinuxSubsystem.EMAIL_NMNM_REGEX.match(value)
         if match:
@@ -125,10 +125,10 @@ class LinuxSubsystem:
             return [('', match.group(1))]
 
         if '@' not in value:
-            return value, ''
+            return [(value, '')]
 
         if value == 'vince bridgers <vbridgers2013@gmail.com':
-            return 'vince bridgers', 'vbridgers2013@gmail.com'
+            return [('vince bridgers', 'vbridgers2013@gmail.com')]
 
         raise RuntimeError('Unable to parse %s' % value)
 
@@ -217,7 +217,7 @@ class LinuxSubsystem:
                 self.patchwork.append(value)
             elif type == 'P':
                 value = value.lower()
-                self.person.append(self.parse_person(value))
+                self.person += self.parse_person(value)
             elif type == 'X':
                 self.xfiles.append(value)
             elif type == 'K':
