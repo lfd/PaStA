@@ -212,29 +212,29 @@ def check_correct_maintainer_patch(repo, characteristic, message_id):
     has_maintainer_per_subsystem = True
     has_list_per_subsystem = True
 
-    for subsystem, (lists, maintainers, reviewers) in maintainers.items():
+    for subsystem, (s_lists, s_maintainers, s_reviewers) in maintainers.items():
         if subsystem == 'THE REST':
             continue
 
-        lists = ignore_tlds(lists)
-        maintainers = ignore_tlds(maintainers) | ignore_tlds(reviewers)
+        s_lists = ignore_tlds(s_lists)
+        s_maintainers = ignore_tlds(s_maintainers) | ignore_tlds(s_reviewers)
 
-        if len(lists):
+        if len(s_lists):
             has_lists = True
 
-        if len(maintainers):
+        if len(s_maintainers):
             has_maintainers = True
 
-        if len(lists & recipients):
+        if len(s_lists & recipients):
             has_one_correct_list = True
 
-        if len(maintainers & recipients):
+        if len(s_maintainers & recipients):
             has_one_correct_maintainer = True
 
-        if len(maintainers) and len(maintainers & recipients) == 0:
+        if len(s_maintainers) and len(s_maintainers & recipients) == 0:
             has_maintainer_per_subsystem = False
 
-        if len(lists) and len(lists & recipients) == 0:
+        if len(s_lists) and len(s_lists & recipients) == 0:
             has_list_per_subsystem = False
 
     # Metric: All lists + at least one maintainer per subsystem
@@ -249,8 +249,20 @@ def check_correct_maintainer_patch(repo, characteristic, message_id):
     #    return True
 
     # Metric: One correct list + one maintainer per subsystem
-    if (not has_lists or has_one_correct_list) and has_maintainer_per_subsystem:
+    #if (not has_lists or has_one_correct_list) and has_maintainer_per_subsystem:
+    #    return True
+
+    # Metric: One correct list
+    #if (not has_lists or has_one_correct_list):
+    #    return True
+
+    # Metric: One correct list or one correct maintainer
+    if has_lists and has_one_correct_list:
         return True
+    elif has_maintainers and has_one_correct_maintainer:
+        return True
+    if not has_lists and not has_maintainers:
+        return 'linux-kernel@vger.kernel' in recipients
 
     return False
 
