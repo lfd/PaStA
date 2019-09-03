@@ -245,6 +245,8 @@ class LinuxMaintainers:
     def get_subsystems_by_files(self, filenames):
         subsystems = set()
         for file in filenames:
+            if file.startswith('linux/'):
+                file = file[len('linux/'):]
             subsystems |= self.get_subsystems_by_file(file)
 
         return subsystems
