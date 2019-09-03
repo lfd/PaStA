@@ -101,6 +101,9 @@ class LinuxMailCharacteristics:
            'noreply@ciplatform.org' in self.mail_from[1]:
             return True
 
+        if message['X-Mailer'] == 'tip-git-log-daemon':
+            return True
+
         # Stephen Rothwell's automated emails
         if self.is_next and 'sfr@canb.auug.org.au' in self.mail_from[1]:
             return True
@@ -147,7 +150,16 @@ class LinuxMailCharacteristics:
             s_reviewers = {x[1] for x in s_reviewers}
             self.maintainers[subsystem] = s_list, s_maintainer, s_reviewers
 
-    def _is_stable_review(self, patch):
+    def _is_stable_review(self, message, patch):
+        if 'X-Mailer' in message and \
+           'LinuxStableQueue' in message['X-Mailer']:
+               return True
+
+        if 'X-stable' in message:
+            xstable = message['X-stable'].lower()
+            if xstable == 'commit' or xstable == 'review':
+                return True
+
         # The patch needs to be sent to the stable list
         if not ('stable' in self.lists or
                 'stable@vger.kernel.org' in self.recipients):
@@ -233,7 +245,7 @@ class LinuxMailCharacteristics:
         if self.is_patch:
             patch = repo[message_id]
             self.patches_linux = self._patches_linux(patch)
-            self.is_stable_review = self._is_stable_review(patch)
+            self.is_stable_review = self._is_stable_review(message, patch)
 
             # We must only analyse foreign responses of patches if the patch is
             # the first patch in a thread. Otherwise, we might not be able to
