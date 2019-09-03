@@ -146,8 +146,8 @@ class LinuxMailCharacteristics:
         subsystems = maintainer.get_subsystems_by_files(patch.diff.affected)
         for subsystem in subsystems:
             s_list, s_maintainer, s_reviewers = maintainer.get_maintainers(subsystem)
-            s_maintainer = {x[1] for x in s_maintainer}
-            s_reviewers = {x[1] for x in s_reviewers}
+            s_maintainer = {x[1] for x in s_maintainer if x[1]}
+            s_reviewers = {x[1] for x in s_reviewers if x[1]}
             self.maintainers[subsystem] = s_list, s_maintainer, s_reviewers
 
     def _is_stable_review(self, message, patch):
