@@ -293,7 +293,7 @@ def a_total_rej_ign():
             'r_ratio': (tot - ups) / tot
         })
 
-        if tot >= borders[1]:
+        if tot >= borders[1] or ign > 200 or tot - ups > 1000:
             print('Author ' + author[0] + ' ' + author[1] + ' has ' + str(tot) + ' totals, ' + str(tot - ups) + ' rejected, and ' + str(
                 ign) + ' ignored patches.')
 
@@ -412,7 +412,7 @@ def analysis_patches(config, prog, argv):
             'ignored': ignored,
             'time': character.date
         })
-    log.info('There are ' + str(len(irrelevants)) + ' irrelevant Patches.')
+    log.info('There are ' + str(len(irrelevants)) + ' irrelevant Mails.')
     patch_data = pd.DataFrame(data)
 
     # Clean Data
@@ -422,10 +422,26 @@ def analysis_patches(config, prog, argv):
     patch_data.reset_index(inplace=True)
     # Remove outlier
     pre_outlier = len(patch_data.index)
+    x = '''
     patch_data = patch_data[patch_data['from'].apply(lambda x: not x in [
-        ('Baole Ni', '<baolex.ni@intel.com>')
-
+        # Total > 3500
+        ('arnaldo carvalho de melo', 'acme@kernel.org'),
+        ('jeff kirsher', 'jeffrey.t.kirsher@intel.com'),
+        ('simon horman', 'horms+renesas@verge.net.au'),
+        ('christoph hellwig', 'hch@lst.de'),
+        ('marc zyngier', 'marc.zyngier@arm.com'),
+        ('arnd bergmann', 'arnd@arndb.de'), # + rejected
+        # Ignored > 200
+        ('baole ni', 'baolex.ni@intel.com'),
+        ('rickard strandqvist', 'rickard_strandqvist@spectrumdigital.se'),
+        # Total + Rejected + Ignored
+        ('sf markus elfring', 'elfring@users.sourceforge.net'),
+        ('mark brown', 'broonie@kernel.org')
     ])]
+    '''
+
+    #patch_data = patch_data[patch_data['time'].apply(lambda x: x.year >= 2018)]
+
     post_outlier = len(patch_data.index)
     log.info(str(pre_outlier - post_outlier) + ' Patches were removed. (Outlier)')
     # Bool to int
@@ -433,7 +449,7 @@ def analysis_patches(config, prog, argv):
     # rcv as int
     patch_data['rcv'] = patch_data['rcv'].apply((lambda x: int(x)))
 
-    if os.path.isfile(d_resources + 'other_data.pkl'):
+    if os.path.isfile(d_resources + 'other_data.pkl') and False:
         author_data, subsystem_data = pickle.load(open(d_resources + 'other_data.pkl', 'rb'))
     else:
         build_data()
