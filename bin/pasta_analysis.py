@@ -22,6 +22,7 @@ import pickle
 import re
 import sys
 from tqdm import tqdm
+import tikzplotlib
 
 log = getLogger(__name__[-15:])
 
@@ -64,8 +65,10 @@ def display_and_save_plot(name):
     global show
     plt.savefig('plots/' + name + '.svg')
     plt.savefig('plots/' + name + '.png', dpi=600)
+    #tikzplotlib.save('plots' + name + ".tex")
     if show:
         plt.show()
+    log.info('Plotted ' + name)
 
 
 def normalize(data, max, args, by):
@@ -137,10 +140,13 @@ def p_by_rc_v():
     ax = frame.boxplot(by='rcv', column='ignored/total')
     ax.set_xticklabels(
         ['MW', 'rc1..', 'rc2..', 'rc3..', 'rc4..', 'rc5..', 'rc6..', 'rc7..', 'rc8..', 'rc9..', 'rc10..'])
-    ax.set_ylabel('')
+    ax.set_ylabel('Ratio Ignored/Total')
     ax.set_title('')
     ax.get_figure().suptitle('')
     display_and_save_plot('by_rc_i_box')
+    am = 0
+    am = frame['ignored/total'].mean()
+    print('AM: ' + str(am))
 
     # global corr
     # ax.set_yscale('linear')
@@ -168,6 +174,9 @@ def p_by_time():
     day = patch_data['time'].apply(lambda x: datetime.datetime(year=x.year, month=x.month, day=x.day))
     patch_data['day'] = day - pd.to_timedelta(day.dt.dayofweek, unit='d')
 
+    patch_data = patch_data[patch_data['day'].apply(lambda x: x > patch_data['day'].min())]
+    patch_data = patch_data[patch_data['day'].apply(lambda x: x < patch_data['day'].max())]
+
     grouped = patch_data.groupby(['day'])
     total = grouped.count()['id']
     rejected = total - grouped.sum()['upstream']
@@ -180,7 +189,9 @@ def p_by_time():
 
     ax = plt.gca()
     ax.set_yscale('log')
-    result_frame.plot.line(ax=ax)
+    ax.set_ylabel('Patches per Week')
+    ax.set_xlabel('')
+    result_frame.plot.line(x='day', y=['total', 'ignored'], ax=ax)
     display_and_save_plot('by_time')
 
     # Plot Scatterplot with regression line Ignored
@@ -266,7 +277,7 @@ def _plot_groups(data, dim, y_label=None, group=None, plot_label=None):
     display_and_save_plot('total_' + dim + str(group))
 
 
-borders = [100, 3500]
+borders = [100, 4000]
 
 
 def a_total_rej_ign():
@@ -293,7 +304,7 @@ def a_total_rej_ign():
             'r_ratio': (tot - ups) / tot
         })
 
-        if tot >= borders[1] or ign > 200 or tot - ups > 1000:
+        if tot >= borders[1] or ign > 200:
             print('Author ' + author[0] + ' ' + author[1] + ' has ' + str(tot) + ' totals, ' + str(tot - ups) + ' rejected, and ' + str(
                 ign) + ' ignored patches.')
 
@@ -315,11 +326,13 @@ def a_total_rej_ign():
     for group, data in p_groups:
         i_groups[group] = data
 
-    _plot_groups(r_groups[0], 'rejected', 'rejected', 0)
-    _plot_groups(r_groups[0], 'r_ratio', 'ratio rejected/total', 0)
+    if r_groups[0]:
+        _plot_groups(r_groups[0], 'rejected', 'rejected', 0)
+        _plot_groups(r_groups[0], 'r_ratio', 'ratio rejected/total', 0)
 
-    _plot_groups(i_groups[0], 'ignored', 'ignored', 0)
-    _plot_groups(i_groups[0], 'i_ratio', 'ratio ignored/total', 0)
+    if i_groups[0]:
+        _plot_groups(i_groups[0], 'ignored', 'ignored', 0)
+        _plot_groups(i_groups[0], 'i_ratio', 'ratio ignored/total', 0)
 
     _plot_groups(pd.concat([r_groups[0], r_groups[1]]), 'rejected', 'rejected', '0-1')
     _plot_groups(pd.concat([r_groups[0], r_groups[1]]), 'r_ratio', 'ratio rejected/total', '0-1')
@@ -422,7 +435,7 @@ def analysis_patches(config, prog, argv):
     patch_data.reset_index(inplace=True)
     # Remove outlier
     pre_outlier = len(patch_data.index)
-    x = '''
+    '''
     patch_data = patch_data[patch_data['from'].apply(lambda x: not x in [
         # Total > 3500
         ('arnaldo carvalho de melo', 'acme@kernel.org'),
@@ -439,11 +452,11 @@ def analysis_patches(config, prog, argv):
         ('mark brown', 'broonie@kernel.org')
     ])]
     '''
-
     #patch_data = patch_data[patch_data['time'].apply(lambda x: x.year >= 2018)]
 
     post_outlier = len(patch_data.index)
     log.info(str(pre_outlier - post_outlier) + ' Patches were removed. (Outlier)')
+    log.info(str(post_outlier) + ' Patches remain.')
     # Bool to int
     patch_data = patch_data.replace(True, 1)
     # rcv as int
