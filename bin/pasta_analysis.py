@@ -385,9 +385,9 @@ def analysis_patches(config, prog, argv):
                     not c.is_from_bot}
     irrelevant = load.keys() - relevant
 
-    ignored_single = {m for m, c in load.items() if
-                        not c.is_upstream and
-                        not c.has_foreign_response}
+    ignored_single = {m for m in relevant if
+                        not load[m].is_upstream and
+                        not load[m].has_foreign_response}
 
     ignored_related = {patch for patch in ignored_single
                         if False not in [load[x].has_foreign_response == False
