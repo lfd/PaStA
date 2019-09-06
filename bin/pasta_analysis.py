@@ -360,10 +360,11 @@ def build_data():
 
     for index, tline in patch_data.iterrows():
         line = tline.to_dict()
-        try:
-            author_data[line['from']].append(line)
-        except KeyError:
-            author_data[line['from']] = [line]
+        mail_from = line['from']
+        if mail_from not in author_data:
+            author_data[mail_from] = list()
+
+        author_data[mail_from].append(line)
 #        if line['subsystems'] is None:
 #            continue
 #        for subsystem in line['subsystems']:
