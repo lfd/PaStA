@@ -384,7 +384,6 @@ def analysis_patches(config, prog, argv):
     log.info('Loading Data')
 
     load = pickle.load(open(d_resources + 'eval_characteristics.pkl', 'rb'))
-    ignored_single = set()
 
     relevant = {m for m, c in load.items() if
                     c.is_patch and
@@ -398,9 +397,9 @@ def analysis_patches(config, prog, argv):
     for patch in irrelevant:
         del load[patch]
 
-    for patch, character in load.items():
-        if not (character.is_upstream or character.has_foreign_response):
-            ignored_single.add(patch)
+    ignored_single = {m for m, c in load.items() if
+                        not c.is_upstream and
+                        not c.has_foreign_response}
 
     ignored_related = {patch for patch in ignored_single
                         if False not in [load[x].has_foreign_response == False
