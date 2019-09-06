@@ -386,16 +386,16 @@ def analysis_patches(config, prog, argv):
     load = pickle.load(open(d_resources + 'eval_characteristics.pkl', 'rb'))
     ignored_single = set()
 
-    irrelevants = set()
-    relevant = set()
-    for patch, character in load.items():
-        if not character.is_patch or not character.patches_linux or character.is_stable_review or \
-                character.is_next or character.process_mail or character.is_from_bot:
-            irrelevants.add(patch)
-            continue
-        relevant.add(patch)
+    relevant = {m for m, c in load.items() if
+                    c.is_patch and
+                    c.patches_linux and
+                    not c.is_stable_review and
+                    not c.is_next and
+                    not c.process_mail and
+                    not c.is_from_bot}
+    irrelevant = load.keys() - relevant
 
-    for patch in irrelevants:
+    for patch in irrelevant:
         del load[patch]
 
     for patch, character in load.items():
@@ -429,7 +429,7 @@ def analysis_patches(config, prog, argv):
             'ignored': ignored,
             'time': character.date
         })
-    log.info('There are ' + str(len(irrelevants)) + ' irrelevant Mails.')
+    log.info('There are ' + str(len(irrelevant)) + ' irrelevant Mails.')
     patch_data = pd.DataFrame(data)
 
     # Clean Data
