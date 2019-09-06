@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2. See
 the COPYING file in the top-level directory.
 """
 
+import csv
 import os
 import pickle
 import re
@@ -18,6 +19,7 @@ from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
+from pypasta import format_date_ymd
 from pypasta.LinuxMaintainers import LinuxMaintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
 
@@ -338,6 +340,69 @@ def dump_messages(filename, repo, messages):
             f.write('%s\t\t\t%s\n' % (message , ' '.join(sorted(repo.mbox.get_lists(message)))))
 
 
+def dump_characteristics(characteristics, filename):
+    fieldnames = ['Message-ID',
+                  'From_name',
+                  'From_email',
+                  'Date',
+                  'Recipients',
+
+                  'lists',
+                  'is_patch',
+                  'patches_linux',
+                  'linux_version',
+                  'is_from_bot',
+                  'is_stable_review',
+                  'is_process_mail',
+                  'is_upstream',
+                  'is_cover_letter',
+                  'is_first_patch_in_thread',
+
+                  'mtrs_has_lists',
+                  'mtrs_has_linux_kernel',
+                  'mtrs_has_list_per_subsystem',
+                  'mtrs_has_one_correct_list',
+
+                  'mtrs_has_maintainers',
+                  'mtrs_has_maintainer_per_subsystem',
+                  'mtrs_has_one_correct_maintainer'
+                  ]
+
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for c in characteristics.values():
+            writer.writerow({
+                'Message-ID': c.message_id,
+                'From_name': c.mail_from[0],
+                'From_email': c.mail_from[1],
+                'Date': format_date_ymd(c.date),
+                'Recipients': ' '.join(sorted(c.recipients)),
+                'lists': ' '.join(sorted(c.lists)),
+
+                'is_patch': c.is_patch,
+                'patches_linux': c.patches_linux,
+                'linux_version': str(c.linux_version),
+                'is_from_bot': str(c.is_from_bot),
+                'is_stable_review': str(c.is_stable_review),
+                'is_process_mail': str(c.process_mail),
+                'is_upstream': str(c.is_upstream),
+
+                'is_cover_letter': c.is_cover_letter,
+                'is_first_patch_in_thread': str(c.is_first_patch_in_thread),
+
+                'mtrs_has_lists': str(c.mtrs_has_lists),
+                'mtrs_has_linux_kernel': str(c.mtrs_has_linux_kernel),
+                'mtrs_has_list_per_subsystem': str(c.mtrs_has_list_per_subsystem),
+                'mtrs_has_one_correct_list': str(c.mtrs_has_one_correct_list),
+
+                'mtrs_has_maintainers': str(c.mtrs_has_maintainers),
+                'mtrs_has_maintainer_per_subsystem': str(c.mtrs_has_maintainer_per_subsystem),
+                'mtrs_has_one_correct_maintainer': str(c.mtrs_has_one_correct_maintainer)
+            })
+
+
 def evaluate_patches(config, prog, argv):
     if config.mode != config.Mode.MBOX:
         log.error('Only works in Mbox mode!')
@@ -406,6 +471,8 @@ def evaluate_patches(config, prog, argv):
 
     log.info('Loading/Updating Linux patch characteristics...')
     characteristics = load_pkl_and_update('characteristics', load_characteristics)
+
+    dump_characteristics(characteristics, os.path.join(d_resources, 'characteristics.raw'))
 
     get_patch_origin(repo, characteristics, all_messages_in_time_window)
 
