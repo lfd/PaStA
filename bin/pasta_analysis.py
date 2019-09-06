@@ -32,7 +32,6 @@ f_suffix = '.pkl'
 
 patch_data = None
 author_data = None
-subsystem_data = None
 corr = []
 show = True
 
@@ -353,10 +352,8 @@ def a_total_rej_ign():
 def build_data():
     print(' building…')
     global author_data
-    global subsystem_data
 
     author_data = dict()
-    subsystem_data = dict()
 
     for index, tline in patch_data.iterrows():
         line = tline.to_dict()
@@ -365,19 +362,11 @@ def build_data():
             author_data[mail_from] = list()
 
         author_data[mail_from].append(line)
-#        if line['subsystems'] is None:
-#            continue
-#        for subsystem in line['subsystems']:
-#            try:
-#                subsystem_data[subsystem].append(line)
-#            except KeyError:
-#                subsystem_data[subsystem] = [line]
 
 
 def analysis_patches(config, prog, argv):
     global author_data
     global patch_data
-    global subsystem_data
 
     _, clustering = config.load_cluster()
     clustering.optimize()
@@ -466,10 +455,10 @@ def analysis_patches(config, prog, argv):
     patch_data = patch_data.replace(True, 1)
 
     if os.path.isfile(d_resources + 'other_data.pkl'):
-        author_data, subsystem_data = pickle.load(open(d_resources + 'other_data.pkl', 'rb'))
+        author_data = pickle.load(open(d_resources + 'other_data.pkl', 'rb'))
     else:
         build_data()
-        pickle.dump((author_data, subsystem_data), open(d_resources + 'other_data.pkl', 'wb'))
+        pickle.dump(author_data, open(d_resources + 'other_data.pkl', 'wb'))
 
     log.info(' → Done')
 
