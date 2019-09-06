@@ -310,7 +310,7 @@ def a_total_rej_ign():
         })
 
         if tot >= borders[1] or ign > 200:
-            print('Author ' + author[0] + ' ' + author[1] + ' has ' + str(tot) + ' totals, ' + str(tot - ups) + ' rejected, and ' + str(
+            print('Author ' + author + ' has ' + str(tot) + ' totals, ' + str(tot - ups) + ' rejected, and ' + str(
                 ign) + ' ignored patches.')
 
     authors = pd.DataFrame(authors)
@@ -357,11 +357,11 @@ def build_data():
 
     for index, tline in patch_data.iterrows():
         line = tline.to_dict()
-        mail_from = line['from']
-        if mail_from not in author_data:
-            author_data[mail_from] = list()
+        email = line['from'][1]
+        if email not in author_data:
+            author_data[email] = list()
 
-        author_data[mail_from].append(line)
+        author_data[email].append(line)
 
 
 def analysis_patches(config, prog, argv):
