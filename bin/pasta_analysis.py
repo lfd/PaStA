@@ -142,7 +142,7 @@ def p_by_rc_v():
     ax = frame.boxplot(by='rcv', column='ignored/total')
     ax.set_xticklabels(
         ['MW', 'rc1..', 'rc2..', 'rc3..', 'rc4..', 'rc5..', 'rc6..', 'rc7..', 'rc8..', 'rc9..', 'rc10..'])
-    ax.set_ylabel('Ratio Ignored/Total')
+    #ax.set_ylabel('Ratio Ignored/Total')
     ax.set_title('')
     ax.get_figure().suptitle('')
     display_and_save_plot('by_rc_i_box')
@@ -174,11 +174,11 @@ def _smooth(data, column, x):
 def p_by_time():
     global patch_data
     day = patch_data['time'].apply(lambda x: datetime.datetime(year=x.year, month=x.month, day=x.day))
-    patch_data['day'] = day - pd.to_timedelta(day.dt.dayofweek, unit='d')
+    patch_data['week'] = day - pd.to_timedelta(day.dt.dayofweek, unit='d')
 
     #patch_data = patch_data[patch_data['day'].apply(lambda x: x > patch_data['day'].min() and x < patch_data['day'].max())]
 
-    grouped = patch_data.groupby(['day'])
+    grouped = patch_data.groupby(['week'])
     total = grouped.count()['id']
     rejected = total - grouped.sum()['upstream']
     ignored = grouped.sum()['ignored']
@@ -191,10 +191,12 @@ def p_by_time():
 
     ax = plt.gca()
     ax.set_yscale('log')
-    ax.set_ylabel('Patches per Week', fontsize='xx-large')
     ax.set_xlabel('')
-    result_frame.plot.line(x='day', y=['total', 'ignored'], ax=ax)
+    ax.set_ylabel('patches per week')
+    result_frame.plot.line(x='week', y=['total', 'ignored'], ax=ax)
     display_and_save_plot('by_time')
+
+    print(result_frame.corr())
 
     # Plot Scatterplot with regression line Ignored
     ax = plt.gca()
@@ -231,11 +233,13 @@ def p_by_time():
     result_frame['index'] = pd.Series(result_frame.index)
     result_frame['regression'] = result_frame['index'].apply(lambda x: fit_fn(x))
 
-    ax = result_frame.plot.line(x='day', y=['ignored/total', 'regression'])
+    ax = result_frame.plot.line(x='week', y=['ignored/total', 'regression'])
 
     display_and_save_plot('by_time_ratio_ign')
     print('regression of ignored/total (line): ' + str(fit_fn))
 
+
+    print(result_frame.corr())
     # result_frame['rejected/total'] = rejected/total
     # _smooth(result_frame, 'rejected/total', 3)
 
@@ -462,7 +466,7 @@ def analysis_patches(config, prog, argv):
     # rcv as int
     patch_data['rcv'] = patch_data['rcv'].apply((lambda x: int(x)))
 
-    if os.path.isfile(d_resources + 'other_data.pkl') and False:
+    if os.path.isfile(d_resources + 'other_data.pkl'):
         author_data, subsystem_data = pickle.load(open(d_resources + 'other_data.pkl', 'rb'))
     else:
         build_data()
@@ -470,9 +474,9 @@ def analysis_patches(config, prog, argv):
 
     log.info(' → Done')
 
-    plt.rc('font', size=12)
+    plt.rc('font', size=15)
 
     #p_by_rc()
     p_by_rc_v()
-    p_by_time()
-    a_total_rej_ign()
+    #p_by_time()
+    #a_total_rej_ign()
