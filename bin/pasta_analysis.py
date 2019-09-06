@@ -407,16 +407,17 @@ def analysis_patches(config, prog, argv):
 
     data = []
     for patch, character in load.items():
-        tag = character.linux_version
-        rc = 'rc' in tag
+        tag = character.linux_version.split('-rc')
+        kv = [int(x) for x in tag[0][1:].split('.')]
 
-        if rc:
-            rc = int(re.search('-rc[0-9]+', tag).group()[3:])
-            kv = re.search('v[0-9]+\.', tag).group() + '%02d' % int(re.search('\.[0-9]+', tag).group()[1:])
-        else:
+        if len(tag) == 1: # we have a release
+            # Set rc to 0 and shift it to the next MW
             rc = 0
-            kv = re.search('v[0-9]+\.', tag).group() + '%02d' % (
-                    int(re.search('\.[0-9]+', tag).group()[1:]) + 1)
+            kv[-1] += 1
+        else:
+            rc = int(tag[1])
+        kv = 'v' + '.'.join([str(v) for v in kv])
+
         ignored = patch in ignored_related
 
         data.append({
