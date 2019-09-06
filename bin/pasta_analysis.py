@@ -411,7 +411,7 @@ def analysis_patches(config, prog, argv):
         rc = 'rc' in tag
 
         if rc:
-            rc = re.search('-rc[0-9]+', tag).group()[3:]
+            rc = int(re.search('-rc[0-9]+', tag).group()[3:])
             kv = re.search('v[0-9]+\.', tag).group() + '%02d' % int(re.search('\.[0-9]+', tag).group()[1:])
         else:
             rc = 0
@@ -462,8 +462,6 @@ def analysis_patches(config, prog, argv):
     log.info(str(post_outlier) + ' Patches remain.')
     # Bool to int
     patch_data = patch_data.replace(True, 1)
-    # rcv as int
-    patch_data['rcv'] = patch_data['rcv'].apply((lambda x: int(x)))
 
     if os.path.isfile(d_resources + 'other_data.pkl'):
         author_data, subsystem_data = pickle.load(open(d_resources + 'other_data.pkl', 'rb'))
