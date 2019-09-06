@@ -88,11 +88,13 @@ class LinuxMailCharacteristics:
 
     def _is_from_bot(self, message):
         bots = ['broonie@kernel.org', 'lkp@intel.com']
+        potential_bot = True in [bot in self.mail_from[1] for bot in bots]
 
-        if 'X-Patchwork-Hint' in message and \
-            message['X-Patchwork-Hint'] == 'ignore':
-            if True in [bot in self.mail_from[1] for bot in bots]:
-                return True
+        if message['X-Patchwork-Hint'] == 'ignore' and potential_bot:
+            return True
+
+        if potential_bot and str(message['Subject']).lower().startswith('applied'):
+            return True
 
         # The Tip bot
         if 'tipbot@zytor.com' in self.mail_from[1] or \
