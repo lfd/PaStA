@@ -472,7 +472,7 @@ def evaluate_patches(config, prog, argv):
     log.info('Loading/Updating Linux patch characteristics...')
     characteristics = load_pkl_and_update('characteristics', load_characteristics)
 
-    dump_characteristics(characteristics, os.path.join(d_resources, 'characteristics.raw'))
+    #dump_characteristics(characteristics, os.path.join(d_resources, 'characteristics.raw'))
 
     get_patch_origin(repo, characteristics, all_messages_in_time_window)
 
