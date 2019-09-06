@@ -394,7 +394,8 @@ def analysis_patches(config, prog, argv):
                                           for x in (clustering.get_downstream(patch) & relevant)]}
 
     data = []
-    for patch, character in load.items():
+    for patch in relevant:
+        character = load[patch]
         tag = character.linux_version.split('-rc')
         kv = [int(x) for x in tag[0][1:].split('.')]
 
