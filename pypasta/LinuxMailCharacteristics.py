@@ -42,8 +42,16 @@ def email_get_recipients(message):
     return recipients
 
 
+def email_get_header_normalised(message, header):
+    header = str(message[header] or '').lower()
+    header = header.replace('\n', '').replace('\t', ' ')
+
+    return header
+
+
 def email_get_from(message):
-    return email.utils.parseaddr(str(message['From'] or '').lower())
+    mail_from = email_get_header_normalised(message, 'From')
+    return email.utils.parseaddr(mail_from)
 
 
 def ignore_tld(address):
@@ -289,7 +297,7 @@ class LinuxMailCharacteristics:
         self.recipients = email_get_recipients(message)
 
         self.mail_from = email_get_from(message)
-        self.subject = str(message['Subject'] or '').lower()
+        self.subject = email_get_header_normalised(message, 'Subject')
         self.date = mail_parse_date(message['Date'])
 
         self.lists = repo.mbox.get_lists(message_id)
