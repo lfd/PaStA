@@ -108,21 +108,7 @@ def compare_clusters(prog, argv):
 
     # remove identical clusters, if desired
     if args.remove_identical:
-        identical = list()
-        for cluster in ground_truth:
-            cand = prediction.get_cluster(list(cluster)[0])
-            if not cand:
-                continue
-            elif cand == cluster:
-                identical.append(cand)
-        log.info('Removing %d identical clusters (%d elements)...' %
-                 (len(identical), sum([len(x) for x in identical])))
-        for cluster in identical:
-            for element in cluster:
-                ground_truth.remove_element(element)
-                prediction.remove_element(element)
-        ground_truth.optimize()
-        prediction.optimize()
+        Clustering.remove_identical(ground_truth, prediction, verbose=True)
 
     if (args.pr):
         prec_rec(ground_truth, prediction)
