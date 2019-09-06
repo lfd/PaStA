@@ -205,6 +205,7 @@ def p_by_time():
     result_frame['reg_ign'] = result_frame['total'].apply(lambda x: fit_fn(x))
     result_frame.plot(x='total', y='reg_ign', ax=ax)
 
+    ax.legend().remove()
     display_and_save_plot('by_time_ign_scat')
     print('regression of ignored/total (scat): ' + str(fit_fn))
 
