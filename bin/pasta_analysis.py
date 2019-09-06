@@ -378,6 +378,7 @@ def analysis_patches(config, prog, argv):
     relevant = {m for m, c in load.items() if
                     c.is_patch and
                     c.patches_linux and
+                    c.is_first_patch_in_thread and
                     not c.is_stable_review and
                     not c.is_next and
                     not c.process_mail and
