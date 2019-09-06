@@ -407,14 +407,15 @@ def analysis_patches(config, prog, argv):
             rc = int(tag[1])
         kv = 'v' + '.'.join([str(v) for v in kv])
 
-        ignored = patch in ignored_related
+        ignored = int(patch in ignored_related)
+        upstream = int(character.is_upstream)
 
         data.append({
             'id': patch,
             'from': character.mail_from,
             'kernel version': kv,
             'rcv': rc,
-            'upstream': character.is_upstream,
+            'upstream': upstream,
             'ignored': ignored,
             'time': character.date
         })
@@ -450,8 +451,6 @@ def analysis_patches(config, prog, argv):
     post_outlier = len(patch_data.index)
     log.info(str(pre_outlier - post_outlier) + ' Patches were removed. (Outlier)')
     log.info(str(post_outlier) + ' Patches remain.')
-    # Bool to int
-    patch_data = patch_data.replace(True, 1)
 
     if os.path.isfile(d_resources + 'other_data.pkl'):
         author_data = pickle.load(open(d_resources + 'other_data.pkl', 'rb'))
