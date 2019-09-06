@@ -26,7 +26,7 @@ import tikzplotlib
 
 log = getLogger(__name__[-15:])
 
-d_resources = './resources/linux/'
+d_resources = './resources/linux/resources/'
 f_prefix = 'eval_'
 f_suffix = '.pkl'
 
