@@ -63,6 +63,8 @@ def plot_and_corr(data, x, ax, from_index=False):
 
 def display_and_save_plot(name):
     global show
+    ax = plt.gca()
+
     plt.savefig('plots/' + name + '.svg')
     plt.savefig('plots/' + name + '.png', dpi=600)
     #tikzplotlib.save('plots' + name + ".tex")
@@ -174,8 +176,7 @@ def p_by_time():
     day = patch_data['time'].apply(lambda x: datetime.datetime(year=x.year, month=x.month, day=x.day))
     patch_data['day'] = day - pd.to_timedelta(day.dt.dayofweek, unit='d')
 
-    patch_data = patch_data[patch_data['day'].apply(lambda x: x > patch_data['day'].min())]
-    patch_data = patch_data[patch_data['day'].apply(lambda x: x < patch_data['day'].max())]
+    #patch_data = patch_data[patch_data['day'].apply(lambda x: x > patch_data['day'].min() and x < patch_data['day'].max())]
 
     grouped = patch_data.groupby(['day'])
     total = grouped.count()['id']
@@ -186,10 +187,11 @@ def p_by_time():
     result_frame['total'] = total
     result_frame['rejected'] = rejected
     result_frame['ignored'] = ignored
+    result_frame.reset_index(inplace=True)
 
     ax = plt.gca()
     ax.set_yscale('log')
-    ax.set_ylabel('Patches per Week')
+    ax.set_ylabel('Patches per Week', fontsize='xx-large')
     ax.set_xlabel('')
     result_frame.plot.line(x='day', y=['total', 'ignored'], ax=ax)
     display_and_save_plot('by_time')
@@ -326,13 +328,11 @@ def a_total_rej_ign():
     for group, data in p_groups:
         i_groups[group] = data
 
-    if r_groups[0]:
-        _plot_groups(r_groups[0], 'rejected', 'rejected', 0)
-        _plot_groups(r_groups[0], 'r_ratio', 'ratio rejected/total', 0)
+    _plot_groups(r_groups[0], 'rejected', 'rejected', 0)
+    _plot_groups(r_groups[0], 'r_ratio', 'ratio rejected/total', 0)
 
-    if i_groups[0]:
-        _plot_groups(i_groups[0], 'ignored', 'ignored', 0)
-        _plot_groups(i_groups[0], 'i_ratio', 'ratio ignored/total', 0)
+    _plot_groups(i_groups[0], 'ignored', 'ignored', 0)
+    _plot_groups(i_groups[0], 'i_ratio', 'ratio ignored/total', 0)
 
     _plot_groups(pd.concat([r_groups[0], r_groups[1]]), 'rejected', 'rejected', '0-1')
     _plot_groups(pd.concat([r_groups[0], r_groups[1]]), 'r_ratio', 'ratio rejected/total', '0-1')
@@ -469,6 +469,8 @@ def analysis_patches(config, prog, argv):
         pickle.dump((author_data, subsystem_data), open(d_resources + 'other_data.pkl', 'wb'))
 
     log.info(' → Done')
+
+    plt.rc('font', size=12)
 
     #p_by_rc()
     p_by_rc_v()
