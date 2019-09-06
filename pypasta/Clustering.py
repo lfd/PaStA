@@ -104,6 +104,25 @@ class Clustering:
 
         return new_id
 
+    @classmethod
+    def remove_identical(cls, cluster1, cluster2, verbose=False):
+        identical = list()
+        for cluster in cluster1:
+            cand = cluster2.get_cluster(list(cluster)[0])
+            if not cand:
+                continue
+            elif cand == cluster:
+                identical.append(cand)
+        if verbose:
+            log.info('Removing %d identical clusters (%d elements)...' %
+                     (len(identical), sum([len(x) for x in identical])))
+        for cluster in identical:
+            for element in cluster:
+                cluster1.remove_element(element)
+                cluster2.remove_element(element)
+        cluster1.optimize()
+        cluster2.optimize()
+
     def insert(self, *elems):
         """
         Create a new cluster with elements elems.
