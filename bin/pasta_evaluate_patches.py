@@ -19,6 +19,8 @@ import re
 
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
+from subprocess import call
+
 from tqdm import tqdm
 
 from pypasta.LinuxMaintainers import LinuxMaintainers
@@ -317,4 +319,9 @@ def evaluate_patches(config, prog, argv):
 
     dump_characteristics(characteristics, ignored_patches_related, relevant,
                          config.f_characteristics)
+<<<<<<< HEAD
 >>>>>>> fd927df... evaluate_patches: implement business logic
+=======
+
+    call(['./R/evaluate_patches.R', config.d_rout, config.f_characteristics])
+>>>>>>> a53dd08... evaluate_patches: Add R script for evaluation of characteristics.csv
