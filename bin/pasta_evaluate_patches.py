@@ -12,6 +12,7 @@ the COPYING file in the top-level directory.
 
 import csv
 import os
+import pandas as pd
 import pickle
 import re
 
@@ -40,7 +41,7 @@ def f_pkl(fname):
     return '%s%s%s%s' % (d_resources, f_prefix, fname, f_suffix)
 
 
-def get_ignored(repo, characteristics, clustering):
+def get_relevant_patches(characteristics):
     # First, we have to define the term patch. In this analysis, we must only
     # regard patches that either fulfil rule 1 or 2:
     #
@@ -60,130 +61,131 @@ def get_ignored(repo, characteristics, clustering):
     # Example: Look at the thread of
     #     <20190408072929.952A1441D3B@finisterre.ee.mobilebroadband>
 
-    population_all_patches = set()
-    population_not_accepted = set()
-    population_accepted = set()
-    not_upstreamed_patches = set()
-    upstreamed_patches = set()
+    relevant = set()
 
+    all_patches = 0
     skipped_bot = 0
     skipped_stable = 0
     skipped_not_linux = 0
+    skipped_no_patch = 0
     skipped_not_first_patch = 0
     skipped_process = 0
+    skipped_next = 0
 
-    for downstream, upstream in clustering.iter_split():
-        # Dive into downstream, and check the above-mentioned criteria
-        relevant = set()
-        for d in downstream:
-            skip = False
-            population_all_patches.add(d)
+    for m, c in characteristics.items():
+        skip = False
+        all_patches += 1
 
-            if len(upstream):
-                population_accepted.add(d)
-            else:
-                population_not_accepted.add(d)
+        if not c.is_patch:
+            skipped_no_patch += 1
+            skip = True
+        if not c.patches_linux:
+            skipped_not_linux += 1
+            skip = True
+        if not c.is_first_patch_in_thread:
+            skipped_not_first_patch += 1
+            skip = True
 
-            c = characteristics[d]
-            if c.is_from_bot:
-                skipped_bot += 1
-                skip = True
-            if c.is_stable_review:
-                skipped_stable += 1
-                skip = True
-            if not c.patches_linux:
-                skipped_not_linux += 1
-                skip = True
-            if not c.is_first_patch_in_thread:
-                skipped_not_first_patch += 1
-                skip = True
-            if c.process_mail:
-                skipped_process += 1
-                skip = True
+        if c.is_from_bot:
+            skipped_bot += 1
+            skip = True
+        if c.is_stable_review:
+            skipped_stable += 1
+            skip = True
+        if c.process_mail:
+            skipped_process += 1
+            skip = True
+        if c.is_next:
+            skipped_next += 1
+            skip = True
 
-            if skip:
-                continue
-
-            relevant.add(d)
-
-        # Nothing left? Skip the cluster.
-        if len(relevant) == 0:
+        if skip:
             continue
 
-        if len(upstream):
-            upstreamed_patches |= relevant
-        else:
-            not_upstreamed_patches |= relevant
+        relevant.add(m)
 
-    # That's the population that is relevant for this analysis
-    population_relevant = upstreamed_patches | not_upstreamed_patches
+    log.info('')
+    log.info('=== Calculation of relevant patches ===')
+    log.info('All patches: %u' % all_patches)
+    log.info('Skipped patches:')
+    log.info('  No patch: %u' % skipped_no_patch)
+    log.info('  Not Linux: %u' % skipped_not_linux)
+    log.info('  Bot: %u' % skipped_bot)
+    log.info('  Stable: %u' % skipped_stable)
+    log.info('  Process mail: %u' % skipped_process)
+    log.info('  Next: %u' % skipped_next)
+    log.info('Relevant patches: %u' % len(relevant))
 
+    return relevant
+
+def get_ignored(repo, characteristics, clustering, relevant):
     # Calculate ignored patches
-    ignored_patches = {patch for patch in not_upstreamed_patches
-                       if characteristics[patch].has_foreign_response == False}
+    ignored_patches = {patch for patch in relevant if
+                        not characteristics[patch].is_upstream and
+                        not characteristics[patch].has_foreign_response}
 
     # Calculate ignored patches wrt to other patches in the cluster: A patch is
     # considered as ignored, if all related patches were ignoreed as well
     ignored_patches_related = {patch for patch in ignored_patches
                                if False not in [characteristics[x].has_foreign_response == False
-                                                for x in clustering.get_downstream(patch)]}
+                                                for x in (clustering.get_downstream(patch) & relevant)]}
 
-    # Create a dictionary list-name -> number of overall patches. We can use it
-    # to calculate a per-list fraction of ignored patches
-    num_patches_on_list = dict()
-    for patch in population_relevant:
-        lists = repo.mbox.get_lists(patch)
-        for mlist in lists:
-            if mlist not in num_patches_on_list:
-                num_patches_on_list[mlist] = 0
-            num_patches_on_list[mlist] += 1
-
+    num_relevant = len(relevant)
     num_ignored_patches = len(ignored_patches)
     num_ignored_patches_related = len(ignored_patches_related)
 
-    num_population_accepted = len(population_accepted)
-    num_population_not_accepted = len(population_not_accepted)
-    num_population_relevant = len(population_relevant)
-
-    log.info('All patches: %u' % len(population_all_patches))
-    log.info('Skipped patches:')
-    log.info('  Bot: %u' % skipped_bot)
-    log.info('  Stable: %u' % skipped_stable)
-    log.info('  Process mail: %u' % skipped_process)
-    log.info('  Not Linux: %u' % skipped_not_linux)
-    log.info('  Not first patch in series: %u' % skipped_not_first_patch)
-    log.info('Not accepted patches: %u' % num_population_not_accepted)
-    log.info('Accepted patches: %u' % num_population_accepted)
-    log.info('Num relevant patches: %u' % num_population_relevant)
     log.info('Found %u ignored patches' % num_ignored_patches)
     log.info('Fraction of ignored patches: %0.3f' %
-             (num_ignored_patches / num_population_relevant))
+             (num_ignored_patches / num_relevant))
     log.info('Found %u ignored patches (related)' % num_ignored_patches_related)
     log.info('Fraction of ignored related patches: %0.3f' %
-            (num_ignored_patches_related / num_population_relevant))
+            (num_ignored_patches_related / num_relevant))
 
-    hs_ignored  = count_lists(repo, ignored_patches, 'Highscore lists / ignored patches')
-    hs_ignored_rel = count_lists(repo, ignored_patches_related,
-                                 'Highscore lists / ignored patches (related)')
+    return ignored_patches, ignored_patches_related
 
-    def highscore_fraction(highscore, description):
-        result = dict()
-        for mlist, count in highscore.items():
-            result[mlist] = count / num_patches_on_list[mlist]
+    # Create a dictionary list-name -> number of overall patches. We can use it
+    # to calculate a per-list fraction of ignored patches
 
-        print(description)
-        for mlist, fraction in sorted(result.items(), key = lambda x: x[1]):
-            print('  List %s: %0.3f' % (mlist, fraction))
+    #num_patches_on_list = dict()
+    #for patch in relevant:
+    #    lists = repo.mbox.get_lists(patch)
+    #    for mlist in lists:
+    #        if mlist not in num_patches_on_list:
+    #            num_patches_on_list[mlist] = 0
+    #        num_patches_on_list[mlist] += 1
 
-    highscore_fraction(hs_ignored, 'Highscore fraction ignored patches')
-    highscore_fraction(hs_ignored_rel,
-                       'Highscore fraction ignored patches (related)')
 
-    dump_messages(os.path.join(d_resources, 'ignored_patches'), repo,
-                  ignored_patches)
-    dump_messages(os.path.join(d_resources, 'ignored_patches_related'), repo,
-                  ignored_patches_related)
-    dump_messages(os.path.join(d_resources, 'base'), repo, population_relevant)
+    #num_population_accepted = len(population_accepted)
+    #num_population_not_accepted = len(population_not_accepted)
+    #num_population_relevant = len(population_relevant)
+
+    #log.info('  Not first patch in series: %u' % skipped_not_first_patch)
+    #log.info('Not accepted patches: %u' % num_population_not_accepted)
+    #log.info('Accepted patches: %u' % num_population_accepted)
+    #log.info('Num relevant patches: %u' % num_population_relevant)
+
+    #hs_ignored  = count_lists(repo, ignored_patches, 'Highscore lists / ignored patches')
+    #hs_ignored_rel = count_lists(repo, ignored_patches_related,
+    #                             'Highscore lists / ignored patches (related)')
+
+    #def highscore_fraction(highscore, description):
+    #    result = dict()
+    #    for mlist, count in highscore.items():
+    #        result[mlist] = count / num_patches_on_list[mlist]
+
+    #    print(description)
+    #    for mlist, fraction in sorted(result.items(), key = lambda x: x[1]):
+    #        print('  List %s: %0.3f' % (mlist, fraction))
+
+    #highscore_fraction(hs_ignored, 'Highscore fraction ignored patches')
+    #highscore_fraction(hs_ignored_rel,
+    #                   'Highscore fraction ignored patches (related)')
+
+    #dump_messages(os.path.join(d_resources, 'ignored_patches'), repo,
+    #              ignored_patches)
+    #dump_messages(os.path.join(d_resources, 'ignored_patches_related'), repo,
+    #              ignored_patches_related)
+    #dump_messages(os.path.join(d_resources, 'base'), repo, population_relevant)
 
 
 def check_correct_maintainer_patch(c):
@@ -340,67 +342,39 @@ def dump_messages(filename, repo, messages):
             f.write('%s\t\t\t%s\n' % (message , ' '.join(sorted(repo.mbox.get_lists(message)))))
 
 
-def dump_characteristics(characteristics, filename):
-    fieldnames = ['Message-ID',
-                  'From_name',
-                  'From_email',
-                  'Date',
-                  'Recipients',
+def dump_characteristics(characteristics, ignored, relevant, filename):
+    df = list()
+    for patch in sorted(relevant):
+        c = characteristics[patch]
 
-                  'lists',
-                  'is_patch',
-                  'patches_linux',
-                  'linux_version',
-                  'is_from_bot',
-                  'is_stable_review',
-                  'is_process_mail',
-                  'is_upstream',
-                  'is_cover_letter',
-                  'is_first_patch_in_thread',
+        tag = c.linux_version.split('-rc')
+        kv = tag[0]
+        rc = 0
+        if len(tag) == 2:
+            rc = int(tag[1])
 
-                  'mtrs_has_lists',
-                  'mtrs_has_linux_kernel',
-                  'mtrs_has_list_per_subsystem',
-                  'mtrs_has_one_correct_list',
+        df.append({
+            'id': patch,
+            'from': c.mail_from[1],
+            'recipients': ' '.join(sorted(c.recipients)),
+            'lists': ' '.join(sorted(c.lists)),
+            'kv': kv,
+            'rc': rc,
+            'upstream': c.is_upstream,
+            'ignored': patch in ignored,
+            'time': c.date,
 
-                  'mtrs_has_maintainers',
-                  'mtrs_has_maintainer_per_subsystem',
-                  'mtrs_has_one_correct_maintainer'
-                  ]
+            'mtrs_has_lists': str(c.mtrs_has_lists),
+            'mtrs_has_linux_kernel': str(c.mtrs_has_linux_kernel),
+            'mtrs_has_list_per_subsystem': str(c.mtrs_has_list_per_subsystem),
+            'mtrs_has_one_correct_list': str(c.mtrs_has_one_correct_list),
 
-    with open(filename, 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-
-        for c in characteristics.values():
-            writer.writerow({
-                'Message-ID': c.message_id,
-                'From_name': c.mail_from[0],
-                'From_email': c.mail_from[1],
-                'Date': format_date_ymd(c.date),
-                'Recipients': ' '.join(sorted(c.recipients)),
-                'lists': ' '.join(sorted(c.lists)),
-
-                'is_patch': c.is_patch,
-                'patches_linux': c.patches_linux,
-                'linux_version': str(c.linux_version),
-                'is_from_bot': str(c.is_from_bot),
-                'is_stable_review': str(c.is_stable_review),
-                'is_process_mail': str(c.process_mail),
-                'is_upstream': str(c.is_upstream),
-
-                'is_cover_letter': c.is_cover_letter,
-                'is_first_patch_in_thread': str(c.is_first_patch_in_thread),
-
-                'mtrs_has_lists': str(c.mtrs_has_lists),
-                'mtrs_has_linux_kernel': str(c.mtrs_has_linux_kernel),
-                'mtrs_has_list_per_subsystem': str(c.mtrs_has_list_per_subsystem),
-                'mtrs_has_one_correct_list': str(c.mtrs_has_one_correct_list),
-
-                'mtrs_has_maintainers': str(c.mtrs_has_maintainers),
-                'mtrs_has_maintainer_per_subsystem': str(c.mtrs_has_maintainer_per_subsystem),
-                'mtrs_has_one_correct_maintainer': str(c.mtrs_has_one_correct_maintainer)
-            })
+            'mtrs_has_maintainers': str(c.mtrs_has_maintainers),
+            'mtrs_has_maintainer_per_subsystem': str(c.mtrs_has_maintainer_per_subsystem),
+            'mtrs_has_one_correct_maintainer': str(c.mtrs_has_one_correct_maintainer)
+         })
+    df = pd.DataFrame(df)
+    df.to_csv(filename)
 
 
 def evaluate_patches(config, prog, argv):
@@ -472,12 +446,14 @@ def evaluate_patches(config, prog, argv):
     log.info('Loading/Updating Linux patch characteristics...')
     characteristics = load_pkl_and_update('characteristics', load_characteristics)
 
-    #dump_characteristics(characteristics, os.path.join(d_resources, 'characteristics.raw'))
+    relevant = get_relevant_patches(characteristics)
 
     get_patch_origin(repo, characteristics, all_messages_in_time_window)
 
     log.info('Identify ignored patches...')
-    get_ignored(repo, characteristics, clustering)
+    ignored_patches, ignored_patches_related = get_ignored(repo, characteristics, clustering, relevant)
 
     log.info('Checking correct maintainers...')
     check_correct_maintainer(repo, characteristics, patches)
+
+    dump_characteristics(characteristics, ignored_patches_related, relevant, os.path.join(d_resources, 'characteristics.raw'))
