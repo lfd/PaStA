@@ -395,6 +395,7 @@ def analysis_patches(config, prog, argv):
                                           for x in (clustering.get_downstream(patch) & relevant)]}
 
     data = []
+    foo = []
     for patch in relevant:
         character = load[patch]
         tag = character.linux_version.split('-rc')
@@ -420,8 +421,26 @@ def analysis_patches(config, prog, argv):
             'ignored': ignored,
             'time': character.date
         })
+
+        tag = character.linux_version.split('-rc')
+        kv = tag[0]
+        rc = 0
+        if len(tag) == 2:
+            rc = int(tag[1])
+        foo.append({
+            'id': patch,
+            'from': character.mail_from[1],
+            'kernel_version': character.linux_version,
+            'kv': kv,
+            'rc': rc,
+            'upstream': character.is_upstream,
+            'ignored': patch in ignored_related,
+            'time': character.date
+            })
     log.info('There are ' + str(len(irrelevant)) + ' irrelevant Mails.')
     patch_data = pd.DataFrame(data)
+    foo = pd.DataFrame(foo)
+    foo.to_csv('./raw_data.csv')
 
     # Clean Data
     # remove v2.* and v5.*
@@ -464,6 +483,6 @@ def analysis_patches(config, prog, argv):
     plt.rc('font', size=15)
 
     #p_by_rc()
-    p_by_rc_v()
+    #p_by_rc_v()
     #p_by_time()
     #a_total_rej_ign()
