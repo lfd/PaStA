@@ -39,11 +39,11 @@ yearpp <- function(date) {
   ymd(paste((year(date) + 1), '0101', sep = ''))
 }
 
-printplot <- function(plot, filename) {
+printplot <- function(plot, filename, width_correction) {
   print(plot)
   ggsave(fname(filename, '.pdf'), plot, dpi = 300, width = 8, device = 'pdf')
 
-  tikz(fname(filename, '.tex'), width = 6.3, height = 5)
+  tikz(fname(filename, '.tex'), width = 6.3 + width_correction, height = 5)
   print(plot)
   dev.off()
 }
@@ -102,9 +102,9 @@ ignored_by_week <- function(data) {
     xlab('Date') +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
     theme_bw(base_size = 15) +
-    theme(legend.position = 'top')
+    # theme(legend.position = 'top') +
     labs(color = '')
-  printplot(plot, 'ignored_by_week_total')
+  printplot(plot, 'ignored_by_week_total', 3)
   
   
   relevant <- df %>% filter(variable == 'ignored') #%>% select(week, value)
@@ -118,8 +118,8 @@ ignored_by_week <- function(data) {
     ylab('Total number of ignored patches') +
     ylim(c(0, 150)) +
     theme(legend.position = 'None')
-  printplot(plot, 'ignored_by_week_ignored_only')
-  
+  printplot(plot, 'ignored_by_week_ignored_only', 3)
+                
   relevant <- df %>% filter(variable == 'fraction')
   plot <- ggplot(relevant,
                  aes(x = week, y = value, color = variable)) +
@@ -130,7 +130,7 @@ ignored_by_week <- function(data) {
     xlab('Date') +
     ylab('Ratio of ignored patches') +
     theme(legend.position = 'None')
-  printplot(plot, 'ignored_by_week_fraction')
+  printplot(plot, 'ignored_by_week_fraction', 3)
 }
 
           ignored_by_rc <- function(data) {
@@ -156,7 +156,7 @@ ignored_by_week <- function(data) {
     scale_x_continuous(breaks = c(0,1,2,3,4,5,6,7,8,9,10)) +
     xlab('Development Stage (-rc)') +
     ylab('Probability that patch is ignored')
-    printplot(plot, 'ignored_by_rc')
+    printplot(plot, 'ignored_by_rc', 0)
 }
 
 scatterplots <- function(data) {
@@ -179,17 +179,17 @@ scatterplots <- function(data) {
   relevant <- df %>% filter(total < 4000) %>% filter(ignored < 400)
   plot <- ggplot(relevant, aes(x = total, y = ignored)) +
     geom_point() + geom_density2d()
-  printplot(plot, 'foo5')
+  printplot(plot, 'foo5', 0)
   
   relevant <- df %>% filter(total < 101)
   plot <- ggplot(relevant, aes(x = total, y = ignored)) +
     geom_point() + geom_density2d()
-  printplot(plot, 'foo6')
+  printplot(plot, 'foo6', 0)
   
   relevant <- df %>% filter(total < 101)
   plot <- ggplot(relevant, aes(x = total, y = ratio)) +
     geom_point() + geom_density2d()
-  printplot(plot, 'foo7')
+  printplot(plot, 'foo7', 0)
 }
   
 week_scatterplots <- function(data) {
@@ -210,7 +210,7 @@ week_scatterplots <- function(data) {
     theme_bw(base_size = 15) +
     xlab('Patches per week') +
     ylab('Number of ign. patches per week')
-  printplot(plot, 'ignored_week_scatter')
+  printplot(plot, 'ignored_week_scatter', 0)
 }
 
 ignore_rate_by_years(filtered_data)
