@@ -1,22 +1,32 @@
 library(ggplot2)
+library(lubridate)
 library(dplyr)
 library(plyr)
 library(reshape2)
 library(tikzDevice)
 
 dst <- '/tmp/R'
+dir.create(dst, showWarnings = FALSE)
 
-#raw_data <- read.csv('raw_data.csv', header = TRUE, sep=",")
-#raw_data$upstream <- as.logical(raw_data$upstream)
-#raw_data$ignored <- as.logical(raw_data$ignored)
-#raw_data <- raw_data %>% mutate(date = as.Date(time))
-# Add week info
-#raw_data <- raw_data %>% mutate(week = as.Date(cut(date, breaks = "week")))
+load_csv <- function(filename) {
+  data <- read.csv(filename, header = TRUE, sep=",")
+  data$upstream <- as.logical(data$upstream)
+  data$ignored <- as.logical(data$ignored)
+  data <- data %>% mutate(date = as.Date(time))
+  # Add week info
+  data <- data %>% mutate(week = as.Date(cut(date, breaks = "week")))
+
+  return(data)
+}
+
+if (!exists('raw_data')) {
+  raw_data <- load_csv('characteristics.raw')
+}
 
 filtered_data <- raw_data
 
 # Filter strong outliers
-#filtered_data <- filtered_data %>% filter(from != 'baolex.ni@intel.com')
+filtered_data <- filtered_data %>% filter(from != 'baolex.ni@intel.com')
 
 filtered_data <- filtered_data %>% 
   filter(week > '2011-05-10')
@@ -25,13 +35,40 @@ fname <- function(file, extension) {
   return(file.path(dst, paste(file, extension, sep='')))
 }
 
+yearpp <- function(date) {
+  ymd(paste((year(date) + 1), '0101', sep = ''))
+}
+
 printplot <- function(plot, filename) {
   print(plot)
   ggsave(fname(filename, '.pdf'), plot, dpi = 300, width = 8, device = 'pdf')
-  
+
   tikz(fname(filename, '.tex'), width = 6.3, height = 5)
   print(plot)
   dev.off()
+}
+
+
+ignore_rate_by_years <- function(data) {
+  calc_ign_rate <- function(data) {
+    total = nrow(data)
+    ignored = nrow(data %>% filter(ignored == TRUE))
+    return(ignored / total)
+  }
+
+  data <- data %>% select(date, ignored)
+  date_begin = as.Date(cut(min(data$date), breaks = "year"))
+  date_end = yearpp(max(data$date))
+  cat('Overall ignored rate: ', calc_ign_rate(data), '\n')
+
+  while (date_begin < date_end) {
+    date_next = yearpp(date_begin)
+  
+    relevant <- data %>% filter(date >= date_begin & date < date_next)
+    cat('Ignored rate', year(date_begin) ,': ', calc_ign_rate(relevant), '\n')
+
+    date_begin <- date_next
+  }
 }
 
 ignored_by_week <- function(data) {
@@ -78,8 +115,8 @@ ignored_by_week <- function(data) {
     theme_bw(base_size = 15) +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
     xlab('Date') +
-    ylab('total number of ignored patches') +
-    scale_y_log10() +
+    ylab('Total number of ignored patches') +
+    ylim(c(0, 150)) +
     theme(legend.position = 'None')
   printplot(plot, 'ignored_by_week_ignored_only')
   
@@ -154,7 +191,7 @@ scatterplots <- function(data) {
     geom_point() + geom_density2d()
   printplot(plot, 'foo7')
 }
-
+  
 week_scatterplots <- function(data) {
   data <- filtered_data
   
@@ -176,8 +213,9 @@ week_scatterplots <- function(data) {
   printplot(plot, 'ignored_week_scatter')
 }
 
-#ignored_by_rc(raw_data)
-#ignored_by_rc(filtered_data)
-#ignored_by_week(filtered_data)
+ignore_rate_by_years(filtered_data)
+ignored_by_rc(raw_data)
+ignored_by_rc(filtered_data)
+ignored_by_week(filtered_data)
 #scatterplots(filtered_data)
 #week_scatterplots(filtered_data)
