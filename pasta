@@ -27,7 +27,6 @@ from copy import deepcopy
 from pypasta import Config
 
 from bin.pasta_analyse import analyse
-from bin.pasta_analysis import analysis_patches
 from bin.pasta_check_connectivity import check_connectivity
 from bin.pasta_check_mbox import check_mbox
 from bin.pasta_compare import compare
@@ -68,7 +67,6 @@ def usage(me, exit_code=errno.EINVAL):
           'usage: %s [-d] [-c project_name] sub [-h|--help]\n'
           'where sub is one of:\n'
           '  analyse\n'
-          '  analysis\n'
           '  check_connectivity\n'
           '  check_mbox\n'
           '  compare\n'
@@ -143,8 +141,6 @@ def main(argv):
         usage(me, 0)
     elif sub == 'analyse':
         return analyse(config, sub, argv)
-    elif sub == 'analysis':
-        return analysis_patches(config, sub, argv)
     elif sub == 'check_connectivity':
         return check_connectivity(config, sub, argv)
     elif sub == 'check_mbox':
