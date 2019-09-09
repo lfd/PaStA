@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Copyright (C) 2019, Bayerische Motoren Werke Aktiengesellschaft (BMW AG)
+#
+# Author:
+#   Mete Polat <metepolat2000@gmail.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+
+echo 'Note: Please ensure that AUTOACCEPT_THRESHOLD is lower than' \
+'INTERACTIVE_THRESHOLD in your config '\
+'(otherwise pasta will run in interactive mode)'
+
+# Stop script when one of the commands fail
+set -e
+
+PASTA=./pasta
+
+# Download new patches from Patchwork
+$PASTA sync -mbox -p -nofetch -create downstream
+
+# Analyse and rate patches
+$PASTA analyse rep
+$PASTA rate
+
+# Upload patch relations and commit references to Patchowrk
+$PASTA push
