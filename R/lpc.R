@@ -12,6 +12,7 @@ load_csv <- function(filename) {
   data <- read.csv(filename, header = TRUE, sep=",")
   data$upstream <- as.logical(data$upstream)
   data$ignored <- as.logical(data$ignored)
+  data$mtrs_correct <- as.logical(data$mtrs_correct)
   data <- data %>% mutate(date = as.Date(time))
   # Add week info
   data <- data %>% mutate(week = as.Date(cut(date, breaks = "week")))
@@ -72,33 +73,39 @@ ignore_rate_by_years <- function(data) {
 }
 
 ignored_by_week <- function(data) {
+  variable <- 'ignored'
+  true_case <- 'ignored'
+  false_case <- 'not_ignored'
+  
   relevant <- data %>% select(week, ignored)
   
-  ignored <- relevant %>% filter(ignored == TRUE)
-  ignored <- ddply(ignored, .(week), nrow)
-  colnames(ignored) <- c('week', 'ignored')
+  count_predicate <- function(data, row, value, name) {
+    ret <- relevant %>% filter(UQ(as.name(row)) == value)
+    ret <- ddply(ret, .(week), nrow)
+    colnames(ret) <- c('week', name)
+    return(ret)
+  }
   
-  not_ignored <- relevant %>% filter(ignored == FALSE)
-  not_ignored <- ddply(not_ignored, .(week), nrow)
-  colnames(not_ignored) <- c('week', 'not_ignored')
+  true <- count_predicate(relevant, variable, TRUE, true_case)
+  false <- count_predicate(relevant, variable, FALSE, false_case)
   
   total <- ddply(relevant, .(week), nrow)
   colnames(total) <- c('week', 'total')
   
-  df <- merge(x = ignored, y = not_ignored, by = c('week'))
+  df <- merge(x = true, y = false, by = c('week'))
   df <- merge(x = df, y = total, by = c('week'))
   
   df$fraction <- df$ignored / df$total
   
   df <- melt(df, id.vars = c('week'))
   
-  relevant <- df %>% filter(variable == 'ignored' | variable == 'total')
+    relevant <- df %>% filter(variable == true_case | variable == 'total')
   plot <- ggplot(relevant,
                  aes(x = week, y = value, color = variable)) +
     geom_line() +
     geom_smooth(method = "lm") +
     scale_y_log10() +
-    ylab('Numbers of patches') +
+    ylab('Number of patches') +
     xlab('Date') +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
     theme_bw(base_size = 15) +
@@ -111,7 +118,8 @@ ignored_by_week <- function(data) {
   plot <- ggplot(relevant,
                  aes(x = week, y = value, color = variable)) +
     geom_line() +
-    geom_smooth(method = "lm") +
+    geom_smooth(method = "lm", fill = 'green', colour = 'black') +
+    geom_smooth(fill = 'blue', colour = 'black') +
     theme_bw(base_size = 15) +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
     xlab('Date') +
@@ -124,16 +132,20 @@ ignored_by_week <- function(data) {
   plot <- ggplot(relevant,
                  aes(x = week, y = value, color = variable)) +
     geom_line() +
-    geom_smooth(method = "lm") +
+    geom_smooth(method = "lm", fill = 'green', colour = 'black') +
+    geom_smooth(fill = 'blue', colour = 'black') +
     theme_bw(base_size = 15) +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%"),
+                       breaks = seq(0.01, 0.06, by = 0.01)) +
     xlab('Date') +
     ylab('Ratio of ignored patches') +
+    #ylab('Ratio of correctly addressed maintainers') +
     theme(legend.position = 'None')
   printplot(plot, 'ignored_by_week_fraction', 3)
 }
 
-          ignored_by_rc <- function(data) {
+ignored_by_rc <- function(data) {
   data <- data %>% select('kv', 'rc', 'ignored')
   
   total <- ddply(data, .(kv, rc), nrow)
@@ -153,13 +165,16 @@ ignored_by_week <- function(data) {
                  aes(x = rc, y = value, group = rc)) +
     geom_boxplot() +
     theme_bw(base_size =  15) +
-    scale_x_continuous(breaks = c(0,1,2,3,4,5,6,7,8,9,10)) +
+    scale_x_continuous(breaks = 0:10,
+                       labels = c('MW', 1:10)) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%"),
+                       breaks = seq(0.01, 0.06, by = 0.01)) +
     xlab('Development Stage (-rc)') +
     ylab('Probability that patch is ignored')
     printplot(plot, 'ignored_by_rc', 0)
 }
 
-scatterplots <- function(data) {
+  scatterplots <- function(data) {
   data <- filtered_data
   
   ignored <- data %>% filter(ignored == TRUE) %>% select(from) %>% count
@@ -177,16 +192,20 @@ scatterplots <- function(data) {
   df$ratio <- df$ignored / df$total
   
   relevant <- df %>% filter(total < 4000) %>% filter(ignored < 400)
+  # relevant <- df
   plot <- ggplot(relevant, aes(x = total, y = ignored)) +
-    geom_point() + geom_density2d()
-  printplot(plot, 'foo5', 0)
+    geom_point() + scale_x_sqrt() + scale_y_sqrt() + geom_smooth() +
+    xlab('Number of patches by author') +
+    ylab('Number of ignored patches') +
+    theme_bw(base_size = 15)
+  printplot(plot, 'foo5', 2)
   
   relevant <- df %>% filter(total < 101)
   plot <- ggplot(relevant, aes(x = total, y = ignored)) +
     geom_point() + geom_density2d()
   printplot(plot, 'foo6', 0)
   
-  relevant <- df %>% filter(total < 101)
+    relevant <- df %>% filter(total < 101)
   plot <- ggplot(relevant, aes(x = total, y = ratio)) +
     geom_point() + geom_density2d()
   printplot(plot, 'foo7', 0)
@@ -213,9 +232,13 @@ week_scatterplots <- function(data) {
   printplot(plot, 'ignored_week_scatter', 0)
 }
 
-ignore_rate_by_years(filtered_data)
-ignored_by_rc(raw_data)
+#ignore_rate_by_years(filtered_data)
+#ignored_by_rc(raw_data)
 ignored_by_rc(filtered_data)
-ignored_by_week(filtered_data)
+
+#filtered_data$ignored <- filtered_data$mtrs_correct
+#filtered_data <- filtered_data %>% filter(kv != 'v2.6.39')
+#ignored_by_week(filtered_data)
+
 #scatterplots(filtered_data)
 #week_scatterplots(filtered_data)
