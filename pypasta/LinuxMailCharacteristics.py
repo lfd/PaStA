@@ -24,6 +24,7 @@ _maintainers_version = None
 _mainline_tags = None
 _clustering = None
 
+MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
 MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
 VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
 
@@ -43,6 +44,18 @@ def email_get_recipients(message):
 
 def email_get_from(message):
     return email.utils.parseaddr(str(message['From'] or '').lower())
+
+
+def ignore_tld(address):
+    match = MAIL_STRIP_TLD_REGEX.match(address)
+    if match:
+        return match.group(1)
+
+    return address
+
+
+def ignore_tlds(addresses):
+    return {ignore_tld(address) for address in addresses if address}
 
 
 class LinuxMailCharacteristics:
@@ -142,13 +155,48 @@ class LinuxMailCharacteristics:
 
         return tag
 
-    def get_maintainer(self, maintainer, patch):
+    def _get_maintainer(self, maintainer, patch):
         subsystems = maintainer.get_subsystems_by_files(patch.diff.affected)
         for subsystem in subsystems:
-            s_list, s_maintainer, s_reviewers = maintainer.get_maintainers(subsystem)
-            s_maintainer = {x[1] for x in s_maintainer if x[1]}
+            s_lists, s_maintainers, s_reviewers = maintainer.get_maintainers(subsystem)
+            s_maintainers = {x[1] for x in s_maintainers if x[1]}
             s_reviewers = {x[1] for x in s_reviewers if x[1]}
-            self.maintainers[subsystem] = s_list, s_maintainer, s_reviewers
+            self.maintainers[subsystem] = s_lists, s_maintainers, s_reviewers
+
+        self.mtrs_has_lists = False
+        self.mtrs_has_maintainers = False
+        self.mtrs_has_one_correct_list = False
+        self.mtrs_has_one_correct_maintainer = False
+        self.mtrs_has_maintainer_per_subsystem = True
+        self.mtrs_has_list_per_subsystem = True
+        self.mtrs_has_linux_kernel = 'linux-kernel@vger.kernel.org' in self.recipients
+
+        recipients = self.recipients | {self.mail_from[1]}
+        recipients = ignore_tlds(recipients)
+        for subsystem, (s_lists, s_maintainers, s_reviewers) in self.maintainers.items():
+            if subsystem == 'THE REST':
+                continue
+
+            s_lists = ignore_tlds(s_lists)
+            s_maintainers = ignore_tlds(s_maintainers) | ignore_tlds(s_reviewers)
+
+            if len(s_lists):
+                self.mtrs_has_lists = True
+
+            if len(s_maintainers):
+                self.mtrs_has_maintainers = True
+
+            if len(s_lists & recipients):
+                self.mtrs_has_one_correct_list = True
+
+            if len(s_maintainers & recipients):
+                self.mtrs_has_one_correct_maintainer = True
+
+            if len(s_maintainers) and len(s_maintainers & recipients) == 0:
+                self.mtrs_has_maintainer_per_subsystem = False
+
+            if len(s_lists) and len(s_lists & recipients) == 0:
+                self.mtrs_has_list_per_subsystem = False
 
     def _is_stable_review(self, message, patch):
         if 'X-Mailer' in message and \
@@ -226,7 +274,15 @@ class LinuxMailCharacteristics:
         self.is_first_patch_in_thread = False
         self.process_mail = False
 
+        # stuff for maintainers analysis
         self.maintainers = dict()
+        self.mtrs_has_lists = None
+        self.mtrs_has_maintainers = None
+        self.mtrs_has_one_correct_list = None
+        self.mtrs_has_one_correct_maintainer = None
+        self.mtrs_has_maintainer_per_subsystem = None
+        self.mtrs_has_list_per_subsystem = None
+        self.mtrs_has_linux_kernel = None
 
         message = repo.mbox.get_messages(message_id)[0]
         thread = repo.mbox.threads.get_thread(message_id)
@@ -263,7 +319,7 @@ class LinuxMailCharacteristics:
                 if maintainers_version is not None:
                     self.linux_version = self._patch_get_version()
                     maintainers = maintainers_version[self.linux_version]
-                    self.get_maintainer(maintainers, patch)
+                    self._get_maintainer(maintainers, patch)
 
 
 def _load_mail_characteristic(message_id):
