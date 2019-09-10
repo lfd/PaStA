@@ -10,12 +10,10 @@ This work is licensed under the terms of the GNU GPL, version 2. See
 the COPYING file in the top-level directory.
 """
 
-import email
 import os
 import pickle
 import re
 
-from anytree import LevelOrderIter
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
@@ -186,83 +184,33 @@ def get_ignored(repo, characteristics, clustering):
     dump_messages(os.path.join(d_resources, 'base'), repo, population_relevant)
 
 
-def check_correct_maintainer_patch(repo, characteristic, message_id):
-    patch = repo[message_id]
-
-    def ignore_tld(address):
-        match = MAIL_STRIP_TLD_REGEX.match(address)
-        if match:
-            return match.group(1)
-
-        return address
-
-    def ignore_tlds(addresses):
-        return {ignore_tld(address) for address in addresses if address}
-
-    maintainers = characteristic.maintainers
-    recipients = ignore_tlds(characteristic.recipients)
-
-    # The author is always a recipient
-    recipients.add(ignore_tld(patch.author.email))
-
-    has_lists = False
-    has_maintainers = False
-    has_one_correct_list = False
-    has_one_correct_maintainer = False
-    has_maintainer_per_subsystem = True
-    has_list_per_subsystem = True
-
-    for subsystem, (s_lists, s_maintainers, s_reviewers) in maintainers.items():
-        if subsystem == 'THE REST':
-            continue
-
-        s_lists = ignore_tlds(s_lists)
-        s_maintainers = ignore_tlds(s_maintainers) | ignore_tlds(s_reviewers)
-
-        if len(s_lists):
-            has_lists = True
-
-        if len(s_maintainers):
-            has_maintainers = True
-
-        if len(s_lists & recipients):
-            has_one_correct_list = True
-
-        if len(s_maintainers & recipients):
-            has_one_correct_maintainer = True
-
-        if len(s_maintainers) and len(s_maintainers & recipients) == 0:
-            has_maintainer_per_subsystem = False
-
-        if len(s_lists) and len(s_lists & recipients) == 0:
-            has_list_per_subsystem = False
-
+def check_correct_maintainer_patch(c):
     # Metric: All lists + at least one maintainer per subsystem
     # needs to be addressed correctly
-    #if (not has_lists or has_list_per_subsystem) and \
-    #   (not has_maintainers or has_maintainer_per_subsystem):
+    #if (not c.mtrs_has_lists or c.mtrs_has_list_per_subsystem) and \
+    #   (not c.mtrs_has_maintainers or c.mtrs_has_maintainer_per_subsystem):
     #    return True
 
     # Metric: At least one correct list + at least one correct maintainer
-    #if (not has_lists or has_one_correct_list) and \
-    #   (not has_maintainers or has_one_correct_maintainer):
+    #if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and \
+    #   (not c.mtrs_has_maintainers or c.mtrs_has_one_correct_maintainer):
     #    return True
 
     # Metric: One correct list + one maintainer per subsystem
-    #if (not has_lists or has_one_correct_list) and has_maintainer_per_subsystem:
+    #if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and c.mtrs_has_maintainer_per_subsystem:
     #    return True
 
     # Metric: One correct list
-    #if (not has_lists or has_one_correct_list):
+    #if (not c.mtrs_has_lists or has_one_correct_list):
     #    return True
 
     # Metric: One correct list or one correct maintainer
-    if has_lists and has_one_correct_list:
+    if c.mtrs_has_lists and c.mtrs_has_one_correct_list:
         return True
-    elif has_maintainers and has_one_correct_maintainer:
+    elif c.mtrs_has_maintainers and c.mtrs_has_one_correct_maintainer:
         return True
-    if not has_lists and not has_maintainers:
-        return 'linux-kernel@vger.kernel' in recipients
+    if not c.mtrs_has_lists and not c.mtrs_has_maintainers:
+        return c.mtrs_has_linux_kernel
 
     return False
 
@@ -289,12 +237,11 @@ def check_correct_maintainer(repo, characteristics, message_ids):
                 sum_lists[l] = 0
             sum_lists[l] += 1
 
-        correct = check_correct_maintainer_patch(repo, characteristics[message_id], message_id)
+        correct = check_correct_maintainer_patch(characteristics[message_id])
         if correct:
             for l in lists:
                 sum_correct[l] += 1
         correct_maintainer[message_id] = correct
-
 
     correct = {message_id for message_id, value in correct_maintainer.items() if value == True}
     log.info('  Fraction of correctly addressed patches: %0.3f' %
