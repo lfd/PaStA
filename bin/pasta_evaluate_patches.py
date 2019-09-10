@@ -364,14 +364,7 @@ def dump_characteristics(characteristics, ignored, relevant, filename):
             'ignored': patch in ignored,
             'time': c.date,
 
-            'mtrs_has_lists': str(c.mtrs_has_lists),
-            'mtrs_has_linux_kernel': str(c.mtrs_has_linux_kernel),
-            'mtrs_has_list_per_subsystem': str(c.mtrs_has_list_per_subsystem),
-            'mtrs_has_one_correct_list': str(c.mtrs_has_one_correct_list),
-
-            'mtrs_has_maintainers': str(c.mtrs_has_maintainers),
-            'mtrs_has_maintainer_per_subsystem': str(c.mtrs_has_maintainer_per_subsystem),
-            'mtrs_has_one_correct_maintainer': str(c.mtrs_has_one_correct_maintainer)
+            'mtrs_correct': check_correct_maintainer_patch(c)
          })
     df = pd.DataFrame(df)
     df.to_csv(filename)
