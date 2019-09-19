@@ -108,8 +108,9 @@ class LinuxMailCharacteristics:
                  'kunit/']
 
     def _is_from_bot(self, message):
+        email = self.mail_from[1]
         bots = ['broonie@kernel.org', 'lkp@intel.com']
-        potential_bot = True in [bot in self.mail_from[1] for bot in bots]
+        potential_bot = True in [bot in email for bot in bots]
 
         if message['X-Patchwork-Hint'] == 'ignore' and potential_bot:
             return True
@@ -117,16 +118,20 @@ class LinuxMailCharacteristics:
         if potential_bot and str(message['Subject']).lower().startswith('applied'):
             return True
 
+        # syzbot
+        if 'syzbot' in email and 'syzkaller.appspotmail.com' in email:
+            return True
+
         # The Tip bot
-        if 'tipbot@zytor.com' in self.mail_from[1] or \
-           'noreply@ciplatform.org' in self.mail_from[1]:
+        if 'tipbot@zytor.com' in email or \
+           'noreply@ciplatform.org' in email:
             return True
 
         if message['X-Mailer'] == 'tip-git-log-daemon':
             return True
 
         # Stephen Rothwell's automated emails
-        if self.is_next and 'sfr@canb.auug.org.au' in self.mail_from[1]:
+        if self.is_next and 'sfr@canb.auug.org.au' in email:
             return True
 
         return False
