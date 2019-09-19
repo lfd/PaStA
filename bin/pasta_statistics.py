@@ -22,8 +22,6 @@ from pypasta import *
 
 def statistics(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
-    parser.add_argument('-R', dest='r_resources', metavar='directory',
-                        default=config.R_resources, help='Output directory for R resources')
     parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['AD', 'CD', 'SRD'],
                         help='Date selector: Either Author Date, Commit Date or Stack Release Date (default: %(default)s)')
     parser.add_argument('-noR', dest='R', action='store_false', help='Don\'t invoke R')
@@ -38,7 +36,7 @@ def statistics(config, prog, argv):
 
     cluster = config.patch_groups
 
-    r_resources = args.r_resources
+    r_resources = config.d_rout
     if not os.path.exists(r_resources):
         os.makedirs(r_resources)
 

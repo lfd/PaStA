@@ -108,6 +108,8 @@ class Config:
         default_cfg = toml.load(Config.DEFAULT_CONFIG)
         cfg = toml.load(self._config_file)
 
+        self.d_rout = join(self.project_root, 'Rout')
+
         # Merge configs
         merge_dicts(default_cfg, cfg)
 
