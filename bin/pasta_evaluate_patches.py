@@ -36,8 +36,8 @@ MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
 
 
 def get_relevant_patches(characteristics):
-    # First, we have to define the term patch. In this analysis, we must only
-    # regard patches that either fulfil rule 1 or 2:
+    # First, we have to define the term 'relevant patch'. For our analysis, we
+    # must only consider patches that either fulfil rule 1 or 2:
     #
     # 1. Patch is the parent of a thread.
     #    This covers classic one-email patches
@@ -54,6 +54,11 @@ def get_relevant_patches(characteristics):
     # the patch as a reply of the discussion. Such patches must be ignored.
     # Example: Look at the thread of
     #     <20190408072929.952A1441D3B@finisterre.ee.mobilebroadband>
+    #
+    # Furthermore, only consider patches that actually patch Linux (~14% of all
+    # patches on Linux MLs patch other projects). Then only consider patches
+    # that are not for next, not from bots (there are a lot of bots) and that
+    # are no 'process mails' (e.g., pull requests)
 
     relevant = set()
 
