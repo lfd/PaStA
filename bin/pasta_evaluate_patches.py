@@ -113,11 +113,11 @@ def get_relevant_patches(characteristics):
     return relevant
 
 
-def get_ignored(repo, characteristics, clustering, relevant):
+def get_ignored(characteristics, clustering, relevant):
     # Calculate ignored patches
     ignored_patches = {patch for patch in relevant if
-                        not characteristics[patch].is_upstream and
-                        not characteristics[patch].has_foreign_response}
+                       not characteristics[patch].is_upstream and
+                       not characteristics[patch].has_foreign_response}
 
     # Calculate ignored patches wrt to other patches in the cluster: A patch is
     # considered as ignored, if all related patches were ignoreed as well
@@ -312,8 +312,7 @@ def evaluate_patches(config, prog, argv):
     relevant = get_relevant_patches(characteristics)
 
     log.info('Identify ignored patches...')
-    ignored_patches, ignored_patches_related = get_ignored(repo,
-                                                           characteristics,
+    ignored_patches, ignored_patches_related = get_ignored(characteristics,
                                                            clustering,
                                                            relevant)
 
