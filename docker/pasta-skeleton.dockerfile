@@ -11,25 +11,39 @@ FROM ubuntu:19.04
 MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 
 ENV DEBIAN_FRONTEND noninteractive
+ENV LANG="C.UTF-8"
+ENV LC_ALL="C.UTF-8"
 
-RUN apt update
-RUN apt -y dist-upgrade
+RUN apt update && apt -y dist-upgrade
 
 # install PaStA dependencies
-RUN apt install -y python3-sklearn python3-git python3-pygit2 \
-	python3-fuzzywuzzy python3-flaskext.wtf python3-pip \
-	python3-toml python3-tqdm git procmail wget sudo vim locales
+RUN apt install -y --no-install-recommends \
+	build-essential \
+	git \
+	locales \
+	procmail \
+	python3-dev \
+	python3-flaskext.wtf \
+	python3-fuzzywuzzy \
+	python3-git \
+	python3-pip \
+	python3-pygit2 \
+	python3-setuptools \
+	python3-sklearn \
+	python3-toml \
+	python3-tqdm \
+	python3-wheel \
+	sudo \
+	vim \
+	wget
 
-RUN locale-gen en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+# install some more python dependencies that are not provided by Ubuntu's repo
+RUN pip3 --no-cache-dir install \
+	dateparser \
+	flask-bootstrap \
+	flask-nav anytree
 
-RUN useradd -m -G sudo -s /bin/bash pasta
-RUN echo "pasta:pasta" | chpasswd
+RUN useradd -m -G sudo -s /bin/bash pasta && echo "pasta:pasta" | chpasswd
 
 USER pasta
 WORKDIR /home/pasta
-
-# install some more python dependencies that are not provided by Ubuntu's repo
-RUN pip3 install --user dateparser flask-bootstrap flask-nav anytree
