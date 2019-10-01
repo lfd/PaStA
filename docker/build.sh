@@ -16,23 +16,29 @@ function build_container() {
 }
 
 # In any case, we need to build the base container
-build_container base
+build_container skeleton
 
+# build intermediate targets
 case $type in
-"base")
+"skeleton")
 	exit 0
 	;;
+"base")
+	;;
 "linux")
-	build_container $type
+	build_container base
 	;;
 "icse-artifact")
+	build_container base
 	build_container linux
-	build_container $type
 	;;
 *)
 	echo "Unknown target $type"
 	exit 1
 	;;
 esac
+
+# build the final target
+build_container $type
 
 exit 0
