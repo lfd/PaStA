@@ -52,6 +52,7 @@ Requirements
 - python scikit-learn
 - python-toml
 - python-tqdm
+- python-requests
 - flask
   - flask-wtf
   - flask-bootstrap
