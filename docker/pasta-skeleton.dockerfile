@@ -33,6 +33,7 @@ RUN apt install -y --no-install-recommends \
 	python3-toml \
 	python3-tqdm \
 	python3-wheel \
+	python3-requests \
 	sudo \
 	vim \
 	wget
