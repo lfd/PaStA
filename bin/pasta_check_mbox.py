@@ -75,10 +75,6 @@ def check_mbox(config, prog, argv):
     for commit_hash in range:
         commit = repo[commit_hash]
 
-        # we can skip merge commits
-        if commit.is_merge_commit:
-            continue
-
         if commit_hash not in cluster:
             not_found.append(commit_hash)
             continue

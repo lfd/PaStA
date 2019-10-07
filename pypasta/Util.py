@@ -45,7 +45,7 @@ def get_commit_hash_range(d_repo, range):
 
         # we use git.Repo, as pygit doesn't support this nifty log functionality
         repo = git.Repo(d_repo)
-        return repo.git.log('--pretty=format:%H', range).splitlines()
+        return repo.git.log('--pretty=format:%H', '--no-merges', range).splitlines()
 
 
 def get_date_selector(repo, patch_stack_definition, selector):

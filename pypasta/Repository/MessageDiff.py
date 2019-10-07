@@ -57,8 +57,6 @@ class MessageDiff:
         message, self.annotation, diff = content
         self.raw_message = message
 
-        self._is_merge_commit = False
-
         # Split by linebreaks and filter empty lines
         message = list(filter(None, message))
         # Filter signed-off-by lines
@@ -90,10 +88,6 @@ class MessageDiff:
         message += custom + [''] + self.raw_message
 
         return message
-
-    @property
-    def is_merge_commit(self):
-        return self._is_merge_commit
 
     @property
     def subject(self):
