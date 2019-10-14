@@ -62,7 +62,7 @@ def get_relevant_patches(characteristics):
 
     relevant = set()
 
-    all_patches = 0
+    all_messages = 0
     skipped_bot = 0
     skipped_stable = 0
     skipped_not_linux = 0
@@ -73,11 +73,12 @@ def get_relevant_patches(characteristics):
 
     for m, c in characteristics.items():
         skip = False
-        all_patches += 1
+        all_messages += 1
 
         if not c.is_patch:
             skipped_no_patch += 1
-            skip = True
+            continue
+
         if not c.patches_linux:
             skipped_not_linux += 1
             skip = True
@@ -105,9 +106,9 @@ def get_relevant_patches(characteristics):
 
     log.info('')
     log.info('=== Calculation of relevant patches ===')
-    log.info('All patches: %u' % all_patches)
+    log.info('All messages: %u' % all_messages)
+    log.info('  No patches: %u' % skipped_no_patch)
     log.info('Skipped patches:')
-    log.info('  No patch: %u' % skipped_no_patch)
     log.info('  Not Linux: %u' % skipped_not_linux)
     log.info('  Bot: %u' % skipped_bot)
     log.info('  Stable: %u' % skipped_stable)
