@@ -154,6 +154,7 @@ class Config:
 
         if self._mode == Config.Mode.MBOX:
             self.f_clustering = path('MBOX_RESULT')
+            self.f_clustering_cache = path('MBOX_RESULT_CACHE')
         else:
             self.f_cluter = path('PASTA_RESULT')
 
@@ -205,6 +206,9 @@ class Config:
             self.mbox_mindate = parse_date_ymd(mbox['MINDATE'])
             self.mbox_maxdate = parse_date_ymd(mbox['MAXDATE'])
             self.mbox_time_window = self.mbox_mindate, self.mbox_maxdate
+
+            # patchwork parameters
+            self.patchwork = mbox['patchwork']
 
             self.mbox_raw = list()
             for listname, f_mbox_raw in mbox_raw.items():
