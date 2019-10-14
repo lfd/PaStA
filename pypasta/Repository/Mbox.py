@@ -13,6 +13,7 @@ the COPYING file in the top-level directory.
 import datetime
 import email
 import glob
+import itertools
 import os
 import pygit2
 import re
@@ -21,6 +22,7 @@ from email.charset import CHARSETS
 from logging import getLogger
 from subprocess import call
 
+from pypasta.Patchwork import Patchwork
 from .MailThread import MailThread
 from .MessageDiff import MessageDiff, Signature
 from ..Util import get_commit_hash_range, mail_parse_date
@@ -96,6 +98,7 @@ class PatchMail(MessageDiff):
     def __init__(self, mail, identifier):
         mail, payload = self.extract_patch_mail(mail)
         self.mail_subject = mail['Subject']
+        self.patchwork_id = int(mail['X-Patchwork-Id'])
 
         # Get informations on the author
         date = mail_parse_date(mail['Date'], assume_epoch=True)
@@ -318,10 +321,12 @@ class MboxRaw(MailContainer):
         self.index = {}
         self.raw_mboxes = []
 
+    def f_index(self, listname):
+        return os.path.join(self.d_index, 'raw.%s' % listname)
+
     def add_mbox(self, listname, f_mbox_raw):
         self.raw_mboxes.append((listname, f_mbox_raw))
-        f_mbox_index = os.path.join(self.d_index, 'raw.%s' % listname)
-        index = load_index(f_mbox_index)
+        index = load_index(self.f_index(listname))
         log.info('  ↪ loaded mail index for %s: found %d mails' % (listname, len(index)))
 
         for id, desc in index.items():
@@ -363,6 +368,7 @@ class MboxRaw(MailContainer):
 class Mbox:
     def __init__(self, config):
         self.threads = None
+        self.patchwork = None
         self.f_mail_thread_cache = config.f_mail_thread_cache
         self.message_id_to_lists = dict()
         self.lists = set()
@@ -424,6 +430,9 @@ class Mbox:
         if not self.threads:
             self.threads = MailThread.load(self.f_mail_thread_cache, self)
         return self.threads
+
+    def register_patchwork(self, config):
+        self.patchwork = Patchwork(**config.patchwork)
 
     def add_mail_to_list(self, message_id, list):
         if message_id not in self.message_id_to_lists:
@@ -497,6 +506,19 @@ class Mbox:
 
     def get_lists(self, message_id):
         return self.message_id_to_lists[message_id]
+
+    def latest_message_date(self):
+        latest = None
+        for mbox in itertools.chain(self.pub_in, self.mbox_raw.raw_mboxes):
+            f_index = mbox.f_index if isinstance(mbox, PubInbox) \
+                else self.mbox_raw.f_index(mbox[0])
+            # process_mailbox_maildir.sh sorts the index lines by date in
+            # ascending order
+            date = load_file(f_index, must_exist=True)[-1][0]
+            date = datetime.datetime.strptime(date, '%Y/%m/%d')
+            if latest is None or date > latest:
+                latest = date
+        return latest
 
     def invalidate(self, invalid):
         self.invalid |= set(invalid)

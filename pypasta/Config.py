@@ -203,6 +203,9 @@ class Config:
             self.mbox_maxdate = parse_date_ymd(mbox['MAXDATE'])
             self.mbox_time_window = self.mbox_mindate, self.mbox_maxdate
 
+            # patchwork parameters
+            self.patchwork = mbox['patchwork']
+
             self.mbox_raw = list()
             for host, (listname, f_mbox_raw) in mbox_raw.items():
                 if not isabs(f_mbox_raw):
