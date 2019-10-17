@@ -327,7 +327,7 @@ class Mbox:
     def __init__(self, config):
         self.threads = None
         self.f_mail_thread_cache = config.f_mail_thread_cache
-        self.lists = dict()
+        self.message_id_to_lists = dict()
         self.d_mbox = config.d_mbox
         self.d_invalid = os.path.join(self.d_mbox, 'invalid')
         self.d_index = os.path.join(self.d_mbox, 'index')
@@ -385,9 +385,9 @@ class Mbox:
         return self.threads
 
     def add_mail_to_list(self, message_id, list):
-        if message_id not in self.lists:
-            self.lists[message_id] = set()
-        self.lists[message_id].add(list)
+        if message_id not in self.message_id_to_lists:
+            self.message_id_to_lists[message_id] = set()
+        self.message_id_to_lists[message_id].add(list)
 
     def __contains__(self, message_id):
         for public_inbox in self.pub_in:
@@ -452,7 +452,7 @@ class Mbox:
             pub.update(nofetch)
 
     def get_lists(self, message_id):
-        return self.lists[message_id]
+        return self.message_id_to_lists[message_id]
 
     def invalidate(self, invalid):
         self.invalid |= set(invalid)
