@@ -437,7 +437,7 @@ class Mbox:
 
         return raws
 
-    def message_ids(self, time_window=None, allow_invalid=False):
+    def message_ids(self, time_window=None, allow_invalid=False, lists=None):
         ids = set()
 
         for pub in self.pub_in:
@@ -445,10 +445,13 @@ class Mbox:
 
         ids |= self.mbox_raw.message_ids(time_window)
 
-        if allow_invalid:
-            return ids
+        if not allow_invalid:
+            ids = ids - self.invalid
 
-        return ids - self.invalid
+        if lists:
+            ids = {id for id in ids if self.get_lists(id) in lists}
+
+        return ids
 
     def update(self, nofetch):
         self.mbox_raw.update()
