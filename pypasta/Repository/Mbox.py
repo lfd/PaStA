@@ -347,9 +347,10 @@ class Mbox:
             log.info('Loading raw mailboxes...')
         self.mbox_raw = MboxRaw(self.d_mbox, self.d_index)
         for host, listname, f_mbox_raw in config.mbox_raw:
-            message_ids = self.mbox_raw.add_mbox(listname, f_mbox_raw)
+            listaddr = '%s@%s' % (listname, host)
+            message_ids = self.mbox_raw.add_mbox(listaddr, f_mbox_raw)
             for message_id in message_ids:
-                self.add_mail_to_list(message_id, listname)
+                self.add_mail_to_list(message_id, listaddr)
 
         self.pub_in = []
         if len(config.mbox_git_public_inbox):
@@ -368,7 +369,7 @@ class Mbox:
                     if os.path.isdir(d_repo):
                         inbox = PubInbox(listaddr, shard, d_repo, f_index)
                         for message_id in inbox.message_ids():
-                            self.add_mail_to_list(message_id, mailinglist)
+                            self.add_mail_to_list(message_id, listaddr)
                         self.pub_in.append(inbox)
                     else:
                         if shard == 0:
