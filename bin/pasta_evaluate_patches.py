@@ -218,26 +218,35 @@ def get_kv_rc(linux_version):
     return kv, rc
 
 
-def dump_characteristics(characteristics, ignored, relevant, filename):
+def dump_characteristics(repo, characteristics, ignored, relevant, filename):
     with open(filename, 'w') as csv_file:
-        csv_fields = ['id', 'from', 'recipients_lists', 'recipients_other',
-                      'lists', 'kv', 'rc', 'upstream', 'ignored', 'time',
-                      'mtrs_correct']
+        csv_fields = ['id', 'from', 'list', 'list_matches_patch', 'kv', 'rc',
+                      'ignored', 'time']
         writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
         writer.writeheader()
 
-        for patch in sorted(relevant):
-            c = characteristics[patch]
+        for message_id in sorted(relevant):
+            c = characteristics[message_id]
             kv, rc = get_kv_rc(c.linux_version)
             mail_from = c.mail_from[1]
 
-            row = {'id': patch,
-                   'from': mail_from,
-                   'kv': kv,
-                   'rc': rc,
-                   'ignored': patch in ignored,
-                   'time': c.date,
-            }
+            for list in repo.mbox.get_lists(message_id):
+                list_matches_patch = False
+                for subsys in c.maintainers.values():
+                    lists = subsys[0]
+                    if list in lists:
+                        list_matches_patch = True
+                        break
+
+                row = {'id': message_id,
+                       'from': mail_from,
+                       'list': list,
+                       'list_matches_patch': list_matches_patch,
+                       'kv': kv,
+                       'rc': rc,
+                       'ignored': message_id in ignored,
+                       'time': c.date,
+                }
 
             writer.writerow(row)
 
@@ -318,7 +327,7 @@ def evaluate_patches(config, prog, argv):
                                                            clustering,
                                                            relevant)
 
-    dump_characteristics(characteristics, ignored_patches_related, relevant,
-                         config.f_characteristics)
+    dump_characteristics(repo, characteristics, ignored_patches_related,
+                         relevant, config.f_characteristics)
 
     call(['./R/evaluate_patches.R', config.d_rout, config.f_characteristics])
