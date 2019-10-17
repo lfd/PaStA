@@ -28,6 +28,80 @@ MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
 MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
 VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
 
+MAILING_LISTS = {'devel@acpica.org', 'alsa-devel@alsa-project.org', 'clang-built-linux@googlegroups.com',
+                 'jailhouse-dev@googlegroups.com', 'kasan-dev@googlegroups.com', 'linux-ntb@googlegroups.com',
+                 'open-iscsi@googlegroups.com', 'linux-oxnas@groups.io', 'pvrusb2@isely.net',
+                 'driverdev-devel@linuxdriverproject.org', 'speakup@linux-speakup.org', 'linux-xtensa@linux-xtensa.org',
+                 'linux-nfc@lists.01.org', 'linux-nvdimm@lists.01.org', 'cake@lists.bufferbloat.net',
+                 'kvmarm@lists.cs.columbia.edu', 'isdn4linux@listserv.isdn4linux.de', 'usrp-users@lists.ettus.com',
+                 'amd-gfx@lists.freedesktop.org', 'dri-devel@lists.freedesktop.org', 'etnaviv@lists.freedesktop.org',
+                 'freedreno@lists.freedesktop.org', 'intel-gfx@lists.freedesktop.org',
+                 'intel-gvt-dev@lists.freedesktop.org', 'nouveau@lists.freedesktop.org',
+                 'spice-devel@lists.freedesktop.org', 'ath10k@lists.infradead.org', 'b43-dev@lists.infradead.org',
+                 'kexec@lists.infradead.org', 'libertas-dev@lists.infradead.org', 'linux-afs@lists.infradead.org',
+                 'linux-amlogic@lists.infradead.org', 'linux-arm-kernel@lists.infradead.org',
+                 'linux-i3c@lists.infradead.org', 'linux-mediatek@lists.infradead.org', 'linux-mtd@lists.infradead.org',
+                 'linux-nvme@lists.infradead.org', 'linux-parport@lists.infradead.org',
+                 'linux-riscv@lists.infradead.org', 'linux-rockchip@lists.infradead.org',
+                 'linux-rpi-kernel@lists.infradead.org', 'linux-snps-arc@lists.infradead.org',
+                 'linux-um@lists.infradead.org', 'linux-unisoc@lists.infradead.org', 'wcn36xx@lists.infradead.org',
+                 'openrisc@lists.librecores.org', 'greybus-dev@lists.linaro.org', 'linaro-mm-sig@lists.linaro.org',
+                 'drbd-dev@lists.linbit.com', 'bridge@lists.linux-foundation.org', 'iommu@lists.linux-foundation.org',
+                 'linux-next@vger.kernel.org', 'netem@lists.linux-foundation.org',
+                 'virtualization@lists.linux-foundation.org', 'ltp@lists.linux.it',
+                 'usb-storage@lists.one-eyed-alien.net', 'b.a.t.m.a.n@lists.open-mesh.org',
+                 'kernel-hardening@lists.openwall.com', 'openwrt-devel@lists.openwrt.org', 'devel@lists.orangefs.org',
+                 'tomoyo-users@lists.osdn.me', 'tomoyo-users-en@lists.osdn.me', 'osmocom-net-gprs@lists.osmocom.org',
+                 'linux-aspeed@lists.ozlabs.org', 'linux-erofs@lists.ozlabs.org', 'linuxppc-dev@lists.ozlabs.org',
+                 'linuxppc-users@lists.ozlabs.org', 'openbmc@lists.ozlabs.org', 'samba-technical@lists.samba.org',
+                 'ibm-acpi-devel@lists.sourceforge.net', 'industrypack-devel@lists.sourceforge.net',
+                 'jfs-discussion@lists.sourceforge.net', 'kgdb-bugreport@lists.sourceforge.net',
+                 'linux1394-devel@lists.sourceforge.net', 'linux-decnet-user@lists.sourceforge.net',
+                 'linux-f2fs-devel@lists.sourceforge.net', 'linux-ntfs-dev@lists.sourceforge.net',
+                 'linux-uvc-devel@lists.sourceforge.net', 'mjpeg-users@lists.sourceforge.net',
+                 'openipmi-developer@lists.sourceforge.net', 'oprofile-list@lists.sourceforge.net',
+                 'osst-users@lists.sourceforge.net', 'squashfs-devel@lists.sourceforge.net',
+                 'tboot-devel@lists.sourceforge.net', 'tipc-discussion@lists.sourceforge.net',
+                 'v9fs-developer@lists.sourceforge.net', 'apparmor@lists.ubuntu.com', 'xen-devel@lists.xenproject.org',
+                 'qemu-devel@nongnu.org', 'intel-wired-lan@osuosl.org', 'nbd@other.debian.org',
+                 'blinux-list@redhat.com', 'cluster-devel@redhat.com', 'dm-devel@redhat.com', 'linux-audit@redhat.com',
+                 'linux-cachefs@redhat.com', 'linux-stm32@st-md-mailman.stormreply.com',
+                 'uboot-stm32@st-md-mailman.stormreply.com', 'cocci@systeme.lip6.fr', 'autofs@vger.kernel.org',
+                 'bpf@vger.kernel.org', 'ceph-devel@vger.kernel.org', 'cgroups@vger.kernel.org', 'dccp@vger.kernel.org',
+                 'devicetree@vger.kernel.org', 'dmaengine@vger.kernel.org', 'ecryptfs@vger.kernel.org',
+                 'kernel-janitors@vger.kernel.org', 'keyrings@vger.kernel.org', 'kvm@vger.kernel.org',
+                 'kvm-ppc@vger.kernel.org', 'linux-acpi@vger.kernel.org', 'linux-alpha@vger.kernel.org',
+                 'linux-api@vger.kernel.org', 'linux-arch@vger.kernel.org', 'linux-arm-msm@vger.kernel.org',
+                 'linux-bcache@vger.kernel.org', 'linux-block@vger.kernel.org', 'linux-bluetooth@vger.kernel.org',
+                 'linux-btrfs@vger.kernel.org', 'linux-can@vger.kernel.org', 'linux-cifs@vger.kernel.org',
+                 'linux-clk@vger.kernel.org', 'linux-crypto@vger.kernel.org', 'linux-csky@vger.kernel.org',
+                 'linux-doc@vger.kernel.org', 'linux-edac@vger.kernel.org', 'linux-efi@vger.kernel.org',
+                 'linux-embedded@vger.kernel.org', 'linux-ext4@vger.kernel.org', 'linux-fbdev@vger.kernel.org',
+                 'linux-fpga@vger.kernel.org', 'linux-fscrypt@vger.kernel.org', 'linux-fsdevel@vger.kernel.org',
+                 'linux-gpio@vger.kernel.org', 'linux-hams@vger.kernel.org', 'linux-hexagon@vger.kernel.org',
+                 'linux-hwmon@vger.kernel.org', 'linux-hyperv@vger.kernel.org', 'linux-i2c@vger.kernel.org',
+                 'linux-ia64@vger.kernel.org', 'linux-ide@vger.kernel.org', 'linux-iio@vger.kernel.org',
+                 'linux-input@vger.kernel.org', 'linux-integrity@vger.kernel.org', 'linux-kbuild@vger.kernel.org',
+                 'linux-kernel@vger.kernel.org', 'linux-kselftest@vger.kernel.org', 'linux-leds@vger.kernel.org',
+                 'linux-man@vger.kernel.org', 'linux-media@vger.kernel.org', 'linux-mips@vger.kernel.org',
+                 'linux-mmc@vger.kernel.org', 'linux-modules@vger.kernel.org', 'linux-next@vger.kernel.org',
+                 'linux-nfs@vger.kernel.org', 'linux-nilfs@vger.kernel.org', 'linux-omap@vger.kernel.org',
+                 'linux-parisc@vger.kernel.org', 'linux-pci@vger.kernel.org', 'linux-pm@vger.kernel.org',
+                 'linux-ppp@vger.kernel.org', 'linux-pwm@vger.kernel.org', 'linux-raid@vger.kernel.org',
+                 'linux-rdma@vger.kernel.org', 'linux-remoteproc@vger.kernel.org', 'linux-renesas-soc@vger.kernel.org',
+                 'linux-rtc@vger.kernel.org', 'linux-s390@vger.kernel.org', 'linux-samsung-soc@vger.kernel.org',
+                 'linux-scsi@vger.kernel.org', 'linux-sctp@vger.kernel.org', 'linux-security-module@vger.kernel.org',
+                 'linux-serial@vger.kernel.org',  'linux-sgx@vger.kernel.org', 'linux-sh@vger.kernel.org',
+                 'linux-sparse@vger.kernel.org', 'linux-spi@vger.kernel.org', 'linux-tegra@vger.kernel.org',
+                 'linux-tip-commits@vger.kernel.org', 'linux-trace-devel@vger.kernel.org',
+                 'linux-unionfs@vger.kernel.org', 'linux-usb@vger.kernel.org', 'linux-watchdog@vger.kernel.org',
+                 'linux-wireless@vger.kernel.org', 'linux-wpan@vger.kernel.org', 'linux-xfs@vger.kernel.org',
+                 'live-patching@vger.kernel.org', 'lvs-devel@vger.kernel.org', 'netdev@vger.kernel.org',
+                 'netfilter-devel@vger.kernel.org', 'platform-driver-x86@vger.kernel.org',
+                 'reiserfs-devel@vger.kernel.org', 'selinux@vger.kernel.org', 'sparclinux@vger.kernel.org',
+                 'stable@vger.kernel.org','target-devel@vger.kernel.org', 'util-linux@vger.kernel.org',
+                 'xdp-newbies@vger.kernel.org'}
+
 
 def email_get_recipients(message):
     recipients = message.get_all('To', []) + message.get_all('Cc', [])
@@ -182,9 +256,10 @@ class LinuxMailCharacteristics:
         self.mtrs_has_one_correct_maintainer = False
         self.mtrs_has_maintainer_per_subsystem = True
         self.mtrs_has_list_per_subsystem = True
-        self.mtrs_has_linux_kernel = 'linux-kernel@vger.kernel.org' in self.recipients
+        self.mtrs_has_linux_kernel = 'linux-kernel@vger.kernel.org' in self.recipients_lists
 
-        recipients = self.recipients | {self.mail_from[1]}
+        recipients = self.recipients_lists | self.recipients_other | \
+                     {self.mail_from[1]}
         recipients = ignore_tlds(recipients)
         for subsystem, (s_lists, s_maintainers, s_reviewers) in self.maintainers.items():
             if subsystem == 'THE REST':
@@ -223,7 +298,7 @@ class LinuxMailCharacteristics:
 
         # The patch needs to be sent to the stable list
         if not ('stable' in self.lists or
-                'stable@vger.kernel.org' in self.recipients):
+                'stable@vger.kernel.org' in self.recipients_lists):
             return False
 
         message_flattened = '\n'.join(patch.message).lower()
@@ -259,7 +334,7 @@ class LinuxMailCharacteristics:
         if 'linux-next' in self.lists:
             return True
 
-        if 'linux-next@vger.kernel.org' in self.recipients:
+        if 'linux-next@vger.kernel.org' in self.recipients_lists:
             return True
 
         return False
@@ -299,7 +374,10 @@ class LinuxMailCharacteristics:
 
         message = repo.mbox.get_messages(message_id)[0]
         thread = repo.mbox.threads.get_thread(message_id)
-        self.recipients = email_get_recipients(message)
+        recipients = email_get_recipients(message)
+
+        self.recipients_lists = recipients & MAILING_LISTS
+        self.recipients_other = recipients - MAILING_LISTS
 
         self.mail_from = email_get_from(message)
         self.subject = email_get_header_normalised(message, 'Subject')

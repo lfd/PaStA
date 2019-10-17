@@ -210,8 +210,9 @@ def load_pkl_and_update(filename, update_command):
 
 def dump_characteristics(characteristics, ignored, relevant, filename):
     with open(filename, 'w') as csv_file:
-        csv_fields = ['id', 'from', 'recipients', 'lists', 'kv', 'rc',
-                      'upstream', 'ignored', 'time', 'mtrs_correct']
+        csv_fields = ['id', 'from', 'recipients_lists', 'recipients_other',
+                      'lists', 'kv', 'rc', 'upstream', 'ignored', 'time',
+                      'mtrs_correct']
         writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
         writer.writeheader()
 
@@ -225,13 +226,16 @@ def dump_characteristics(characteristics, ignored, relevant, filename):
                 rc = int(tag[1])
 
             mail_from = c.mail_from[1]
-            recipients = ' '.join(sorted(c.recipients))
+            recipients_lists = ' '.join(sorted(c.recipients_lists))
+            recipients_other = ' '.join(sorted(c.recipients_other))
+
             lists = ' '.join(sorted(c.lists))
             mtrs_correct = check_correct_maintainer_patch(c)
 
             row = {'id': patch,
                    'from': mail_from,
-                   'recipients': recipients,
+                   'recipients_lists': recipients_lists,
+                   'recipients_other': recipients_other,
                    'lists' : lists,
                    'kv': kv,
                    'rc': rc,
