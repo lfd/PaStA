@@ -187,16 +187,16 @@ class MailContainer:
 class PubInbox(MailContainer):
     MESSAGE_ID_REGEX = re.compile(r'.*(<.*>).*')
 
-    def __init__(self, listname, d_repo, f_index):
-        self.listname = listname
+    def __init__(self, listaddr, shard, d_repo, f_index):
+        self.listaddr = listaddr
         self.f_index = f_index
         self.d_repo = d_repo
 
         self.repo = pygit2.Repository(d_repo)
         self.index = load_index(self.f_index)
 
-        log.info('  ↪ loaded mail index for %s: found %d mails' %
-                 (listname, len(self.index)))
+        log.info('  ↪ loaded mail index for %s (shard %u): found %d mails' %
+                 (listaddr, shard, len(self.index)))
 
     def get_blob(self, commit):
         if 'm' not in self.repo[commit].tree:
@@ -356,16 +356,17 @@ class Mbox:
             log.info('Loading public inboxes')
         for host, mailinglists in config.mbox_git_public_inbox:
             for mailinglist in mailinglists:
+                listaddr = '%s@%s' % (mailinglist, host)
+
                 shard = 0
                 while True:
                     d_repo = os.path.join(config.d_mbox, 'pubin', host,
                                           mailinglist, '%u.git' % shard)
                     f_index = os.path.join(config.d_mbox, 'index', 'pubin',
                                            host, mailinglist, '%u' % shard)
-                    listname = '%s.%s.%u' % (host, mailinglist, shard)
 
                     if os.path.isdir(d_repo):
-                        inbox = PubInbox(listname, d_repo, f_index)
+                        inbox = PubInbox(listaddr, shard, d_repo, f_index)
                         for message_id in inbox.message_ids():
                             self.add_mail_to_list(message_id, mailinglist)
                         self.pub_in.append(inbox)
