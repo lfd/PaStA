@@ -328,6 +328,7 @@ class Mbox:
         self.threads = None
         self.f_mail_thread_cache = config.f_mail_thread_cache
         self.message_id_to_lists = dict()
+        self.lists = set()
         self.d_mbox = config.d_mbox
         self.d_invalid = os.path.join(self.d_mbox, 'invalid')
         self.d_index = os.path.join(self.d_mbox, 'index')
@@ -348,6 +349,7 @@ class Mbox:
         self.mbox_raw = MboxRaw(self.d_mbox, self.d_index)
         for host, listname, f_mbox_raw in config.mbox_raw:
             listaddr = '%s@%s' % (listname, host)
+            self.lists.add(listaddr)
             message_ids = self.mbox_raw.add_mbox(listaddr, f_mbox_raw)
             for message_id in message_ids:
                 self.add_mail_to_list(message_id, listaddr)
@@ -358,6 +360,7 @@ class Mbox:
         for host, mailinglists in config.mbox_git_public_inbox:
             for mailinglist in mailinglists:
                 listaddr = '%s@%s' % (mailinglist, host)
+                self.lists.add(listaddr)
 
                 shard = 0
                 while True:
