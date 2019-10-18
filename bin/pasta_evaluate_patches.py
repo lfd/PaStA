@@ -330,4 +330,4 @@ def evaluate_patches(config, prog, argv):
     dump_characteristics(repo, characteristics, ignored_patches_related,
                          relevant, config.f_characteristics)
 
-    call(['./R/evaluate_patches.R', config.d_rout, config.f_characteristics])
+    call(['./R/ignored_patches.R', config.d_rout, config.f_characteristics])
