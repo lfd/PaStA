@@ -208,6 +208,16 @@ def load_pkl_and_update(filename, update_command):
     return ret
 
 
+def get_kv_rc(linux_version):
+    tag = linux_version.split('-rc')
+    kv = tag[0]
+    rc = 0
+    if len(tag) == 2:
+        rc = int(tag[1])
+
+    return kv, rc
+
+
 def dump_characteristics(characteristics, ignored, relevant, filename):
     with open(filename, 'w') as csv_file:
         csv_fields = ['id', 'from', 'recipients_lists', 'recipients_other',
@@ -219,11 +229,7 @@ def dump_characteristics(characteristics, ignored, relevant, filename):
         for patch in sorted(relevant):
             c = characteristics[patch]
 
-            tag = c.linux_version.split('-rc')
-            kv = tag[0]
-            rc = 0
-            if len(tag) == 2:
-                rc = int(tag[1])
+            kv, rc = get_kv_rc(c.linux_version)
 
             mail_from = c.mail_from[1]
             recipients_lists = ' '.join(sorted(c.recipients_lists))
