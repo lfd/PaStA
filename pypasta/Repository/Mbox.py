@@ -28,7 +28,7 @@ from ..Util import get_commit_hash_range, mail_parse_date
 
 log = getLogger(__name__[-15:])
 
-PATCH_SUBJECT_REGEX = re.compile(r'\[.*\]:? ?(.*)')
+PATCH_SUBJECT_REGEX = re.compile(r'\[.*?\]:? ?(.*)')
 DIFF_START_REGEX = re.compile(r'^--- \S+/.+$')
 ANNOTATION_REGEX = re.compile(r'^---\s*$')
 
