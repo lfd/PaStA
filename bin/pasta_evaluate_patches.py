@@ -228,27 +228,16 @@ def dump_characteristics(characteristics, ignored, relevant, filename):
 
         for patch in sorted(relevant):
             c = characteristics[patch]
-
             kv, rc = get_kv_rc(c.linux_version)
-
             mail_from = c.mail_from[1]
-            recipients_lists = ' '.join(sorted(c.recipients_lists))
-            recipients_other = ' '.join(sorted(c.recipients_other))
-
-            lists = ' '.join(sorted(c.lists))
-            mtrs_correct = check_correct_maintainer_patch(c)
 
             row = {'id': patch,
                    'from': mail_from,
-                   'recipients_lists': recipients_lists,
-                   'recipients_other': recipients_other,
-                   'lists' : lists,
                    'kv': kv,
                    'rc': rc,
-                   'upstream': c.is_upstream,
                    'ignored': patch in ignored,
                    'time': c.date,
-                   'mtrs_correct': mtrs_correct}
+            }
 
             writer.writerow(row)
 
