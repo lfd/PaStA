@@ -193,6 +193,7 @@ class Diff:
 
                 # hunks may occur twice or more often
                 self.patches[filenames].hunks[hunk_heading].merge(h)
+                self.footer = len(diff)
 
         self.affected.discard('/dev/null')
 
