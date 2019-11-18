@@ -214,7 +214,6 @@ class Config:
 
             self.mbox_git_public_inbox = list()
             for host, mailinglists in mbox_pub_in.items():
-                mailinglists = mailinglists['lists']
                 self.mbox_git_public_inbox.append((host, mailinglists))
 
     @property
