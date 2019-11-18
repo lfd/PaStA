@@ -346,7 +346,7 @@ class Mbox:
         if len(config.mbox_raw):
             log.info('Loading raw mailboxes...')
         self.mbox_raw = MboxRaw(self.d_mbox, self.d_index)
-        for listname, f_mbox_raw in config.mbox_raw:
+        for host, listname, f_mbox_raw in config.mbox_raw:
             message_ids = self.mbox_raw.add_mbox(listname, f_mbox_raw)
             for message_id in message_ids:
                 self.add_mail_to_list(message_id, listname)

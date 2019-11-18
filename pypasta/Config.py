@@ -207,10 +207,10 @@ class Config:
             self.mbox_time_window = self.mbox_mindate, self.mbox_maxdate
 
             self.mbox_raw = list()
-            for listname, f_mbox_raw in mbox_raw.items():
+            for host, (listname, f_mbox_raw) in mbox_raw.items():
                 if not isabs(f_mbox_raw):
                     f_mbox_raw = join(self.d_mbox, 'raw', f_mbox_raw)
-                self.mbox_raw.append((listname, f_mbox_raw))
+                self.mbox_raw.append((host, listname, f_mbox_raw))
 
             self.mbox_git_public_inbox = list()
             for host, mailinglists in mbox_pub_in.items():
