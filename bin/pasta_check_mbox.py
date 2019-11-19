@@ -110,11 +110,11 @@ def check_mbox(config, prog, argv):
     if not args.lookup:
         return 0
 
-    message_ids = repo.mbox.message_ids(allow_invalid=True)
-    valid_ids = repo.mbox.message_ids(allow_invalid=False)
+    ids = repo.mbox.get_ids(allow_invalid=True)
+    valid_ids = repo.mbox.get_ids(allow_invalid=False)
 
     with Pool(cpu_count()) as p:
-        result = tqdm(p.imap(load_subject, message_ids), total=len(message_ids))
+        result = tqdm(p.imap(load_subject, ids), total=len(ids))
         result = dict(filter(None, result))
 
     for missing in not_found:

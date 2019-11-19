@@ -164,7 +164,7 @@ def analyse(config, prog, argv):
         config.load_ccache_mbox()
 
     if mbox and mode == 'rep':
-        victims = repo.mbox.message_ids(config.mbox_time_window)
+        victims = repo.mbox.get_ids(config.mbox_time_window)
 
         # we have to temporarily cache those commits to filter out invalid
         # emails. Commit cache is already loaded, so evict everything except
@@ -175,7 +175,7 @@ def analyse(config, prog, argv):
         # we might have loaded invalid emails, so reload the victim list once
         # more. This time, include all patches from the pre-existing (partial)
         # result, and check if all patches are reachable
-        victims = repo.mbox.message_ids(config.mbox_time_window) | \
+        victims = repo.mbox.get_ids(config.mbox_time_window) | \
                   cluster.get_downstream()
 
         # in case of an mbox analysis, we will definitely need all untagged

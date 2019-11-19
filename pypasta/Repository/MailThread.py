@@ -72,7 +72,7 @@ class MailThread:
 
     def update(self, parallelise=True):
         log.info('Updating mail thread cache')
-        all_messages = self.mbox.message_ids(allow_invalid=True)
+        all_messages = self.mbox.get_ids(allow_invalid=True)
         present = set(chain.from_iterable(self.reply_to_map.values()))
         victims = all_messages - present - self.parents
         length = len(victims)

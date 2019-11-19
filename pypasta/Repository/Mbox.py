@@ -171,7 +171,7 @@ def load_index(basename):
 
 
 class MailContainer:
-    def message_ids(self, time_window=None):
+    def get_ids(self, time_window=None):
         if time_window:
             return {x[0] for x in self.index.items() if
                     any(map(
@@ -355,8 +355,8 @@ class Mbox:
         for host, listname, f_mbox_raw in config.mbox_raw:
             listaddr = '%s@%s' % (listname, host)
             self.lists.add(listaddr)
-            message_ids = self.mbox_raw.add_mbox(listaddr, f_mbox_raw)
-            for message_id in message_ids:
+            ids = self.mbox_raw.add_mbox(listaddr, f_mbox_raw)
+            for message_id in ids:
                 self.add_mail_to_list(message_id, listaddr)
 
         self.pub_in = []
@@ -376,7 +376,7 @@ class Mbox:
 
                     if os.path.isdir(d_repo):
                         inbox = PubInbox(listaddr, shard, d_repo, f_index)
-                        for message_id in inbox.message_ids():
+                        for message_id in inbox.get_ids():
                             self.add_mail_to_list(message_id, listaddr)
                         self.pub_in.append(inbox)
                     else:
@@ -424,8 +424,8 @@ class Mbox:
 
         raise exception
 
-    def get_messages(self, message_id):
-        raws = self.get_raws(message_id)
+    def get_messages(self, id):
+        raws = self.get_raws(id)
 
         return [email.message_from_bytes(raw) for raw in raws]
 
@@ -441,13 +441,13 @@ class Mbox:
 
         return raws
 
-    def message_ids(self, time_window=None, allow_invalid=False, lists=None):
+    def get_ids(self, time_window=None, allow_invalid=False, lists=None):
         ids = set()
 
         for pub in self.pub_in:
-            ids |= pub.message_ids(time_window)
+            ids |= pub.get_ids(time_window)
 
-        ids |= self.mbox_raw.message_ids(time_window)
+        ids |= self.mbox_raw.get_ids(time_window)
 
         if not allow_invalid:
             ids = ids - self.invalid

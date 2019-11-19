@@ -418,8 +418,7 @@ def _load_mail_characteristic(message_id):
                                                 _clustering, message_id)
 
 
-def load_linux_mail_characteristics(repo, message_ids,
-                                    maintainers_version=None,
+def load_linux_mail_characteristics(repo, ids, maintainers_version=None,
                                     clustering=None):
     ret = dict()
 
@@ -432,7 +431,7 @@ def load_linux_mail_characteristics(repo, message_ids,
     _repo = repo
     p = Pool(processes=int(cpu_count()), maxtasksperchild=1)
 
-    ret = p.map(_load_mail_characteristic, message_ids, chunksize=1000)
+    ret = p.map(_load_mail_characteristic, ids, chunksize=1000)
     ret = dict(ret)
     print('Done')
     p.close()

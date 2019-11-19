@@ -244,7 +244,7 @@ class Config:
 
     def update_ccache_mbox(self):
         self._update_ccache(self.f_ccache_mbox,
-                            self.repo.mbox.message_ids(self.mbox_time_window),
+                            self.repo.mbox.get_ids(self.mbox_time_window),
                             'mbox')
 
     def update_ccache_stack(self):

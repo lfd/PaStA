@@ -269,8 +269,8 @@ def evaluate_patches(config, prog, argv):
         patches |= d
         upstream |= u
 
-    all_messages_in_time_window = repo.mbox.message_ids(config.mbox_time_window,
-                                                        allow_invalid=True)
+    all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
+                                                    allow_invalid=True)
 
     def load_all_maintainers(ret):
         if ret is None:
