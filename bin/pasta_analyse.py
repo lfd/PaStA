@@ -196,6 +196,10 @@ def analyse(config, prog, argv):
             victims = available
 
         if args.linux:
+            if config.mbox_use_patchwork_id:
+                log.error('Doesn\'t work with USE_PATCHWORK_ID = true')
+                return -1
+
             log.info('Searching for non-Linux patches...')
             repo.mbox.load_threads()
             characteristic = load_linux_mail_characteristics(repo, victims)
@@ -217,7 +221,7 @@ def analyse(config, prog, argv):
     if mode == 'succ':
         if mbox:
             log.error('Analysis mode succ is not available in mailbox mode!')
-            quit(-1)
+            return -1
 
         num_cpus = int(cpu_count() * args.cpu_factor)
 

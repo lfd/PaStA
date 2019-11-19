@@ -202,6 +202,7 @@ class Config:
             mbox_pub_in = mbox['pubin']
 
             # mailbox parameters
+            self.mbox_use_patchwork_id = mbox['USE_PATCHWORK_ID']
             self.mbox_mindate = parse_date_ymd(mbox['MINDATE'])
             self.mbox_maxdate = parse_date_ymd(mbox['MAXDATE'])
             self.mbox_time_window = self.mbox_mindate, self.mbox_maxdate
