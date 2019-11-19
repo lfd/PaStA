@@ -12,7 +12,7 @@
 
 initialise
 
-if [ "$#" -ne 3 ]; then
+if [ "$#" -ne 4 ]; then
 	echo "Usage: $0 listname destination_directory mailbox_file"
 	echo
 	echo "This script splits up a mailbox file into seperate mail"
@@ -23,9 +23,9 @@ fi
 if [ -d ${VICTIM} ]; then
 	find ${VICTIM} -type f -print0 | \
 		xargs -0 -P $(nproc) -n 1 \
-			./process_mail.sh ${LISTNAME} ${BASEDIR}
+			./process_mail.sh $USE_PATCHWORK_ID $LISTNAME $BASEDIR
 elif [ -f ${VICTIM} ]; then
-	formail -n $(nproc) -s <${VICTIM} ./process_mail_pipe.sh ${LISTNAME} ${BASEDIR}
+	formail -n $(nproc) -s <${VICTIM} ./process_mail_pipe.sh $USE_PATCHWORK_ID $LISTNAME $BASEDIR
 else
 	echo "${VICTIM} is not a file or directory"
 	exit 1

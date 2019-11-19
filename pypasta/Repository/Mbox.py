@@ -223,7 +223,7 @@ class PubInbox(MailContainer):
         commits = self.get_hashes(message_id)
         return [self.get_blob(commit) for commit in commits]
 
-    def update(self, nofetch):
+    def update(self, nofetch, use_patchwork_id):
         log.info('Update list %s' % self.listaddr)
         repo = git.Repo(self.d_repo)
         if not nofetch:
@@ -240,35 +240,41 @@ class PubInbox(MailContainer):
         hashes = hashes - known_hashes
         log.info('Updating %d emails' % len(hashes))
 
+        identifier = 'X-Patchwork-ID' if use_patchwork_id else 'Message-ID'
+
         for hash in hashes:
             mail = self.get_mail_by_commit(hash)
             if not mail:
                 log.warning('No email behind commit %s' % hash)
                 continue
 
-            if not mail['Message-ID']:
-                log.warning('No Message ID in commit %s' % hash)
+            if not mail[identifier]:
+                log.warning('No %s in commit %s' % (identifier, hash))
                 continue
-            message_id = mail['Message-ID']
-            message_id = ''.join(message_id.split())
-            match = PubInbox.MESSAGE_ID_REGEX.match(message_id)
-            if match:
-                message_id = match.group(1)
+
+            id = mail[identifier]
+            id = ''.join(id.split())
+            if use_patchwork_id:
+                id = '<%s>' % id
             else:
-                log.warning('Unable to parse Message ID: %s' % message_id)
-                continue
+                match = PubInbox.MESSAGE_ID_REGEX.match(id)
+                if match:
+                    id = match.group(1)
+                else:
+                    log.warning('Unable to parse Message ID: %s' % id)
+                    continue
 
             date = mail_parse_date(mail['Date'])
             if not date:
                 log.warning('Unable to parse datetime %s of %s (%s)' %
-                            (mail['Date'], message_id, hash))
+                            (mail['Date'], id, hash))
                 continue
 
             format_date = date.strftime('%04Y/%m/%d')
 
-            if message_id not in self.index:
-                self.index[message_id] = list()
-            self.index[message_id].append((date, format_date, hash))
+            if id not in self.index:
+                self.index[id] = list()
+            self.index[id].append((date, format_date, hash))
 
         with open(self.f_index, 'w') as f:
             index = list()
@@ -301,7 +307,7 @@ class MboxRaw(MailContainer):
 
         return set(index.keys())
 
-    def update(self):
+    def update(self, use_patchwork_id):
         for listname, f_mbox_raw in self.raw_mboxes:
             if not os.path.exists(f_mbox_raw):
                 log.error('not a file or directory: %s' % f_mbox_raw)
@@ -310,7 +316,8 @@ class MboxRaw(MailContainer):
             log.info('Processing raw mailbox %s' % listname)
             cwd = os.getcwd()
             os.chdir(os.path.join(cwd, 'tools'))
-            ret = call(['./process_mailbox_maildir.sh', listname, self.d_mbox, f_mbox_raw])
+            ret = call(['./process_mailbox_maildir.sh', str(use_patchwork_id),
+                        listname, self.d_mbox, f_mbox_raw])
             os.chdir(cwd)
             if ret == 0:
                 log.info('  ↪ done')
@@ -457,11 +464,11 @@ class Mbox:
 
         return ids
 
-    def update(self, nofetch):
-        self.mbox_raw.update()
+    def update(self, nofetch, use_patchwork_id):
+        self.mbox_raw.update(use_patchwork_id)
 
         for pub in self.pub_in:
-            pub.update(nofetch)
+            pub.update(nofetch, use_patchwork_id)
 
     def get_lists(self, message_id):
         return self.message_id_to_lists[message_id]

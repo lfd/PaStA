@@ -40,12 +40,25 @@ function parse_date {
 	return 0
 }
 
-ID=$(formail -x "Message-id" -c < $MAIL | tail -n 1 | sed -e 's/.*\(<.*>\).*/\1/i')
 whitespace_pattern=" |'"
-if [ "$ID" = "" ]; then
-	die "Unable to parse Message ID for ${MAIL}: empty Message-ID"
-elif [[ "$ID" =~ $whitespace_pattern ]]; then
-	die "Unable to parse Message ID for ${MAIL}: contains whitespaces"
+
+function get_header {
+	# Also remove preceeding and trailing whitespaces from the header
+	formail -x $1 -c < $MAIL | tail -n 1 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+if [ "$USE_PATCHWORK_ID" = "True" ]; then
+	ID=$(get_header "X-Patchwork-ID")
+	# Always surround emails by <> tags. PaStA needs them in order to
+	# classify them as emails
+	ID="<${ID}>"
+else
+	ID=$(get_header "Message-id" | sed -e 's/.*\(<.*>\).*/\1/i')
+	if [ "$ID" = "" ]; then
+		die "Unable to parse Message ID for ${MAIL}: empty Message-ID"
+	elif [[ "$ID" =~ $whitespace_pattern ]]; then
+		die "Unable to parse Message ID for ${MAIL}: contains whitespaces"
+	fi
 fi
 
 MD5=$(md5sum $MAIL | awk '{ print $1 }')
