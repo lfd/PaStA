@@ -285,7 +285,6 @@ class MboxRaw(MailContainer):
         self.d_mbox_raw = os.path.join(d_mbox, 'raw')
         self.d_index = d_index
         self.index = {}
-        self.lists = {}
         self.raw_mboxes = []
 
     def add_mbox(self, listname, f_mbox_raw):
@@ -293,7 +292,13 @@ class MboxRaw(MailContainer):
         f_mbox_index = os.path.join(self.d_index, 'raw.%s' % listname)
         index = load_index(f_mbox_index)
         log.info('  ↪ loaded mail index for %s: found %d mails' % (listname, len(index)))
-        self.index = {**self.index, **index}
+
+        for id, desc in index.items():
+            if id in self.index:
+                self.index[id] += desc
+            else:
+                self.index[id] = desc
+
         return set(index.keys())
 
     def update(self):
