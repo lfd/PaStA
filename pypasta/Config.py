@@ -229,11 +229,11 @@ class Config:
     def load_ccache_stack(self):
         self.repo.load_ccache(self.f_ccache_stack, 'stack')
 
-    def _update_ccache(self, f_ccache, commits, desc):
+    def _update_ccache(self, f_ccache, ids, desc):
         repo = self.repo
         repo.clear_commit_cache()
         repo.load_ccache(f_ccache, desc)
-        cached = repo.cache_commits(commits)
+        cached = repo.cache_commits(ids)
         if cached:
             repo.export_ccache(f_ccache)
         repo.clear_commit_cache()
