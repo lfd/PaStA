@@ -44,7 +44,7 @@ whitespace_pattern=" |'"
 
 function get_header {
 	# Also remove preceeding and trailing whitespaces from the header
-	formail -x $1 -c < $MAIL | tail -n 1 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+	formail -x $1 -c < $MAIL | head -n 1 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 }
 
 if [ "$USE_PATCHWORK_ID" = "True" ]; then
