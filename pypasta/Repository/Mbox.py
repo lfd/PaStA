@@ -224,7 +224,7 @@ class PubInbox(MailContainer):
         return [self.get_blob(commit) for commit in commits]
 
     def update(self, nofetch):
-        log.info('Update list %s' % self.listname)
+        log.info('Update list %s' % self.listaddr)
         repo = git.Repo(self.d_repo)
         if not nofetch:
             for remote in repo.remotes:
