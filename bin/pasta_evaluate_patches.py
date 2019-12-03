@@ -220,7 +220,7 @@ def get_kv_rc(linux_version):
 
 def dump_characteristics(repo, characteristics, ignored, relevant, filename):
     with open(filename, 'w') as csv_file:
-        csv_fields = ['id', 'from', 'list', 'list_matches_patch', 'kv', 'rc',
+        csv_fields = ['id', 'from', 'from_name', 'list', 'list_matches_patch', 'kv', 'rc',
                       'ignored', 'time']
         writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
         writer.writeheader()
@@ -240,6 +240,7 @@ def dump_characteristics(repo, characteristics, ignored, relevant, filename):
 
                 row = {'id': message_id,
                        'from': mail_from,
+                       'from_name': c.mail_from[0],
                        'list': list,
                        'list_matches_patch': list_matches_patch,
                        'kv': kv,
