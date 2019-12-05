@@ -158,6 +158,7 @@ class Config:
         self.f_ccache_mbox = path('COMMIT_CACHE_MBOX')
 
         self.f_characteristics = path('CHARACTERISTICS')
+        self.f_offlist = path('OFFLIST')
         self.f_releases = path('RELEASES')
         self.f_characteristics_pkl = path('CHARACTERISTICS_PKL')
         self.f_maintainers_pkl = path('MAINTAINERS_PKL')

@@ -18,6 +18,7 @@ import csv
 import pickle
 import re
 
+from collections import defaultdict
 from logging import getLogger
 from subprocess import call
 from tqdm import tqdm
@@ -305,8 +306,74 @@ def prepare_process_characteristics(config, clustering):
     call(['./analyses/ignored_patches.R', config.d_rout, config.f_characteristics, config.f_releases])
 
 
-def prepare_off_list_patches():
-    pass
+def prepare_off_list_patches(config, clustering):
+    def get_youngest_commit(repo, commits):
+        commits = list(commits)
+        youngest = commits[0]
+        youngest_date = repo[youngest].committer.date
+
+        for commit in commits[1:]:
+            date = repo[commit].committer.date
+            if date > youngest_date:
+                youngest = commit
+                youngest_date = date
+
+        return youngest
+
+    repo = config.repo
+    repo.mbox.load_threads()
+
+    # We need information of upstream commits, so warm up caches
+    config.load_ccache_upstream()
+
+    characteristics, maintainers_version = \
+        load_characteristics_and_maintainers(config, clustering)
+
+    offlist = set()
+    for downstream, upstream in tqdm(clustering.iter_split()):
+        l_upsteam = len(upstream)
+        # We're not interested in clusters with no upstream hash
+        # Filter for patches with too many upstream commits. They're very
+        # likely no off-list patches.
+        if l_upsteam == 0 or l_upsteam > 2:
+            continue
+
+        # Across downstream patches: filter for backports and for next patches
+        # or patches from bots
+        downstream = {x for x in downstream if
+                      not characteristics[x].is_stable_review}
+
+        # We must NOT exclude bots. E.g., bots DO write patches that are
+        # accepted E.g., kbuild test robot write coccinelle patches.
+        #downstream = {x for x in downstream if
+        #              not characteristics[x].is_from_bot}
+        downstream = {x for x in downstream if
+                      not characteristics[x].is_next}
+
+        upstream = get_youngest_commit(repo, upstream)
+        #upstream_commit_date = repo[upstream].committer.date
+
+        if len(downstream):
+            continue
+
+        # We have an off-list patch if len(downstream) == 0
+        offlist.add(upstream)
+
+    csv_fields = ['commit',
+                  'author',
+                  'committer',
+                  'subject',
+                  'l_down']
+    with open(config.f_offlist, 'w') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
+        writer.writeheader()
+        for o in offlist:
+            patch = repo[o]
+            writer.writerow({'commit': o,
+                             'author': patch.author.email.lower(),
+                             'committer': patch.committer.email.lower(),
+                             'subject': patch.subject,
+                             'l_down': len(clustering.get_downstream(o))})
 
 
 def prepare_patch_review(config, clustering):
@@ -387,9 +454,7 @@ def prepare_evaluation(config, argv):
 
     if analysis_option.mode == 'process_characteristics':
         prepare_process_characteristics(config, clustering)
-
     elif analysis_option.mode == 'off-list':
-        prepare_off_list_patches()
-
+        prepare_off_list_patches(config, clustering)
     else:
         prepare_patch_review(config, clustering)
