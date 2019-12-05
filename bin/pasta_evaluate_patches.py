@@ -2,7 +2,7 @@
 PaStA - Patch Stack Analysis
 
 Copyright (c) Bayerische Motoren Werke Aktiengesellschaft (BMW AG), 2019
-Copyright (c) OTH Regensburg, 2019
+Copyright (c) OTH Regensburg, 2019-2020
 
 Authors:
   Sebastian Duda <sebastian.duda@fau.de>
@@ -13,8 +13,6 @@ the COPYING file in the top-level directory.
 """
 
 import csv
-import os
-import pickle
 import re
 
 from logging import getLogger
@@ -25,6 +23,7 @@ from tqdm import tqdm
 
 from pypasta.LinuxMaintainers import LinuxMaintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
+from pypasta.Util import load_pkl_and_update
 
 log = getLogger(__name__[-15:])
 
@@ -194,18 +193,6 @@ def load_maintainers(tag):
     m = LinuxMaintainers(maintainers)
 
     return tag, m
-
-
-def load_pkl_and_update(filename, update_command):
-    ret = None
-    if os.path.isfile(filename):
-        ret = pickle.load(open(filename, 'rb'))
-
-    ret, changed = update_command(ret)
-    if changed:
-        pickle.dump(ret, open(filename, 'wb'))
-
-    return ret
 
 
 def get_kv_rc(linux_version):
