@@ -32,6 +32,7 @@ from bin.pasta_check_mbox import check_mbox
 from bin.pasta_compare import compare
 from bin.pasta_compare_clusters import compare_clusters
 from bin.pasta_maintainers_stats import maintainers_stats
+from bin.pasta_offlist import offlist
 from bin.pasta_optimise_cluster import optimise_cluster
 from bin.pasta_prepare_evaluation import prepare_evaluation
 from bin.pasta_rate import rate
@@ -48,7 +49,7 @@ from bin.pasta_form_patchwork_relations import form_patchwork_relations
 
 
 __author__ = 'Ralf Ramsauer'
-__copyright__ = 'Copyright (c) OTH Regensburg, 2016-2017'
+__copyright__ = 'Copyright (c) OTH Regensburg, 2016-2019'
 __credits__ = ['Ralf Ramsauer']
 __license__ = 'GPLv2'
 __version__ = '0.3'
@@ -170,6 +171,8 @@ def main(argv):
         return form_patchwork_relations(config, argv)
     elif sub == 'maintainers_stats':
         return maintainers_stats(config, argv)
+    elif sub == 'offlist':
+        return offlist(config, sub, argv)
     elif sub == 'patch_descriptions':
         return patch_descriptions(config, argv)
     elif sub == 'ripup':
