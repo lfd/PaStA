@@ -38,12 +38,16 @@ def pygit2_signature_to_datetime(signature):
     return dt
 
 
-def load_pkl_and_update(filename, update_command):
+def load_pkl_and_update(filename, update_command, *params):
     ret = None
     if os.path.isfile(filename):
         ret = pickle.load(open(filename, 'rb'))
 
-    ret, changed = update_command(ret)
+    if len(params) == 0:
+        ret, changed = update_command(ret)
+    else:
+        ret, changed = update_command(ret, *params)
+
     if changed:
         pickle.dump(ret, open(filename, 'wb'))
 
