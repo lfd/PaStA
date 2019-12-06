@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2019
+Copyright (c) OTH Regensburg, 2019-2020
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -14,10 +14,13 @@ import email
 import re
 
 from anytree import LevelOrderIter
+from logging import getLogger
 from multiprocessing import Pool, cpu_count
-from tqdm import tqdm
 
-from .Util import mail_parse_date
+from .Util import mail_parse_date, load_pkl_and_update
+
+
+log = getLogger(__name__[-15:])
 
 _repo = None
 _maintainers_version = None
@@ -418,26 +421,41 @@ def _load_mail_characteristic(message_id):
                                                 _clustering, message_id)
 
 
-def load_linux_mail_characteristics(repo, ids, maintainers_version=None,
-                                    clustering=None):
-    ret = dict()
+def load_linux_mail_characteristics(config, maintainers_version, clustering,
+                                    ids):
+    repo = config.repo
 
-    global _mainline_tags
-    _mainline_tags = list(filter(lambda x: MAINLINE_REGEX.match(x[0]), repo.tags))
+    def _load_characteristics(ret):
+        if ret is None:
+            ret = dict()
 
-    global _repo, _maintainers_version, _clustering
-    _maintainers_version = maintainers_version
-    _clustering = clustering
-    _repo = repo
-    p = Pool(processes=int(cpu_count()), maxtasksperchild=1)
+        missing = ids - ret.keys()
+        if len(missing) == 0:
+            return ret, False
 
-    ret = p.map(_load_mail_characteristic, ids, chunksize=1000)
-    ret = dict(ret)
-    print('Done')
-    p.close()
-    p.join()
-    _repo = None
-    _maintainers_version = None
-    _clustering = None
+        global _mainline_tags
+        _mainline_tags = list(filter(lambda x: MAINLINE_REGEX.match(x[0]),
+                                     repo.tags))
 
-    return ret
+        global _repo, _maintainers_version, _clustering
+        _maintainers_version = maintainers_version
+        _clustering = clustering
+        _repo = repo
+        p = Pool(processes=int(cpu_count()), maxtasksperchild=1)
+
+        missing = p.map(_load_mail_characteristic, missing, chunksize=1000)
+        missing = dict(missing)
+        print('Done')
+        p.close()
+        p.join()
+        _repo = None
+        _maintainers_version = None
+        _clustering = None
+
+        return {**ret, **missing}, True
+
+    log.info('Loading/Updating Linux patch characteristics...')
+    characteristics = load_pkl_and_update(config.f_characteristics_pkl,
+                                          _load_characteristics)
+
+    return characteristics

@@ -20,7 +20,6 @@ from subprocess import call
 
 from pypasta.LinuxMaintainers import load_maintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
-from pypasta.Util import load_pkl_and_update
 
 log = getLogger(__name__[-15:])
 
@@ -241,28 +240,12 @@ def evaluate_patches(config, prog, argv):
     all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
                                                     allow_invalid=True)
 
-    def load_characteristics(ret):
-        if ret is None:
-            ret = dict()
-
-        missing = all_messages_in_time_window - ret.keys()
-        if len(missing) == 0:
-            return ret, False
-
-        missing = load_linux_mail_characteristics(repo,
-                                                  missing,
-                                                  maintainers_version,
-                                                  clustering)
-
-        return {**ret, **missing}, True
-
     tags = {x[0] for x in repo.tags if not x[0].startswith('v2.6')}
     tags |= {x[0] for x in repo.tags if x[0].startswith('v2.6.39')}
     maintainers_version = load_maintainers(config, tags)
-
-    log.info('Loading/Updating Linux patch characteristics...')
-    characteristics = load_pkl_and_update(config.f_characteristics_pkl,
-                                          load_characteristics)
+    characteristics = \
+        load_linux_mail_characteristics(config, maintainers_version, clustering,
+                                        all_messages_in_time_window)
 
     relevant = get_relevant_patches(characteristics)
 
