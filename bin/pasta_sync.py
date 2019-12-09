@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2018
+Copyright (c) OTH Regensburg, 2016-2019
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -52,21 +52,27 @@ def sync(config, prog, argv):
                         choices=choices,
                         help='create cache for commits on patch stacks or '
                              'mailboxes (downstream) and upstream commits. '
-                             'Possibilities: downstream / upstream / all')
+                             'Possibilities: downstream / upstream / all. '
+                             'Default: upstream. If -mbox is specified: all')
     parser.add_argument('-clear', metavar='clear', default=None,
                         choices=choices,
                         help='Invalidates cache. Usage same as create')
     parser.add_argument('-mbox', action='store_true', default=False,
-                        help='synchronise mailboxes before creating caches')
+                        help='Load mailbox subsystem')
     parser.add_argument('-noup', action='store_true', default=False,
-                        help='Don\'t synchronise upstream repositories')
+                        help='Don\'t synchronise internal index files. '
+                             'Implies -nofetch.')
     parser.add_argument('-nofetch', action='store_true', default=False,
                         help='Don\'t fetch upstream repositories')
-
 
     args = parser.parse_args(argv)
     repo = config.repo
     is_mbox = config.mode == Config.Mode.MBOX
+
+    if args.create is None:
+        args.create = 'upstream'
+        if args.mbox and is_mbox:
+            args.create = 'all'
 
     if is_mbox and (args.create in ['downstream', 'all'] or args.mbox):
         repo.register_mbox(config)
@@ -80,9 +86,6 @@ def sync(config, prog, argv):
 
         if is_mbox and args.mbox:
             repo.update_mbox(config, nofetch=args.nofetch)
-
-    if args.clear is None and args.create is None:
-        args.create = 'all'
 
     create_stack, create_upstream, create_mbox = parse_choices(config, args.create)
     clear_stack, clear_upstream, clear_mbox = parse_choices(config, args.clear)
