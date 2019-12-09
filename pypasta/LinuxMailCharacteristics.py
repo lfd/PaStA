@@ -146,6 +146,7 @@ def ignore_tlds(addresses):
 class LinuxMailCharacteristics:
     REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
     REGEX_COVER = re.compile('\[.*patch.*\s0+/.*\].*', re.IGNORECASE)
+    REGEX_GREG_ADDED = re.compile('patch \".*\" added to .*')
     ROOT_FILES = ['.clang-format',
                   '.cocciconfig',
                   '.get_maintainer.ignore',
@@ -192,7 +193,12 @@ class LinuxMailCharacteristics:
         if message['X-Patchwork-Hint'] == 'ignore' and potential_bot:
             return True
 
-        if potential_bot and str(message['Subject']).lower().startswith('applied'):
+        subject = str(message['Subject']).lower()
+
+        if potential_bot and subject.startswith('applied'):
+            return True
+
+        if LinuxMailCharacteristics.REGEX_GREG_ADDED.match(subject):
             return True
 
         # syzbot
@@ -333,7 +339,7 @@ class LinuxMailCharacteristics:
 
         return True
 
-    def _is_next(self):
+    def _is_next(self, message):
         if 'linux-next' in self.lists:
             return True
 
@@ -387,7 +393,7 @@ class LinuxMailCharacteristics:
         self.date = mail_parse_date(message['Date'])
 
         self.lists = repo.mbox.get_lists(message_id)
-        self.is_next = self._is_next()
+        self.is_next = self._is_next(message)
 
         self.is_from_bot = self._is_from_bot(message)
         self._analyse_series(thread, message)
