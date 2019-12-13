@@ -33,6 +33,19 @@ DIFF_START_REGEX = re.compile(r'^--- \S+/.+$')
 ANNOTATION_REGEX = re.compile(r'^---\s*$')
 
 
+def decode_payload(message):
+    payload = message.get_payload(decode=True)
+    if not payload:
+        return None
+
+    charset = message.get_content_charset()
+    if charset not in CHARSETS:
+        charset = 'ascii'
+
+    payload = payload.decode(charset, errors='ignore')
+    return payload
+
+
 class PatchMail(MessageDiff):
     def __init__(self, mail, identifier):
         self.mail_subject = mail['Subject']
@@ -45,20 +58,22 @@ class PatchMail(MessageDiff):
         author = Signature(author_name, author_email, date)
 
         # Get the patch payload
-        payload = mail.get_payload(decode=True)
-        charset = mail.get_content_charset()
+        payload = decode_payload(mail)
+        if not payload:
+            payload = mail.get_payload()
+            if isinstance(payload, list):
+                payload = [decode_payload(x) for x in payload]
+                payload = list(filter(None, payload))
+                tmp = None
+                for p in payload:
+                    if 'From: ' in p or 'diff --' in p:
+                        tmp = p
+                        break
+                if not tmp:
+                    raise ValueError('Unable to find suitable payload')
+                payload = tmp
 
-        if charset not in CHARSETS:
-           charset = 'ascii'
-        payload = payload.decode(charset, errors='ignore')
-
-        if isinstance(payload, list):
-            retval = parse_list(payload)
-        elif isinstance(payload, str):
-            retval = parse_single_message(payload)
-        else:
-            raise TypeError('Warning: unknown payload type')
-
+        retval = parse_single_message(payload)
         if retval is None:
             raise TypeError('Unable to split mail to msg and diff')
 
@@ -114,28 +129,6 @@ def parse_single_message(mail):
 
     if patch:
         return message, annotation, patch
-
-    return None
-
-
-def parse_list(payload):
-    if len(payload) == 1:
-        retval = parse_single_message(payload[0].get_payload())
-        if retval:
-            return retval
-        else:
-            return None
-    payload0 = payload[0].get_payload()
-    payload1 = payload[1].get_payload()
-
-    if not (isinstance(payload0, str) and isinstance(payload1, str)):
-        return None
-
-    payload0 = payload0.splitlines()
-    payload1 = payload1.splitlines()
-
-    if any([x.startswith('diff ') for x in payload1]):
-        return payload0, payload1
 
     return None
 
