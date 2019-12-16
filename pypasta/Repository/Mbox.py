@@ -74,7 +74,7 @@ class PatchMail(MessageDiff):
         for p in payload:
             try:
                 m = email.message_from_string(p)
-                if len(m.defects):
+                if len(m.defects) or len(m.keys()) == 0:
                     continue
 
                 # Hey, we have a valid email as attachment. Use it.
@@ -82,6 +82,11 @@ class PatchMail(MessageDiff):
                 return m, p
             except:
                 pass
+
+        if len(payload) >= 2 and \
+           isinstance(payload[0], str) and isinstance(payload[1], str) and \
+           True in ['diff --' in x for x in payload]:
+            return mail, payload[0] + payload[1]
 
         for p in payload:
             if 'From: ' in p or 'diff --' in p:
