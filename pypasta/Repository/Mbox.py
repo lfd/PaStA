@@ -48,15 +48,6 @@ def decode_payload(message):
 
 class PatchMail(MessageDiff):
     def __init__(self, mail, identifier):
-        self.mail_subject = mail['Subject']
-
-        # Get informations on the author
-        date = mail_parse_date(mail['Date'], assume_epoch=True)
-
-        author = str(mail['From'])
-        author_name, author_email = email.utils.parseaddr(author)
-        author = Signature(author_name, author_email, date)
-
         # Get the patch payload
         payload = decode_payload(mail)
         if not payload:
@@ -72,6 +63,15 @@ class PatchMail(MessageDiff):
                 if not tmp:
                     raise ValueError('Unable to find suitable payload')
                 payload = tmp
+
+        self.mail_subject = mail['Subject']
+
+        # Get informations on the author
+        date = mail_parse_date(mail['Date'], assume_epoch=True)
+
+        author = str(mail['From'])
+        author_name, author_email = email.utils.parseaddr(author)
+        author = Signature(author_name, author_email, date)
 
         retval = parse_single_message(payload)
         if retval is None:
