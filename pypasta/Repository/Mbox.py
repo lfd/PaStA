@@ -47,23 +47,47 @@ def decode_payload(message):
 
 
 class PatchMail(MessageDiff):
-    def __init__(self, mail, identifier):
-        # Get the patch payload
-        payload = decode_payload(mail)
-        if not payload:
-            payload = mail.get_payload()
-            if isinstance(payload, list):
-                payload = [decode_payload(x) for x in payload]
-                payload = list(filter(None, payload))
-                tmp = None
-                for p in payload:
-                    if 'From: ' in p or 'diff --' in p:
-                        tmp = p
-                        break
-                if not tmp:
-                    raise ValueError('Unable to find suitable payload')
-                payload = tmp
+    @staticmethod
+    def extract_patch_mail(mail):
+        id = mail['message-id']
 
+        # The easy case: Mail is a raw text mail, and contains the patch inline
+        payload = decode_payload(mail)
+        if payload:
+            return mail, payload
+
+        # The complex case: mail consists of multiple parts:
+        payload = mail.get_payload()
+        if not isinstance(payload, list):
+            log.warning('IMPLEMENT ME! %s' % id)
+            raise NotImplementedError('impl me')
+
+        # Try to decode all message parts
+        payload = [decode_payload(x) for x in payload]
+        payload = list(filter(None, payload))
+        # Let's test if one of the payloads can be converted to a
+        # mail object. In that case, it's very likely that a patch created by
+        # git format-patch was sent as attachment
+        for p in payload:
+            try:
+                m = email.message_from_string(p)
+                if len(m.defects):
+                    continue
+
+                # Hey, we have a valid email as attachment. Use it.
+                p = decode_payload(m)
+                return m, p
+            except:
+                pass
+
+        for p in payload:
+            if 'From: ' in p or 'diff --' in p:
+                return mail, p
+
+        raise ValueError('Unable to find suitable payload')
+
+    def __init__(self, mail, identifier):
+        mail, payload = self.extract_patch_mail(mail)
         self.mail_subject = mail['Subject']
 
         # Get informations on the author
