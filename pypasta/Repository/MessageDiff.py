@@ -25,30 +25,30 @@ class MessageDiff:
     """
     An abstract class that consists of a message, and a diff.
     """
-    SIGN_OFF_REGEX = re.compile(r'^('
-                                r'Signed-off-by:|'
-                                r'Acked-by:|'
-                                r'Link:|'
-                                r'CC:|'
-                                r'Reviewed-by:|'
-                                r'Reported-by:|'
-                                r'Tested-by:|'
-                                r'LKML-Reference:|'
-                                r'Patch:|'
-                                r'Wrecked-off-by:|'
-                                r'Gitweb:|'
-                                r'Merge:|'
-                                r'Fixes:|'
-                                r'Commit:|'
-                                r'Patchwork:|'
-                                r'From:|'
-                                r'Commit-ID:|'
-                                r'Author:|'
-                                r'AuthorDate:|'
-                                r'Committer:|'
-                                r'CommitDate:'
-                                r')',
-                                re.IGNORECASE)
+    TAGS_REGEX = re.compile(r'^('
+                            r'Signed-off-by:|'
+                            r'Acked-by:|'
+                            r'Link:|'
+                            r'CC:|'
+                            r'Reviewed-by:|'
+                            r'Reported-by:|'
+                            r'Tested-by:|'
+                            r'LKML-Reference:|'
+                            r'Patch:|'
+                            r'Wrecked-off-by:|'
+                            r'Gitweb:|'
+                            r'Merge:|'
+                            r'Fixes:|'
+                            r'Commit:|'
+                            r'Patchwork:|'
+                            r'From:|'
+                            r'Commit-ID:|'
+                            r'Author:|'
+                            r'AuthorDate:|'
+                            r'Committer:|'
+                            r'CommitDate:'
+                            r')',
+                            re.IGNORECASE)
 
     def __init__(self, identifier, content, author):
         self.identifier = identifier
@@ -60,7 +60,7 @@ class MessageDiff:
         # Split by linebreaks and filter empty lines
         message = list(filter(None, message))
         # Filter signed-off-by lines
-        filtered = list(filter(lambda x: not MessageDiff.SIGN_OFF_REGEX.match(x),
+        filtered = list(filter(lambda x: not MessageDiff.TAGS_REGEX.match(x),
                                message))
 
         if len(filtered) > 1 and filtered[0] == filtered[1]:
