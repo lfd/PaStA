@@ -58,6 +58,9 @@ class PatchMail(MessageDiff):
 
         # The complex case: mail consists of multiple parts:
         payload = mail.get_payload()
+        if isinstance(payload, str):
+            return mail, payload
+
         if not isinstance(payload, list):
             log.warning('IMPLEMENT ME! %s' % id)
             raise NotImplementedError('impl me')
