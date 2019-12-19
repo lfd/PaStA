@@ -112,6 +112,24 @@ ignored_by_week <- function(data) {
   total <- ddply(relevant, .(week, list), nrow)
   colnames(total) <- c('week', 'list', 'total')
 
+  fillup_missing_weeks <- function(data, key) {
+    min.week <- min(data$week)
+    delta.weeks <- days(max(data$week) - min.week)$day / 7
+
+    all.weeks <- as.Date(sapply(0:delta.weeks, function(n) {
+      return (as.character(min.week + weeks(n)))
+    }))
+
+    missing.weeks <- !(all.weeks %in% data$week)
+    if (any(missing.weeks)) {
+      return(rbind(data, data.frame(week=all.weeks[missing.weeks], total=0)))
+    }
+    return (data)
+  }
+
+  # Fill up weeks with no values with zeroes
+  total <- total %>% group_by(list) %>% group_modify(fillup_missing_weeks)
+
   # We must also merge weeks with no ignored patches, so all.x/y = TRUE
   df <- merge(x = true, y = false, by = c('week', 'list'), all.x = TRUE, all.y = TRUE)
   df <- merge(x = df, y = total, by = c('week', 'list'), all.x = TRUE, all.y = TRUE)
