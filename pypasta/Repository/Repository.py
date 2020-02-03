@@ -106,9 +106,6 @@ class Repository:
 
         self.tags.sort(key=lambda x: x[1])
 
-    def update(self):
-        self.repo.remotes['origin'].fetch(callbacks=PygitCredentials())
-
     def _inject_commits(self, commit_dict):
         for key, val in commit_dict.items():
             self.ccache[key] = val
@@ -260,9 +257,9 @@ class Repository:
         if not self.mbox:
             self.mbox = Mbox(config)
 
-    def update_mbox(self, config, nofetch):
+    def update_mbox(self, config):
         self.register_mbox(config)
-        self.mbox.update(nofetch, config.mbox_use_patchwork_id)
+        self.mbox.update(config.mbox_use_patchwork_id)
 
         # The mbox doesn't track changes after an update. The easiest
         # workaround is to reload the whole instance.

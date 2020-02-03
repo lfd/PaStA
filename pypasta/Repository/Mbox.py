@@ -223,12 +223,8 @@ class PubInbox(MailContainer):
         commits = self.get_hashes(message_id)
         return [self.get_blob(commit) for commit in commits]
 
-    def update(self, nofetch, use_patchwork_id):
+    def update(self, use_patchwork_id):
         log.info('Update list %s' % self.listaddr)
-        repo = git.Repo(self.d_repo)
-        if not nofetch:
-            for remote in repo.remotes:
-                remote.fetch()
         self.repo = pygit2.Repository(self.d_repo)
 
         known_hashes = set()
@@ -464,11 +460,11 @@ class Mbox:
 
         return ids
 
-    def update(self, nofetch, use_patchwork_id):
+    def update(self, use_patchwork_id):
         self.mbox_raw.update(use_patchwork_id)
 
         for pub in self.pub_in:
-            pub.update(nofetch, use_patchwork_id)
+            pub.update(use_patchwork_id)
 
     def get_lists(self, message_id):
         return self.message_id_to_lists[message_id]

@@ -60,10 +60,7 @@ def sync(config, prog, argv):
     parser.add_argument('-mbox', action='store_true', default=False,
                         help='Load mailbox subsystem')
     parser.add_argument('-noup', action='store_true', default=False,
-                        help='Don\'t synchronise internal index files. '
-                             'Implies -nofetch.')
-    parser.add_argument('-nofetch', action='store_true', default=False,
-                        help='Don\'t fetch upstream repositories')
+                        help='Don\'t synchronise internal index files. ')
 
     args = parser.parse_args(argv)
     repo = config.repo
@@ -79,13 +76,9 @@ def sync(config, prog, argv):
 
     # Update upstream
     if not args.noup:
-        if not args.nofetch:
-            log.info('Fetching and syncing upstream repository')
-            repo.update()
         config.load_upstream_hashes(force_reload=True)
-
         if is_mbox and args.mbox:
-            repo.update_mbox(config, nofetch=args.nofetch)
+            repo.update_mbox(config)
 
     create_stack, create_upstream, create_mbox = parse_choices(config, args.create)
     clear_stack, clear_upstream, clear_mbox = parse_choices(config, args.clear)
