@@ -144,6 +144,10 @@ def analyse(config, prog, argv):
     mbox = config.mode == Config.Mode.MBOX
     mode = args.mode
 
+    if mbox and mode == 'succ':
+        log.error('Analysis mode succ is not available in mailbox mode!')
+        return -1
+
     f_cluster, cluster = config.load_cluster(must_exist=False)
 
     def fill_result(hashes, tag):
@@ -219,10 +223,6 @@ def analyse(config, prog, argv):
 
     cherries = EvaluationResult()
     if mode == 'succ':
-        if mbox:
-            log.error('Analysis mode succ is not available in mailbox mode!')
-            return -1
-
         num_cpus = int(cpu_count() * args.cpu_factor)
 
         psd = config.psd
