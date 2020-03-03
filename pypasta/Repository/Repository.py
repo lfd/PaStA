@@ -97,7 +97,17 @@ class Repository:
         for tag_ref in tag_refs:
             tag = tag_ref[len('refs/tags/'):]
             ref = self.repo.lookup_reference(tag_ref)
-            tagger = self.repo[ref.target].tagger
+            target = self.repo[ref.target]
+            # There are some broken tags in the Linux Kernel (e.g. v2.6.13.4)
+            # that point to commits instead of tags. In those cases, we need to
+            # treat the tag as a commit.
+            if isinstance(target, pygit2.Tag):
+                tagger = target.tagger
+            elif isinstance(target, pygit2.Commit):
+                tagger = target.committer
+            else:
+                raise NotImplementedError('Unknown tag type')
+
             if tagger is None:
                 continue
 
