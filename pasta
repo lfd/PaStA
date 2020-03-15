@@ -43,7 +43,7 @@ from bin.pasta_patch_descriptions import patch_descriptions
 from bin.pasta_upstream_duration import upstream_duration
 from bin.pasta_upstream_history import pasta_upstream_history
 from bin.pasta_web import web
-
+from bin.pasta_show_maintainers import get_maintainers
 
 __author__ = 'Ralf Ramsauer'
 __copyright__ = 'Copyright (c) OTH Regensburg, 2016-2017'
@@ -169,6 +169,8 @@ def main(argv):
         return upstream_duration(config, sub, argv)
     elif sub == 'web':
         return web(config, sub, argv)
+    elif sub == "maintainers":
+        return get_maintainers(config, sub, argv)
     else:
         print('Unknown command: %s' % sub)
         usage(me)

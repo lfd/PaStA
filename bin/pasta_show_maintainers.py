@@ -17,16 +17,16 @@ from pypasta.LinuxMaintainers import LinuxMaintainers
 
 log = getLogger(__name__[-15:])
 
-def get_maintainers(filenames):
+def get_maintainers(config, sub, argv):
     results = list()
     maintainers = open('./resources/linux/repo/MAINTAINERS', 'r').read()
     maintain = LinuxMaintainers(maintainers)
 
-    for filename in filenames:
+    for filename in argv:
         subsystem = maintain.get_subsystems_by_file(filename)
         maintainer = maintain.get_maintainers(subsystem.pop())
         results.append((filename, subsystem, maintainer))
     return results
 
-sys.argv.pop(0)
-print(*get_maintainers(sys.argv), sep='\n')
+#sys.argv.pop(0)
+#print(*get_maintainers(sys.argv), sep='\n')
