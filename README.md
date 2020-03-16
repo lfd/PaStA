@@ -33,14 +33,8 @@ Requirements
   - flask-bootstrap
   - flask-nav
 
-On Ubuntu 18.10 as reference distro, those dependencies can easily installed
-with:
-```
-# apt install python3-sklearn python3-git python3-pygit2 python3-fuzzywuzzy
-	      python3-flaskext.wtf python3-pip python3-tqdm \
-              git procmail
-$ pip3 install --user flask-bootstrap flask-nav anytree
-```
+Please refer to this [Dockerfile](/docker/pasta-skeleton.dockerfile) to 
+download the required dependencies.
 
 Getting started
 ---------------
