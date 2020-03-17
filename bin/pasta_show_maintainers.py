@@ -17,7 +17,15 @@ from pypasta.Util import file_to_string
 
 log = getLogger(__name__[-15:])
 
+def flatten(nested):
+    flat_list = []
+    for sublist in nested:
+        for item in sublist:
+            flat_list.append(item)
+    return flat_list
+
 def get_maintainers(config, sub, argv):
+        
     if argv.pop(0) == '--filter':
         filenames = file_to_string(argv.pop(0)).splitlines()
     else:
@@ -26,16 +34,16 @@ def get_maintainers(config, sub, argv):
         
     if argv[0] == '--file':
         argv.pop(0)
-        all_maintainers = file_to_string(argv.pop(0))
+        all_maintainers_text = file_to_string(argv.pop(0))
     else:
-        all_maintainers = file_to_string('./resources/linux/repo/MAINTAINERS')
+        all_maintainers_text = file_to_string('./resources/linux/repo/MAINTAINERS')
 
-    all_maintainers = LinuxMaintainers(all_maintainers)
+    all_maintainers = LinuxMaintainers(all_maintainers_text)
 
-    results = dict()
-    for filename in filenames:
-        subsystem = all_maintainers.get_subsystems_by_file(filename)
-        maintainer = all_maintainers.get_maintainers(subsystem.pop())
-        results[filename] = maintainer
+    subsystems = all_maintainers.get_subsystems_by_files(filenames)
+
+    results = list()
+    for subsystem in subsystems:
+        maintainer = all_maintainers.get_maintainers(subsystem)
+        results.append(maintainer[1])
     
-    return results
