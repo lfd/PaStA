@@ -21,7 +21,8 @@ def get_maintainers(config, sub, argv):
     if argv.pop(0) == '--filter':
         filenames = file_to_string(argv.pop(0)).splitlines()
     else:
-        exit
+        print('usage: ./pasta maintainers --filter <filelist text file> [--file <MAINTAINERS file>]')
+        exit()
         
     if argv[0] == '--file':
         argv.pop(0)
