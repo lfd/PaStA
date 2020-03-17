@@ -159,6 +159,7 @@ def analyse(config, prog, argv):
         cluster.to_file(f_cluster)
 
     if mbox:
+        
         log.info('Regarding mails in time window %s--%s' %
                  (format_date_ymd(config.mbox_mindate),
                   format_date_ymd(config.mbox_maxdate)))
@@ -166,62 +167,62 @@ def analyse(config, prog, argv):
         # exists.
         config.load_ccache_mbox()
 
-    if mbox and mode == 'rep':
-        victims = repo.mbox.get_ids(config.mbox_time_window)
+        if mode == 'rep':
+            victims = repo.mbox.get_ids(config.mbox_time_window)
 
-        # we have to temporarily cache those commits to filter out invalid
-        # emails. Commit cache is already loaded, so evict everything except
-        # victims and then cache all victims.
-        repo.cache_evict_except(victims)
-        repo.cache_commits(victims)
-
-        # we might have loaded invalid emails, so reload the victim list once
-        # more. This time, include all patches from the pre-existing (partial)
-        # result, and check if all patches are reachable
-        victims = repo.mbox.get_ids(config.mbox_time_window) | \
-                  cluster.get_downstream()
-
-        # in case of an mbox analysis, we will definitely need all untagged
-        # commit hashes as we need to determine the representative system for
-        # both modes, rep and upstream.
-        available = repo.cache_commits(victims)
-        if available != victims:
-            missing = victims - available
-            log.warning('MAILBOX RESULT CONTAINS %d MESSAGES THAT ARE NOT '
-                        'REACHABLE BY THE MAILBOX CONFIGURATION' % len(missing))
-            log.warning('Those messages will be removed from the result')
-            log.warning('Waiting 5 seconds before starting. Press Ctrl-C to '
-                        'abort.')
-            sleep(5)
-            for miss in missing:
-                cluster.remove_element(miss)
-            cluster.optimize()
-            victims = available
-
-        if args.linux:
-            if config.mbox_use_patchwork_id:
-                log.error('Doesn\'t work with USE_PATCHWORK_ID = true')
-                return -1
-
-            log.info('Searching for non-Linux patches...')
-            repo.mbox.load_threads()
-            characteristic = load_linux_mail_characteristics(repo, victims)
-            linux_patches= {victim for victim in victims if
-                            characteristic[victim].patches_linux}
-            log.info('Will consider only %u/%u patches (%0.3f%%) as Linux'
-                     'patches' % (len(linux_patches), len(victims),
-                     len(linux_patches) * 100.0 / len(victims)))
-            victims = linux_patches
+            # we have to temporarily cache those commits to filter out invalid
+            # emails. Commit cache is already loaded, so evict everything except
+            # victims and then cache all victims.
             repo.cache_evict_except(victims)
+            repo.cache_commits(victims)
 
-        log.info('Cached %d relevant mails' % len(available))
-        fill_result(victims, False)
-    elif mode == 'succ':
+            # we might have loaded invalid emails, so reload the victim list once
+            # more. This time, include all patches from the pre-existing (partial)
+            # result, and check if all patches are reachable
+            victims = repo.mbox.get_ids(config.mbox_time_window) | \
+                    cluster.get_downstream()
+
+            # in case of an mbox analysis, we will definitely need all untagged
+            # commit hashes as we need to determine the representative system for
+            # both modes, rep and upstream.
+            available = repo.cache_commits(victims)
+            if available != victims:
+                missing = victims - available
+                log.warning('MAILBOX RESULT CONTAINS %d MESSAGES THAT ARE NOT '
+                            'REACHABLE BY THE MAILBOX CONFIGURATION' % len(missing))
+                log.warning('Those messages will be removed from the result')
+                log.warning('Waiting 5 seconds before starting. Press Ctrl-C to '
+                            'abort.')
+                sleep(5)
+                for miss in missing:
+                    cluster.remove_element(miss)
+                cluster.optimize()
+                victims = available
+
+            if args.linux:
+                if config.mbox_use_patchwork_id:
+                    log.error('Doesn\'t work with USE_PATCHWORK_ID = true')
+                    return -1
+
+                log.info('Searching for non-Linux patches...')
+                repo.mbox.load_threads()
+                characteristic = load_linux_mail_characteristics(repo, victims)
+                linux_patches= {victim for victim in victims if
+                                characteristic[victim].patches_linux}
+                log.info('Will consider only %u/%u patches (%0.3f%%) as Linux'
+                        'patches' % (len(linux_patches), len(victims),
+                        len(linux_patches) * 100.0 / len(victims)))
+                victims = linux_patches
+                repo.cache_evict_except(victims)
+
+            log.info('Cached %d relevant mails' % len(available))
+            fill_result(victims, False)
+        
+    cherries = EvaluationResult()
+
+    if mode == 'succ':
         victims = config.psd.commits_on_stacks
         fill_result(victims, False)
-
-    cherries = EvaluationResult()
-    if mode == 'succ':
         num_cpus = int(cpu_count() * args.cpu_factor)
 
         psd = config.psd
