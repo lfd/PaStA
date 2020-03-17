@@ -45,5 +45,5 @@ def get_maintainers(config, sub, argv):
     results = list()
     for subsystem in subsystems:
         maintainer = all_maintainers.get_maintainers(subsystem)
-        results.append(maintainer[1])
-    
+        results.append(maintainer)
+    return set(flatten(flatten(results)))
