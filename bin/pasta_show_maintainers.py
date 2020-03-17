@@ -14,6 +14,7 @@ from logging import getLogger
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from pypasta.LinuxMaintainers import LinuxMaintainers
+from pypasta.Util import file_to_string
 
 log = getLogger(__name__[-15:])
 
@@ -21,12 +22,12 @@ def get_maintainers(config, sub, argv):
 
     if argv[0] == '--file':
         argv.pop(0)
-        all_maintainers = open(argv.pop(0), 'r').read()
+        all_maintainers = file_to_string(argv.pop(0))
     else:
-        all_maintainers = open('./resources/linux/repo/MAINTAINERS', 'r').read()
+        all_maintainers = file_to_string('./resources/linux/repo/MAINTAINERS')
 
     all_maintainers = LinuxMaintainers(all_maintainers)
-    
+
     results = dict()
     for filename in argv:
         subsystem = all_maintainers.get_subsystems_by_file(filename)
