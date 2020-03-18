@@ -3,8 +3,6 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-# ./pasta maintainers --filter /home/q503670/file_list --file ./resources/linux/repo/MAINTAINERS
-
 import sys
 import os
 
@@ -46,4 +44,5 @@ def get_maintainers(config, sub, argv):
     for subsystem in subsystems:
         maintainer = all_maintainers.get_maintainers(subsystem)
         results.append(maintainer)
+
     return set(flatten(flatten(results)))
