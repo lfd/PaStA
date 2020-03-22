@@ -51,19 +51,24 @@ def get_maintainers(config, sub, argv):
     all_kernel_files = []
     filenames = []
     total_loc= 0
-    loc_by_subsystem = dict()
+    loc_by_maintainer = dict()
     all_maintainers = LinuxMaintainers(all_maintainers_text)
 
     for r, d, f in os.walk('./resources/linux/repo/kernel/'):
         for item in f:
             filename = os.path.join(r, item)
+            all_kernel_files.append(filename)
             # Maybe keep all lenghts per file as a dict as well&use later instead of re-calculating? Is is worth the memory?
             loc = file_len(filename)
-            for subsystem in all_maintainers.get_subsystems_by_file(filename):
-                loc_by_subsystem[subsystem] = loc_by_subsystem.get(subsystem, 0) + loc
             total_loc += loc
-            all_kernel_files.append(filename)
+            subsystems = all_maintainers.get_subsystems_by_file(filename)
+            maintainers = []
+            for subsystem in subsystems:
+                maintainers.append(all_maintainers.get_maintainers(subsystem))
 
+            for entry in set(flatten(flatten(maintainers))):
+                loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
+    
     if '--filter' in argv:
         index = argv.index('--filter')
         argv.pop(index)
