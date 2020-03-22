@@ -26,7 +26,12 @@ def file_len(filename):
     f = file_to_string(filename)
     for i, l in enumerate(f):
         pass
-    return i + 1
+    try:
+        return i + 1
+    except:
+        return 0
+        
+    
 
 def get_maintainers(config, sub, argv):
 
@@ -88,21 +93,33 @@ def get_maintainers(config, sub, argv):
                 print(filename + '\t' + str(loc) + '\t' + str(loc/total_loc))
             else:
                 print(filename + '\t' + str(loc))
+        return 0
+
     elif query == "maintainers":
 
         maintainers = []
-        print('Maintainers of:')
+        loc_by_maintainer_filt = dict()
+        print('Lines of code for maintainers:')
         for filename in filenames:
             subsystems = all_maintainers.get_subsystems_by_file(filename)
             for subsystem in subsystems:
                 maintainers.append(all_maintainers.get_maintainers(subsystem))
-
-            print('\n' + filename + ':')
+            
+            loc = file_len(str.strip(filename))
             for entry in set(flatten(flatten(maintainers))):
-                if type(entry) is str:
-                    print('\t', entry)
-                else:
-                    print('\t', entry[0], entry[1])
+                loc_by_maintainer_filt[entry] = loc_by_maintainer_filt.get(entry, 0) + loc
+            
+        if optionals:
+            print("Maintainer",  '\t',  "Lines of code in the list",  '\t',  "Total lines of code",  '\t',  "Lines of code in the list/total lines of code")
+            for maintainer in loc_by_maintainer_filt:
+                #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
+                # (optional: \t <total lines of code for the maintainer> \t <ratio of relevant LoC / total>)
+                print(maintainer , '\t',  loc_by_maintainer_filt[maintainer],  '\t',  loc_by_maintainer[maintainer],  '\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
+        else:
+            print("Maintainer",  '\t',  "Lines of code")
+            for maintainer in loc_by_maintainer_filt:
+                #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
+                print(maintainer,  '\t',  loc_by_maintainer_filt[maintainer])
         return 0
     else:
         print('usage: ./pasta maintainers show entries/maintainers [--filter <filelist text file>] [--file <MAINTAINERS file>]')
