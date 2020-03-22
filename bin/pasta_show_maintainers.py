@@ -6,6 +6,7 @@ the COPYING file in the top-level directory.
 import sys
 import os
 
+from csv import writer
 from logging import getLogger
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -31,20 +32,26 @@ def file_len(filename):
     except:
         return 0
         
-    
-
 def get_maintainers(config, sub, argv):
 
+    # Check to show the detailed view or not
     if '--smallstat' in argv:
-        index = argv.index('--smallstat')
-        argv.pop(index)
+        argv.remove('--smallstat')
         optionals = False
-    elif '--largestat' in argv:#the default option
-        index = argv.index('--largestat')
-        argv.pop(index)
+    elif '--largestat' in argv:
+        # The default option
+        argv.remove('--largestat')
         optionals = True
     else:
         optionals = True
+
+    if '--outfile' in argv:
+        output_to_file = True
+        index = argv.index('--outfile')
+        argv.pop(index)
+        outfile_name = argv.pop(index)
+    else:
+        output_to_file = False
 
     if '--file' in argv:
         index = argv.index('--file')
@@ -61,16 +68,22 @@ def get_maintainers(config, sub, argv):
 
     for r, d, f in os.walk('./resources/linux/repo/kernel/'):
         for item in f:
+
             filename = os.path.join(r, item)
+            
             all_kernel_files.append(filename)
-            # Maybe keep all lenghts per file as a dict as well&use later instead of re-calculating? Is is worth the memory?
+            
+            # Later needed for the ratio LoC/total LoC
             loc = file_len(filename)
             total_loc += loc
-            subsystems = all_maintainers.get_subsystems_by_file(filename)
+
+            # Get all the maintainers for the given repo
             maintainers = []
+            subsystems = all_maintainers.get_subsystems_by_file(filename)
             for subsystem in subsystems:
                 maintainers.append(all_maintainers.get_maintainers(subsystem))
 
+            # Map the maintainers to LoC they are tied to
             for entry in set(flatten(flatten(maintainers))):
                 loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
     
@@ -81,25 +94,39 @@ def get_maintainers(config, sub, argv):
     else:
         filenames = all_kernel_files
 
-    argv.pop(0) #show
+    argv.pop(0) # show
     query = argv.pop(0) #entries or maintainers
 
     if query == 'entries':
-
-        #print('File name\tLines of code\tLines of code / Total lines of code')
-        for filename in filenames:
-            loc = file_len(str.strip(filename))
-            if optionals:
-                print(filename + '\t' + str(loc) + '\t' + str(loc/total_loc))
+        if optionals:
+            if output_to_file:
+                with open(outfile_name, 'w+') as csv_file:
+                    csv_writer = writer(csv_file)
+                    csv_writer.writerow(["File", "Lines of code", "Lines of code file/total lines of code"])
+                    for filename in filenames:
+                        csv_writer.writerow([filename, str(loc), str(loc/total_loc)]) 
             else:
-                print(filename + '\t' + str(loc))
+                for filename in filenames:
+                    loc = file_len(str.strip(filename))
+                    print(filename + '\t' + str(loc) + '\t' + str(loc/total_loc)) 
+        else:
+            if output_to_file:
+                with open(outfile_name, 'w+') as csv_file:
+                    csv_writer = writer(csv_file)
+                    csv_writer.writerow(["File", "Lines of code"])
+                    for filename in filenames:
+                        loc = file_len(str.strip(filename))
+                        csv_writer.writerow([filename, str(loc)]) 
+            else:
+                for filename in filenames:
+                    loc = file_len(str.strip(filename))
+                    print(filename + '\t' + str(loc))
         return 0
 
     elif query == "maintainers":
 
         maintainers = []
         loc_by_maintainer_filt = dict()
-        print('Lines of code for maintainers:')
         for filename in filenames:
             subsystems = all_maintainers.get_subsystems_by_file(filename)
             for subsystem in subsystems:
@@ -110,17 +137,32 @@ def get_maintainers(config, sub, argv):
                 loc_by_maintainer_filt[entry] = loc_by_maintainer_filt.get(entry, 0) + loc
             
         if optionals:
-            print("Maintainer",  '\t',  "Lines of code in the list",  '\t',  "Total lines of code",  '\t',  "Lines of code in the list/total lines of code")
-            for maintainer in loc_by_maintainer_filt:
-                #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
-                # (optional: \t <total lines of code for the maintainer> \t <ratio of relevant LoC / total>)
-                print(maintainer , '\t',  loc_by_maintainer_filt[maintainer],  '\t',  loc_by_maintainer[maintainer],  '\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
+            #Detailed view with ratios
+            if output_to_file:
+                with open(outfile_name, 'w+') as csv_file:
+                    csv_writer = writer(csv_file)
+                    csv_writer.writerow(["Maintainer", "Lines of code in the list", "Total lines of code", "Lines of code in the list/total lines of code"])
+                    for maintainer in loc_by_maintainer_filt:
+                        csv_writer.writerow([maintainer , loc_by_maintainer_filt[maintainer], loc_by_maintainer[maintainer], loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer]])
+            else:
+                print("Maintainer",  '\t',  "Lines of code in the list",  '\t',  "Total lines of code",  '\t',  "Lines of code in the list/total lines of code")
+                for maintainer in loc_by_maintainer_filt:
+                    #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
+                    # (optional: \t <total lines of code for the maintainer> \t <ratio of relevant LoC / total>)
+                    print(maintainer , '\t',  loc_by_maintainer_filt[maintainer],  '\t',  loc_by_maintainer[maintainer],  '\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
         else:
-            print("Maintainer",  '\t',  "Lines of code")
-            for maintainer in loc_by_maintainer_filt:
-                #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
-                print(maintainer,  '\t',  loc_by_maintainer_filt[maintainer])
+            if output_to_file:
+                with open(outfile_name, 'w+') as csv_file:
+                    csv_writer = writer(csv_file)
+                    csv_writer.writerow(["Maintainer", "Lines of code"])
+                    for maintainer in loc_by_maintainer_filt:
+                         csv_writer.writerow([maintainer, loc_by_maintainer_filt[maintainer]])
+            else:
+                print("Maintainer",  '\t',  "Lines of code")
+                for maintainer in loc_by_maintainer_filt:
+                    #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
+                    print(maintainer,  '\t',  loc_by_maintainer_filt[maintainer])
         return 0
     else:
-        print('usage: ./pasta maintainers show entries/maintainers [--filter <filelist text file>] [--file <MAINTAINERS file>]')
+        print('usage: ./pasta maintainers show entries/maintainers [--filter <filelist text file>] [--file <MAINTAINERS file>] [--outfile <output csv file>] [--smallstat]')
         return -1
