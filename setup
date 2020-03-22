@@ -1,0 +1,4 @@
+conda create --name pasta python=3
+conda activate pasta
+pip install flask_wtf toml dateparser gitpython fuzzywuzzy sklearn tqdm flask-bootstrap flask-nav anytree pygit2
+conda install -c conda-forge python-levenshtein 
