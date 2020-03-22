@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2019
+Copyright (c) OTH Regensburg, 2016-2020
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -15,6 +15,8 @@ import datetime
 import dateparser
 import email
 import git
+import os
+import pickle
 import re
 import termios
 import tty
@@ -34,6 +36,22 @@ def pygit2_signature_to_datetime(signature):
     dt = datetime.datetime.fromtimestamp(signature.time, tz)
 
     return dt
+
+
+def load_pkl_and_update(filename, update_command, *params):
+    ret = None
+    if os.path.isfile(filename):
+        ret = pickle.load(open(filename, 'rb'))
+
+    if len(params) == 0:
+        ret, changed = update_command(ret)
+    else:
+        ret, changed = update_command(ret, *params)
+
+    if changed:
+        pickle.dump(ret, open(filename, 'wb'))
+
+    return ret
 
 
 def get_commit_hash_range(d_repo, range):

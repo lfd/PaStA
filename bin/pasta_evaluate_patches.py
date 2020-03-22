@@ -2,7 +2,7 @@
 PaStA - Patch Stack Analysis
 
 Copyright (c) Bayerische Motoren Werke Aktiengesellschaft (BMW AG), 2019
-Copyright (c) OTH Regensburg, 2019
+Copyright (c) OTH Regensburg, 2019-2020
 
 Authors:
   Sebastian Duda <sebastian.duda@fau.de>
@@ -13,17 +13,12 @@ the COPYING file in the top-level directory.
 """
 
 import csv
-import os
-import pickle
 import re
 
 from logging import getLogger
-from multiprocessing import Pool, cpu_count
 from subprocess import call
 
-from tqdm import tqdm
-
-from pypasta.LinuxMaintainers import LinuxMaintainers
+from pypasta.LinuxMaintainers import load_maintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
 
 log = getLogger(__name__[-15:])
@@ -177,37 +172,6 @@ def check_correct_maintainer_patch(c):
     return False
 
 
-def load_maintainers(tag):
-    pyrepo = _repo.repo
-
-    tag_hash = pyrepo.lookup_reference('refs/tags/%s' % tag).target
-    commit_hash = pyrepo[tag_hash].target
-    maintainers_blob_hash = pyrepo[commit_hash].tree['MAINTAINERS'].id
-    maintainers = pyrepo[maintainers_blob_hash].data
-
-    try:
-        maintainers = maintainers.decode('utf-8')
-    except:
-        # older versions use ISO8859
-        maintainers = maintainers.decode('iso8859')
-
-    m = LinuxMaintainers(maintainers)
-
-    return tag, m
-
-
-def load_pkl_and_update(filename, update_command):
-    ret = None
-    if os.path.isfile(filename):
-        ret = pickle.load(open(filename, 'rb'))
-
-    ret, changed = update_command(ret)
-    if changed:
-        pickle.dump(ret, open(filename, 'wb'))
-
-    return ret
-
-
 def get_kv_rc(linux_version):
     tag = linux_version.split('-rc')
     kv = tag[0]
@@ -276,53 +240,12 @@ def evaluate_patches(config, prog, argv):
     all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
                                                     allow_invalid=True)
 
-    def load_all_maintainers(ret):
-        if ret is None:
-            ret = dict()
-
-        tags = {x[0] for x in repo.tags if not x[0].startswith('v2.6')}
-        tags |= {x[0] for x in repo.tags if x[0].startswith('v2.6.39')}
-
-        # Only load what's not yet cached
-        tags -= ret.keys()
-
-        if len(tags) == 0:
-            return ret, False
-
-        global _repo
-        _repo = repo
-        p = Pool(processes=cpu_count())
-        for tag, maintainers in tqdm(p.imap_unordered(load_maintainers, tags),
-                                     total=len(tags), desc='MAINTAINERS'):
-            ret[tag] = maintainers
-        p.close()
-        p.join()
-        _repo = None
-
-        return ret, True
-
-    def load_characteristics(ret):
-        if ret is None:
-            ret = dict()
-
-        missing = all_messages_in_time_window - ret.keys()
-        if len(missing) == 0:
-            return ret, False
-
-        missing = load_linux_mail_characteristics(repo,
-                                                  missing,
-                                                  maintainers_version,
-                                                  clustering)
-
-        return {**ret, **missing}, True
-
-    log.info('Loading/Updating MAINTAINERS...')
-    maintainers_version = load_pkl_and_update(config.f_maintainers_pkl,
-                                              load_all_maintainers)
-
-    log.info('Loading/Updating Linux patch characteristics...')
-    characteristics = load_pkl_and_update(config.f_characteristics_pkl,
-                                          load_characteristics)
+    tags = {x[0] for x in repo.tags if not x[0].startswith('v2.6')}
+    tags |= {x[0] for x in repo.tags if x[0].startswith('v2.6.39')}
+    maintainers_version = load_maintainers(config, tags)
+    characteristics = \
+        load_linux_mail_characteristics(config, maintainers_version, clustering,
+                                        all_messages_in_time_window)
 
     relevant = get_relevant_patches(characteristics)
 

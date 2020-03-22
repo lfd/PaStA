@@ -33,8 +33,69 @@ DIFF_START_REGEX = re.compile(r'^--- \S+/.+$')
 ANNOTATION_REGEX = re.compile(r'^---\s*$')
 
 
+def decode_payload(message):
+    payload = message.get_payload(decode=True)
+    if not payload:
+        return None
+
+    charset = message.get_content_charset()
+    if charset not in CHARSETS:
+        charset = 'ascii'
+
+    payload = payload.decode(charset, errors='ignore')
+    return payload
+
+
 class PatchMail(MessageDiff):
+    @staticmethod
+    def extract_patch_mail(mail):
+        id = mail['message-id']
+
+        # The easy case: Mail is a raw text mail, and contains the patch inline
+        payload = decode_payload(mail)
+        if payload:
+            return mail, payload
+
+        # The complex case: mail consists of multiple parts:
+        payload = mail.get_payload()
+        if isinstance(payload, str):
+            return mail, payload
+
+        if not isinstance(payload, list):
+            log.warning('IMPLEMENT ME! %s' % id)
+            raise NotImplementedError('impl me')
+
+        # Try to decode all message parts
+        payload = [decode_payload(x) for x in payload]
+        payload = list(filter(None, payload))
+        # Let's test if one of the payloads can be converted to a
+        # mail object. In that case, it's very likely that a patch created by
+        # git format-patch was sent as attachment
+        for p in payload:
+            try:
+                m = email.message_from_string(p)
+                if len(m.defects) or len(m.keys()) == 0:
+                    continue
+
+                # Hey, we have a valid email as attachment. Use it.
+                p = decode_payload(m)
+                return m, p
+            except:
+                pass
+
+        if len(payload) >= 2 and \
+           isinstance(payload[0], str) and isinstance(payload[1], str) and \
+           True in ['diff --' in x for x in payload]:
+            return mail, payload[0] + payload[1]
+
+        for p in payload:
+            if 'From: ' in p or 'diff --' in p:
+                return mail, p
+
+        raise ValueError('Unable to find suitable payload')
+
     def __init__(self, mail, identifier):
+        mail, payload = self.extract_patch_mail(mail)
         self.mail_subject = mail['Subject']
 
         # Get informations on the author
@@ -44,21 +105,7 @@ class PatchMail(MessageDiff):
         author_name, author_email = email.utils.parseaddr(author)
         author = Signature(author_name, author_email, date)
 
-        # Get the patch payload
-        payload = mail.get_payload(decode=True)
-        charset = mail.get_content_charset()
-
-        if charset not in CHARSETS:
-           charset = 'ascii'
-        payload = payload.decode(charset, errors='ignore')
-
-        if isinstance(payload, list):
-            retval = parse_list(payload)
-        elif isinstance(payload, str):
-            retval = parse_single_message(payload)
-        else:
-            raise TypeError('Warning: unknown payload type')
-
+        retval = parse_single_message(payload)
         if retval is None:
             raise TypeError('Unable to split mail to msg and diff')
 
@@ -114,28 +161,6 @@ def parse_single_message(mail):
 
     if patch:
         return message, annotation, patch
-
-    return None
-
-
-def parse_list(payload):
-    if len(payload) == 1:
-        retval = parse_single_message(payload[0].get_payload())
-        if retval:
-            return retval
-        else:
-            return None
-    payload0 = payload[0].get_payload()
-    payload1 = payload[1].get_payload()
-
-    if not (isinstance(payload0, str) and isinstance(payload1, str)):
-        return None
-
-    payload0 = payload0.splitlines()
-    payload1 = payload1.splitlines()
-
-    if any([x.startswith('diff ') for x in payload1]):
-        return payload0, payload1
 
     return None
 
