@@ -1,0 +1,6 @@
+./resources/linux/repo/kernel/printk/printk.c
+./resources/linux/repo/kernel/locking/lock_events.c
+./resources/linux/repo/drivers/acpi/acpica/accommon.h
+./resources/linux/repo/sound/atmel/ac97c.c
+./resources/linux/repo/sound/drivers/opl3/opl3_synth.c
+./resources/linux/repo/drivers/android/binder_alloc_selftest.c

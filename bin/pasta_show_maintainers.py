@@ -30,6 +30,17 @@ def file_len(filename):
 
 def get_maintainers(config, sub, argv):
 
+    if '--smallstat' in argv:
+        index = argv.index('--smallstat')
+        argv.pop(index)
+        optionals = False
+    elif '--largestat' in argv:#the default option
+        index = argv.index('--largestat')
+        argv.pop(index)
+        optionals = True
+    else:
+        optionals = True
+
     if '--file' in argv:
         index = argv.index('--file')
         argv.pop(index)
@@ -40,11 +51,17 @@ def get_maintainers(config, sub, argv):
     all_kernel_files = []
     filenames = []
     total_loc= 0
-    
+    loc_by_subsystem = dict()
+    all_maintainers = LinuxMaintainers(all_maintainers_text)
+
     for r, d, f in os.walk('./resources/linux/repo/kernel/'):
         for item in f:
             filename = os.path.join(r, item)
-            total_loc += file_len(filename)
+            # Maybe keep all lenghts per file as a dict as well&use later instead of re-calculating? Is is worth the memory?
+            loc = file_len(filename)
+            for subsystem in all_maintainers.get_subsystems_by_file(filename):
+                loc_by_subsystem[subsystem] = loc_by_subsystem.get(subsystem, 0) + loc
+            total_loc += loc
             all_kernel_files.append(filename)
 
     if '--filter' in argv:
@@ -54,19 +71,20 @@ def get_maintainers(config, sub, argv):
     else:
         filenames = all_kernel_files
 
-    argv.pop(0)
-    query = argv.pop(0)
+    argv.pop(0) #show
+    query = argv.pop(0) #entries or maintainers
 
     if query == 'entries':
 
-        print('File name\tLines of code\tLines of code / Total lines of code')
+        #print('File name\tLines of code\tLines of code / Total lines of code')
         for filename in filenames:
             loc = file_len(str.strip(filename))
-            print(filename + '\t' + str(loc) + '\t' + str(loc/total_loc))
-
+            if optionals:
+                print(filename + '\t' + str(loc) + '\t' + str(loc/total_loc))
+            else:
+                print(filename + '\t' + str(loc))
     elif query == "maintainers":
 
-        all_maintainers = LinuxMaintainers(all_maintainers_text)
         maintainers = []
         print('Maintainers of:')
         for filename in filenames:
@@ -82,5 +100,5 @@ def get_maintainers(config, sub, argv):
                     print('\t', entry[0], entry[1])
         return 0
     else:
-        print('usage: ./pasta maintainers show entries [--filter <filelist text file>] [--file <MAINTAINERS file>]')
+        print('usage: ./pasta maintainers show entries/maintainers [--filter <filelist text file>] [--file <MAINTAINERS file>]')
         return -1
