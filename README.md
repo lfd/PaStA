@@ -1,16 +1,40 @@
 PaStA - Patch Stack Analysis
 ============================
 
+About
+-----
+
+**PaStA**  is a tool for detecting similar patches. In PaStA, a patch is
+everything that can be split up to a commit message and a diff. Patches can
+either come from patch stacks or mailboxes. A patch stack is a fork/branch (a
+set of commits) from a git project that are developed and maintained
+independently of the base project.  . Patch stacks are, for example, used by
+extensions of the Linux kernel (e.g., the Preempt-RT patch stack), or custom
+vendor trees.  Many OSS projects, like the Linux kernel, use a mail-based
+workflow. PaStA is able to assign mails from mailboxes to commits in
+repositories. It comes with heuristics that are able to detect patches even if
+their content significantly changes over time. In this way, PaStA is able to
+track different revisions of a patch.
+
+
+**PaStA** is a research project from the Technical University of Applied
+Sciences Regensburg. The following papers describe the methodology, use-cases
+and accuracy of PaStA:
+
+- [Observing Custom Software Modifications: A Quantitative Approach of Tracking the Evolution of Patch Stacks](https://arxiv.org/abs/1607.00905)
+- [The List is the Process: Reliable Pre-Integration Tracking of Commits on Mailing Lists](https://arxiv.org/pdf/1902.03147.pdf)
+
 Getting PaStA
 -------------
 
-Clone PaStA and its resources submodule. The resources contain configuration as
-well as results of some sample projects.
+Clone **PaStA** and its resources submodule. The resources contain
+project-specific configuration, project-related repositories and public inboxes
+as well as results of **PaStA**'s analysis for some sample projects.
 
 ```
 $ git clone https://github.com/lfd/PaStA.git
 $ cd PaStA
-$ git submodule update --recursive --init resources
+$ git submodule update --recursive --init resources # This might take some time to complete
 ```
 
 Requirements
@@ -44,8 +68,38 @@ Getting started
 
 Running PaStA
 -------------
+### Modes
+**PaStA** has two modes of operation, mailbox (mbox) mode and patch stack mode:
 
-### PaStA's caches
+#### Mailbox Mode
+The development of a number of open source projects is carried out on public
+mailing lists. A prime example of this is the Linux kernel. Developers send
+patches to mailing lists, where they are reviewed by other subscribers or
+maintainers. Note that a project may use several mailing lists. The Linux
+kernel, for example, uses more than 200 different lists for its subsystems.
+Discussion related to new features, bug reports etc. also takes place on the
+mailing list.
+
+Given a mailbox of such a mailing list, PaStA searches for all mails that
+contain patches. PaStA understands regular patch emails, as they are formatted
+by 'git format-patch', or patches that are sent as an attachment. PaStA tries
+to repair emails with best effort (e.g., erroneous encoding, non-conform
+headers, …). PaStA also maps these patches to their corresponding upstream
+commits.
+
+PaStA understands several mailbox exchange formats:
+- Raw mboxes
+- Public inboxes (Given a link to the mailbox)
+- Messages from [Patchwork](https://github.com/getpatchwork/patchwork)
+
+#### Patch stack mode
+This mode uses patch stack definition files to compare succesive versions of
+patch stacks. Different patch stacks are defined in the patch stack definition.
+An example configuration, as well as script can be found in the resources of
+the PreemptRT project.
+
+
+### Initialise PaStA's caches
 Many projects contain thousands of commits. It is time-consuming to determine
 and load commits. To increase overall performance, PaStA persists lists of
 commit hashes and creates pkl-based commit caches. Those lists will be created
@@ -55,19 +109,19 @@ updates those lists.
 The commit cache has to be created manually:
 ```
 $ ./pasta sync # Creates cache file for commits on the patch stacks
-$ ./pasta sync -mbox # Update / synchronise mailboxes before creating caches
+$ ./pasta sync -mbox # Update / synchronise mailboxes before creating caches if in mail box mode
 ```
 
 ### Detecting and grouping similar patches
-Detecting similar patches on patch stacks (i.e., branches) and eventually
+Detecting similar patches on patch stacks (i.e. branches) or mail boxes and eventually
 linking them into equivalence classes is split in two different commands:
 `pasta analyse` and `pasta rate`.
 Reason for the split is the comparatively long duration of the analysation
 phase. After `pasta analyse`, you might want to reuse the results of the
 analysation and run `pasta rate` for several times on the same data set.
 
-The detection phase is split in four steps:
-1. Comparing successive versions on the patch stacks
+The detection phase is split in three steps:
+1. In patch stack mode, the comparison of successive versions on the patch stack:
    ```
    $ ./pasta analyse succ
    $ ./pasta rate
@@ -86,7 +140,7 @@ The detection phase is split in four steps:
    ```
 
 This will create a `patch-groups` file inside the resources directory of your
-projecta. Each line represents a group of similar patches, commit hashes are
+project. Each line represents a group of similar patches, commit hashes are
 separated by whitespaces. A line can optionally end with ' => ' and point to
 upstream commit hash(es).
 
