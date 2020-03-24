@@ -7,6 +7,8 @@ import sys
 import os
 
 from csv import writer
+from multiprocessing import cpu_count, Pool
+from itertools import chain
 from logging import getLogger
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -45,6 +47,7 @@ def get_maintainers(config, sub, argv):
     else:
         optionals = True
 
+     # Decide to output to file or not
     if '--outfile' in argv:
         output_to_file = True
         index = argv.index('--outfile')
@@ -53,6 +56,7 @@ def get_maintainers(config, sub, argv):
     else:
         output_to_file = False
 
+    # Is there another MAINTAINERS file given?:
     if '--file' in argv:
         index = argv.index('--file')
         argv.pop(index)
@@ -66,7 +70,36 @@ def get_maintainers(config, sub, argv):
     loc_by_maintainer = dict()
     all_maintainers = LinuxMaintainers(all_maintainers_text)
 
-    for r, d, f in os.walk('./resources/linux/repo/kernel/'):
+    # TODO: Check to see if this is the right path to walk!
+    
+    def worker(filename):
+        all_kernel_files.append(filename)
+            
+        # Later needed for the ratio LoC/total LoC
+        loc = file_len(filename)
+        total_loc += loc
+
+        # Get all the maintainers for the given repo
+        maintainers = []
+        subsystems = all_maintainers.get_subsystems_by_file(filename)
+        for subsystem in subsystems:
+            maintainers.append(all_maintainers.get_maintainers(subsystem))
+
+        # Map the maintainers to LoC they are tied to
+        for entry in set(flatten(flatten(maintainers))):
+            loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
+    
+    num_cpus = int(cpu_count() * 0.5)
+    
+    with Pool(num_cpus) as  pool:
+        walk = os.walk('./resources/linux/repo/')
+        fn_gen = chain.from_iterable((os.path.join(root, file)
+                                                for file in files)
+                                               for root, dirs, files in walk)
+        results_of_work = pool.map(worker, fn_gen)
+        print("results_of_work", results_of_work)
+    '''
+    for r, d, f in os.walk('./resources/linux/repo/'):
         for item in f:
 
             filename = os.path.join(r, item)
@@ -86,7 +119,7 @@ def get_maintainers(config, sub, argv):
             # Map the maintainers to LoC they are tied to
             for entry in set(flatten(flatten(maintainers))):
                 loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
-    
+    '''
     if '--filter' in argv:
         index = argv.index('--filter')
         argv.pop(index)
@@ -108,7 +141,7 @@ def get_maintainers(config, sub, argv):
             else:
                 for filename in filenames:
                     loc = file_len(str.strip(filename))
-                    print(filename + '\t' + str(loc) + '\t' + str(loc/total_loc)) 
+                    print(filename + '\t\t' + str(loc) + '\t\t' + str(loc/total_loc)) 
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
@@ -120,7 +153,7 @@ def get_maintainers(config, sub, argv):
             else:
                 for filename in filenames:
                     loc = file_len(str.strip(filename))
-                    print(filename + '\t' + str(loc))
+                    print(filename + '\t\t' + str(loc))
         return 0
 
     elif query == "maintainers":
@@ -145,11 +178,11 @@ def get_maintainers(config, sub, argv):
                     for maintainer in loc_by_maintainer_filt:
                         csv_writer.writerow([maintainer , loc_by_maintainer_filt[maintainer], loc_by_maintainer[maintainer], loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer]])
             else:
-                print("Maintainer",  '\t',  "Lines of code in the list",  '\t',  "Total lines of code",  '\t',  "Lines of code in the list/total lines of code")
+                print("Maintainer",  '\t\t',  "Lines of code in the list",  '\t\t',  "Total lines of code",  '\t\t',  "Lines of code in the list/total lines of code")
                 for maintainer in loc_by_maintainer_filt:
                     #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
                     # (optional: \t <total lines of code for the maintainer> \t <ratio of relevant LoC / total>)
-                    print(maintainer , '\t',  loc_by_maintainer_filt[maintainer],  '\t',  loc_by_maintainer[maintainer],  '\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
+                    print(maintainer , '\t\t',  loc_by_maintainer_filt[maintainer],  '\t\t',  loc_by_maintainer[maintainer],  '\t\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
