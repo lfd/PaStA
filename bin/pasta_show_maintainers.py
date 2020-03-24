@@ -108,7 +108,7 @@ def get_maintainers(config, sub, argv):
             else:
                 for filename in filenames:
                     loc = file_len(str.strip(filename))
-                    print(filename + '\t' + str(loc) + '\t' + str(loc/total_loc)) 
+                    print(filename + '\t\t' + str(loc) + '\t\t' + str(loc/total_loc)) 
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
@@ -120,7 +120,7 @@ def get_maintainers(config, sub, argv):
             else:
                 for filename in filenames:
                     loc = file_len(str.strip(filename))
-                    print(filename + '\t' + str(loc))
+                    print(filename + '\t\t' + str(loc))
         return 0
 
     elif query == "maintainers":
@@ -145,11 +145,11 @@ def get_maintainers(config, sub, argv):
                     for maintainer in loc_by_maintainer_filt:
                         csv_writer.writerow([maintainer , loc_by_maintainer_filt[maintainer], loc_by_maintainer[maintainer], loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer]])
             else:
-                print("Maintainer",  '\t',  "Lines of code in the list",  '\t',  "Total lines of code",  '\t',  "Lines of code in the list/total lines of code")
+                print("Maintainer",  '\t\t',  "Lines of code in the list",  '\t\t',  "Total lines of code",  '\t\t',  "Lines of code in the list/total lines of code")
                 for maintainer in loc_by_maintainer_filt:
                     #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
                     # (optional: \t <total lines of code for the maintainer> \t <ratio of relevant LoC / total>)
-                    print(maintainer , '\t',  loc_by_maintainer_filt[maintainer],  '\t',  loc_by_maintainer[maintainer],  '\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
+                    print(maintainer , '\t\t',  loc_by_maintainer_filt[maintainer],  '\t\t',  loc_by_maintainer[maintainer],  '\t\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
