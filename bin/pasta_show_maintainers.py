@@ -45,6 +45,7 @@ def get_maintainers(config, sub, argv):
     else:
         optionals = True
 
+     # Decide to output to file or not
     if '--outfile' in argv:
         output_to_file = True
         index = argv.index('--outfile')
@@ -53,6 +54,7 @@ def get_maintainers(config, sub, argv):
     else:
         output_to_file = False
 
+    # Is there another MAINTAINERS file given?:
     if '--file' in argv:
         index = argv.index('--file')
         argv.pop(index)
@@ -66,6 +68,7 @@ def get_maintainers(config, sub, argv):
     loc_by_maintainer = dict()
     all_maintainers = LinuxMaintainers(all_maintainers_text)
 
+    # TODO: Check to see if this is the right path to walk!
     for r, d, f in os.walk('./resources/linux/repo/kernel/'):
         for item in f:
 
