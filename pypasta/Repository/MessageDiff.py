@@ -80,6 +80,9 @@ class MessageDiff:
         if len(self.message) > 1 and self.message[0] == self.message[1]:
             self.message.pop(0)
 
+        self.linux_links = [x for x in self.tags['link']
+                            if MessageDiff.LINUX_ML_PREFIX.match(x)]
+
         # is a revert message?
         self.is_revert = any('revert' in x.lower() for x in self.raw_message)
 
