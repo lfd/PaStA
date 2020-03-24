@@ -33,7 +33,28 @@ def file_len(filename):
         return i + 1
     except:
         return 0
-        
+'''
+def worker(filename):
+    
+    all_kernel_files = []
+    total_loc= 0
+    loc_by_maintainer = dict()
+    all_kernel_files.append(filename)
+            
+    # Later needed for the ratio LoC/total LoC
+    loc = file_len(filename)
+    total_loc += loc
+
+    # Get all the maintainers for the given repo
+    maintainers = []
+    subsystems = all_maintainers.get_subsystems_by_file(filename)
+    for subsystem in subsystems:
+        maintainers.append(all_maintainers.get_maintainers(subsystem))
+
+    # Map the maintainers to LoC they are tied to
+    for entry in set(flatten(flatten(maintainers))):
+        loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
+'''
 def get_maintainers(config, sub, argv):
 
     # Check to show the detailed view or not
@@ -71,24 +92,7 @@ def get_maintainers(config, sub, argv):
     all_maintainers = LinuxMaintainers(all_maintainers_text)
 
     # TODO: Check to see if this is the right path to walk!
-    
-    def worker(filename):
-        all_kernel_files.append(filename)
-            
-        # Later needed for the ratio LoC/total LoC
-        loc = file_len(filename)
-        total_loc += loc
-
-        # Get all the maintainers for the given repo
-        maintainers = []
-        subsystems = all_maintainers.get_subsystems_by_file(filename)
-        for subsystem in subsystems:
-            maintainers.append(all_maintainers.get_maintainers(subsystem))
-
-        # Map the maintainers to LoC they are tied to
-        for entry in set(flatten(flatten(maintainers))):
-            loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
-    
+    '''
     num_cpus = int(cpu_count() * 0.5)
     
     with Pool(num_cpus) as  pool:
@@ -99,7 +103,7 @@ def get_maintainers(config, sub, argv):
         results_of_work = pool.map(worker, fn_gen)
         print("results_of_work", results_of_work)
     '''
-    for r, d, f in os.walk('./resources/linux/repo/'):
+    for r, d, f in os.walk('./resources/linux/repo/kernel'):
         for item in f:
 
             filename = os.path.join(r, item)
@@ -119,7 +123,7 @@ def get_maintainers(config, sub, argv):
             # Map the maintainers to LoC they are tied to
             for entry in set(flatten(flatten(maintainers))):
                 loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
-    '''
+    
     if '--filter' in argv:
         index = argv.index('--filter')
         argv.pop(index)
