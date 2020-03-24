@@ -7,6 +7,8 @@ import sys
 import os
 
 from csv import writer
+from multiprocessing import cpu_count, Pool
+from itertools import chain
 from logging import getLogger
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -69,7 +71,35 @@ def get_maintainers(config, sub, argv):
     all_maintainers = LinuxMaintainers(all_maintainers_text)
 
     # TODO: Check to see if this is the right path to walk!
-    for r, d, f in os.walk('./resources/linux/repo/kernel/'):
+    
+    def worker(filename):
+        all_kernel_files.append(filename)
+            
+        # Later needed for the ratio LoC/total LoC
+        loc = file_len(filename)
+        total_loc += loc
+
+        # Get all the maintainers for the given repo
+        maintainers = []
+        subsystems = all_maintainers.get_subsystems_by_file(filename)
+        for subsystem in subsystems:
+            maintainers.append(all_maintainers.get_maintainers(subsystem))
+
+        # Map the maintainers to LoC they are tied to
+        for entry in set(flatten(flatten(maintainers))):
+            loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
+    
+    num_cpus = int(cpu_count() * 0.5)
+    
+    with Pool(num_cpus) as  pool:
+        walk = os.walk('./resources/linux/repo/')
+        fn_gen = chain.from_iterable((os.path.join(root, file)
+                                                for file in files)
+                                               for root, dirs, files in walk)
+        results_of_work = pool.map(worker, fn_gen)
+        print("results_of_work", results_of_work)
+    '''
+    for r, d, f in os.walk('./resources/linux/repo/'):
         for item in f:
 
             filename = os.path.join(r, item)
@@ -89,7 +119,7 @@ def get_maintainers(config, sub, argv):
             # Map the maintainers to LoC they are tied to
             for entry in set(flatten(flatten(maintainers))):
                 loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
-    
+    '''
     if '--filter' in argv:
         index = argv.index('--filter')
         argv.pop(index)
