@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 import re
+from collections import defaultdict
 
 from .Patch import Diff
 
@@ -25,30 +26,33 @@ class MessageDiff:
     """
     An abstract class that consists of a message, and a diff.
     """
-    TAGS_REGEX = re.compile(r'^('
-                            r'Signed-off-by:|'
-                            r'Acked-by:|'
-                            r'Link:|'
-                            r'CC:|'
-                            r'Reviewed-by:|'
-                            r'Reported-by:|'
-                            r'Tested-by:|'
-                            r'LKML-Reference:|'
-                            r'Patch:|'
-                            r'Wrecked-off-by:|'
-                            r'Gitweb:|'
-                            r'Merge:|'
-                            r'Fixes:|'
-                            r'Commit:|'
-                            r'Patchwork:|'
-                            r'From:|'
-                            r'Commit-ID:|'
-                            r'Author:|'
-                            r'AuthorDate:|'
-                            r'Committer:|'
-                            r'CommitDate:'
-                            r')',
-                            re.IGNORECASE)
+
+    # Tags used in Linux kernel mailing lists
+    VALID_TAGS = (r'^('
+                  'Signed-off-by|'
+                  'Acked-by|'
+                  'Link|'
+                  'CC|'
+                  'Reviewed-by|'
+                  'Reported-by|'
+                  'Tested-by|'
+                  'LKML-Reference|'
+                  'Patch|'
+                  'Wrecked-off-by|'
+                  'Gitweb|'
+                  'Merge|'
+                  'Fixes|'
+                  'Commit|'
+                  'Patchwork|'
+                  'From|'
+                  'Commit-ID|'
+                  'Author|'
+                  'AuthorDate|'
+                  'Committer|'
+                  'CommitDate'
+                  ')')
+    TAG_REGEX = re.compile(r'^%s\s*:\s*(.*)$' % VALID_TAGS, re.IGNORECASE)
+    LINUX_ML_PREFIX = re.compile(r'https?://(lore|lkml).kernel.org')
 
     def __init__(self, identifier, content, author):
         self.identifier = identifier
@@ -59,18 +63,22 @@ class MessageDiff:
 
         # Split by linebreaks and filter empty lines
         message = list(filter(None, message))
-        # Filter signed-off-by lines
-        filtered = list(filter(lambda x: not MessageDiff.TAGS_REGEX.match(x),
-                               message))
 
-        if len(filtered) > 1 and filtered[0] == filtered[1]:
-            filtered.pop(0)
+        self.tags = defaultdict(list)
+        self.message = []
 
-        # if the filtered result is empty, then leave at least one line
-        if filtered:
-            message = filtered
+        for line in message:
+            line = line.strip()
+            match = MessageDiff.TAG_REGEX.match(line)
+            if not match:
+                self.message.append(line)
+            else:
+                tag, content = match.group(1), match.group(2)
+                self.tags[tag.lower().strip()].append(content.strip())
 
-        self.message = message
+        # Handle cases where the subject line is duplicated
+        if len(self.message) > 1 and self.message[0] == self.message[1]:
+            self.message.pop(0)
 
         # is a revert message?
         self.is_revert = any('revert' in x.lower() for x in self.raw_message)
