@@ -39,6 +39,7 @@ def parse_choices(config, choices):
 
 
 def remove_if_exist(filename):
+    log.info('Removing %s' % filename)
     if os.path.isfile(filename):
         os.remove(filename)
 
