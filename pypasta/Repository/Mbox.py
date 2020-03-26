@@ -268,15 +268,20 @@ class PubInbox(MailContainer):
                 log.warning('No email behind commit %s' % hash)
                 continue
 
-            if not mail[identifier]:
+            ids = mail.get_all(identifier)
+            if ids is None or len(ids) == 0:
                 log.warning('No %s in commit %s' % (identifier, hash))
                 continue
 
-            id = mail[identifier]
+            id = max(ids, key=len)
             id = ''.join(id.split())
             if use_patchwork_id:
                 id = '<%s>' % id
             else:
+                # Try to do repair some broken message IDs. This only makes
+                # sense if the message ids have a 'sane' length
+                if len(id) > 10 and id[0] != '<' and id[-1] != '>':
+                    id = '<%s>' % id
                 match = PubInbox.MESSAGE_ID_REGEX.match(id)
                 if match:
                     id = match.group(1)
