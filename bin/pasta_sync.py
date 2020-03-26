@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2019
+Copyright (c) OTH Regensburg, 2016-2020
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -66,7 +66,8 @@ def sync(config, prog, argv):
     repo = config.repo
     is_mbox = config.mode == Config.Mode.MBOX
 
-    if args.create is None:
+    # Choose sane defaults
+    if args.clear is None and args.create is None:
         args.create = 'upstream'
         if args.mbox and is_mbox:
             args.create = 'all'
