@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2019
+Copyright (c) OTH Regensburg, 2016-2020
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -12,7 +12,6 @@ the COPYING file in the top-level directory.
 
 import datetime
 import email
-import git
 import glob
 import os
 import pygit2
