@@ -10,6 +10,7 @@ from csv import writer
 from multiprocessing import cpu_count, Pool
 from itertools import chain
 from logging import getLogger
+import collections
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -27,7 +28,7 @@ def flatten(nested):
 
 def file_len(filename):
     f = file_to_string(filename)
-    for i, l in enumerate(f):
+    for i, _ in enumerate(f):
         pass
     try:
         return i + 1
@@ -82,9 +83,7 @@ def get_maintainers(config, sub, argv):
     
     global all_maintainers
     all_maintainers = LinuxMaintainers(all_maintainers_text)
-
-
-    
+  
     num_cpus = int(cpu_count() * 0.75)
     
     with Pool(num_cpus) as  pool:
@@ -102,15 +101,17 @@ def get_maintainers(config, sub, argv):
         all_kernel_files.append(filename)
         total_loc += loc
         for maintainer in maintainers:
-            print(maintainer, filename)
             loc_by_maintainer[maintainer] = loc_by_maintainer.get(maintainer, 0) + loc
-
+    
+   
     if '--filter' in argv:
         index = argv.index('--filter')
         argv.pop(index)
         filenames = file_to_string(argv.pop(index)).splitlines()
+        filter_by = True
     else:
         filenames = all_kernel_files
+        filter_by = False
 
     argv.pop(0) # show
     query = argv.pop(0) #entries or maintainers
@@ -126,7 +127,7 @@ def get_maintainers(config, sub, argv):
             else:
                 for filename in filenames:
                     loc = file_len(str.strip(filename))
-                    print(filename + '\t\t' + str(loc) + '\t\t' + str(loc/total_loc)) 
+                    print(filename + '\t' + str(loc) + '\t' + str(loc/total_loc)) 
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
@@ -138,36 +139,41 @@ def get_maintainers(config, sub, argv):
             else:
                 for filename in filenames:
                     loc = file_len(str.strip(filename))
-                    print(filename + '\t\t' + str(loc))
+                    print(filename + '\t' + str(loc))
         return 0
 
     elif query == "maintainers":
 
         maintainers = []
-        loc_by_maintainer_filt = dict()
-        for filename in filenames:
-            subsystems = all_maintainers.get_subsystems_by_file(filename)
-            for subsystem in subsystems:
-                maintainers.append(all_maintainers.get_maintainers(subsystem))
-            
-            loc = file_len(str.strip(filename))
-            for entry in set(flatten(flatten(maintainers))):
-                loc_by_maintainer_filt[entry] = loc_by_maintainer_filt.get(entry, 0) + loc
+        if filter_by:
+            for filename in filenames:
+                subsystems = all_maintainers.get_subsystems_by_file(filename)
+                for subsystem in subsystems:
+                    maintainers.append(all_maintainers.get_maintainers(subsystem))
+                
+                loc = file_len(str.strip(filename))
+                for entry in set(flatten(flatten(maintainers))):
+                    loc_by_maintainer_filt[entry] = loc_by_maintainer_filt.get(entry, 0) + loc
+            loc_by_maintainer_filt = collections.OrderedDict(sorted(loc_by_maintainer_filt.items(), key=lambda x: x[1]))
+
+        else:
+            # Order loc_by_maintainer by values:
+            loc_by_maintainer_filt = collections.OrderedDict(sorted(loc_by_maintainer.items(), key=lambda x: x[1]))
             
         if optionals:
             #Detailed view with ratios
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
                     csv_writer = writer(csv_file)
-                    csv_writer.writerow(["Maintainer", "Lines of code in the list", "Total lines of code", "Lines of code in the list/total lines of code"])
+                    csv_writer.writerow(["Maintainer", "Lines of code in the list", "Total lines of code", "Lines of code in the list/total lines of code in repo"])
                     for maintainer in loc_by_maintainer_filt:
-                        csv_writer.writerow([maintainer , loc_by_maintainer_filt[maintainer], loc_by_maintainer[maintainer], loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer]])
+                        csv_writer.writerow([maintainer , loc_by_maintainer_filt[maintainer], loc_by_maintainer[maintainer], loc_by_maintainer_filt[maintainer] /total_loc])
             else:
-                print("Maintainer",  '\t\t',  "Lines of code in the list",  '\t\t',  "Total lines of code",  '\t\t',  "Lines of code in the list/total lines of code")
+                print("Maintainer",  '\t',  "Lines of code in the list",  '\t',  "Total lines of code",  '\t',  "Lines of code in the list/total lines of code in repo")
                 for maintainer in loc_by_maintainer_filt:
                     #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
                     # (optional: \t <total lines of code for the maintainer> \t <ratio of relevant LoC / total>)
-                    print(maintainer , '\t\t',  loc_by_maintainer_filt[maintainer],  '\t\t',  loc_by_maintainer[maintainer],  '\t\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
+                    print(maintainer , '\t',  loc_by_maintainer_filt[maintainer],  '\t',  loc_by_maintainer[maintainer],  '\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
