@@ -33,28 +33,23 @@ def file_len(filename):
         return i + 1
     except:
         return 0
-'''
+
+all_maintainers = LinuxMaintainers.__class__
+
 def worker(filename):
-    
-    all_kernel_files = []
-    total_loc= 0
-    loc_by_maintainer = dict()
-    all_kernel_files.append(filename)
             
     # Later needed for the ratio LoC/total LoC
     loc = file_len(filename)
-    total_loc += loc
 
-    # Get all the maintainers for the given repo
+    # Get all the maintainers for the given file
     maintainers = []
     subsystems = all_maintainers.get_subsystems_by_file(filename)
+
     for subsystem in subsystems:
         maintainers.append(all_maintainers.get_maintainers(subsystem))
 
-    # Map the maintainers to LoC they are tied to
-    for entry in set(flatten(flatten(maintainers))):
-        loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
-'''
+    return filename, loc, set(flatten(flatten(maintainers)))
+
 def get_maintainers(config, sub, argv):
 
     # Check to show the detailed view or not
@@ -85,45 +80,31 @@ def get_maintainers(config, sub, argv):
     else:
         all_maintainers_text = file_to_string('./resources/linux/repo/MAINTAINERS')
     
-    all_kernel_files = []
-    filenames = []
-    total_loc= 0
-    loc_by_maintainer = dict()
+    global all_maintainers
     all_maintainers = LinuxMaintainers(all_maintainers_text)
 
-    # TODO: Check to see if this is the right path to walk!
-    '''
-    num_cpus = int(cpu_count() * 0.5)
+
+    
+    num_cpus = int(cpu_count() * 0.75)
     
     with Pool(num_cpus) as  pool:
+        # TODO: Check to see if this is the right path to walk!
         walk = os.walk('./resources/linux/repo/')
-        fn_gen = chain.from_iterable((os.path.join(root, file)
+        iterator = chain.from_iterable((os.path.join(root, file)
                                                 for file in files)
                                                for root, dirs, files in walk)
-        results_of_work = pool.map(worker, fn_gen)
-        print("results_of_work", results_of_work)
-    '''
-    for r, d, f in os.walk('./resources/linux/repo/kernel'):
-        for item in f:
+        results = pool.map(worker, iterator)
 
-            filename = os.path.join(r, item)
-            
-            all_kernel_files.append(filename)
-            
-            # Later needed for the ratio LoC/total LoC
-            loc = file_len(filename)
-            total_loc += loc
+    total_loc= 0
+    loc_by_maintainer = dict()
+    all_kernel_files = []
+    for filename, loc, maintainers in results:
+        all_kernel_files.append(filename)
+        total_loc += loc
+        for maintainer in maintainers:
+            print(maintainer, filename)
+            loc_by_maintainer[maintainer] = loc_by_maintainer.get(maintainer, 0) + loc
 
-            # Get all the maintainers for the given repo
-            maintainers = []
-            subsystems = all_maintainers.get_subsystems_by_file(filename)
-            for subsystem in subsystems:
-                maintainers.append(all_maintainers.get_maintainers(subsystem))
-
-            # Map the maintainers to LoC they are tied to
-            for entry in set(flatten(flatten(maintainers))):
-                loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
-    
     if '--filter' in argv:
         index = argv.index('--filter')
         argv.pop(index)
