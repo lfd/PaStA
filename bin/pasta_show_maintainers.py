@@ -8,6 +8,7 @@ import os
 
 from csv import writer
 from logging import getLogger
+from collections import OrderedDict
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -25,14 +26,18 @@ def flatten(nested):
 
 def file_len(filename):
     f = file_to_string(filename)
-    for i, l in enumerate(f):
+    for i, _ in enumerate(f):
         pass
     try:
         return i + 1
+    # Empty file:
     except:
         return 0
         
 def get_maintainers(config, sub, argv):
+
+    argv.pop(0) # show
+    query = argv.pop(0) #entries or maintainers
 
     # Check to show the detailed view or not
     if '--smallstat' in argv:
@@ -45,7 +50,7 @@ def get_maintainers(config, sub, argv):
     else:
         optionals = True
 
-     # Decide to output to file or not
+    # Decide to output to file or not
     if '--outfile' in argv:
         output_to_file = True
         index = argv.index('--outfile')
@@ -62,97 +67,119 @@ def get_maintainers(config, sub, argv):
     else:
         all_maintainers_text = file_to_string('./resources/linux/repo/MAINTAINERS')
     
-    all_kernel_files = []
-    filenames = []
-    total_loc= 0
-    loc_by_maintainer = dict()
-    all_maintainers = LinuxMaintainers(all_maintainers_text)
-
-    # TODO: Check to see if this is the right path to walk!
-    for r, d, f in os.walk('./resources/linux/repo/kernel/'):
-        for item in f:
-
-            filename = os.path.join(r, item)
-            
-            all_kernel_files.append(filename)
-            
-            # Later needed for the ratio LoC/total LoC
-            loc = file_len(filename)
-            total_loc += loc
-
-            # Get all the maintainers for the given repo
-            maintainers = []
-            subsystems = all_maintainers.get_subsystems_by_file(filename)
-            for subsystem in subsystems:
-                maintainers.append(all_maintainers.get_maintainers(subsystem))
-
-            # Map the maintainers to LoC they are tied to
-            for entry in set(flatten(flatten(maintainers))):
-                loc_by_maintainer[entry] = loc_by_maintainer.get(entry, 0) + loc
-    
     if '--filter' in argv:
         index = argv.index('--filter')
         argv.pop(index)
         filenames = file_to_string(argv.pop(index)).splitlines()
+        filter_by = True
     else:
-        filenames = all_kernel_files
+        filter_by = False
 
-    argv.pop(0) # show
-    query = argv.pop(0) #entries or maintainers
+    total_loc= 0
+    all_maintainers = LinuxMaintainers(all_maintainers_text)
 
     if query == 'entries':
+        loc_by_entry = dict()
+        for r, _, f in os.walk('./resources/linux/repo'):
+            for item in f:
+                filename = os.path.join(r, item)
+                # Later needed for the ratio LoC/total LoC
+                loc = file_len(filename)
+                total_loc += loc
+                subsystems = all_maintainers.get_subsystems_by_file(filename[23:])
+                for subsystem in subsystems:
+                    loc_by_entry[subsystem] = loc_by_entry.get(subsystem, 0) + loc
+
+        loc_by_entry_filt = dict()
+        if filter_by:
+            maintainers = []
+            for filename in filenames:
+                loc = file_len(str.strip(filename))
+                total_loc += loc
+                subsystems = all_maintainers.get_subsystems_by_file(filename)
+                for subsystem in subsystems:
+                    loc_by_entry_filt[subsystem] = loc_by_entry_filt.get(subsystem, 0) + loc
+            loc_by_entry_filt = OrderedDict(sorted(loc_by_entry_filt.items(), key=lambda x: x[1], reverse=True))
+        else:
+            loc_by_entry_filt = OrderedDict(sorted(loc_by_entry.items(), key=lambda x: x[1], reverse=True))
+
         if optionals:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
                     csv_writer = writer(csv_file)
-                    csv_writer.writerow(["File", "Lines of code", "Lines of code file/total lines of code"])
-                    for filename in filenames:
-                        csv_writer.writerow([filename, str(loc), str(loc/total_loc)]) 
+                    csv_writer.writerow(["Entry", "Lines of code", "Lines of code entry/total lines of code"])
+                    for entry in loc_by_entry_filt:
+                        csv_writer.writerow([entry, loc_by_entry_filt[entry], loc_by_entry_filt[entry]/total_loc]) 
             else:
-                for filename in filenames:
-                    loc = file_len(str.strip(filename))
-                    print(filename + '\t\t' + str(loc) + '\t\t' + str(loc/total_loc)) 
+                print("Entry", '\t', "Lines of code", '\t', "Lines of code entry/total lines of code")
+                for entry in loc_by_entry_filt:
+                    print(entry, '\t', loc_by_entry_filt[entry],'\t', loc_by_entry_filt[entry]/total_loc) 
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
                     csv_writer = writer(csv_file)
-                    csv_writer.writerow(["File", "Lines of code"])
-                    for filename in filenames:
-                        loc = file_len(str.strip(filename))
-                        csv_writer.writerow([filename, str(loc)]) 
+                    csv_writer.writerow(["Entry", "Lines of code"])
+                    for entry in loc_by_entry_filt:
+                        csv_writer.writerow([entry, loc_by_entry_filt[entry]]) 
             else:
-                for filename in filenames:
-                    loc = file_len(str.strip(filename))
-                    print(filename + '\t\t' + str(loc))
+                print("Entry", '\t', "Lines of code")
+                for entry in loc_by_entry_filt:
+                    print(entry, '\t', loc_by_entry_filt[entry]) 
         return 0
 
     elif query == "maintainers":
+        loc_by_maintainer = dict()
+        for r, _, f in os.walk('./resources/linux/repo'):
+            for item in f:
+                filename = os.path.join(r, item)
 
-        maintainers = []
+                # Later needed for the ratio LoC/total LoC
+                loc = file_len(filename)
+                total_loc += loc
+
+                # Get all the maintainers for the given repo
+                maintainers = []
+                subsystems = all_maintainers.get_subsystems_by_file(filename[23:])
+
+                for subsystem in subsystems:
+                    maintainers.append(all_maintainers.get_maintainers(subsystem))
+                # Map the maintainers to LoC they are tied to
+                for maintainer in flatten(flatten(maintainers)):
+                    # Strings are mailing lists, maintainers are tuples like ('linus torvalds ', 'torvalds@linux-foundation.org')
+                    # 2 tuples are referring to documentation files with name element empty '', eliminate them too
+                    if not (type(maintainer) == str or maintainer[0] == '' or maintainer[1] == ''):
+                        loc_by_maintainer[maintainer] = loc_by_maintainer.get(maintainer, 0) + loc        
+        
         loc_by_maintainer_filt = dict()
-        for filename in filenames:
-            subsystems = all_maintainers.get_subsystems_by_file(filename)
-            for subsystem in subsystems:
-                maintainers.append(all_maintainers.get_maintainers(subsystem))
-            
-            loc = file_len(str.strip(filename))
-            for entry in set(flatten(flatten(maintainers))):
-                loc_by_maintainer_filt[entry] = loc_by_maintainer_filt.get(entry, 0) + loc
+        if filter_by:
+            for filename in filenames:
+                maintainers = []
+                subsystems = all_maintainers.get_subsystems_by_file(filename)
+                for subsystem in subsystems:
+                    maintainers.append(all_maintainers.get_maintainers(subsystem))
+                loc = file_len(str.strip(filename))
+                for maintainer in set(flatten(flatten(maintainers))):
+                    if not type(maintainer) == str:
+                        loc_by_maintainer_filt[maintainer] = loc_by_maintainer_filt.get(maintainer, 0) + loc
+            # Order loc_by_maintainer by values:
+            loc_by_maintainer_filt = OrderedDict(sorted(loc_by_maintainer_filt.items(), key=lambda x: x[1], reverse=True))
+        else:
+            loc_by_maintainer_filt = OrderedDict(sorted(loc_by_maintainer.items(), key=lambda x: x[1], reverse=True))
             
         if optionals:
             #Detailed view with ratios
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
                     csv_writer = writer(csv_file)
-                    csv_writer.writerow(["Maintainer", "Lines of code in the list", "Total lines of code", "Lines of code in the list/total lines of code"])
+                    csv_writer.writerow(["Maintainer", "Lines of code in the list", "Total lines of code", "Lines of code in the list/total lines of code in repo"])
                     for maintainer in loc_by_maintainer_filt:
-                        csv_writer.writerow([maintainer , loc_by_maintainer_filt[maintainer], loc_by_maintainer[maintainer], loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer]])
+                        csv_writer.writerow([maintainer , loc_by_maintainer_filt[maintainer], loc_by_maintainer[maintainer], loc_by_maintainer_filt[maintainer] /total_loc])
             else:
-                print("Maintainer",  '\t\t',  "Lines of code in the list",  '\t\t',  "Total lines of code",  '\t\t',  "Lines of code in the list/total lines of code")
+                print("Maintainer",  '\t',  "Lines of code in the list",  '\t',  "Total lines of code",  '\t',  "Lines of code in the list/total lines of code in repo")
                 for maintainer in loc_by_maintainer_filt:
                     #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
                     # (optional: \t <total lines of code for the maintainer> \t <ratio of relevant LoC / total>)
-                    print(maintainer , '\t\t',  loc_by_maintainer_filt[maintainer],  '\t\t',  loc_by_maintainer[maintainer],  '\t\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
+                    print(maintainer , '\t',  loc_by_maintainer_filt[maintainer],  '\t',  loc_by_maintainer[maintainer],  '\t',  loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
