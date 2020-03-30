@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2019
+Copyright (c) OTH Regensburg, 2019-2020
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -13,6 +13,13 @@ the COPYING file in the top-level directory.
 import re
 
 from enum import Enum
+from logging import getLogger
+from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
+
+from .Util import load_pkl_and_update
+
+log = getLogger(__name__[-15:])
 
 
 class Matcher:
@@ -287,3 +294,54 @@ class LinuxMaintainers:
             else:
                 tmp.append(line)
         add_subsystem(tmp)
+
+
+def load_maintainer(tag):
+    pyrepo = _repo.repo
+
+    tag_hash = pyrepo.lookup_reference('refs/tags/%s' % tag).target
+    commit_hash = pyrepo[tag_hash].target
+    maintainers_blob_hash = pyrepo[commit_hash].tree['MAINTAINERS'].id
+    maintainers = pyrepo[maintainers_blob_hash].data
+
+    try:
+        maintainers = maintainers.decode('utf-8')
+    except:
+        # older versions use ISO8859
+        maintainers = maintainers.decode('iso8859')
+
+    m = LinuxMaintainers(maintainers)
+
+    return tag, m
+
+
+def load_maintainers(config, versions):
+    def __load_maintainers(ret, config, versions):
+        if ret is None:
+            ret = dict()
+
+        # Only load what's not yet cached
+        versions -= ret.keys()
+
+        if len(versions) == 0:
+            return ret, False
+
+        global _repo
+        _repo = config.repo
+        p = Pool(processes=cpu_count())
+        for tag, maintainers in tqdm(p.imap_unordered(load_maintainer,
+                                                      versions),
+                                     total=len(versions), desc='MAINTAINERS'):
+            ret[tag] = maintainers
+
+        p.close()
+        p.join()
+        _repo = None
+
+        return ret, True
+
+    log.info('Loading/Updating MAINTAINERS...')
+    maintainers_version = load_pkl_and_update(config.f_maintainers_pkl,
+                                              __load_maintainers, config,
+                                              versions)
+    return maintainers_version

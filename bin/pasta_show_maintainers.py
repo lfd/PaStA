@@ -7,6 +7,8 @@ import sys
 import os
 
 from csv import writer
+from multiprocessing import cpu_count, Pool
+from itertools import chain
 from logging import getLogger
 from collections import OrderedDict
 
@@ -32,6 +34,7 @@ def file_len(filename):
     except:
         return 0 , 0
         
+
 def get_maintainers(config, sub, argv):
 
     argv.pop(0) # show
@@ -65,13 +68,13 @@ def get_maintainers(config, sub, argv):
     else:
         all_maintainers_text = file_to_string('./resources/linux/repo/MAINTAINERS')
     
+
     if '--filter' in argv:
         index = argv.index('--filter')
         argv.pop(index)
         filenames = file_to_string(argv.pop(index)).splitlines()
         filter_by = True
     else:
-        filter_by = False
 
     total_loc= 0
     all_maintainers = LinuxMaintainers(all_maintainers_text)
@@ -116,9 +119,11 @@ def get_maintainers(config, sub, argv):
                     for entry in loc_by_entry_filt:
                         csv_writer.writerow([entry, loc_by_entry_filt[entry],byte_by_entry_filt[entry], loc_by_entry_filt[entry]/total_loc]) 
             else:
+
                 print("Entry", '\t', "Lines of code", '\t', "Byte count", '\t', "Lines of code entry/total lines of code")
                 for entry in loc_by_entry_filt:
                     print(entry, '\t', loc_by_entry_filt[entry], '\t', byte_by_entry_filt[entry] ,'\t', loc_by_entry_filt[entry]/total_loc) 
+
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
@@ -127,6 +132,7 @@ def get_maintainers(config, sub, argv):
                     for entry in loc_by_entry_filt:
                         csv_writer.writerow([entry, byte_by_entry_filt[entry], loc_by_entry_filt[entry]]) 
             else:
+
                 print("Entry", '\t', "Byte count", '\t', "Lines of code")
                 for entry in loc_by_entry_filt:
                     print(entry, '\t',byte_by_entry_filt[entry], '\t', loc_by_entry_filt[entry]) 
@@ -175,12 +181,14 @@ def get_maintainers(config, sub, argv):
         else:
             loc_by_maintainer_filt = OrderedDict(sorted(loc_by_maintainer.items(), key=lambda x: x[1], reverse=True))
             byte_by_maintainer_filt = byte_by_maintainer
+
             
         if optionals:
             #Detailed view with ratios
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:
                     csv_writer = writer(csv_file)
+
                     csv_writer.writerow(["Maintainer", "Lines of code in the list", "Total lines of code","Byte count on the list", "Byte count total", "Lines of code in the list/total lines of code in repo"])
                     for maintainer in loc_by_maintainer_filt:
                         csv_writer.writerow([maintainer , loc_by_maintainer_filt[maintainer], loc_by_maintainer[maintainer], byte_by_maintainer_filt[maintainer], byte_by_maintainer[maintainer], loc_by_maintainer_filt[maintainer] /total_loc])
@@ -190,6 +198,7 @@ def get_maintainers(config, sub, argv):
                     #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
                     # (optional: \t <total lines of code for the maintainer> \t <ratio of relevant LoC / total>)
                     print(maintainer , '\t',  loc_by_maintainer_filt[maintainer],  '\t',  loc_by_maintainer[maintainer],  '\t', byte_by_maintainer_filt[maintainer],  '\t',  byte_by_maintainer[maintainer],  '\t', loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
+
         else:
             if output_to_file:
                 with open(outfile_name, 'w+') as csv_file:

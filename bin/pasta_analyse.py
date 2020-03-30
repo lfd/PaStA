@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2019
+Copyright (c) OTH Regensburg, 2016-2020
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -18,7 +18,6 @@ from functools import partial
 from logging import getLogger
 from multiprocessing import cpu_count, Pool
 from time import sleep
-from tqdm import tqdm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from pypasta import *
@@ -144,6 +143,10 @@ def analyse(config, prog, argv):
     mbox = config.mode == Config.Mode.MBOX
     mode = args.mode
 
+    if mbox and mode == 'succ':
+        log.error('Analysis mode succ is not available in mailbox mode!')
+        return -1
+
     f_cluster, cluster = config.load_cluster(must_exist=False)
 
     def fill_result(hashes, tag):
@@ -219,10 +222,6 @@ def analyse(config, prog, argv):
 
     cherries = EvaluationResult()
     if mode == 'succ':
-        if mbox:
-            log.error('Analysis mode succ is not available in mailbox mode!')
-            return -1
-
         num_cpus = int(cpu_count() * args.cpu_factor)
 
         psd = config.psd
