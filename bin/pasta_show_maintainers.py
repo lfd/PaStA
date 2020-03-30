@@ -43,15 +43,13 @@ def get_entry_counts(filenames, all_maintainers):
             for subsystem in subsystems:
                 loc_by_entry[subsystem] = loc_by_entry.get(subsystem, 0) + loc
                 byte_by_entry[subsystem] = byte_by_entry.get(subsystem, 0) + byte
-    loc_by_entry = OrderedDict(sorted(loc_by_entry.items(), key=lambda x: x[1], reverse=True))
-    return loc_by_entry, byte_by_entry, total_loc
+    return OrderedDict(sorted(loc_by_entry.items(), key=lambda x: x[1], reverse=True)), byte_by_entry, total_loc
 
 def get_maintainer_counts(filenames, all_maintainers):
+    loc_by_maintainer = dict()
+    byte_by_maintainer = dict()
+    total_loc = 0
     for filename in filenames:
-        total_loc = 0
-        loc_by_maintainer = dict()
-        byte_by_maintainer = dict()
-        # Later needed for the ratio LoC/total LoC
         byte, loc = file_len('./resources/linux/repo/' + str.strip(filename))
         total_loc += loc
 
@@ -61,7 +59,7 @@ def get_maintainer_counts(filenames, all_maintainers):
 
         for subsystem in subsystems:
             maintainers.append(all_maintainers.get_maintainers(subsystem))
-        # Map the maintainers to LoC they are tied to
+        # Map the maintainers to LoC
         for maintainer in flatten(flatten(maintainers)):
             # Strings are mailing lists, maintainers are tuples like ('linus torvalds ', 'torvalds@linux-foundation.org')
             # 2 tuples are referring to documentation files with name element empty '', eliminate them too
@@ -70,7 +68,7 @@ def get_maintainer_counts(filenames, all_maintainers):
                 byte_by_maintainer[maintainer] = byte_by_maintainer.get(maintainer, 0) + byte  
     return OrderedDict(sorted(loc_by_maintainer.items(), key=lambda x: x[1], reverse=True)), byte_by_maintainer, total_loc
 
-def get_all(path):
+def get_filenames(path):
     all_filenames = list()
     for r, _, f in os.walk(path):
         for item in f:
@@ -118,12 +116,11 @@ def get_maintainers(config, sub, argv):
     else:
         filter_by = False
 
-    total_loc= 0
     all_maintainers = LinuxMaintainers(all_maintainers_text)
 
     if query == 'entries':
-        all_filenames = get_all('./resources/linux/repo')
-        loc_by_entry, byte_by_entry, total_loc = get_entry_counts(all_filenames, all_maintainers)
+
+        loc_by_entry, byte_by_entry, total_loc = get_entry_counts(get_filenames('./resources/linux/repo'), all_maintainers)
         if filter_by:
             loc_by_entry_filt, byte_by_entry_filt, _ = get_entry_counts(filenames, all_maintainers)
             
@@ -156,9 +153,8 @@ def get_maintainers(config, sub, argv):
         return 0
 
     elif query == "maintainers":
-        
-        all_filenames = get_all('./resources/linux/repo')
-        loc_by_maintainer, byte_by_maintainer, total_loc = get_maintainer_counts(all_filenames, all_maintainers)
+
+        loc_by_maintainer, byte_by_maintainer, total_loc = get_maintainer_counts(get_filenames('./resources/linux/repo'), all_maintainers)
 
         if filter_by:
             loc_by_maintainer_filt, byte_by_maintainer_filt, _ = get_maintainer_counts(filenames, all_maintainers)
