@@ -100,7 +100,7 @@ def get_maintainers(config, sub, argv):
     else:
         output_to_file = False
 
-    # Is there another MAINTAINERS file given?:
+    # Is there another MAINTAINERS file given:
     if '--file' in argv:
         index = argv.index('--file')
         argv.pop(index)
@@ -123,9 +123,8 @@ def get_maintainers(config, sub, argv):
         loc_by_entry, byte_by_entry, total_loc = get_entry_counts(get_filenames('./resources/linux/repo'), all_maintainers)
         if filter_by:
             loc_by_entry_filt, byte_by_entry_filt, _ = get_entry_counts(filenames, all_maintainers)
-            
         else:
-            loc_by_entry_filt = OrderedDict(sorted(loc_by_entry.items(), key=lambda x: x[1], reverse=True))
+            loc_by_entry_filt = loc_by_entry
             byte_by_entry_filt = byte_by_entry
 
         if optionals:
@@ -160,7 +159,7 @@ def get_maintainers(config, sub, argv):
             loc_by_maintainer_filt, byte_by_maintainer_filt, _ = get_maintainer_counts(filenames, all_maintainers)
             
         else:
-            loc_by_maintainer_filt = OrderedDict(sorted(loc_by_maintainer.items(), key=lambda x: x[1], reverse=True))
+            loc_by_maintainer_filt = loc_by_maintainer
             byte_by_maintainer_filt = byte_by_maintainer
             
         if optionals:
@@ -174,8 +173,6 @@ def get_maintainers(config, sub, argv):
             else:
                 print("Maintainer",  '\t',  "Lines of code in the list",  '\t',  "Total lines of code",  '\t', "Byte count on the list", '\t', "Byte count total", '\t', "Lines of code in the list/total lines of code in repo")
                 for maintainer in loc_by_maintainer_filt:
-                    #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
-                    # (optional: \t <total lines of code for the maintainer> \t <ratio of relevant LoC / total>)
                     print(maintainer , '\t',  loc_by_maintainer_filt[maintainer],  '\t',  loc_by_maintainer[maintainer],  '\t', byte_by_maintainer_filt[maintainer],  '\t',  byte_by_maintainer[maintainer],  '\t', loc_by_maintainer_filt[maintainer] /loc_by_maintainer[maintainer])
         else:
             if output_to_file:
@@ -187,7 +184,6 @@ def get_maintainers(config, sub, argv):
             else:
                 print("Maintainer",  '\t',  "Lines of code", '\t', "Byte count")
                 for maintainer in loc_by_maintainer_filt:
-                    #<MAINTAINER> \t\t <relevant lines of code for that maintainer based on the filelist> 
                     print(maintainer,  '\t',  loc_by_maintainer_filt[maintainer], byte_by_maintainer[maintainer])
         return 0
     else:
