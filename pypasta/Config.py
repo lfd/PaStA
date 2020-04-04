@@ -151,11 +151,7 @@ class Config:
         # analysis results
         self.d_false_positives = path('FALSE_POSTITIVES')
 
-        if self._mode == Config.Mode.MBOX:
-            cluster_dst = 'MBOX_RESULT'
-        else:
-            cluster_dst = 'PASTA_RESULT'
-        self.f_clustering = path(cluster_dst)
+        self.f_clustering = path('PATCH_GROUPS')
 
         self.f_commit_description = path('COMMIT_DESCRIPTION')
 
