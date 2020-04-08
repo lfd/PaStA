@@ -31,8 +31,9 @@ from bin.pasta_check_connectivity import check_connectivity
 from bin.pasta_check_mbox import check_mbox
 from bin.pasta_compare import compare
 from bin.pasta_compare_clusters import compare_clusters
-from bin.pasta_prepare_evaluation import prepare_evaluation
+from bin.pasta_maintainers_stats import maintainers_stats
 from bin.pasta_optimise_cluster import optimise_cluster
+from bin.pasta_prepare_evaluation import prepare_evaluation
 from bin.pasta_rate import rate
 from bin.pasta_ripup import ripup
 from bin.pasta_show_cluster import show_cluster
@@ -83,6 +84,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  ripup\n'
           '  upstream_history\n'
           '  web\n'
+          '  maintainers_stats\n'
           '\n'
           'If -c is not provided, PaStA will choose ./config as config file\n'
           '\n'
@@ -169,6 +171,8 @@ def main(argv):
         return upstream_duration(config, sub, argv)
     elif sub == 'web':
         return web(config, sub, argv)
+    elif sub == 'maintainers_stats':
+        return maintainers_stats(config, sub, argv)
     else:
         print('Unknown command: %s' % sub)
         usage(me)
