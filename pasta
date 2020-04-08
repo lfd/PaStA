@@ -31,8 +31,9 @@ from bin.pasta_check_connectivity import check_connectivity
 from bin.pasta_check_mbox import check_mbox
 from bin.pasta_compare import compare
 from bin.pasta_compare_clusters import compare_clusters
-from bin.pasta_prepare_evaluation import prepare_evaluation
+from bin.pasta_maintainers_stats import maintainers_stats
 from bin.pasta_optimise_cluster import optimise_cluster
+from bin.pasta_prepare_evaluation import prepare_evaluation
 from bin.pasta_rate import rate
 from bin.pasta_ripup import ripup
 from bin.pasta_show_cluster import show_cluster
@@ -73,6 +74,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  check_mbox\n'
           '  compare\n'
           '  form_patchwork_relations\n'
+          '  maintainers_stats\n'
           '  optimise_cluster\n'
           '  prepare_evaluation\n'
           '  rate\n'
@@ -166,6 +168,8 @@ def main(argv):
         return compare_stacks(config, argv)
     elif sub == 'form_patchwork_relations':
         return form_patchwork_relations(config, argv)
+    elif sub == 'maintainers_stats':
+        return maintainers_stats(config, argv)
     elif sub == 'patch_descriptions':
         return patch_descriptions(config, argv)
     elif sub == 'ripup':
