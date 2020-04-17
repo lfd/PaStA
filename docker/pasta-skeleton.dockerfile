@@ -6,7 +6,7 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-FROM ubuntu:19.04
+FROM ubuntu:20.04
 
 MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 
