@@ -296,7 +296,7 @@ class LinuxMaintainers:
         add_subsystem(tmp)
 
 
-def load_maintainer(tag):
+def _load_maintainer(tag):
     pyrepo = _repo.repo
 
     tag_hash = pyrepo.lookup_reference('refs/tags/%s' % tag).target
@@ -329,7 +329,7 @@ def load_maintainers(config, versions):
         global _repo
         _repo = config.repo
         p = Pool(processes=cpu_count())
-        for tag, maintainers in tqdm(p.imap_unordered(load_maintainer,
+        for tag, maintainers in tqdm(p.imap_unordered(_load_maintainer,
                                                       versions),
                                      total=len(versions), desc='MAINTAINERS'):
             ret[tag] = maintainers
