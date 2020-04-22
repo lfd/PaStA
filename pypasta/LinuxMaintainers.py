@@ -295,19 +295,18 @@ class LinuxMaintainers:
                 tmp.append(line)
         add_subsystem(tmp)
 
-
-def _load_maintainer(revision):
-    maintainers = _repo.get_blob(revision, 'MAINTAINERS')
+def load_maintainer(repo, revision):
+    maintainers = repo.get_blob(revision, 'MAINTAINERS')
     try:
         maintainers = maintainers.decode('utf-8')
     except:
         # older versions use ISO8859
         maintainers = maintainers.decode('iso8859')
 
-    m = LinuxMaintainers(maintainers)
+    return LinuxMaintainers(maintainers)
 
-    return revision, m
-
+def _load_maintainer(revision):
+    return revision, load_maintainer(_repo, revision)
 
 def load_maintainers(config, versions):
     def __load_maintainers(ret, config, versions):
