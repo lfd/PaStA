@@ -134,6 +134,18 @@ class Repository:
             log.debug('Unable to load commit %s: %s' % (identifier, str(e)))
             return None
 
+    def get_blob(self, revision, filename):
+        target = self.repo.revparse_single(revision)
+        if isinstance(target, pygit2.Tag):
+            commit = target.get_object()
+        else:
+            commit = target
+        tree = commit.tree
+        blob_hash = tree[filename].id
+        blob = self.repo[blob_hash].data
+
+        return blob
+
     def get_commit(self, identifier):
         """
         Get a particular commit
