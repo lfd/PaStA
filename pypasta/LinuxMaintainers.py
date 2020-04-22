@@ -296,14 +296,8 @@ class LinuxMaintainers:
         add_subsystem(tmp)
 
 
-def _load_maintainer(tag):
-    pyrepo = _repo.repo
-
-    tag_hash = pyrepo.lookup_reference('refs/tags/%s' % tag).target
-    commit_hash = pyrepo[tag_hash].target
-    maintainers_blob_hash = pyrepo[commit_hash].tree['MAINTAINERS'].id
-    maintainers = pyrepo[maintainers_blob_hash].data
-
+def _load_maintainer(revision):
+    maintainers = _repo.get_blob(revision, 'MAINTAINERS')
     try:
         maintainers = maintainers.decode('utf-8')
     except:
@@ -312,7 +306,7 @@ def _load_maintainer(tag):
 
     m = LinuxMaintainers(maintainers)
 
-    return tag, m
+    return revision, m
 
 
 def load_maintainers(config, versions):
