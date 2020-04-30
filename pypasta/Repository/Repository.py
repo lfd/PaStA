@@ -192,6 +192,7 @@ class Repository:
         for victim in victims:
             del self.ccache[victim]
         gc.collect()
+        return victims
 
     def cache_commits(self, identifiers, parallelise=True, cpu_factor=1):
         """

@@ -228,10 +228,19 @@ class Config:
 
     def _update_ccache(self, f_ccache, ids, desc):
         repo = self.repo
+        changed = False
+        ids = set(ids)
         repo.clear_commit_cache()
-        repo.load_ccache(f_ccache, desc)
-        cached = repo.cache_commits(ids)
-        if cached:
+        already_cached = repo.load_ccache(f_ccache, desc)
+        evicted = repo.cache_evict_except(ids)
+        if len(evicted):
+            changed = True
+        already_cached -= evicted
+        if len(ids - already_cached):
+            repo.cache_commits(ids)
+            changed = True
+
+        if changed:
             repo.export_ccache(f_ccache)
         repo.clear_commit_cache()
 
