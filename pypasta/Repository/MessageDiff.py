@@ -89,16 +89,19 @@ class MessageDiff:
         message = list(filter(None, message))
 
         self.tags = defaultdict(list)
-        self.message = []
 
-        for line in message:
-            line = line.strip()
-            match = MessageDiff.TAG_REGEX.match(line)
-            if not match:
-                self.message.append(line)
-            else:
-                tag, content = match.group(1), match.group(2)
-                self.tags[tag.lower().strip()].append(content.strip())
+        if len(message) > 1:
+            self.message = [message[0]]
+            for line in message[1:]:
+                line = line.strip()
+                match = MessageDiff.TAG_REGEX.match(line)
+                if not match:
+                    self.message.append(line)
+                else:
+                    tag, content = match.group(1), match.group(2)
+                    self.tags[tag.lower().strip()].append(content.strip())
+        else:
+            self.message = message
 
         # Handle cases where the subject line is duplicated
         if len(self.message) > 1 and self.message[0] == self.message[1]:
