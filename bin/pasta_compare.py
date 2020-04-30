@@ -26,6 +26,10 @@ def compare(config, prog, argv):
     parser.add_argument('commits', metavar='commit', type=str, nargs='+',
                         help='Commit hashes / Mail IDs')
 
+    parser.add_argument('-tf', dest='thres_filename', metavar='threshold',
+                        default=config.thresholds.filename, type=float,
+                        help='Minimum filename similarity '
+                             '(default: %(default)s)')
     parser.add_argument('-th', dest='thres_heading', metavar='threshold',
                         default=config.thresholds.heading, type=float,
                         help='Minimum diff hunk section heading similarity '
@@ -34,6 +38,7 @@ def compare(config, prog, argv):
     args = parser.parse_args(argv)
 
     config.thresholds.heading = args.thres_heading
+    config.thresholds.filename = args.thres_filename
     commits = args.commits
     repo = config.repo
 
