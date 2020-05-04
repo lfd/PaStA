@@ -130,7 +130,7 @@ def compare_getmaintainers(config, argv):
         # Take 10 times as much patches as specified in bulk. We don't know yet,
         # if all patches will match our criteria, so take some more patches just
         # to be sure
-        all_patches = random.sample(all_patches, bulk * 10)
+        all_patches = set(random.sample(all_patches, bulk * 10))
         repo.cache_commits(all_patches)
         c = load_characteristics(config, clustering, all_patches)
 
