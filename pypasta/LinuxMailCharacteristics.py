@@ -24,11 +24,9 @@ log = getLogger(__name__[-15:])
 
 _repo = None
 _maintainers_version = None
-_mainline_tags = None
 _clustering = None
 
 MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
-MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
 VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
 
 MAILING_LISTS = {'devel@acpica.org', 'alsa-devel@alsa-project.org', 'clang-built-linux@googlegroups.com',
@@ -249,19 +247,6 @@ class LinuxMailCharacteristics:
                 return True
         return False
 
-    def _patch_get_version(self):
-        tag = None
-
-        for cand_tag, cand_tag_date in _mainline_tags:
-            if cand_tag_date > self.date:
-                break
-            tag = cand_tag
-
-        if tag is None:
-            raise RuntimeError('No valid tag found for patch %s' % self.message_id)
-
-        return tag
-
     def _get_maintainer(self, maintainer, patch):
         subsystems = maintainer.get_subsystems_by_files(patch.diff.affected)
         for subsystem in subsystems:
@@ -428,7 +413,7 @@ class LinuxMailCharacteristics:
                 self.process_mail = True in [process in self.subject for process in processes]
 
                 if maintainers_version is not None:
-                    self.linux_version = self._patch_get_version()
+                    self.linux_version = repo.linux_patch_get_version(patch)
                     maintainers = maintainers_version[self.linux_version]
                     self._get_maintainer(maintainers, patch)
 
@@ -449,10 +434,6 @@ def load_linux_mail_characteristics(config, maintainers_version, clustering,
         missing = ids - ret.keys()
         if len(missing) == 0:
             return ret, False
-
-        global _mainline_tags
-        _mainline_tags = list(filter(lambda x: MAINLINE_REGEX.match(x[0]),
-                                     repo.tags))
 
         global _repo, _maintainers_version, _clustering
         _maintainers_version = maintainers_version

@@ -30,6 +30,7 @@ log = getLogger(__name__[-15:])
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
 
+MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
 
 class PygitCredentials(pygit2.RemoteCallbacks):
     def credentials(self, url, username_from_url, allowed_types):
@@ -115,6 +116,22 @@ class Repository:
             self.tags.append((tag, dt))
 
         self.tags.sort(key=lambda x: x[1])
+
+        self.linux_mainline_tags = list(filter(lambda x : MAINLINE_REGEX.match(x[0]),
+                                         self.tags))
+
+    def linux_patch_get_version(self, patch):
+        tag = None
+
+        for cand_tag, cand_tag_date in self.linux_mainline_tags:
+            if cand_tag_date > patch.author.date:
+                break
+            tag = cand_tag
+
+        if tag is None:
+            raise RuntimeError('No valid tag found for patch %s' % patch.message_id)
+
+        return tag
 
     def _inject_commits(self, commit_dict):
         for key, val in commit_dict.items():
