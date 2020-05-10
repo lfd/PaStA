@@ -152,6 +152,8 @@ class Config:
         self.d_false_positives = path('FALSE_POSTITIVES')
 
         self.f_clustering = path('PATCH_GROUPS')
+        if self._mode == Config.Mode.MBOX:
+            self.f_clustering_cache = path('PATCH_GROUPS_CACHE')
 
         self.f_commit_description = path('COMMIT_DESCRIPTION')
 
