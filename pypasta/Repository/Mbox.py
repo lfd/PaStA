@@ -520,6 +520,18 @@ class Mbox:
                 latest = date
         return latest
 
+    def greatest_patchwork_id(self):
+        # find better way to do this. Persist greatest patch id somehow
+        latest = -1
+        for mbox in self.mbox_raw.raw_mboxes:
+            f_index = self.mbox_raw.f_index(mbox[0])
+            index = load_file(f_index)
+            patchwork_ids = [id for (_, id, _) in index]
+            patchwork_ids = list(
+                map(lambda id: int(id[id.find('<')+1:id.find('>')]),
+                    patchwork_ids))
+            return max(patchwork_ids)
+
     def invalidate(self, invalid):
         self.invalid |= set(invalid)
 

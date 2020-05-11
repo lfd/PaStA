@@ -90,7 +90,7 @@ def sync(config, prog, argv):
             if args.patchwork:
                 pull_patches(config)
 
-            repo.update_mbox(config, nofetch=args.nofetch)
+            repo.update_mbox(config)
 
     if args.clear is None and args.create is None:
         args.create = 'all'
@@ -120,32 +120,26 @@ def sync(config, prog, argv):
 
 
 def pull_patches(config: Config):
-    since = config.repo.mbox.latest_message_date()
+    # highest patchwork patch id in pasta. We need patches with patch_id > since.
+    since = config.repo.mbox.greatest_patchwork_id()
     if since is None:
-        log.info('Pulling all patches from patchwork')
+        log.info('Pulling no patches from patchwork')
     else:
-        log.info('Pulling patches from patchwork created since %s', since)
+        log.info('Pulling patches from patchwork created since patch id %s', since)
 
-    lists = {list_id: path for list_id, path in config.mbox_raw}
+    # let us assume one pasta instance for one list for simplicity
+    mbox_path = config.mbox_raw[0][2]
+    project_id = config.patchwork['project_id']
     index = config.repo.mbox.mbox_raw.index
     patchwork = config.repo.mbox.patchwork
-    patches = patchwork.download_patches(since, lists, ignore=index)
+    patches = patchwork.download_patches(project_id, since)
 
     pulled = 0
-    try:
-        for event_date, list_id, msg_id, mbox in patches:
-            if isinstance(lists[list_id], str):
-                # replace file path string with (open) file object
-                lists[list_id] = open(lists[list_id], 'a')
-
+    with open(mbox_path, 'a') as f:
+        for event_date, msg_id, mbox, _ in patches:
             if mbox[-1] != '\n':
                 mbox += '\n'
-            lists[list_id].write(mbox + '\n')
+            f.write(mbox + '\n')
             pulled += 1
-    finally:
-        for item in lists:
-            # only call close on items we opened before
-            if isinstance(item, io.TextIOBase):
-                item.close()
 
     log.info('  ↪ Pulled %d patches', pulled)
