@@ -20,6 +20,7 @@ class Patchwork:
 
     def __init__(self, **kwargs):
         self.url = kwargs['url']
+        self.project_id = kwargs['project_id']
         self.token = kwargs.get('token')
         username = kwargs.get('username')
         password = kwargs.get('password')
@@ -39,38 +40,44 @@ class Patchwork:
             return {'auth': self.basic_auth}
 
     @staticmethod
-    def page_iterator(resp, yield_value):
+    def page_iterator(resp, yield_value, since):
+        done = False
         while True:
+            if resp.status_code != 200:
+                break
             for item in resp.json():
                 value = yield_value(item)
                 if value:
+                    if since is not None:
+                        if value[-1] == since:
+                            done = True
+                            break
                     yield value
-
+            if done:
+                break
             next_page = resp.links.get('next', None)
             if next_page is None:
                 break
             resp = requests.get(next_page['url'])
 
-    def download_patches(self, since: datetime, lists, ignore):
-        def yield_value(event):
-            date = datetime.fromisoformat(event['date'])
-            patch = event['payload']['patch']
-            list_id = event['project']['list_id']
+    # downloads all patches since the patch with patchwork id: since. If since is None will download all patches.
+    # In the worst case will lead to fetching an extra page of patches.
+    def download_patches(self, project_id, since=None):
+
+        def yield_value(patch):
+            patchwork_id = patch['id']
+            date = datetime.fromisoformat(patch['date'])
             msg_id = patch['msgid']
             mbox_url = patch['mbox']
-
-            if list_id not in lists or msg_id in ignore:
-                # None skips yielding a value
-                return None
-
             resp_mbox = requests.get(mbox_url)
-            return date, list_id, msg_id, resp_mbox.text
 
-        params = {'category': 'patch-created'}
-        if since is not None:
-            params['since'] = since.isoformat()
-        resp = requests.get(urljoin(self.url, 'events'), params)
-        return self.page_iterator(resp, yield_value)
+            return date, msg_id, resp_mbox.text, patchwork_id
+
+        params = {}
+        params['order'] = '-id'   # descending id order
+        params['project'] = project_id
+        resp = requests.get(urljoin(self.url, 'patches'), params)
+        return self.page_iterator(resp, yield_value, since)
 
     def insert_relation(self, related):
         url = urljoin(self.url, 'relations/')
@@ -82,3 +89,12 @@ class Patchwork:
         url = urljoin(self.url, 'patches/%d/' % patch_id)
         resp = requests.patch(url, json=data, **self.auth)
         resp.raise_for_status()
+
+    def get_patchwork_id(self, msg_id):
+        url = urljoin(self.url, 'patches')
+        resp = requests.get(url, params={'msgid': msg_id})
+        if resp is not None:
+            resp = resp.json()
+            if len(resp) != 0:
+                return resp[0]['id']
+        return None
