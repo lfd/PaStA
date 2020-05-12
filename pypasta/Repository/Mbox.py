@@ -179,22 +179,19 @@ def load_file(filename, must_exist=True):
     return f
 
 
-def load_index(basename):
-    entries = load_file(basename, must_exist=False)
-    ret = dict()
-
-    for (date, message_id, location) in entries:
-        dtime = datetime.datetime.strptime(date, '%Y/%m/%d')
-
-        if message_id not in ret:
-            ret[message_id] = list()
-
-        ret[message_id].append((dtime, date, location))
-
-    return ret
-
-
 class MailContainer:
+    def load_index(self, f_index):
+        self.index = dict()
+        entries = load_file(f_index, must_exist=False)
+
+        for (date, message_id, location) in entries:
+            dtime = datetime.datetime.strptime(date, '%Y/%m/%d')
+
+            if message_id not in self.index:
+                self.index[message_id] = list()
+
+            self.index[message_id].append((dtime, date, location))
+
     def get_ids(self, time_window=None):
         if time_window:
             return {x[0] for x in self.index.items() if
@@ -217,7 +214,7 @@ class PubInbox(MailContainer):
         self.d_repo = d_repo
 
         self.repo = pygit2.Repository(d_repo)
-        self.index = load_index(self.f_index)
+        self.load_index(self.f_index)
 
         log.info('  ↪ loaded mail index for %s (shard %u): found %d mails' %
                  (listaddr, shard, len(self.index)))
@@ -321,7 +318,7 @@ class MboxRaw(MailContainer):
     def add_mbox(self, listname, f_mbox_raw):
         self.raw_mboxes.append((listname, f_mbox_raw))
         f_mbox_index = os.path.join(self.d_index, 'raw.%s' % listname)
-        index = load_index(f_mbox_index)
+        self.load_index(f_mbox_index)
         log.info('  ↪ loaded mail index for %s: found %d mails' % (listname, len(index)))
 
         for id, desc in index.items():
