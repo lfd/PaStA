@@ -192,6 +192,15 @@ class MailContainer:
 
             self.index[message_id].append((dtime, date, location))
 
+    def write_index(self, f_index):
+        with open(f_index, 'w') as f:
+            index = list()
+            for message_id, candidates in self.index.items():
+                for date, format_date, commit in candidates:
+                    index.append('%s %s %s' % (format_date, message_id, commit))
+            index.sort()
+            f.write('\n'.join(index) + '\n')
+
     def get_ids(self, time_window=None):
         if time_window:
             return {x[0] for x in self.index.items() if
@@ -298,13 +307,7 @@ class PubInbox(MailContainer):
                 self.index[id] = list()
             self.index[id].append((date, format_date, hash))
 
-        with open(self.f_index, 'w') as f:
-            index = list()
-            for message_id, candidates in self.index.items():
-                for date, format_date, commit in candidates:
-                    index.append('%s %s %s' % (format_date, message_id, commit))
-            index.sort()
-            f.write('\n'.join(index) + '\n')
+        self.write_index(self.f_index)
 
 
 class MboxRaw(MailContainer):
