@@ -8,13 +8,13 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-USE_PATCHWORK_ID=$1
+IS_PATCHWORK_ARCHIVE=$1
 LISTNAME=$2
 BASEDIR=$3
 TMP=$(mktemp)
 
 cat /dev/stdin > $TMP
-./process_mail.sh $USE_PATCHWORK_ID $LISTNAME $BASEDIR $TMP
+./process_mail.sh $IS_PATCHWORK_ARCHIVE $LISTNAME $BASEDIR $TMP
 RET=$?
 
 if [ $RET -eq 0 ]; then

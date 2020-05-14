@@ -199,10 +199,6 @@ def analyse(config, prog, argv):
                 victims = available
 
             if args.linux:
-                if config.mbox_use_patchwork_id:
-                    log.error('Doesn\'t work with USE_PATCHWORK_ID = true')
-                    return -1
-
                 log.info('Searching for non-Linux patches...')
                 repo.mbox.load_threads()
                 characteristic = load_linux_mail_characteristics(repo, victims)

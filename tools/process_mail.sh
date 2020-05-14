@@ -47,18 +47,22 @@ function get_header {
 	formail -x $1 -c < $MAIL | head -n 1 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 }
 
-if [ "$USE_PATCHWORK_ID" = "True" ]; then
-	ID=$(get_header "X-Patchwork-ID")
+if [ "$IS_PATCHWORK_ARCHIVE" = "True" ]; then
+	PATCHWORK_ID=$(get_header "X-Patchwork-ID")
+
+	if [ "$PATCHWORK_ID" = "" ]; then
+		die "Unable to parse Patchwork ID for ${MAIL}: empty Patchwork ID"
+	fi
 	# Always surround emails by <> tags. PaStA needs them in order to
 	# classify them as emails
-	ID="<${ID}>"
-else
-	ID=$(get_header "Message-id" | sed -e 's/.*\(<.*>\).*/\1/i')
-	if [ "$ID" = "" ]; then
-		die "Unable to parse Message ID for ${MAIL}: empty Message-ID"
-	elif [[ "$ID" =~ $whitespace_pattern ]]; then
-		die "Unable to parse Message ID for ${MAIL}: contains whitespaces"
-	fi
+	PATCHWORK_ID="<${PATCHWORK_ID}>"
+fi
+
+ID=$(get_header "Message-id" | sed -e 's/.*\(<.*>\).*/\1/i')
+if [ "$ID" = "" ]; then
+	die "Unable to parse Message ID for ${MAIL}: empty Message-ID"
+elif [[ "$ID" =~ $whitespace_pattern ]]; then
+	die "Unable to parse Message ID for ${MAIL}: contains whitespaces"
 fi
 
 MD5=$(md5sum $MAIL | awk '{ print $1 }')
@@ -84,7 +88,11 @@ if [ "$DATE" == "" ]; then
 fi
 
 # no lock required, echo will write atomatically when writing short lines
-DSTDIR="${BASEDIR}/raw/${DATE}"
+if [ "$IS_PATCHWORK_ARCHIVE" = "True" ]; then
+	DSTDIR="${BASEDIR}/patchwork/${DATE}"
+else
+	DSTDIR="${BASEDIR}/raw/${DATE}"
+fi
 DSTFILE="${DSTDIR}/${MD5}"
 [ -d $DSTDIR ] || mkdir -p $DSTDIR
 
@@ -93,4 +101,8 @@ if [ ! -f $DSTFILE ]; then
 	cp $MAIL $DSTFILE
 fi
 
-echo "$DATE $ID $MD5" >> ${INDEX}
+if [ "$IS_PATCHWORK_ARCHIVE" = "True" ]; then
+	echo "$DATE $ID $MD5 $PATCHWORK_ID" >> ${INDEX}
+else
+	echo "$DATE $ID $MD5" >> ${INDEX}
+fi

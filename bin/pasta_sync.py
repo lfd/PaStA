@@ -101,6 +101,5 @@ def sync(config, prog, argv):
         config.update_ccache_mbox()
 
         # Update the mail thread cache
-        if not config.mbox_use_patchwork_id:
-            repo.mbox.load_threads()
-            repo.mbox.threads.update()
+        repo.mbox.load_threads()
+        repo.mbox.threads.update()

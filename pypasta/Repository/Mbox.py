@@ -256,7 +256,7 @@ class PubInbox(MailContainer):
         commits = self.get_hashes(message_id)
         return [self.get_blob(commit) for commit in commits]
 
-    def update(self, use_patchwork_id):
+    def update(self):
         log.info('Update list %s' % self.listaddr)
         self.repo = pygit2.Repository(self.d_repo)
 
@@ -269,8 +269,6 @@ class PubInbox(MailContainer):
         hashes = hashes - known_hashes
         log.info('Updating %d emails' % len(hashes))
 
-        identifier = 'X-Patchwork-ID' if use_patchwork_id else 'Message-ID'
-
         for hash in hashes:
             mail = self.get_mail_by_commit(hash)
             if not mail:
@@ -279,26 +277,23 @@ class PubInbox(MailContainer):
 
             # There are broken mails that may contain multiple Message-IDs.
             # Hence, get all Message-IDs and search for the sanest one
-            ids = mail.get_all(identifier)
+            ids = mail.get_all('Message-Id')
             if ids is None or len(ids) == 0:
-                log.warning('No %s in commit %s' % (identifier, hash))
+                log.warning('No Message-Id in commit %s' % hash)
                 continue
 
             id = max(ids, key=len)
             id = ''.join(id.split())
-            if use_patchwork_id:
+            # Try to do repair some broken message IDs. This only makes
+            # sense if the message ids have a 'sane' length
+            if len(id) > 10 and id[0] != '<' and id[-1] != '>':
                 id = '<%s>' % id
+            match = PubInbox.MESSAGE_ID_REGEX.match(id)
+            if match:
+                id = match.group(1)
             else:
-                # Try to do repair some broken message IDs. This only makes
-                # sense if the message ids have a 'sane' length
-                if len(id) > 10 and id[0] != '<' and id[-1] != '>':
-                    id = '<%s>' % id
-                match = PubInbox.MESSAGE_ID_REGEX.match(id)
-                if match:
-                    id = match.group(1)
-                else:
-                    log.warning('Unable to parse Message ID: %s' % id)
-                    continue
+                log.warning('Unable to parse Message ID: %s' % id)
+                continue
 
             date = mail_parse_date(mail['Date'])
             if not date:
@@ -337,7 +332,7 @@ class MboxRaw(MailContainer):
 
         return set(index.keys())
 
-    def update(self, use_patchwork_id):
+    def update(self):
         for listname, f_mbox_raw in self.raw_mboxes:
             if not os.path.exists(f_mbox_raw):
                 log.error('not a file or directory: %s' % f_mbox_raw)
@@ -346,7 +341,7 @@ class MboxRaw(MailContainer):
             log.info('Processing raw mailbox %s' % listname)
             cwd = os.getcwd()
             os.chdir(os.path.join(cwd, 'tools'))
-            ret = call(['./process_mailbox_maildir.sh', str(use_patchwork_id),
+            ret = call(['./process_mailbox_maildir.sh', "False",
                         listname, self.d_mbox, f_mbox_raw])
             os.chdir(cwd)
             if ret == 0:
@@ -494,11 +489,11 @@ class Mbox:
 
         return ids
 
-    def update(self, use_patchwork_id):
-        self.mbox_raw.update(use_patchwork_id)
+    def update(self):
+        self.mbox_raw.update()
 
         for pub in self.pub_in:
-            pub.update(use_patchwork_id)
+            pub.update()
 
     def get_lists(self, message_id):
         return self.message_id_to_lists[message_id]
