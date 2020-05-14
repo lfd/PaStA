@@ -282,7 +282,7 @@ class Repository:
 
     def update_mbox(self, config):
         self.register_mbox(config)
-        self.mbox.update(config.mbox_use_patchwork_id)
+        self.mbox.update()
 
         # The mbox doesn't track changes after an update. The easiest
         # workaround is to reload the whole instance.

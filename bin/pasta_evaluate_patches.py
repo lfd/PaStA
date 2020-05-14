@@ -220,10 +220,6 @@ def evaluate_patches(config, prog, argv):
         log.error('Only works in Mbox mode!')
         return -1
 
-    if config.mbox_use_patchwork_id:
-        log.error('pasta evaluate_patches does not work with '
-                  'USE_PATCHWORK_ID = true')
-
     repo = config.repo
     _, clustering = config.load_cluster()
     clustering.optimize()

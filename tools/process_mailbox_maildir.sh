@@ -15,7 +15,7 @@ initialise
 if [ "$#" -ne 4 ]; then
 	echo "Usage: $0 listname destination_directory mailbox_file"
 	echo
-	echo "This script splits up a mailbox file into seperate mail"
+	echo "This script splits up a mailbox file into separate mail"
 	echo "files, placed into date-separated subdirectories."
 	exit 1
 fi
@@ -23,9 +23,9 @@ fi
 if [ -d ${VICTIM} ]; then
 	find ${VICTIM} -type f -print0 | \
 		xargs -0 -P $(nproc) -n 1 \
-			./process_mail.sh $USE_PATCHWORK_ID $LISTNAME $BASEDIR
+			./process_mail.sh $IS_PATCHWORK_ARCHIVE $LISTNAME $BASEDIR
 elif [ -f ${VICTIM} ]; then
-	formail -n $(nproc) -s <${VICTIM} ./process_mail_pipe.sh $USE_PATCHWORK_ID $LISTNAME $BASEDIR
+	formail -n $(nproc) -s <${VICTIM} ./process_mail_pipe.sh $IS_PATCHWORK_ARCHIVE $LISTNAME $BASEDIR
 else
 	echo "${VICTIM} is not a file or directory"
 	exit 1
