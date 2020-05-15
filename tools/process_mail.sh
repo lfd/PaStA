@@ -55,7 +55,7 @@ if [ "$IS_PATCHWORK_ARCHIVE" = "True" ]; then
 	fi
 	# Always surround emails by <> tags. PaStA needs them in order to
 	# classify them as emails
-	PATCHWORK_ID="<${PATCHWORK_ID}>"
+	PATCHWORK_ID=" ${PATCHWORK_ID}"
 fi
 
 ID=$(get_header "Message-id" | sed -e 's/.*\(<.*>\).*/\1/i')
@@ -103,8 +103,4 @@ if [ ! -f $DSTFILE ]; then
 fi
 
 # no lock required, echo will write atomatically when writing short lines
-if [ "$IS_PATCHWORK_ARCHIVE" = "True" ]; then
-	echo "$DATE $ID $MD5 $PATCHWORK_ID" >> ${INDEX}
-else
-	echo "$DATE $ID $MD5" >> ${INDEX}
-fi
+echo "$DATE $ID ${MD5}${PATCHWORK_ID}" >> ${INDEX}
