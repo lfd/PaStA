@@ -185,7 +185,7 @@ class MailContainer:
         index = dict()
         entries = load_file(f_index, must_exist=False)
 
-        for (date, message_id, location) in entries:
+        for date, message_id, location in entries:
             dtime = datetime.datetime.strptime(date, '%Y/%m/%d')
 
             if message_id not in index:
