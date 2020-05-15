@@ -277,6 +277,8 @@ class PubInbox(MailContainer):
                 log.warning('No email behind commit %s' % hash)
                 continue
 
+            # There are broken mails that may contain multiple Message-IDs.
+            # Hence, get all Message-IDs and search for the sanest one
             ids = mail.get_all(identifier)
             if ids is None or len(ids) == 0:
                 log.warning('No %s in commit %s' % (identifier, hash))
