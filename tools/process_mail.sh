@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) OTH Regensburg, 2017-2018
+# Copyright (c) OTH Regensburg, 2017-2020
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -60,9 +60,11 @@ fi
 
 ID=$(get_header "Message-id" | sed -e 's/.*\(<.*>\).*/\1/i')
 if [ "$ID" = "" ]; then
-	die "Unable to parse Message ID for ${MAIL}: empty Message-ID"
+	echo "Unable to parse Message ID for ${MAIL}: empty Message-ID"
+	exit 0
 elif [[ "$ID" =~ $whitespace_pattern ]]; then
-	die "Unable to parse Message ID for ${MAIL}: contains whitespaces"
+	echo "Unable to parse Message ID for ${MAIL}: contains whitespaces"
+	exit 0
 fi
 
 MD5=$(md5sum $MAIL | awk '{ print $1 }')
