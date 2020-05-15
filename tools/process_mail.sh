@@ -89,7 +89,6 @@ if [ "$DATE" == "" ]; then
 	die "Nope, I'm sorry. No way to parse this mail: $MAIL"
 fi
 
-# no lock required, echo will write atomatically when writing short lines
 if [ "$IS_PATCHWORK_ARCHIVE" = "True" ]; then
 	DSTDIR="${BASEDIR}/patchwork/${DATE}"
 else
@@ -103,6 +102,7 @@ if [ ! -f $DSTFILE ]; then
 	cp $MAIL $DSTFILE
 fi
 
+# no lock required, echo will write atomatically when writing short lines
 if [ "$IS_PATCHWORK_ARCHIVE" = "True" ]; then
 	echo "$DATE $ID $MD5 $PATCHWORK_ID" >> ${INDEX}
 else
