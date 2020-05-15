@@ -341,7 +341,7 @@ class MboxRaw(MailContainer):
             log.info('Processing raw mailbox %s' % listname)
             cwd = os.getcwd()
             os.chdir(os.path.join(cwd, 'tools'))
-            ret = call(['./process_mailbox_maildir.sh', "False",
+            ret = call(['./process_mailbox_maildir.sh', 'raw',
                         listname, self.d_mbox, f_mbox_raw])
             os.chdir(cwd)
             if ret == 0:

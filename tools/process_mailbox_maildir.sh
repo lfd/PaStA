@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) OTH Regensburg, 2017-2019
+# Copyright (c) OTH Regensburg, 2017-2020
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@othr.de>
@@ -23,9 +23,9 @@ fi
 if [ -d ${VICTIM} ]; then
 	find ${VICTIM} -type f -print0 | \
 		xargs -0 -P $(nproc) -n 1 \
-			./process_mail.sh $IS_PATCHWORK_ARCHIVE $LISTNAME $BASEDIR
+			./process_mail.sh $ARCHIVE_TYPE $LISTNAME $BASEDIR
 elif [ -f ${VICTIM} ]; then
-	formail -n $(nproc) -s <${VICTIM} ./process_mail_pipe.sh $IS_PATCHWORK_ARCHIVE $LISTNAME $BASEDIR
+	formail -n $(nproc) -s <${VICTIM} ./process_mail_pipe.sh $ARCHIVE_TYPE $LISTNAME $BASEDIR
 else
 	echo "${VICTIM} is not a file or directory"
 	exit 1

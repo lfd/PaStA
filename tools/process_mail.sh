@@ -47,7 +47,7 @@ function get_header {
 	formail -x $1 -c < $MAIL | head -n 1 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 }
 
-if [ "$IS_PATCHWORK_ARCHIVE" = "True" ]; then
+if [ "$ARCHIVE_TYPE" = "patchwork" ]; then
 	PATCHWORK_ID=$(get_header "X-Patchwork-ID")
 
 	if [ "$PATCHWORK_ID" = "" ]; then
@@ -89,11 +89,7 @@ if [ "$DATE" == "" ]; then
 	die "Nope, I'm sorry. No way to parse this mail: $MAIL"
 fi
 
-if [ "$IS_PATCHWORK_ARCHIVE" = "True" ]; then
-	DSTDIR="${BASEDIR}/patchwork/${DATE}"
-else
-	DSTDIR="${BASEDIR}/raw/${DATE}"
-fi
+DSTDIR="${BASEDIR}/${ARCHIVE_TYPE}/${DATE}"
 DSTFILE="${DSTDIR}/${MD5}"
 [ -d $DSTDIR ] || mkdir -p $DSTDIR
 
