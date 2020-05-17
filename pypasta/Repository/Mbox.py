@@ -19,7 +19,7 @@ import re
 from datetime import datetime
 from email.charset import CHARSETS
 from logging import getLogger
-from subprocess import call
+from subprocess import Popen
 
 from .MailThread import MailThread
 from .MessageDiff import MessageDiff, Signature
@@ -177,6 +177,25 @@ def load_file(filename, must_exist=True):
     f = [tuple(x.split(' ')) for x in f]
 
     return f
+
+
+def process_mailbox_maildir(f_mbox_raw, name, d_mbox, mode):
+    """
+    :param f_mbox_raw: filename of the mbox/maildir
+    :param name: index name
+    :param d_mbox: destination directory
+    :param mode: can either be 'raw', or 'patchwork'
+    """
+    if not os.path.exists(f_mbox_raw):
+        log.error('no such file or directory: %s' % f_mbox_raw)
+        quit(-1)
+
+    p = Popen(['./process_mailbox_maildir.sh', mode, name, d_mbox, f_mbox_raw],
+              cwd=os.path.join(os.getcwd(), 'tools'))
+    if p.wait():
+        log.error('Mail processor failed!')
+        quit(-1)
+    log.info('  ↪ done')
 
 
 class MailContainer:
@@ -341,20 +360,8 @@ class MboxRaw(MailContainer):
 
     def update(self):
         for listname, f_mbox_raw in self.raw_mboxes:
-            if not os.path.exists(f_mbox_raw):
-                log.error('not a file or directory: %s' % f_mbox_raw)
-                quit(-1)
-
             log.info('Processing raw mailbox %s' % listname)
-            cwd = os.getcwd()
-            os.chdir(os.path.join(cwd, 'tools'))
-            ret = call(['./process_mailbox_maildir.sh', 'raw',
-                        listname, self.d_mbox, f_mbox_raw])
-            os.chdir(cwd)
-            if ret == 0:
-                log.info('  ↪ done')
-            else:
-                log.error('Mail processor failed!')
+            process_mailbox_maildir(f_mbox_raw, listname, self.d_mbox, 'raw')
 
     def __getitem__(self, message_id):
         ret = list()
