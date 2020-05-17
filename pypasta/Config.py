@@ -196,6 +196,7 @@ class Config:
             mbox = cfg['mbox']
             mbox_raw = mbox['raw']
             mbox_pub_in = mbox['pubin']
+            mbox_patchwork = mbox['patchwork']
 
             # mailbox parameters
             self.mbox_mindate = parse_date_ymd(mbox['MINDATE'])
@@ -211,6 +212,22 @@ class Config:
             self.mbox_git_public_inbox = list()
             for host, mailinglists in mbox_pub_in.items():
                 self.mbox_git_public_inbox.append((host, mailinglists))
+
+            self.patchwork = dict()
+            self.patchwork['url'] = mbox_patchwork.get('url')
+            self.patchwork['username'] = mbox_patchwork.get('username')
+            self.patchwork['password'] = mbox_patchwork.get('password')
+            self.patchwork['token'] = mbox_patchwork.get('token')
+            self.patchwork['page_size'] = mbox_patchwork.get('page_size')
+            self.patchwork['projects'] = list()
+
+            for project in mbox_patchwork['projects']:
+                initial_archive = project.get('initial_archive')
+                if initial_archive and not isabs(initial_archive):
+                    initial_archive = join(self.d_mbox, 'patchwork',
+                                           initial_archive)
+                self.patchwork['projects'].append(
+                    (project['id'], initial_archive, project['list_email']))
 
     @property
     def project_root(self):
