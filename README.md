@@ -248,3 +248,46 @@ To compare all mails on the list against upstream:
 [1]: https://public-inbox.org/README.html
 [2]: https://github.com/xai/nntp2mbox
 [3]: https://git.kernel.org/pub/scm/public-inbox/
+
+PaStA and Patchwork
+--------------------
+The results of PaStA's analyses can be used by [Patchwork](http://jk.ozlabs.org/projects/patchwork/).
+
+## Setting up PaStA and Patchwork
+Assuming a working setup of PaStA already exists, here are the steps necessary for Patchwork integration
+
+1. Install Patchwork on your system, following the guidelines in Patchwork's [documentation](https://patchwork.readthedocs.io/en/latest/development/installation/)
+
+2. Start a shell inside Patchwork's docker container with `docker-compose run --rm web --shell`
+
+3. Bring up a Patchwork development server, by running
+`./manage.py runserver 0.0.0.0:8000` inside the shell started in step 2. You should now have a Patchwork instance
+running at `<Patchwork-Docker-Container-IP-address>:8000` on your host. The Patchwork container's IP address can be
+found using `ifconfig` command on Linux distributions.
+
+4. Start PaStA's docker container on the same network as the Patchwork one by running the command:
+`docker run -it --rm --network patchwork_default --name pasta -v </path/to/PaStA>:/home/pasta pasta:latest`
+
+5. Set the Patchwork specific settings in config:
+```
+[mbox]
+...
+
+[mbox.patchwork]
+url = 'http://<Patchwork-Container-IP-Address>/api/1.2/'
+projects = [{ id = x, initial_archive="path/to/archive", list_email="list@domain.org"},
+{id = y, initial_archive="", list_email="anotherlist@anotherdomain.org"}, ...]
+page_size = 10
+
+# Provide an api_token token or username/password if restricted api access is
+# needed (e.g updating relations)
+token = 'your_token'
+username = 'your_username'
+password = 'your_password'
+```
+
+Each Patchwork project from which mails are to be imported needs to be listed in the configuration. If
+the `initial_archive` property of the project is specified (project with id `x` in the example above)
+, PaStA will import mails from the archive treating it as a raw mail box. If the `initial_archive`
+property is an empty string (project with id `y` in the example above),
+PaStA will fetch mails using Patchwork's API, only importing those mails which are not already in PaStA.
