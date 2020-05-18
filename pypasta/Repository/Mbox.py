@@ -196,12 +196,13 @@ class MailContainer:
         return index
 
     def write_index(self, f_index):
+        index = list()
+        for message_id, candidates in self.index.items():
+            for date, format_date, commit in candidates:
+                index.append('%s %s %s' % (format_date, message_id, commit))
+        index.sort()
+
         with open(f_index, 'w') as f:
-            index = list()
-            for message_id, candidates in self.index.items():
-                for date, format_date, commit in candidates:
-                    index.append('%s %s %s' % (format_date, message_id, commit))
-            index.sort()
             f.write('\n'.join(index) + '\n')
 
     def get_ids(self, time_window=None):
