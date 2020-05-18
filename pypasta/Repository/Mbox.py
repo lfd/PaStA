@@ -185,21 +185,27 @@ class MailContainer:
         index = dict()
         entries = load_file(f_index, must_exist=False)
 
-        for date, message_id, location in entries:
+        for entry in entries:
+            date, message_id, location = entry[0:3]
+            patchwork_id = tuple(int(x) for x in entry[3:])
             dtime = datetime.datetime.strptime(date, '%Y/%m/%d')
 
             if message_id not in index:
                 index[message_id] = list()
 
-            index[message_id].append((dtime, date, location))
+            index[message_id].append((dtime, date, location) + patchwork_id)
 
         return index
 
     def write_index(self, f_index):
         index = list()
         for message_id, candidates in self.index.items():
-            for date, format_date, commit in candidates:
-                index.append('%s %s %s' % (format_date, message_id, commit))
+            for entry in candidates:
+                format_date = entry[1]
+                line = '%s %s ' % (format_date, message_id)
+                # Append the location, and the optional patchwork-id
+                line += ' '.join([str(x) for x in entry[2:]])
+                index.append(line)
         index.sort()
 
         with open(f_index, 'w') as f:
