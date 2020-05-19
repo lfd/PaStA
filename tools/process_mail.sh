@@ -51,7 +51,8 @@ if [ "$ARCHIVE_TYPE" = "patchwork" ]; then
 	PATCHWORK_ID=$(get_header "X-Patchwork-ID")
 
 	if [ "$PATCHWORK_ID" = "" ]; then
-		die "Unable to parse Patchwork ID for ${MAIL}: empty Patchwork ID"
+		echo "Unable to parse Patchwork ID for ${MAIL}: empty Patchwork ID"
+		exit 0
 	fi
 	# Always surround emails by <> tags. PaStA needs them in order to
 	# classify them as emails
@@ -86,7 +87,8 @@ if [ "$DATE" == "" ]; then
 	DATE=$(parse_date "$DATE_HDR")
 fi
 if [ "$DATE" == "" ]; then
-	die "Nope, I'm sorry. No way to parse this mail: $MAIL"
+	echo "Nope, I'm sorry. No way to parse this mail: $MAIL"
+	exit 0
 fi
 
 DSTDIR="${BASEDIR}/${ARCHIVE_TYPE}/${DATE}"
