@@ -13,7 +13,8 @@ LISTNAME=$2
 BASEDIR=$3
 TMP=$(mktemp)
 
-cat /dev/stdin > $TMP
+# Remove last character (\n) from the input and store the file
+head -c -1 /dev/stdin > $TMP
 ./process_mail.sh $ARCHIVE_TYPE $LISTNAME $BASEDIR $TMP
 RET=$?
 
