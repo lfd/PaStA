@@ -10,13 +10,13 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-import datetime
 import email
 import glob
 import os
 import pygit2
 import re
 
+from datetime import datetime
 from email.charset import CHARSETS
 from logging import getLogger
 from subprocess import call
@@ -188,7 +188,7 @@ class MailContainer:
         for entry in entries:
             date, message_id, location = entry[0:3]
             patchwork_id = tuple(int(x) for x in entry[3:])
-            dtime = datetime.datetime.strptime(date, '%Y/%m/%d')
+            dtime = datetime.strptime(date, '%Y/%m/%d')
 
             if message_id not in index:
                 index[message_id] = list()
