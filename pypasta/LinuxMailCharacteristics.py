@@ -186,19 +186,29 @@ class LinuxMailCharacteristics:
                  'kunit/']
 
     def _is_from_bot(self, message):
-        email = self.mail_from[1]
+        email = self.mail_from[1].lower()
         bots = ['broonie@kernel.org', 'lkp@intel.com']
         potential_bot = True in [bot in email for bot in bots]
 
-        if message['X-Patchwork-Hint'] == 'ignore' and potential_bot:
+        if potential_bot and \
+           email_get_header_normalised(message, 'x-patchwork-hint') == 'ignore':
             return True
 
-        subject = str(message['Subject']).lower()
+        subject = email_get_header_normalised(message, 'subject')
 
+        # Mark Brown's bot and lkp
         if potential_bot and subject.startswith('applied'):
             return True
 
         if LinuxMailCharacteristics.REGEX_GREG_ADDED.match(subject):
+            return True
+
+        uagent = email_get_header_normalised(message, 'user-agent')
+
+        # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for
+        # all other mails. That's how we can easily separate automated mails
+        # from real mails.
+        if email == 'akpm@linux-foundation.org' and 's-nail' in uagent:
             return True
 
         # syzbot
@@ -210,7 +220,8 @@ class LinuxMailCharacteristics:
            'noreply@ciplatform.org' in email:
             return True
 
-        if message['X-Mailer'] == 'tip-git-log-daemon':
+        xmailer = email_get_header_normalised(message, 'x-mailer')
+        if xmailer == 'tip-git-log-daemon':
             return True
 
         # Stephen Rothwell's automated emails
