@@ -227,6 +227,8 @@ class MailContainer:
                 index.append(line)
         index.sort()
 
+        d_index = os.path.dirname(f_index)
+        os.makedirs(d_index, exist_ok=True)
         with open(f_index, 'w') as f:
             f.write('\n'.join(index) + '\n')
 
