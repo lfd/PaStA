@@ -86,21 +86,20 @@ class NMatcher:
 
 
 class LinuxSubsystem:
-    NAME_REGEX = '([^<]+)'
-    BRACKET_REGEX = '<([^>]+)>'
-    DEF_EMAIL_REGEX = '%s\s*%s' % (NAME_REGEX, BRACKET_REGEX)
-
     DESCRIPTOR_REGEX = re.compile(r'([A-Z]):\s*(.*)')
-    EMAIL_RAW_REGEX = re.compile('^(\S+@\S+\.\S+)$')
+    EMAIL_RAW_REGEX = r'\S+@\S+\.\S+'
 
-    EMAIL_LIST_REGEX = re.compile(r'([^\s<]+@[^\s>]+)>?')
-
-    EMAIL_DEFAULT_RGEX = re.compile(DEF_EMAIL_REGEX)
-    EMAIL_MM_REGEX = re.compile('%s\s*%s' % (BRACKET_REGEX, BRACKET_REGEX))
-    EMAIL_NMM_REGEX = re.compile('%s\s*%s\s*%s' %
-                                 (NAME_REGEX, BRACKET_REGEX, BRACKET_REGEX))
-    EMAIL_NMNM_REGEX = re.compile('%s\s*%s' % (DEF_EMAIL_REGEX, DEF_EMAIL_REGEX))
-    EMAIL_MO_REGEX = re.compile('([^\s]+@[^\s]+\.[^\s]+)')
+    # matches a name and an email in brackets, such as 'John F. Doe <john.f.doe@gmail.com>'
+    EMAIL_DEFAULT_REGEX = re.compile('(.*)<(%s)>' % EMAIL_RAW_REGEX)
+    # matches two emails in brackets, such as '<john.f.doe@gmail.com> <joedoe@outlook.com>'
+    EMAIL_MM_REGEX = re.compile('<(%s)>\\s*<(%s)>' % (EMAIL_RAW_REGEX, EMAIL_RAW_REGEX))
+    # matches a name and two emails in brackets, such as 'John F. Doe <john.f.doe@gmail.com> <joedoe@outlook.com>'
+    EMAIL_NMM_REGEX = re.compile('(.*)<(%s)>(.*)<(%s)>' % (EMAIL_RAW_REGEX, EMAIL_RAW_REGEX))
+    # matches a name followed by an email twice, such as:
+    # 'John F. Doe <john.f.doe@gmail.com> Emily Swanson <emily.s@gmail.com>
+    EMAIL_NMNM_REGEX = re.compile('(.*)<(%s)>(.*)<(%s)>' % (EMAIL_RAW_REGEX, EMAIL_RAW_REGEX))
+    # matches a typical email address such as 'john.doe@gmail.com'
+    EMAIL_MAIL_REGEX = re.compile(r'(%s)' % EMAIL_RAW_REGEX)
 
     class Status(Enum):
         Supported = 'supported'
@@ -112,9 +111,9 @@ class LinuxSubsystem:
 
     @staticmethod
     def parse_person(value):
-        match = LinuxSubsystem.EMAIL_DEFAULT_RGEX.match(value)
+        match = LinuxSubsystem.EMAIL_DEFAULT_REGEX.match(value)
         if match:
-            return [(match.group(1), match.group(2))]
+            return [(match.group(1).strip(), match.group(2))]
 
         match = LinuxSubsystem.EMAIL_MM_REGEX.match(value)
         if match:
@@ -129,7 +128,7 @@ class LinuxSubsystem:
             return [(match.group(1), match.group(2)),
                     (match.group(3), match.group(4))]
 
-        match = LinuxSubsystem.EMAIL_MO_REGEX.match(value)
+        match = LinuxSubsystem.EMAIL_MAIL_REGEX.match(value)
         if match:
             return [('', match.group(1))]
 
@@ -199,7 +198,7 @@ class LinuxSubsystem:
                 # We have some lists that are no email adresses. Skip them
                 if value.startswith('http://'):
                     continue
-                ml = self.EMAIL_LIST_REGEX.findall(value)[0]
+                ml = self.EMAIL_MAIL_REGEX.findall(value)[0]
                 self.list.add(ml)
             elif type == 'S':
                 # some nasty cases
