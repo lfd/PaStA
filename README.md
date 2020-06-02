@@ -34,7 +34,7 @@ as well as results of **PaStA**'s analysis for some sample projects.
 ```
 $ git clone https://github.com/lfd/PaStA.git
 $ cd PaStA
-$ git submodule update --recursive --init resources # This might take some time to complete
+$ ./tools/update_resources.sh # This might take some time to complete
 ```
 
 Requirements
