@@ -295,7 +295,7 @@ class PubInbox(MailContainer):
         for entry in self.index.values():
             known_hashes |= {x[2] for x in entry}
 
-        hashes = set(get_commit_hash_range(self.d_repo, 'origin/master'))
+        hashes = set(get_commit_hash_range(self.d_repo, 'HEAD'))
 
         hashes = hashes - known_hashes
         log.info('Updating %d emails' % len(hashes))
