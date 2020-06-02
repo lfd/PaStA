@@ -305,8 +305,10 @@ def load_maintainer(repo, revision):
 
     return LinuxMaintainers(maintainers)
 
+
 def _load_maintainer(revision):
     return revision, load_maintainer(_repo, revision)
+
 
 def load_maintainers(config, versions):
     def __load_maintainers(ret, config, versions):
