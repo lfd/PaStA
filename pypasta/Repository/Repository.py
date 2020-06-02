@@ -115,6 +115,7 @@ class Repository:
             dt = pygit2_signature_to_datetime(tagger)
             self.tags.append((tag, dt))
 
+        # Sort tags - by date
         self.tags.sort(key=lambda x: x[1])
 
         self.linux_mainline_tags = list(filter(lambda x : MAINLINE_REGEX.match(x[0]),
@@ -122,14 +123,17 @@ class Repository:
 
     def linux_patch_get_version(self, patch):
         tag = None
+        date = patch.author.date
+
+        # We won't be able to find a valid tag if the author date is older
+        # than the first date in self.tags.
+        if date < self.linux_mainline_tags[0][1]:
+            raise ValueError('Too old: no valid tag found for patch %s' % patch.identifier)
 
         for cand_tag, cand_tag_date in self.linux_mainline_tags:
             if cand_tag_date > patch.author.date:
                 break
             tag = cand_tag
-
-        if tag is None:
-            raise RuntimeError('No valid tag found for patch %s' % patch.message_id)
 
         return tag
 
