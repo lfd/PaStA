@@ -86,7 +86,10 @@ def compare_clusters(argv):
     parser.add_argument('-test', action='store_true', default=False,
                         help='run tests')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
 
     # These are the converted example from:
     # https://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-clustering-1.html
@@ -103,8 +106,12 @@ def compare_clusters(argv):
         ground_truth.insert(1, 7, 8, 9, 11)
         ground_truth.insert(10,13,15,16)
     else:
-        ground_truth = Clustering.from_file(args.classes[0], must_exist=True)
-        prediction = Clustering.from_file(args.classes[1], must_exist=True)
+        try:
+            ground_truth = Clustering.from_file(args.classes[0], must_exist=True)
+            prediction = Clustering.from_file(args.classes[1], must_exist=True)
+        except Exception as e:
+            log.error('Loading clusters: %s' % str(e))
+            return
 
     # remove identical clusters, if desired
     if args.remove_identical:

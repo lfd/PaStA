@@ -158,6 +158,9 @@ class PastaShell(Cmd):
     def do_compare(self, line):
         compare(config, line.split())
 
+    def do_compare_clusters(self, line):
+        compare_clusters(line.split())
+
     def do_config(self, line):
         line = line.split()
         if len(line) == 0:
@@ -195,6 +198,9 @@ class PastaShell(Cmd):
     @requires_config
     def help_compare(self):
         compare(config, ['-h'])
+
+    def help_compare_clusters(self):
+        compare_clusters(['-h'])
 
     def help_config(self):
         print(
@@ -237,8 +243,6 @@ def main(argv):
         usage(me)
 
     sub = argv.pop(0)
-    if sub == 'compare_clusters':
-        return compare_clusters(argv)
     if sub == 'optimise_cluster':
         return optimise_cluster(argv)
     if sub == 'set_config':
@@ -256,6 +260,7 @@ def main(argv):
 
     if sub in [
         'compare',
+        'compare_clusters',
         'config',
     ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
