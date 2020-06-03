@@ -195,6 +195,9 @@ class PastaShell(Cmd):
         log.info('Bye')
         return True
 
+    def do_optimise_cluster(self, line):
+        optimise_cluster(line.split())
+
     @requires_config
     def help_compare(self):
         compare(config, ['-h'])
@@ -211,6 +214,9 @@ class PastaShell(Cmd):
 
     def help_exit(self):
         print('Exit PaStA. Usual suspect shorthands: x q quit Ctrl-D')
+
+    def help_optimise_cluster(self):
+        optimise_cluster(['-h'])
 
     do_EOF = do_exit
 
@@ -243,8 +249,6 @@ def main(argv):
         usage(me)
 
     sub = argv.pop(0)
-    if sub == 'optimise_cluster':
-        return optimise_cluster(argv)
     if sub == 'set_config':
         if len(argv) != 1:
             usage(me, -1)
@@ -262,6 +266,7 @@ def main(argv):
         'compare',
         'compare_clusters',
         'config',
+        'optimise_cluster',
     ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
         shell.onecmd(cmd)
