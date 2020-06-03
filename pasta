@@ -22,6 +22,7 @@ import errno
 import logging
 import sys
 
+from cmd import Cmd
 from copy import deepcopy
 
 from pypasta import Config
@@ -48,7 +49,7 @@ from bin.pasta_form_patchwork_relations import form_patchwork_relations
 
 
 __author__ = 'Ralf Ramsauer'
-__copyright__ = 'Copyright (c) OTH Regensburg, 2016-2017'
+__copyright__ = 'Copyright (c) OTH Regensburg, 2016-2020'
 __credits__ = ['Ralf Ramsauer']
 __license__ = 'GPLv2'
 __version__ = '0.3'
@@ -78,8 +79,9 @@ def usage(me, exit_code=errno.EINVAL):
           '  optimise_cluster\n'
           '  prepare_evaluation\n'
           '  rate\n'
-          '  sync\n'
           '  set_config\n'
+          '  shell\n'
+          '  sync\n'
           '  show_cluster\n'
           '  statistics\n'
           '  compare_stacks\n'
@@ -99,6 +101,30 @@ def usage(me, exit_code=errno.EINVAL):
           'Written by %s.' %
           (__version__, me, __copyright__, __license__, __author__), file=file)
     sys.exit(exit_code)
+
+
+class PastaShell(Cmd):
+    prompt = 'PaStA>>> '
+    intro = 'Welcome to PaStA\'s interactive shell. Type ? for a list of all commands'
+
+    def __init__(self):
+        super(PastaShell, self).__init__()
+
+    def default(self, line: str) -> bool:
+        if line in ['x', 'q', 'quit']:
+            return self.do_exit(line)
+
+        print('*** Unknown syntax: %s' % line)
+        return False
+
+    def do_exit(self, line):
+        log.info('Bye')
+        return True
+
+    def help_exit(self):
+        print('Exit PaStA. Usual suspect shorthands: x q quit Ctrl-D')
+
+    do_EOF = do_exit
 
 
 def main(argv):
@@ -146,8 +172,12 @@ def main(argv):
         config.set_config()
         return 0
 
-    config = Config(project_name)
+    if sub == 'shell':
+        shell = PastaShell()
+        shell.cmdloop()
+        return 0
 
+    config = Config(project_name)
     if sub == '-h' or sub == '--help':
         usage(me, 0)
     elif sub == 'analyse':
