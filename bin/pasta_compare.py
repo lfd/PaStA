@@ -13,9 +13,13 @@ the COPYING file in the top-level directory.
 import os
 import sys
 
+from logging import getLogger
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 '..')))
 from pypasta import *
+
+log = getLogger(__name__[-15:])
 
 
 def compare(config, argv):
@@ -35,7 +39,10 @@ def compare(config, argv):
                         help='Minimum diff hunk section heading similarity '
                              '(default: %(default)s)')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
 
     config.thresholds.heading = args.thres_heading
     config.thresholds.filename = args.thres_filename
@@ -44,6 +51,15 @@ def compare(config, argv):
 
     if any([x.startswith('<') for x in commits]):
         repo.register_mbox(config)
+
+    fail = False
+    for commit in commits:
+        if commit not in repo:
+            log.error('Unable to find patch %s' % commit)
+            fail = True
+
+    if fail:
+        return
 
     if len(commits) == 1:
         show_commit(repo, commits[0])
