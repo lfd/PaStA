@@ -103,7 +103,6 @@ def main(argv):
     project_name = None
     me = argv.pop(0)
     level = logging.INFO
-    debug = False
 
     while len(argv) and argv[0].startswith('-'):
         argument = argv.pop(0)
@@ -114,7 +113,6 @@ def main(argv):
             project_name = argv.pop(0)
         elif argument == '-d':
             level = logging.DEBUG
-            debug = True
 
     fmt = '%(asctime)-15s %(name)-15s %(levelname)-8s %(message)s'
     logging.basicConfig(level=level, stream=sys.stdout, format=fmt)
@@ -138,7 +136,7 @@ def main(argv):
     if sub == 'set_config':
         project_name = argv[0]
         try:
-            config = Config(project_name, debug)
+            config = Config(project_name)
         except Exception as e:
             log.error('Unable to load configuration %s:' % project_name)
             log.error('  %s' % str(e))
@@ -146,7 +144,7 @@ def main(argv):
         config.set_config()
         return 0
 
-    config = Config(project_name, debug)
+    config = Config(project_name)
 
     if sub == '-h' or sub == '--help':
         usage(me, 0)

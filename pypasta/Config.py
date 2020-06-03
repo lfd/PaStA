@@ -88,9 +88,8 @@ class Config:
         MBOX = "mbox"
         PATCHSTACK = "patchstack"
 
-    def __init__(self, project, debug):
+    def __init__(self, project):
         self.project_name = project
-        self.debug = debug
         self._project_root, self._config_file = \
             Config.get_config_dir_file(project)
 

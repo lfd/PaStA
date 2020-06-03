@@ -162,4 +162,4 @@ def web(c, prog, argv):
     _, cluster = config.load_cluster()
 
     nav.init_app(app)
-    app.run(debug=c.debug, host='127.0.0.1', port=8080, use_reloader=False)
+    app.run(debug=False, host='127.0.0.1', port=8080, use_reloader=False)
