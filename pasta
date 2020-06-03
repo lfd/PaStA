@@ -233,9 +233,14 @@ def main(argv):
             config.set_config()
         return 0
 
+    shell = PastaShell()
     if sub == 'shell':
-        shell = PastaShell()
         shell.cmdloop()
+        return 0
+
+    if sub in ['config']:
+        cmd = '%s %s' % (sub, ' '.join(argv))
+        shell.onecmd(cmd)
         return 0
 
     select_config(project_name, verbose=True)
