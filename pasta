@@ -132,6 +132,14 @@ def select_config(project_name=None, verbose=True):
     return True
 
 
+def requires_config(func):
+    def wrapper(*args, **kwargs):
+        if not config:
+            select_config()
+        func(*args, **kwargs)
+    return wrapper
+
+
 class PastaShell(Cmd):
     prompt = 'PaStA>>> '
     intro = 'Welcome to PaStA\'s interactive shell. Type ? for a list of all commands'
