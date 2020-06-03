@@ -146,9 +146,46 @@ class PastaShell(Cmd):
         print('*** Unknown syntax: %s' % line)
         return False
 
+    def do_config(self, line):
+        line = line.split()
+        if len(line) == 0:
+            if config:
+                log.info('Active configuration: %s' % config.project_name)
+            else:
+                log.info('No configuration loaded')
+            return
+        sub = line.pop(0)
+        if len(line) > 1 or sub not in ['load', 'save']:
+            log.error('Unknown command: config %s %s' % (sub, ' '.join(line)))
+            return
+
+        project_name = None
+        if len(line):
+            project_name = line[0]
+
+        if sub == 'load':
+            select_config(project_name, verbose=True)
+        elif sub == 'save':
+            if not project_name:
+                if config:
+                    project_name = config.project_name
+                else:
+                    log.error('No configuration loaded')
+                    return
+
+            if select_config(project_name, verbose=False):
+                config.set_config()
+
     def do_exit(self, line):
         log.info('Bye')
         return True
+
+    def help_config(self):
+        print(
+            'config - print current configuration\n'
+            'config load [<project_name>] - load project_name configuration. Load the default configuration of no project_name given\n'
+            'config save [<project_name>] - load project_name and set default configuration. Set the active configuration if no project provided.'
+        )
 
     def help_exit(self):
         print('Exit PaStA. Usual suspect shorthands: x q quit Ctrl-D')
