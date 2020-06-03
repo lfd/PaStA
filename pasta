@@ -56,6 +56,7 @@ __email__ = 'ralf.ramsauer@oth-regensburg.de'
 __status__ = 'Development'
 
 log = logging.getLogger('PaStA')
+config = None
 
 
 def usage(me, exit_code=errno.EINVAL):
@@ -99,8 +100,8 @@ def usage(me, exit_code=errno.EINVAL):
 
 
 def main(argv):
+    project_name = None
     me = argv.pop(0)
-    config = None
     level = logging.INFO
     debug = False
 
@@ -110,7 +111,7 @@ def main(argv):
         if argument == '-c':
             if not argv:
                 usage(me)
-            config = argv.pop(0)
+            project_name = argv.pop(0)
         elif argument == '-d':
             level = logging.DEBUG
             debug = True
@@ -122,9 +123,9 @@ def main(argv):
     logging.getLogger().addHandler(filehandler)
     log.info('Cmdline: ' + ' '.join(sys.argv))
 
-    if not config:
+    if not project_name:
         with open('./config', 'r') as f:
-            config = f.read().strip()
+            project_name = f.read().strip()
 
     if not argv:
         usage(me)
@@ -145,7 +146,7 @@ def main(argv):
         config.set_config()
         return 0
 
-    config = Config(config, debug)
+    config = Config(project_name, debug)
 
     if sub == '-h' or sub == '--help':
         usage(me, 0)
