@@ -154,6 +154,10 @@ class PastaShell(Cmd):
         print('*** Unknown syntax: %s' % line)
         return False
 
+    @requires_config
+    def do_compare(self, line):
+        compare(config, line.split())
+
     def do_config(self, line):
         line = line.split()
         if len(line) == 0:
@@ -187,6 +191,10 @@ class PastaShell(Cmd):
     def do_exit(self, line):
         log.info('Bye')
         return True
+
+    @requires_config
+    def help_compare(self):
+        compare(config, ['-h'])
 
     def help_config(self):
         print(
@@ -246,7 +254,10 @@ def main(argv):
         shell.cmdloop()
         return 0
 
-    if sub in ['config']:
+    if sub in [
+        'compare',
+        'config',
+    ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
         shell.onecmd(cmd)
         return 0
@@ -260,8 +271,6 @@ def main(argv):
         return check_connectivity(config, argv)
     elif sub == 'check_mbox':
         return check_mbox(config, argv)
-    elif sub == 'compare':
-        return compare(config, argv)
     elif sub == 'prepare_evaluation':
         return prepare_evaluation(config, argv)
     elif sub == 'rate':
