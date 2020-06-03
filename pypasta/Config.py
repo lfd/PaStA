@@ -102,7 +102,7 @@ class Config:
             raise FileNotFoundError('Config file \'%s\' not found' %
                                     project)
         else:
-            log.info('Active configuration: %s' % project)
+            log.info('Loading configuration: %s' % project)
 
         default_cfg = toml.load(Config.DEFAULT_CONFIG)
         cfg = toml.load(self._config_file)
