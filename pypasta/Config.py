@@ -329,7 +329,7 @@ class Config:
         return project_root, config_file
 
     @staticmethod
-    def select_config(project):
+    def set_config(project):
         _, config_file = Config.get_config_dir_file(project)
 
         if not isfile(config_file):

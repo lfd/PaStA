@@ -4,7 +4,7 @@
 PaStA - Patch Stack Analysis
 A tool for tracking the evolution of patch stacks
 
-Copyright (c) OTH Regensburg, 2016-2017
+Copyright (c) OTH Regensburg, 2016-2020
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -76,7 +76,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  prepare_evaluation\n'
           '  rate\n'
           '  sync\n'
-          '  select\n'
+          '  set_config\n'
           '  show_cluster\n'
           '  statistics\n'
           '  compare_stacks\n'
@@ -134,8 +134,9 @@ def main(argv):
         return compare_clusters(sub, argv)
     if sub == 'optimise_cluster':
         return optimise_cluster(sub, argv)
-    if sub == 'select':
-        return Config.select_config(argv[0])
+    if sub == 'set_config':
+        project_name = argv[0]
+        return Config.set_config(project_name)
 
     config = Config(config, debug)
 
