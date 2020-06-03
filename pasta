@@ -136,7 +136,14 @@ def main(argv):
         return optimise_cluster(sub, argv)
     if sub == 'set_config':
         project_name = argv[0]
-        return Config.set_config(project_name)
+        try:
+            config = Config(project_name, debug)
+        except Exception as e:
+            log.error('Unable to load configuration %s:' % project_name)
+            log.error('  %s' % str(e))
+            return -1
+        config.set_config()
+        return 0
 
     config = Config(config, debug)
 

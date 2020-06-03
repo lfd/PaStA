@@ -328,18 +328,10 @@ class Config:
 
         return project_root, config_file
 
-    @staticmethod
-    def set_config(project):
-        _, config_file = Config.get_config_dir_file(project)
-
-        if not isfile(config_file):
-            log.error('Unable to select %s: configuration missing' % project)
-            return -1
-
+    def set_config(self):
+        log.info('Set %s as default configuration' % self.project_name)
         with open('./config', 'w') as config_select:
-            config_select.write('%s\n' % project)
-
-        log.info('Successfully set active configuration: %s' % project)
+            config_select.write('%s\n' % self.project_name)
 
     @staticmethod
     def fail_result_not_exists(filename):
