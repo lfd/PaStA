@@ -19,6 +19,7 @@ details.
 """
 
 import errno
+import gc
 import logging
 import sys
 
@@ -103,6 +104,34 @@ def usage(me, exit_code=errno.EINVAL):
     sys.exit(exit_code)
 
 
+def select_config(project_name=None, verbose=True):
+    global config
+
+    if not project_name:
+        with open('./config', 'r') as f:
+            project_name = f.read().strip()
+
+    # We have nothing to do if the configuration is already loaded
+    if config and config.project_name == project_name:
+        if verbose:
+            log.info('Already active: %s' % project_name)
+        return True
+
+    # Try to load the new configuration
+    try:
+        tmp = Config(project_name)
+    except Exception as e:
+        log.error('Unable to load %s: %s' % (project_name, str(e)))
+        return False
+
+    # We need to reload the configuration object. Delete the current one, if existent
+    if config:
+        del config
+        gc.collect()
+    config = tmp
+    return True
+
+
 class PastaShell(Cmd):
     prompt = 'PaStA>>> '
     intro = 'Welcome to PaStA\'s interactive shell. Type ? for a list of all commands'
@@ -128,6 +157,8 @@ class PastaShell(Cmd):
 
 
 def main(argv):
+    global config
+
     project_name = None
     me = argv.pop(0)
     level = logging.INFO
@@ -149,10 +180,6 @@ def main(argv):
     logging.getLogger().addHandler(filehandler)
     log.info('Cmdline: ' + ' '.join(sys.argv))
 
-    if not project_name:
-        with open('./config', 'r') as f:
-            project_name = f.read().strip()
-
     if not argv:
         usage(me)
 
@@ -162,14 +189,11 @@ def main(argv):
     if sub == 'optimise_cluster':
         return optimise_cluster(argv)
     if sub == 'set_config':
+        if len(argv) != 1:
+            usage(me, -1)
         project_name = argv[0]
-        try:
-            config = Config(project_name)
-        except Exception as e:
-            log.error('Unable to load configuration %s:' % project_name)
-            log.error('  %s' % str(e))
-            return -1
-        config.set_config()
+        if select_config(project_name, verbose=True):
+            config.set_config()
         return 0
 
     if sub == 'shell':
@@ -177,7 +201,7 @@ def main(argv):
         shell.cmdloop()
         return 0
 
-    config = Config(project_name)
+    select_config(project_name, verbose=True)
     if sub == '-h' or sub == '--help':
         usage(me, 0)
     elif sub == 'analyse':
