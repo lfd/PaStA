@@ -89,6 +89,7 @@ class Config:
         PATCHSTACK = "patchstack"
 
     def __init__(self, project, debug):
+        self.project_name = project
         self.debug = debug
         self._project_root, self._config_file = \
             Config.get_config_dir_file(project)
@@ -103,7 +104,6 @@ class Config:
         else:
             log.info('Active configuration: %s' % project)
 
-
         default_cfg = toml.load(Config.DEFAULT_CONFIG)
         cfg = toml.load(self._config_file)
 
@@ -113,11 +113,6 @@ class Config:
         merge_dicts(default_cfg, cfg)
 
         pasta = cfg['PaStA']
-
-        # Obligatory values
-        self.project_name = pasta.get('PROJECT_NAME')
-        if not self.project_name:
-            raise RuntimeError('Project name not found')
 
         self._mode = Config.Mode(pasta['MODE'])
 
