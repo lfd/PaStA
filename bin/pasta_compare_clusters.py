@@ -61,8 +61,8 @@ def prec_rec(ground_truth, prediction):
     log.info('  F-Measure: %f' % fmeasure)
 
 
-def compare_clusters(prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def compare_clusters(argv):
+    parser = argparse.ArgumentParser(prog='compare_clusters',
                                      description='Compare Equivalence Classes')
     parser.add_argument('classes', metavar='eqclass', type=str, nargs=2,
                         help='Ground Truth / Prediction')

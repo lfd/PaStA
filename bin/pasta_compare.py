@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
 from pypasta import *
 
 
-def compare(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='compare patches')
+def compare(config, argv):
+    parser = argparse.ArgumentParser(prog='compare', description='compare patches')
 
     parser.add_argument('-n', action='store_false', default=True,
                         help = 'don\'t use a pager')

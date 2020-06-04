@@ -21,8 +21,8 @@ from pypasta import *
 log = getLogger(__name__[-15:])
 
 
-def check_connectivity(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def check_connectivity(config, argv):
+    parser = argparse.ArgumentParser(prog='check_connectivity',
                                      description='Check result connectivity')
 
     parser.add_argument('-d', dest='d', default=False, action='store_true')

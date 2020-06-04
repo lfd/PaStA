@@ -16,14 +16,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from pypasta import *
 
 
-def optimise_cluster(prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
-                                     description='Optimise an equiv\' class')
-    parser.add_argument('eqclass', metavar='eqclass', type=str,
+def optimise_cluster(argv):
+    parser = argparse.ArgumentParser(prog='optimise_cluster',
+                                     description='Optimise a clustering')
+    parser.add_argument('clustering', metavar='clustering', type=str,
                         help='Equivalence class file')
 
     args = parser.parse_args(argv)
 
-    res = Clustering.from_file(args.eqclass, must_exist=True)
+    res = Clustering.from_file(args.clustering, must_exist=True)
     res.optimize()
-    res.to_file(args.eqclass)
+    res.to_file(args.clustering)

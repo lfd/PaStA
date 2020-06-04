@@ -83,9 +83,8 @@ def find_cherries(repo, commit_hashes, dest_list):
     return cherries
 
 
-def analyse(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
-                                     description='Analyse patch stacks')
+def analyse(config, argv):
+    parser = argparse.ArgumentParser(prog='analyse', description='Analyse patch stacks')
 
     # thresholds
     parser.add_argument('-th', dest='thres_heading', metavar='threshold',

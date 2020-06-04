@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
 from pypasta import *
 
 
-def show_cluster(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='compare patches')
+def show_cluster(config, argv):
+    parser = argparse.ArgumentParser(prog='show_cluster', description='compare patches')
 
     parser.add_argument('-n', action='store_false', default=True,
                         help = 'don\'t use a pager')

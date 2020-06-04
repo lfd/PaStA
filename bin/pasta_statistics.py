@@ -20,8 +20,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
 from pypasta import *
 
 
-def statistics(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
+def statistics(config, argv):
+    parser = argparse.ArgumentParser(prog='statistics', description='Interactive Rating: Rate evaluation results')
     parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['AD', 'CD', 'SRD'],
                         help='Date selector: Either Author Date, Commit Date or Stack Release Date (default: %(default)s)')
     parser.add_argument('-noR', dest='R', action='store_false', help='Don\'t invoke R')

@@ -59,7 +59,7 @@ def describe_commit(commit):
     return commit_hash, (branch_name, author_date, commit_date, release_date)
 
 
-def patch_descriptions(config, prog, argv):
+def patch_descriptions(config, argv):
     repo = config.repo
     global _tmp_repo
     _tmp_repo = gitpython.Repo(config.repo_location)

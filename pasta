@@ -130,9 +130,9 @@ def main(argv):
 
     sub = argv.pop(0)
     if sub == 'compare_clusters':
-        return compare_clusters(sub, argv)
+        return compare_clusters(argv)
     if sub == 'optimise_cluster':
-        return optimise_cluster(sub, argv)
+        return optimise_cluster(argv)
     if sub == 'set_config':
         project_name = argv[0]
         try:
@@ -149,37 +149,37 @@ def main(argv):
     if sub == '-h' or sub == '--help':
         usage(me, 0)
     elif sub == 'analyse':
-        return analyse(config, sub, argv)
+        return analyse(config, argv)
     elif sub == 'check_connectivity':
-        return check_connectivity(config, sub, argv)
+        return check_connectivity(config, argv)
     elif sub == 'check_mbox':
-        return check_mbox(config, sub, argv)
+        return check_mbox(config, argv)
     elif sub == 'compare':
-        return compare(config, sub, argv)
+        return compare(config, argv)
     elif sub == 'prepare_evaluation':
-        return prepare_evaluation(config, sub, argv)
+        return prepare_evaluation(config, argv)
     elif sub == 'rate':
-        return rate(config, sub, argv)
+        return rate(config, argv)
     elif sub == 'statistics':
-        return statistics(config, sub, argv)
+        return statistics(config, argv)
     elif sub == 'compare_stacks':
-        return compare_stacks(config, sub, argv)
+        return compare_stacks(config, argv)
     elif sub == 'form_patchwork_relations':
-        return form_patchwork_relations(config, sub, argv)
+        return form_patchwork_relations(config, argv)
     elif sub == 'patch_descriptions':
-        return patch_descriptions(config, sub, argv)
+        return patch_descriptions(config, argv)
     elif sub == 'ripup':
-        return ripup(config, sub, argv)
+        return ripup(config, argv)
     elif sub == 'show_cluster':
-        return show_cluster(config, sub, argv)
+        return show_cluster(config, argv)
     elif sub == 'sync':
-        return sync(config, sub, argv)
+        return sync(config, argv)
     elif sub == 'upstream_history':
-        return pasta_upstream_history(config, sub, argv)
+        return pasta_upstream_history(config, argv)
     elif sub == 'upstream_duration':
-        return upstream_duration(config, sub, argv)
+        return upstream_duration(config, argv)
     elif sub == 'web':
-        return web(config, sub, argv)
+        return web(config, argv)
     else:
         print('Unknown command: %s' % sub)
         usage(me)

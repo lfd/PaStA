@@ -19,8 +19,8 @@ from pypasta import *
 log = getLogger(__name__[-15:])
 
 
-def form_patchwork_relations(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def form_patchwork_relations(config, argv):
+    parser = argparse.ArgumentParser(prog='form_patchwork_relations',
                                      description='Form patch groups using Patchwork IDs instead of Message IDs')
     parser.add_argument('-infile', metavar='infile', default=config.f_clustering,
                         help='The patch groups file to be used as input. '

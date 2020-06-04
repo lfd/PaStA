@@ -22,8 +22,8 @@ from pypasta import *
 log = getLogger(__name__[-15:])
 
 
-def rate(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def rate(config, argv):
+    parser = argparse.ArgumentParser(prog='rate',
                                      description='classify results of analysis')
 
     # evaluation result and patch groups

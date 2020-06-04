@@ -154,7 +154,7 @@ def mbox():
     return render_mbox(patch, history)
 
 
-def web(c, prog, argv):
+def web(c, argv):
     global config
     global cluster
     config = c

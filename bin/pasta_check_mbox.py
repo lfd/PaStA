@@ -40,8 +40,8 @@ def load_subject(message_id):
     return message_id, subject
 
 
-def check_mbox(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def check_mbox(config, argv):
+    parser = argparse.ArgumentParser(prog='check_mbox',
                                      description='Check consistency of mailbox '
                                                  'result')
 

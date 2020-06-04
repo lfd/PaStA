@@ -343,8 +343,8 @@ def prepare_patch_review(repo, clustering):
     log.info("Total clusters found by pasta: {}".format(len(clusters)))
 
 
-def prepare_evaluation(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def prepare_evaluation(config, argv):
+    parser = argparse.ArgumentParser(prog='prepare_evaluation',
                                      description='aggregate commit and patch info')
 
     parser.add_argument('--ignored',

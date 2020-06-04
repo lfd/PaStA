@@ -28,8 +28,8 @@ def upstream_duration(repo, date_selector, cluster, rep):
     return delta
 
 
-def pasta_upstream_history(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def pasta_upstream_history(config, argv):
+    parser = argparse.ArgumentParser(prog='upstream_history',
                                      description='Interactive Rating: Rate '
                                                  'evaluation results')
     parser.add_argument('-ds', dest='date_selector', default='SRD',

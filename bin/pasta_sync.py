@@ -44,8 +44,8 @@ def remove_if_exist(filename):
         os.remove(filename)
 
 
-def sync(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def sync(config, argv):
+    parser = argparse.ArgumentParser(prog='sync',
                                      description='Manage PaStA\'s resources')
 
     choices = ['downstream', 'upstream', 'all']

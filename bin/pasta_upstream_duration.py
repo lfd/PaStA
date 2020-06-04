@@ -69,8 +69,8 @@ def upstream_duration_of_group(group):
            ymd(youngest_upstream_date), len(untagged), len(tagged), delta
 
 
-def upstream_duration(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def upstream_duration(config, argv):
+    parser = argparse.ArgumentParser(prog='upstream_duration',
                                      description='upstream_time')
 
     args = parser.parse_args(argv)

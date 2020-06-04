@@ -22,8 +22,8 @@ from pypasta import *
 log = getLogger(__name__[-15:])
 
 
-def ripup(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog,
+def ripup(config, argv):
+    parser = argparse.ArgumentParser(prog='ripup',
                                      description='Rip up equivalence class and '
                                                  'reanalyse')
 

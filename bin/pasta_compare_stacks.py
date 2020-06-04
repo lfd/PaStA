@@ -113,8 +113,8 @@ def compare_stack_against_upstream(repo, cluster, date_selector, stack, verbosit
     print_flow(repo, composition.none, verbosity=verbosity, indent=2)
 
 
-def compare_stacks(config, prog, argv):
-    parser = argparse.ArgumentParser(prog=prog, description='Interactive Rating: Rate evaluation results')
+def compare_stacks(config, argv):
+    parser = argparse.ArgumentParser(prog='compare_stacks', description='compare_stacks')
     parser.add_argument('-ds', dest='date_selector', default='SRD', choices=['SRD', 'CD'],
                         help='Date selector: Either Commit Date or Stack Release Date (default: %(default)s)')
     parser.add_argument('versions', metavar='version', nargs=2, help='versions to compare')
