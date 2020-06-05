@@ -15,15 +15,21 @@ the COPYING file in the top-level directory.
 
 import argparse
 import csv
+import os
+import pickle
 import re
 
 from logging import getLogger
+
+from multiprocessing import Pool, cpu_count
 from subprocess import call
 
-from pypasta.LinuxMaintainers import load_maintainers
+from tqdm import tqdm
+
+from pypasta.LinuxMaintainers import LinuxMaintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
 
-log = getLogger(__name__[-16:])
+log = getLogger(__name__[-15:])
 
 _repo = None
 _config = None
@@ -368,7 +374,7 @@ def prepare_patch_review(repo, clustering):
     log.info("Total clusters found by pasta: {}".format(len(clusters)))
 
 
-def evaluate_patches(config, prog, argv):
+def prepare_evaluation(config, prog, argv):
     parser = argparse.ArgumentParser(prog=prog,
                                      description='aggregate commit and patch info')
 
@@ -400,10 +406,6 @@ def evaluate_patches(config, prog, argv):
     if config.mode != config.Mode.MBOX:
         log.error("Only works in Mbox mode!")
         return -1
-
-    if config.mbox_use_patchwork_id:
-        log.error('pasta prepare_evaluation does not work with '
-                  'USE_PATCHWORK_ID = true')
 
     repo = config.repo
     _, clustering = config.load_cluster()
