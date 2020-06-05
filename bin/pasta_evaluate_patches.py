@@ -7,6 +7,7 @@ Copyright (c) OTH Regensburg, 2019-2020
 Authors:
   Sebastian Duda <sebastian.duda@fau.de>
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+  Anmol Singh <anmol.singh@bmw.de>
 
 This work is licensed under the terms of the GNU GPL, version 2. See
 the COPYING file in the top-level directory.
@@ -22,7 +23,7 @@ from subprocess import call
 from pypasta.LinuxMaintainers import load_maintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
 
-log = getLogger(__name__[-15:])
+log = getLogger(__name__[-16:])
 
 _repo = None
 _config = None
@@ -316,8 +317,55 @@ def prepare_off_list_patches():
     pass
 
 
-def prepare_patch_review():
-    pass
+def prepare_patch_review(repo, clustering):
+    threads = repo.mbox.load_threads()
+    clusters = list(clustering.iter_split())
+
+    def _load_responses_dict(msg_id, response_list):
+        queue = [msg_id]
+        seen = []
+        while queue:
+            next_msg = queue.pop(0)
+            if next_msg not in seen:
+                seen.append(next_msg)
+                try:
+                    next_msg_responses = list(threads.reply_to_map[next_msg])
+                    queue.extend(next_msg_responses)
+                    for resp in next_msg_responses:
+                        resp_dict = {'parent': next_msg, 'resp_msg_id': resp, 'message': repo.mbox.get_raws(resp)}
+                        response_list.append(resp_dict)
+                except KeyError:
+                    log.info("The email {} has no response".format(next_msg))
+                    continue
+        return
+
+    clusters_responses = []
+    for d, u in clusters:
+        # Handle upstream commits without patches
+        if not d:
+            cluster_dict = {}
+            try:
+                cluster_dict['cluster_id'] = clustering.get_cluster(next(iter(u)))
+                cluster_dict['upstream'] = u
+                cluster_dict['patch_id'] = None
+                cluster_dict['responses'] = None
+                clusters_responses.append(cluster_dict)
+            except KeyError:
+                log.warning("No downstream or upstream found, bad entry?...Skipping")
+        for patch_id in d:
+            # Handle entries with patches
+            cluster_dict = {'cluster_id': clustering.get_cluster(patch_id), 'patch_id': patch_id, 'upstream': u}
+
+            # Add responses for the patch
+            response_lst = []
+            _load_responses_dict(patch_id, response_lst)
+            cluster_dict['responses'] = response_lst
+            clusters_responses.append(cluster_dict)
+
+    with open('patch_responses.pickle', 'wb') as handle:
+        pickle.dump(clusters_responses, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    log.info("Done writing response info for {} patch/commit entries!".format(len(clusters)))
+    log.info("Total clusters found by pasta: {}".format(len(clusters)))
 
 
 def evaluate_patches(config, prog, argv):
@@ -370,4 +418,4 @@ def evaluate_patches(config, prog, argv):
         prepare_off_list_patches()
 
     else:
-        prepare_patch_review()
+        prepare_patch_review(repo, clustering)
