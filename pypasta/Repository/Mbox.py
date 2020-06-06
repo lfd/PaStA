@@ -489,7 +489,7 @@ class PatchworkProject(MailContainer):
         return ret
 
     def get_patchwork_id(self, message_id):
-        return self.index[message_id][0][3]
+        return str(self.index[message_id][0][3])
 
 
 class Mbox:
@@ -660,10 +660,10 @@ class Mbox:
         return self.message_id_to_lists[message_id]
 
     def get_patchwork_ids(self, message_id):
-        ret = list()
+        ret = set()
         for project in self.patchwork_projects:
             if message_id in project:
-                ret.append(project.get_patchwork_id(message_id))
+                ret |= {project.get_patchwork_id(message_id)}
         return ret
 
     def invalidate(self, invalid):
