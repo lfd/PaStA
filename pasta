@@ -155,6 +155,10 @@ class PastaShell(Cmd):
         return False
 
     @requires_config
+    def do_check_connectivity(self, line):
+        check_connectivity(config, line.split())
+
+    @requires_config
     def do_compare(self, line):
         compare(config, line.split())
 
@@ -197,6 +201,10 @@ class PastaShell(Cmd):
 
     def do_optimise_cluster(self, line):
         optimise_cluster(line.split())
+
+    @requires_config
+    def help_check_connectivity(self):
+        check_connectivity(config, ['-h'])
 
     @requires_config
     def help_compare(self):
@@ -263,6 +271,7 @@ def main(argv):
         return 0
 
     if sub in [
+        'check_connectivity',
         'compare',
         'compare_clusters',
         'config',
@@ -277,8 +286,6 @@ def main(argv):
         usage(me, 0)
     elif sub == 'analyse':
         return analyse(config, argv)
-    elif sub == 'check_connectivity':
-        return check_connectivity(config, argv)
     elif sub == 'check_mbox':
         return check_mbox(config, argv)
     elif sub == 'prepare_evaluation':

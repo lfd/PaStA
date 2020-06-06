@@ -27,7 +27,11 @@ def check_connectivity(config, argv):
 
     parser.add_argument('-d', dest='d', default=False, action='store_true')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
+
     repo = config.repo
     f_cluster, cluster = config.load_cluster()
 
