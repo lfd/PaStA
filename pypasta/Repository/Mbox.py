@@ -488,6 +488,9 @@ class PatchworkProject(MailContainer):
 
         return ret
 
+    def get_patchwork_id(self, message_id):
+        return self.index[message_id][0][3]
+
 
 class Mbox:
     def __init__(self, config):
@@ -655,6 +658,13 @@ class Mbox:
 
     def get_lists(self, message_id):
         return self.message_id_to_lists[message_id]
+
+    def get_patchwork_ids(self, message_id):
+        ret = list()
+        for project in self.patchwork_projects:
+            if message_id in project:
+                ret.append(project.get_patchwork_id(message_id))
+        return ret
 
     def invalidate(self, invalid):
         self.invalid |= set(invalid)
