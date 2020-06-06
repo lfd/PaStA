@@ -43,6 +43,7 @@ from bin.pasta_patch_descriptions import patch_descriptions
 from bin.pasta_upstream_duration import upstream_duration
 from bin.pasta_upstream_history import pasta_upstream_history
 from bin.pasta_web import web
+from bin.pasta_form_patchwork_relations import form_patchwork_relations
 
 
 __author__ = 'Ralf Ramsauer'
@@ -70,6 +71,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  check_connectivity\n'
           '  check_mbox\n'
           '  compare\n'
+          '  form_patchwork_relations\n'
           '  optimise_cluster\n'
           '  prepare_evaluation\n'
           '  rate\n'
@@ -155,6 +157,8 @@ def main(argv):
         return statistics(config, sub, argv)
     elif sub == 'compare_stacks':
         return compare_stacks(config, sub, argv)
+    elif sub == 'form_patchwork_relations':
+        return form_patchwork_relations(config, sub, argv)
     elif sub == 'patch_descriptions':
         return patch_descriptions(config, sub, argv)
     elif sub == 'ripup':
