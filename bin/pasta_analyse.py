@@ -131,7 +131,10 @@ def analyse(config, argv):
                              'e.g.: v0.1..v0.2 (default: %s)' %
                              config.upstream_range)
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
 
     config.thresholds.heading = args.thres_heading
     config.thresholds.filename = args.thres_filename
