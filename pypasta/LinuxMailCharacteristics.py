@@ -141,6 +141,42 @@ def ignore_tlds(addresses):
     return {ignore_tld(address) for address in addresses if address}
 
 
+class MaintainerMetrics:
+    def __init__(self, c):
+        self.all_lists_one_mtr_per_sub = False
+        self.one_list_and_mtr = False
+        self.one_list_mtr_per_sub = False
+        self.one_list = False
+        self.one_list_or_mtr = False
+
+        # Metric: All lists + at least one maintainer per subsystem
+        # needs to be addressed correctly
+        if (not c.mtrs_has_lists or c.mtrs_has_list_per_subsystem) and \
+           (not c.mtrs_has_maintainers or c.mtrs_has_maintainer_per_subsystem):
+            self.all_lists_one_mtr_per_sub = True
+
+        # Metric: At least one correct list + at least one correct maintainer
+        if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and \
+           (not c.mtrs_has_maintainers or c.mtrs_has_one_correct_maintainer):
+            self.one_list_and_mtr = True
+
+        # Metric: One correct list + one maintainer per subsystem
+        if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and c.mtrs_has_maintainer_per_subsystem:
+            self.one_list_mtr_per_sub = True
+
+        # Metric: One correct list
+        if not c.mtrs_has_lists or c.has_one_correct_list:
+            self.one_list = True
+
+        # Metric: One correct list or one correct maintainer
+        if c.mtrs_has_lists and c.mtrs_has_one_correct_list:
+            self.one_list_or_mtr = True
+        elif c.mtrs_has_maintainers and c.mtrs_has_one_correct_maintainer:
+            self.one_list_or_mtr = True
+        if not c.mtrs_has_lists and not c.mtrs_has_maintainers:
+            self.one_list_or_mtr = c.mtrs_has_linux_kernel
+
+
 class LinuxMailCharacteristics:
     REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
     REGEX_COVER = re.compile('\[.*patch.*\s0+/.*\].*', re.IGNORECASE)
@@ -291,6 +327,8 @@ class LinuxMailCharacteristics:
             if len(s_lists) and len(s_lists & recipients) == 0:
                 self.mtrs_has_list_per_subsystem = False
 
+        self.maintainer_metrics = MaintainerMetrics(self)
+
     def _is_stable_review(self, message, patch):
         if 'X-Mailer' in message and \
            'LinuxStableQueue' in message['X-Mailer']:
@@ -376,6 +414,7 @@ class LinuxMailCharacteristics:
         self.mtrs_has_maintainer_per_subsystem = None
         self.mtrs_has_list_per_subsystem = None
         self.mtrs_has_linux_kernel = None
+        self.maintainer_metrics = None
 
         message = repo.mbox.get_messages(message_id)[0]
         thread = repo.mbox.threads.get_thread(message_id)

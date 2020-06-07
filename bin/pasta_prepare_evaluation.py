@@ -122,37 +122,6 @@ def get_relevant_patches(characteristics):
     return relevant
 
 
-def check_correct_maintainer_patch(c):
-    # Metric: All lists + at least one maintainer per subsystem
-    # needs to be addressed correctly
-    #if (not c.mtrs_has_lists or c.mtrs_has_list_per_subsystem) and \
-    #   (not c.mtrs_has_maintainers or c.mtrs_has_maintainer_per_subsystem):
-    #    return True
-
-    # Metric: At least one correct list + at least one correct maintainer
-    #if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and \
-    #   (not c.mtrs_has_maintainers or c.mtrs_has_one_correct_maintainer):
-    #    return True
-
-    # Metric: One correct list + one maintainer per subsystem
-    #if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and c.mtrs_has_maintainer_per_subsystem:
-    #    return True
-
-    # Metric: One correct list
-    #if (not c.mtrs_has_lists or has_one_correct_list):
-    #    return True
-
-    # Metric: One correct list or one correct maintainer
-    if c.mtrs_has_lists and c.mtrs_has_one_correct_list:
-        return True
-    elif c.mtrs_has_maintainers and c.mtrs_has_one_correct_maintainer:
-        return True
-    if not c.mtrs_has_lists and not c.mtrs_has_maintainers:
-        return c.mtrs_has_linux_kernel
-
-    return False
-
-
 def load_maintainers(tag):
     pyrepo = _repo.repo
 
