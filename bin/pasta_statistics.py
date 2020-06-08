@@ -82,7 +82,7 @@ def statistics(config, prog, argv):
 
     if args.R:
         print('Invoke R')
-        call(['./R/PaStA.R',
+        call(['./analyses/PaStA.R',
               config.project_name,
               r_resources,
               release_sort_filename,
