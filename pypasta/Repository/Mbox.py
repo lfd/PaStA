@@ -97,11 +97,11 @@ class PatchMail(MessageDiff):
         raise ValueError('Unable to find suitable payload')
 
     def __init__(self, mail, identifier):
-        mail, payload = self.extract_patch_mail(mail)
-        self.mail_subject = mail['Subject']
-
         # Get informations on the author
         date = mail_parse_date(mail['Date'], assume_epoch=True)
+
+        mail, payload = self.extract_patch_mail(mail)
+        self.mail_subject = mail['Subject']
 
         author = str(mail['From'])
         author_name, author_email = email.utils.parseaddr(author)
