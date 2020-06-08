@@ -285,7 +285,7 @@ def prepare_ignored_patches(config, repo, clustering):
     _dump_characteristics(repo, characteristics, ignored_patches_related,
                           relevant, config.f_characteristics)
 
-    call(['./R/ignored_patches.R', config.d_rout, config.f_characteristics])
+    call(['./analyses/ignored_patches.R', config.d_rout, config.f_characteristics])
 
 
 def prepare_off_list_patches():
