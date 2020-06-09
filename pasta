@@ -249,6 +249,10 @@ class PastaShell(Cmd):
         sync(config, line.split())
 
     @requires_config
+    def do_upstream_duration(self, line):
+        upstream_duration(config, line.split())
+
+    @requires_config
     def do_upstream_history(self, line):
         upstream_history(config, line.split())
 
@@ -317,6 +321,10 @@ class PastaShell(Cmd):
         sync(config, ['-h'])
 
     @requires_config
+    def help_upstream_duration(self):
+        upstream_duration(config, ['-h'])
+
+    @requires_config
     def help_upstream_history(self):
         upstream_history(config, ['-h'])
 
@@ -381,6 +389,7 @@ def main(argv):
         'show_cluster',
         'statistics',
         'sync',
+        'upstream_duration',
         'upstream_history',
     ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
@@ -392,8 +401,6 @@ def main(argv):
         usage(me, 0)
     elif sub == 'form_patchwork_relations':
         return form_patchwork_relations(config, argv)
-    elif sub == 'upstream_duration':
-        return upstream_duration(config, argv)
     elif sub == 'web':
         return web(config, argv)
     else:

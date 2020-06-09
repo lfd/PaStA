@@ -73,7 +73,11 @@ def upstream_duration(config, argv):
     parser = argparse.ArgumentParser(prog='upstream_duration',
                                      description='upstream_time')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
+
     global repo
     repo = config.repo
 
