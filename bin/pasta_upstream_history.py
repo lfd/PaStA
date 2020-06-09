@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2019
+Copyright (c) OTH Regensburg, 2016-2020
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -13,8 +13,13 @@ import functools
 import os
 import sys
 
+from logging import getLogger
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from pypasta import *
+
+
+log = getLogger(__name__[-15:])
 
 
 def upstream_duration(repo, date_selector, cluster, rep):
@@ -28,7 +33,7 @@ def upstream_duration(repo, date_selector, cluster, rep):
     return delta
 
 
-def pasta_upstream_history(config, argv):
+def upstream_history(config, argv):
     parser = argparse.ArgumentParser(prog='upstream_history',
                                      description='Interactive Rating: Rate '
                                                  'evaluation results')
@@ -36,7 +41,14 @@ def pasta_upstream_history(config, argv):
                         choices=['SRD', 'CD'],
                         help='Date selector: Either Commit Date or Stack Release'
                              ' Date (default: %(default)s)')
-    args = parser.parse_args(argv)
+
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
+
+    log.error('currently broken')
+    return
 
     config.fail_no_patch_groups()
     # !FIXME Not align with current API

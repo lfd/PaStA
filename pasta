@@ -44,7 +44,7 @@ from bin.pasta_sync import sync
 from bin.pasta_compare_stacks import compare_stacks
 from bin.pasta_patch_descriptions import patch_descriptions
 from bin.pasta_upstream_duration import upstream_duration
-from bin.pasta_upstream_history import pasta_upstream_history
+from bin.pasta_upstream_history import upstream_history
 from bin.pasta_web import web
 from bin.pasta_form_patchwork_relations import form_patchwork_relations
 
@@ -249,6 +249,10 @@ class PastaShell(Cmd):
         sync(config, line.split())
 
     @requires_config
+    def do_upstream_history(self, line):
+        upstream_history(config, line.split())
+
+    @requires_config
     def help_analyse(self):
         analyse(config, ['-h'])
 
@@ -312,6 +316,10 @@ class PastaShell(Cmd):
     def help_sync(self):
         sync(config, ['-h'])
 
+    @requires_config
+    def help_upstream_history(self):
+        upstream_history(config, ['-h'])
+
     do_EOF = do_exit
 
 
@@ -373,6 +381,7 @@ def main(argv):
         'show_cluster',
         'statistics',
         'sync',
+        'upstream_history',
     ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
         shell.onecmd(cmd)
@@ -383,8 +392,6 @@ def main(argv):
         usage(me, 0)
     elif sub == 'form_patchwork_relations':
         return form_patchwork_relations(config, argv)
-    elif sub == 'upstream_history':
-        return pasta_upstream_history(config, argv)
     elif sub == 'upstream_duration':
         return upstream_duration(config, argv)
     elif sub == 'web':
