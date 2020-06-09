@@ -26,7 +26,11 @@ def show_cluster(config, argv):
     parser.add_argument('patch', metavar='representative', type=str,
                         help='Commit hash / Mail ID')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
+
     repo = config.repo
 
     _, cluster = config.load_cluster()
