@@ -53,11 +53,14 @@ def check_mbox(config, argv):
                         action='store_true', help='Respect author date')
     parser.add_argument('range', type=str, nargs=1, help='Revision range')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
 
     if config.mode != config.Mode.MBOX:
         log.error('Only works in Mbox mode!')
-        return -1
+        return
 
     global repo
     repo = config.repo
@@ -108,7 +111,7 @@ def check_mbox(config, argv):
              (len(found), len(found) + len(not_found)))
 
     if not args.lookup:
-        return 0
+        return
 
     ids = repo.mbox.get_ids(allow_invalid=True)
     valid_ids = repo.mbox.get_ids(allow_invalid=False)

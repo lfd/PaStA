@@ -163,6 +163,10 @@ class PastaShell(Cmd):
         check_connectivity(config, line.split())
 
     @requires_config
+    def do_check_mbox(self, line):
+        check_mbox(config, line.split())
+
+    @requires_config
     def do_compare(self, line):
         compare(config, line.split())
 
@@ -213,6 +217,10 @@ class PastaShell(Cmd):
     @requires_config
     def help_check_connectivity(self):
         check_connectivity(config, ['-h'])
+
+    @requires_config
+    def help_check_mbox(self):
+        check_mbox(config, ['-h'])
 
     @requires_config
     def help_compare(self):
@@ -281,6 +289,7 @@ def main(argv):
     if sub in [
         'analyse',
         'check_connectivity',
+        'check_mbox',
         'compare',
         'compare_clusters',
         'config',
@@ -293,8 +302,6 @@ def main(argv):
     select_config(project_name, verbose=True)
     if sub == '-h' or sub == '--help':
         usage(me, 0)
-    elif sub == 'check_mbox':
-        return check_mbox(config, argv)
     elif sub == 'prepare_evaluation':
         return prepare_evaluation(config, argv)
     elif sub == 'rate':
