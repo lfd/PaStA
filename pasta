@@ -233,6 +233,10 @@ class PastaShell(Cmd):
         rate(config, line.split())
 
     @requires_config
+    def do_ripup(self, line):
+        ripup(config, line.split())
+
+    @requires_config
     def do_statistics(self, line):
         statistics(config, line.split())
 
@@ -283,6 +287,10 @@ class PastaShell(Cmd):
     @requires_config
     def help_rate(self):
         rate(config, ['-h'])
+
+    @requires_config
+    def help_ripup(self):
+        ripup(config, ['-h'])
 
     @requires_config
     def help_statistics(self):
@@ -345,6 +353,7 @@ def main(argv):
         'patch_descriptions',
         'prepare_evaluation',
         'rate',
+        'ripup',
         'statistics',
     ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
@@ -356,8 +365,6 @@ def main(argv):
         usage(me, 0)
     elif sub == 'form_patchwork_relations':
         return form_patchwork_relations(config, argv)
-    elif sub == 'ripup':
-        return ripup(config, argv)
     elif sub == 'show_cluster':
         return show_cluster(config, argv)
     elif sub == 'sync':

@@ -61,7 +61,11 @@ def ripup(config, argv):
                         default=config.thresholds.author_date_interval,
                         help='Author date interval (default: %(default)s)')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
+
     representatives = args.reps
     repo = config.repo
     mbox = config.mode == Config.Mode.MBOX
