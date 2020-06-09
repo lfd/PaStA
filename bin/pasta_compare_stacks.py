@@ -121,7 +121,11 @@ def compare_stacks(config, argv):
     parser.add_argument('-v', nargs='?', metavar='level', action=VAction,
                         dest='verbose', default=0, help='Verbosity level -v -vv -v 2')
     parser.set_defaults(R=True)
-    args = parser.parse_args(argv)
+
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
 
     # !FIXME This code is not aligned with current API
     config.fail_no_patch_groups()

@@ -173,6 +173,10 @@ class PastaShell(Cmd):
     def do_compare_clusters(self, line):
         compare_clusters(line.split())
 
+    @requires_config
+    def do_compare_stacks(self, line):
+        compare_stacks(config, line.split())
+
     def do_config(self, line):
         line = line.split()
         if len(line) == 0:
@@ -240,6 +244,10 @@ class PastaShell(Cmd):
 
     def help_compare_clusters(self):
         compare_clusters(['-h'])
+
+    @requires_config
+    def help_compare_stacks(self):
+        compare_stacks(config, ['-h'])
 
     def help_config(self):
         print(
@@ -316,6 +324,7 @@ def main(argv):
         'check_mbox',
         'compare',
         'compare_clusters',
+        'compare_stacks',
         'config',
         'optimise_cluster',
         'prepare_evaluation',
@@ -329,8 +338,6 @@ def main(argv):
     select_config(project_name, verbose=True)
     if sub == '-h' or sub == '--help':
         usage(me, 0)
-    elif sub == 'compare_stacks':
-        return compare_stacks(config, argv)
     elif sub == 'form_patchwork_relations':
         return form_patchwork_relations(config, argv)
     elif sub == 'maintainers_stats':
