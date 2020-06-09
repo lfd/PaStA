@@ -257,6 +257,10 @@ class PastaShell(Cmd):
         upstream_history(config, line.split())
 
     @requires_config
+    def do_web(self, line):
+        web(config, line.split())
+
+    @requires_config
     def help_analyse(self):
         analyse(config, ['-h'])
 
@@ -391,6 +395,7 @@ def main(argv):
         'sync',
         'upstream_duration',
         'upstream_history',
+        'web',
     ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
         shell.onecmd(cmd)
@@ -401,8 +406,6 @@ def main(argv):
         usage(me, 0)
     elif sub == 'form_patchwork_relations':
         return form_patchwork_relations(config, argv)
-    elif sub == 'web':
-        return web(config, argv)
     else:
         print('Unknown command: %s' % sub)
         usage(me)
