@@ -13,11 +13,14 @@ the COPYING file in the top-level directory.
 import os
 import sys
 
+from logging import getLogger
 from subprocess import call
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 '..')))
 from pypasta import *
+
+log = getLogger(__name__[-15:])
 
 
 def statistics(config, argv):
@@ -34,6 +37,9 @@ def statistics(config, argv):
         return
 
     # !FIXME Not aligned with current API
+    log.error('statistics is currently broken')
+    return
+
     config.fail_no_patch_groups()
     psd = config.psd
     repo = config.repo
