@@ -50,7 +50,10 @@ def rate(config, argv):
     parser.add_argument('-p', dest='enable_pager', action='store_true',
                         default=False, help='Enable pager')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
 
     config.thresholds.autoaccept = args.thres_accept
     config.thresholds.interactive = args.thres_interactive
