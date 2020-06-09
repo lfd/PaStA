@@ -1,9 +1,13 @@
 """
 PaStA - Patch Stack Analysis
+
 Copyright (c) Bayerische Motoren Werke Aktiengesellschaft (BMW AG), 2020
-Copyright (c) OTH Regensburg, 2019-2020
+Copyright (c) OTH Regensburg, 2020
+
 Authors:
   Basak Erdamar <basakerdamar@gmail.com>
+  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de
+
 This work is licensed under the terms of the GNU GPL, version 2. See
 the COPYING file in the top-level directory.
 """
@@ -13,7 +17,7 @@ import pygit2
 import sys
 
 from argparse import ArgumentParser
-from collections import defaultdict
+from collections import defaultdict, Counter
 from csv import writer
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
@@ -27,7 +31,7 @@ log = getLogger(__name__[-15:])
 
 # We need this global variable, as pygit2 Commit.tree objects are not pickleable
 _tmp_tree = None
-
+_all_maintainers = None
 
 
 def walk_commit_tree(tree):
@@ -57,16 +61,14 @@ def get_tree(repo, revision):
     return tree
 
 
-def decreasing_order(dictionary):
-    return sorted(dictionary.items(), key=lambda item:item[1].loc, reverse=True)
-
-
-def get_file_size(filename):
+def get_file_map(filename):
     blob = _tmp_tree[filename]
     lines = blob.data.count(b'\n')
     size = blob.size
 
-    return filename, (lines, size)
+    sections = _all_maintainers.get_subsystems_by_file(filename)
+
+    return filename, (lines, size, sections)
 
 
 def pretty_name(maintainer):
@@ -80,76 +82,18 @@ def status(all_maintainers, section_name):
         return ''
 
 
-class Counter:
-    def __init__(self, loc=0, byte=0, filter=None):
-        self.loc = loc
-        self.byte = byte
-        self.loc_filt = 0
-        self.byte_filt = 0
-        if filter:
-            self.loc_filt = loc
-            self.byte_filt = byte
+def dump_csv(title, data, filename):
+    if filename:
+        # implement csv writing stuff...
+        return
 
-    def increase(self, loc, byte, filter):
-        self.loc += loc
-        self.byte += byte
-        if filter:
-            self.loc_filt += loc
-            self.byte_filt += byte
+    # El Cheapo pretty printer.
+    headers = '\t\t'.join([header[0] for header in title])
+    formats = '\t\t'.join([header[1] for header in title])
 
-    def display_in_filter(self):
-        # whether to show this item in filtered view or not
-        if self.byte_filt > 0:
-            return True
-        return False
-
-
-def get_counts(all_maintainers, file_sizes, filter_by_files, group_by):
-    counts = defaultdict(Counter)
-    if  group_by == 'sections':
-        filename_excluded = defaultdict(list)
-        filenames_filt = defaultdict(list)
-    else:
-        maintainer_to_section = defaultdict(set)
-    for filename, (loc, byte) in file_sizes.items():
-        sections = all_maintainers.get_subsystems_by_file(filename)
-        sections -= {'THE REST'}
-        for section in sections:
-            if group_by == 'sections':
-                counts[section].increase(loc, byte, filename in filter_by_files)
-                if filename in filter_by_files:
-                    filenames_filt[section].append(filename)
-                else:
-                    filename_excluded[section].append(filename)
-            else:
-                _, maintainers, _ = all_maintainers.get_maintainers(section)
-                for maintainer in maintainers:
-                    name = pretty_name(maintainer)
-                    maintainer_to_section[name].add(section)
-                    counts[name].increase(loc, byte, filename in filter_by_files)
-
-    if len(filter_by_files) > 0:
-        # If filter is given, only return the relevant lines:
-        counts = {name:item for name,item in counts.items()
-                    if item.display_in_filter()}
-    if group_by == 'sections':
-        return decreasing_order(counts), filename_excluded, filenames_filt
-    else:
-        return decreasing_order(counts), maintainer_to_section
-
-
-def get_sections_by_files(all_maintainers, filenames):
-    results = []
-    for filename in filenames:
-        sections = all_maintainers.get_subsystems_by_file(filename)
-        sections -= {'THE REST'}
-        # To get a sense of how large the section is and order by it, look at
-        # how many different patterns it includes:
-        # all_maintainers.subsystems[section].files
-        sections = sorted(sections, 
-         key=lambda section: len(all_maintainers.subsystems[section].files))
-        results.append([filename, sections])
-    return results
+    print(headers)
+    for entry in data:
+        print(formats % entry)
 
 
 def maintainers_stats(config, sub, argv):
@@ -196,80 +140,122 @@ def maintainers_stats(config, sub, argv):
     tree = get_tree(repo.repo, kernel_revision)
     all_filenames = walk_commit_tree(tree)
 
+    if args.group_by == 'files':
+        filenames = filter_by_files if len(filter_by_files) else all_filenames
+
+        title = [('%30s' % 'Filename', '%30.30s'),
+                 ('Sections of file', '%s')]
+        results = []
+        for filename in filenames:
+            sections = all_maintainers.get_subsystems_by_file(filename)
+            sections -= {'THE REST'}
+            results.append((filename, sections))
+
+        dump_csv(title, results, args.outfile)
+        return
+
+    # We end up here in case of args.group_by in {'sections', 'maintainers'}
     global _tmp_tree
+    global _all_maintainers
+
     _tmp_tree = tree
+    _all_maintainers = all_maintainers
     processes = int(cpu_count())
     p = Pool(processes=processes, maxtasksperchild=1)
-    result = p.map(get_file_size, all_filenames)
+    file_map = p.map(get_file_map, all_filenames)
     p.close()
     p.join()
+
     _tmp_tree = None
+    _all_maintainers = None
 
-    file_sizes = dict(result)
+    file_map = dict(file_map)
 
-    if  args.group_by == 'sections':# or not args.group_by:
-        title = ['Sections','LoC']
-        results, irrelevant_dirs, relevant_dirs = \
-         get_counts(all_maintainers, file_sizes, filter_by_files, args.group_by)
-    elif args.group_by == 'maintainers':
-        title = ['Maintainers', 'LoC']
-        results, maintainer_to_section = \
-         get_counts(all_maintainers, file_sizes, filter_by_files, args.group_by)
-    elif args.group_by == 'files':
-        title = ['File name', 'Sections of file']
-        victims = filter_by_files if len(filter_by_files) else all_filenames
-        results = get_sections_by_files(all_maintainers, victims)
+    # An object is the kind of the analysis, and reflects the target. A target
+    # can either be a section or the maintainer.
+
+    # Maps Section/Maintainer to a Counter
+    object_stats = defaultdict(Counter)
+    # Maps Section/Maintainer to a set of files
+    object_files = defaultdict(set)
+
+    relevant = defaultdict(Counter)
+
+    #############################################
+    # Routines that handle differences between
+    # maintainer / section grouping
+    #############################################
+    # Routines that are chosen in case of --group-by maintainers
+    def _evaluator_maintainers(file, lines, size, section):
+        _, mtrs, _ = all_maintainers.get_maintainers(section)
+        for mtr in mtrs:
+            object_files[mtr].add(file)
+            object_stats[mtr].update(lines=lines, size=size)
+
+    def _filter_sections(section, lines, size):
+        relevant[section].update(lines=lines, size=size)
+
+    # Routines that are chosen in case of --group-by sections
+    def _evaluator_sections(file, lines, size, section):
+        object_files[section].add(file)
+        object_stats[section].update(lines=lines, size=size)
+
+    def _filter_maintainers(section, lines, size):
+        _, mtrs, _ = all_maintainers.get_maintainers(section)
+        for mtr in mtrs:
+            relevant[mtr].update(lines=lines, size=size)
+    #############################################
+
+    # Choose the right routines
+    _title, _evaluator, _filter = {
+        'maintainers': ('Maintainers',
+                        _evaluator_maintainers,
+                        _filter_maintainers),
+
+        'sections': ('Sections',
+                     _evaluator_sections,
+                     _filter_sections),
+    }[args.group_by]
+
+    # First of all, fill object_{stats, file}
+    for file, (lines, size, sections) in file_map.items():
+        for section in sections:
+            _evaluator(file, lines, size, section)
+
+    # Do we have to respect any filters?
+    for file in filter_by_files:
+        lines, size, sections = file_map[file]
+        for section in sections:
+            _filter(section, lines, size)
+
+    # Fill the first two fields of the title
+    title = [('%30s' % _title, '%30.30s'),
+             ('Sum Lines', '%9u')]
+
+    result = list()
+    if len(relevant):
+        title += [('Lines in filter',  '%15u'),
+                  ('Lines percentage', '%16.2f'),
+                  ('Relevant files',   '%s')]
+
+        for object, counter in relevant.items():
+            object_stat = object_stats[object]
+            lines_percentage = counter['lines'] / object_stat['lines']
+
+            result.append((object,
+                           object_stat['lines'],
+                           counter['lines'],
+                           lines_percentage,
+                           {filename for filename in object_files[object] if
+                            filename in filter_by_files}))
+
+        # sort by lines percentage
+        result.sort(key=lambda x: x[3])
     else:
-        parser.print_help()
-        sys.exit()
+        for object, counter in object_stats.items():
+            result.append((object, counter['lines']))
 
-    fields = dict()
-    fields['Maintainers'] = fields['Sections'] = fields['File name'] =\
-                                                         lambda item : item[0]
-    fields['LoC in list'] = lambda item : item[1].loc_filt
-    fields['Total LoC'] = fields['LoC'] = lambda item : item[1].loc
-    fields['Byte count'] = lambda item : item[1].byte
-    fields['In list(%)']=lambda item:round((item[1].loc_filt/item[1].loc)*100,2)
-    fields['Status'] = lambda item : status(all_maintainers, item[0])
-    fields['Sections of maintainer'] = \
-                         lambda item:', '.join(maintainer_to_section[item[0]])
-    fields['Irrelevant files'] = lambda item: ','.join(irrelevant_dirs[item[0]])
-    fields['Relevant files'] = lambda item: ','.join(relevant_dirs[item[0]])
-    fields['Sections of file'] = lambda item : ','.join(item[1])
-    fields['LoC of file'] = lambda item : file_sizes[item[0]][0]
+        # sort by sum lines
+        result.sort(key=lambda x: x[1])
 
-    if args.bytes:
-        title += ['Byte count']
-    if not args.smallstat:
-        if args.filter and not args.group_by == 'files':
-            title += ['LoC in list', 'In list(%)']
-            if  args.group_by == 'sections':
-                title += ['Relevant files', 'Irrelevant files']
-        if  args.group_by == 'sections':
-            title.insert(1, 'Status')
-        elif args.group_by =='maintainers':
-            title += ['Sections of maintainer']
-        elif  args.group_by == 'files' and args.filesize:
-            title.insert(1, 'LoC of file')
-
-
-    results = [[fields[field](item) for field in title] for item in results]
-    results.insert(0, title)
-    if args.outfile:
-        with open(args.outfile, 'w+') as csv_file:
-            csv_writer = writer(csv_file)
-            csv_writer.writerows(results)
-    else:
-        width = len(max(list(zip(*results))[0], key = len))
-        _, columns = os.popen('stty size', 'r').read().split()
-        columns = int(columns)
-        for line in results:
-            line_s = str(line[0]).ljust(width+4)
-            for item in line[1:]:
-                line_s += str(item).ljust(15)
-            if len(line_s) > columns:
-                print(line_s[0:columns-3]+"...")
-            else:
-                print(line_s)
-
-    return 0
+    dump_csv(title, result, args.outfile)
