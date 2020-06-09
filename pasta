@@ -245,6 +245,10 @@ class PastaShell(Cmd):
         statistics(config, line.split())
 
     @requires_config
+    def do_sync(self, line):
+        sync(config, line.split())
+
+    @requires_config
     def help_analyse(self):
         analyse(config, ['-h'])
 
@@ -303,6 +307,10 @@ class PastaShell(Cmd):
     @requires_config
     def help_statistics(self):
         statistics(config, ['-h'])
+
+    @requires_config
+    def help_sync(self):
+        sync(config, ['-h'])
 
     do_EOF = do_exit
 
@@ -364,6 +372,7 @@ def main(argv):
         'ripup',
         'show_cluster',
         'statistics',
+        'sync',
     ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
         shell.onecmd(cmd)

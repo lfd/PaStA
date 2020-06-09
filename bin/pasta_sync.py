@@ -63,7 +63,11 @@ def sync(config, argv):
     parser.add_argument('-noup', action='store_true', default=False,
                         help='Don\'t synchronise internal index files. ')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
+
     repo = config.repo
     is_mbox = config.mode == Config.Mode.MBOX
 
