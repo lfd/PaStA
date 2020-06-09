@@ -62,46 +62,19 @@ log = logging.getLogger('PaStA')
 config = None
 
 
-def usage(me, exit_code=errno.EINVAL):
-    file = sys.stdout
-    if exit_code != 0:
-        file = sys.stderr
+def usage(shell):
+    print(
+        'PaStA - The Patch Stack Analysis (PaStA v%s)\n'
+        '\n'
+        'usage: pasta [-d] sub {[args...] | [-h|--help]}\n'
+        ' -d: enable debug messages\n\n'
+        'By default, PaStA will choose the configuration stored in \'./config\'.\n'
+        'Available subcommands are listed below. Type \'pasta sub -h\' to get\n'
+        'help for a specific subcommand. Type \'pasta shell\' to start an\n'
+        'interactive shell.'
+        % __version__)
 
-    print('PaStA - The Patch Stack Analysis (PaStA %s)\n'
-          '\n'
-          'usage: %s [-d] [-c project_name] sub [-h|--help]\n'
-          'where sub is one of:\n'
-          '  analyse\n'
-          '  check_connectivity\n'
-          '  check_mbox\n'
-          '  compare\n'
-          '  form_patchwork_relations\n'
-          '  maintainers_stats\n'
-          '  optimise_cluster\n'
-          '  prepare_evaluation\n'
-          '  rate\n'
-          '  set_config\n'
-          '  shell\n'
-          '  sync\n'
-          '  show_cluster\n'
-          '  statistics\n'
-          '  compare_stacks\n'
-          '  compare_clusters\n'
-          '  patch_descriptions\n'
-          '  ripup\n'
-          '  upstream_history\n'
-          '  web\n'
-          '\n'
-          'If -c is not provided, PaStA will choose ./config as config file\n'
-          '\n'
-          '%s\n'
-          'Licensed under %s (See COPYING)\n'
-          'This is free software: you are free to change and redistribute it.\n'
-          'There is NO WARRANTY, to the extent permitted by law.\n'
-          '\n'
-          'Written by %s.' %
-          (__version__, me, __copyright__, __license__, __author__), file=file)
-    sys.exit(exit_code)
+    shell.onecmd('?')
 
 
 def select_config(project_name=None, verbose=True):
@@ -142,7 +115,8 @@ def requires_config(func):
 
 class PastaShell(Cmd):
     prompt = 'PaStA>>> '
-    intro = 'Welcome to PaStA\'s interactive shell. Type ? for a list of all commands'
+    intro = 'PaStA - The Patch Stack Analysis (PaStA %s)\n' \
+            'Type ? for a list of all commands' % (__version__)
 
     def __init__(self):
         super(PastaShell, self).__init__()
@@ -344,19 +318,21 @@ class PastaShell(Cmd):
 def main(argv):
     global config
 
-    project_name = None
-    me = argv.pop(0)
-    level = logging.INFO
+    # drop the name of the command
+    argv.pop(0)
 
+    shell = PastaShell()
+    level = logging.INFO
     while len(argv) and argv[0].startswith('-'):
         argument = argv.pop(0)
-
-        if argument == '-c':
-            if not argv:
-                usage(me)
-            project_name = argv.pop(0)
-        elif argument == '-d':
+        if argument == '-d':
             level = logging.DEBUG
+        elif argument in {'-h', '--help'}:
+            usage(shell)
+            return 0
+        else:
+            usage(shell)
+            return -1
 
     fmt = '%(asctime)-15s %(name)-15s %(levelname)-8s %(message)s'
     logging.basicConfig(level=level, stream=sys.stdout, format=fmt)
@@ -366,54 +342,18 @@ def main(argv):
     log.info('Cmdline: ' + ' '.join(sys.argv))
 
     if not argv:
-        usage(me)
+        usage(shell)
+        return -1
 
     sub = argv.pop(0)
-    if sub == 'set_config':
-        if len(argv) != 1:
-            usage(me, -1)
-        project_name = argv[0]
-        if select_config(project_name, verbose=True):
-            config.set_config()
-        return 0
-
-    shell = PastaShell()
     if sub == 'shell':
         shell.cmdloop()
         return 0
 
-    if sub in [
-        'analyse',
-        'check_connectivity',
-        'check_mbox',
-        'compare',
-        'compare_clusters',
-        'compare_stacks',
-        'config',
-        'form_patchwork_relations',
-        'maintainers_stats'
-        'optimise_cluster',
-        'patch_descriptions',
-        'prepare_evaluation',
-        'rate',
-        'ripup',
-        'show_cluster',
-        'statistics',
-        'sync',
-        'upstream_duration',
-        'upstream_history',
-        'web',
-    ]:
-        cmd = '%s %s' % (sub, ' '.join(argv))
-        shell.onecmd(cmd)
-        return 0
+    cmd = '%s %s' % (sub, ' '.join(argv))
+    ret = shell.onecmd(cmd)
 
-    select_config(project_name, verbose=True)
-    if sub == '-h' or sub == '--help':
-        usage(me, 0)
-    else:
-        print('Unknown command: %s' % sub)
-        usage(me)
+    return ret is not None
 
 
 if __name__ == '__main__':
