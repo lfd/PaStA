@@ -219,6 +219,10 @@ class PastaShell(Cmd):
         rate(config, line.split())
 
     @requires_config
+    def do_statistics(self, line):
+        statistics(config, line.split())
+
+    @requires_config
     def help_analyse(self):
         analyse(config, ['-h'])
 
@@ -257,6 +261,10 @@ class PastaShell(Cmd):
     @requires_config
     def help_rate(self):
         rate(config, ['-h'])
+
+    @requires_config
+    def help_statistics(self):
+        statistics(config, ['-h'])
 
     do_EOF = do_exit
 
@@ -312,6 +320,7 @@ def main(argv):
         'optimise_cluster',
         'prepare_evaluation',
         'rate',
+        'statistics',
     ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
         shell.onecmd(cmd)
@@ -320,8 +329,6 @@ def main(argv):
     select_config(project_name, verbose=True)
     if sub == '-h' or sub == '--help':
         usage(me, 0)
-    elif sub == 'statistics':
-        return statistics(config, argv)
     elif sub == 'compare_stacks':
         return compare_stacks(config, argv)
     elif sub == 'form_patchwork_relations':

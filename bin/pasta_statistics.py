@@ -27,7 +27,11 @@ def statistics(config, argv):
     parser.add_argument('-noR', dest='R', action='store_false', help='Don\'t invoke R')
     parser.add_argument('-noEx', dest='Ex', action='store_false', help='Don\'t export data')
     parser.set_defaults(R=True)
-    args = parser.parse_args(argv)
+
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
 
     # !FIXME Not aligned with current API
     config.fail_no_patch_groups()
