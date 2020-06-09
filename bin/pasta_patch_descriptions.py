@@ -59,12 +59,15 @@ def describe_commit(commit):
     return commit_hash, (branch_name, author_date, commit_date, release_date)
 
 
-def patch_descriptions(config, argv):
+def patch_descriptions(config):
     repo = config.repo
     global _tmp_repo
     _tmp_repo = gitpython.Repo(config.repo_location)
     global _config
     _config = config
+
+    log.error('currently broken')
+    return
 
     # !FIXME This code is not aligned with current API
     # similar patch groups

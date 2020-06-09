@@ -215,6 +215,12 @@ class PastaShell(Cmd):
         optimise_cluster(line.split())
 
     @requires_config
+    def do_patch_descriptions(self, line):
+        if len(line.split()):
+            log.error('Unknown arguments: %s' % line)
+        patch_descriptions(config)
+
+    @requires_config
     def do_prepare_evaluation(self, line):
         prepare_evaluation(config, line.split())
 
@@ -327,6 +333,7 @@ def main(argv):
         'compare_stacks',
         'config',
         'optimise_cluster',
+        'patch_descriptions',
         'prepare_evaluation',
         'rate',
         'statistics',
@@ -342,8 +349,6 @@ def main(argv):
         return form_patchwork_relations(config, argv)
     elif sub == 'maintainers_stats':
         return maintainers_stats(config, argv)
-    elif sub == 'patch_descriptions':
-        return patch_descriptions(config, argv)
     elif sub == 'ripup':
         return ripup(config, argv)
     elif sub == 'show_cluster':
