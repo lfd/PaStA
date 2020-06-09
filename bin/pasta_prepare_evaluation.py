@@ -367,14 +367,18 @@ def prepare_evaluation(config, argv):
                         dest='mode',
                         help='prepare data for patch review analysis \n')
 
-    analysis_option = parser.parse_args(argv)
+    try:
+        analysis_option = parser.parse_args(argv)
+    except SystemExit:
+        return
 
     if not analysis_option.mode:
-        parser.error("No action requested, one of --ignored, --off-list, or --review must be given")
+        log.error("No action requested, one of --ignored, --off-list, or --review must be given")
+        return
 
     if config.mode != config.Mode.MBOX:
         log.error("Only works in Mbox mode!")
-        return -1
+        return
 
     repo = config.repo
     _, clustering = config.load_cluster()

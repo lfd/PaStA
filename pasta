@@ -211,6 +211,10 @@ class PastaShell(Cmd):
         optimise_cluster(line.split())
 
     @requires_config
+    def do_prepare_evaluation(self, line):
+        prepare_evaluation(config, line.split())
+
+    @requires_config
     def help_analyse(self):
         analyse(config, ['-h'])
 
@@ -241,6 +245,10 @@ class PastaShell(Cmd):
 
     def help_optimise_cluster(self):
         optimise_cluster(['-h'])
+
+    @requires_config
+    def help_prepare_evaluation(self):
+        prepare_evaluation(config, ['-h'])
 
     do_EOF = do_exit
 
@@ -294,6 +302,7 @@ def main(argv):
         'compare_clusters',
         'config',
         'optimise_cluster',
+        'prepare_evaluation',
     ]:
         cmd = '%s %s' % (sub, ' '.join(argv))
         shell.onecmd(cmd)
@@ -302,8 +311,6 @@ def main(argv):
     select_config(project_name, verbose=True)
     if sub == '-h' or sub == '--help':
         usage(me, 0)
-    elif sub == 'prepare_evaluation':
-        return prepare_evaluation(config, argv)
     elif sub == 'rate':
         return rate(config, argv)
     elif sub == 'statistics':
