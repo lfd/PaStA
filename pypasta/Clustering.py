@@ -181,6 +181,11 @@ class Clustering:
                              filter(lambda x: len(x[0]) == 0, cluster_list)])
 
         for downstreams, upstreams in downstream_list:
+            # Convert to string representation. In this way, we can also handle other
+            # types than pure strings, like integers.
+            downstreams = [str(x) for x in downstreams]
+            upstreams = [str(x) for x in upstreams]
+
             retval += ' '.join(downstreams)
             if len(upstreams):
                 retval += ' %s %s' % (Clustering.SEPARATOR, ' '.join(upstreams))
