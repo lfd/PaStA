@@ -29,11 +29,14 @@ def form_patchwork_relations(config, argv):
                         default=os.path.join(config.project_root, 'resources', 'patch-groups-patchwork'),
                         help='Name of the output file')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
 
     if config.mode != config.Mode.MBOX:
         log.error('Only works in Mbox mode!')
-        return -1
+        return
 
     config.repo.register_mbox(config)
     mbox = config.repo.mbox

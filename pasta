@@ -211,6 +211,9 @@ class PastaShell(Cmd):
         log.info('Bye')
         return True
 
+    def do_form_patchwork_relations(self, line):
+        form_patchwork_relations(config, line.split())
+
     @requires_config
     def do_maintainers_stats(self, line):
         maintainers_stats(config, line.split())
@@ -292,6 +295,9 @@ class PastaShell(Cmd):
 
     def help_exit(self):
         print('Exit PaStA. Usual suspect shorthands: x q quit Ctrl-D')
+
+    def help_form_patchwork_relations(self):
+        form_patchwork_relations(config, ['-h'])
 
     @requires_config
     def help_maintainers_stats(self):
@@ -384,6 +390,7 @@ def main(argv):
         'compare_clusters',
         'compare_stacks',
         'config',
+        'form_patchwork_relations',
         'maintainers_stats'
         'optimise_cluster',
         'patch_descriptions',
@@ -404,8 +411,6 @@ def main(argv):
     select_config(project_name, verbose=True)
     if sub == '-h' or sub == '--help':
         usage(me, 0)
-    elif sub == 'form_patchwork_relations':
-        return form_patchwork_relations(config, argv)
     else:
         print('Unknown command: %s' % sub)
         usage(me)
