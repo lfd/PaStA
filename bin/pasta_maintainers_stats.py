@@ -75,7 +75,7 @@ def pretty_name(maintainer):
     return maintainer[0]+' <'+maintainer[1]+'>'
 
 
-def status(all_maintainers, section_name):
+def get_status(all_maintainers, section_name):
     if any(all_maintainers.subsystems[section_name].status):
         return all_maintainers.subsystems[section_name].status[0].value
     else:
@@ -83,8 +83,12 @@ def status(all_maintainers, section_name):
 
 
 def dump_csv(title, data, filename):
+
     if filename:
-        # implement csv writing stuff...
+        with open(filename, 'w+') as csv_file:
+            csv_writer = writer(csv_file)
+            csv_writer.writerow([header[0] for header in title])
+            csv_writer.writerows(data)
         return
 
     # El Cheapo pretty printer.
@@ -107,16 +111,15 @@ def maintainers_stats(config, sub, argv):
                         'enter the file name for the file containing the list '
                         'of files to filter by.')
     parser.add_argument('--group-by', type=str, default='sections',
+                        choices={'maintainers', 'sections', 'files'},
                         help='files option '
-                        'Displays files with corresponding sections\n'
+                        'displays files with corresponding sections. '
                         'sections option groups files by sections, displays '
-                        'sections ordered by lines of code they include\n'
+                        'sections ordered by lines of code they include. '
                         'maintainers option groups files by sections, displays '
                         'each maintainer ordered by lines of code they are '
-                        'responsible for\n'
+                        'responsible for. '
                         'Default is sections if no value is specified')
-    parser.add_argument('--filesize', action='store_true', 
-                                        help='Display file sizes in file mode')
     parser.add_argument('--revision', type=str, help='Specify a commit hash or '
                         'a version name for a Linux repo')
 
@@ -143,13 +146,13 @@ def maintainers_stats(config, sub, argv):
     if args.group_by == 'files':
         filenames = filter_by_files if len(filter_by_files) else all_filenames
 
-        title = [('%30s' % 'Filename', '%30.30s'),
-                 ('Sections of file', '%s')]
+        title = [('%-30s' % 'Filename', '%-30.30s'),
+                 ('Sections of file', '%-s')]
         results = []
         for filename in filenames:
             sections = all_maintainers.get_subsystems_by_file(filename)
             sections -= {'THE REST'}
-            results.append((filename, sections))
+            results.append((filename, ', '.join(sections)))
 
         dump_csv(title, results, args.outfile)
         return
@@ -229,31 +232,62 @@ def maintainers_stats(config, sub, argv):
             _filter(section, lines, size)
 
     # Fill the first two fields of the title
-    title = [('%30s' % _title, '%30.30s'),
-             ('Sum Lines', '%9u')]
+    title = [('%-30s' % _title, '%-30.30s'),
+             ('Sum Lines', '%-9u')]
+
+    if args.bytes:
+        title += [('File size',   '%-15u')]
+
+    if args.group_by == 'sections':
+        title += [('Status',   '%-10s')]
 
     result = list()
+
     if len(relevant):
-        title += [('Lines in filter',  '%15u'),
-                  ('Lines percentage', '%16.2f'),
-                  ('Relevant files',   '%s')]
+        title += [('Lines in filter',  '%-15u'),
+                  ('Lines percentage', '%-16.2f'),
+                  ('Relevant files',   '%-s')]
+
 
         for object, counter in relevant.items():
             object_stat = object_stats[object]
             lines_percentage = counter['lines'] / object_stat['lines']
 
-            result.append((object,
-                           object_stat['lines'],
-                           counter['lines'],
-                           lines_percentage,
-                           {filename for filename in object_files[object] if
-                            filename in filter_by_files}))
+            item = (object if not args.group_by == 'maintainers' 
+                                            else pretty_name(object),
+                    object_stat['lines'])
+            
+            if args.bytes:
+                item += (object_stat['size'],)
+
+            if args.group_by == 'sections':
+                item += (get_status(all_maintainers, object), )
+
+            item += (
+                     counter['lines'],
+                     lines_percentage,
+                     ', '.join({filename for filename in object_files[object] 
+                                               if filename in filter_by_files}))
+
+
+            result.append(item)
 
         # sort by lines percentage
         result.sort(key=lambda x: x[3])
     else:
         for object, counter in object_stats.items():
-            result.append((object, counter['lines']))
+
+            item = (object if not args.group_by == 'maintainers' 
+                                            else pretty_name(object),
+                    counter['lines'])
+
+            if args.bytes:
+                item += (counter['size'],)
+
+            if args.group_by == 'sections':
+                item += (get_status(all_maintainers, object), )
+
+            result.append(item)
 
         # sort by sum lines
         result.sort(key=lambda x: x[1])
