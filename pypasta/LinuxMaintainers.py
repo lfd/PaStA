@@ -29,6 +29,7 @@ class Matcher:
         regex = regex.replace('*', '([^/]*)')
         # A ? means it can be any character besides '/'
         regex = regex.replace('?', '([^/])')
+        # Regexes like abc.[ch] don't need any rewrite rules.
 
         # If the regex ends with /, then we can match anything behind the /
         if regex[-1] == '/':
@@ -60,7 +61,8 @@ class Matcher:
             if entry[-1] == '*':
                 self.regexes.append(self.regex_rewrite(entry + '/'))
 
-            if '*' in entry or '?' in entry or entry[-1] == '/':
+            if any({x in entry for x in {'*', '?', '[', ']'}}) or \
+               entry[-1] == '/':
                 self.regexes.append(self.regex_rewrite(entry))
             else:
                 self.direct_match.append(entry)
