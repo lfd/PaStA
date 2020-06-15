@@ -87,7 +87,7 @@ class NMatcher:
             self.expressions.append(re.compile(expression))
 
 
-class LinuxSubsystem:
+class Section:
     DESCRIPTOR_REGEX = re.compile(r'([A-Z]):\s*(.*)')
     EMAIL_RAW_REGEX = r'\S+@\S+\.\S+'
 
@@ -113,24 +113,24 @@ class LinuxSubsystem:
 
     @staticmethod
     def parse_person(value):
-        match = LinuxSubsystem.EMAIL_DEFAULT_REGEX.match(value)
+        match = Section.EMAIL_DEFAULT_REGEX.match(value)
         if match:
             return [(match.group(1).strip(), match.group(2))]
 
-        match = LinuxSubsystem.EMAIL_MM_REGEX.match(value)
+        match = Section.EMAIL_MM_REGEX.match(value)
         if match:
             return [('', match.group(1)), ('', match.group(2))]
 
-        match = LinuxSubsystem.EMAIL_NMM_REGEX.match(value)
+        match = Section.EMAIL_NMM_REGEX.match(value)
         if match:
             raise NotImplementedError('IMPLEMENT ME %s' % value)
 
-        match = LinuxSubsystem.EMAIL_NMNM_REGEX.match(value)
+        match = Section.EMAIL_NMNM_REGEX.match(value)
         if match:
             return [(match.group(1), match.group(2)),
                     (match.group(3), match.group(4))]
 
-        match = LinuxSubsystem.EMAIL_MAIL_REGEX.match(value)
+        match = Section.EMAIL_MAIL_REGEX.match(value)
         if match:
             return [('', match.group(1))]
 
@@ -216,7 +216,7 @@ class LinuxSubsystem:
                     value = 'buried'
 
                 stati = [x.strip().lower() for x in value.split('/')]
-                self.status += [LinuxSubsystem.Status(x) for x in stati]
+                self.status += [Section.Status(x) for x in stati]
             elif type == 'F':
                 self.files.append(value)
             elif type == 'W':
@@ -250,34 +250,34 @@ class LinuxSubsystem:
 
 
 class LinuxMaintainers:
-    def get_subsystems_by_files(self, filenames):
-        subsystems = set()
+    def get_sections_by_files(self, filenames):
+        sections = set()
         for file in filenames:
             if file.startswith('linux/'):
                 file = file[len('linux/'):]
-            subsystems |= self.get_subsystems_by_file(file)
+            sections |= self.get_sections_by_file(file)
 
-        return subsystems
+        return sections
 
-    def get_subsystems_by_file(self, filename):
-        subsystems = set()
-        for subsystem in self.subsystems.values():
-            if subsystem.match(filename):
-                subsystems.add(subsystem.description)
-        return subsystems
+    def get_sections_by_file(self, filename):
+        sections = set()
+        for section in self.sections.values():
+            if section.match(filename):
+                sections.add(section.description)
+        return sections
 
-    def get_maintainers(self, subsystem):
-        return self.subsystems[subsystem].get_maintainers()
+    def get_maintainers(self, section):
+        return self.sections[section].get_maintainers()
 
     def __getitem__(self, item):
-        return self.subsystems[item]
+        return self.sections[item]
 
     def __init__(self, maintainers):
-        self.subsystems = dict()
+        self.sections = dict()
 
-        def add_subsystem(content):
-            subsys = LinuxSubsystem(content)
-            self.subsystems[subsys.description] = subsys
+        def add_section(content):
+            section = Section(content)
+            self.sections[section.description] = section
 
         # For all versions, we can drop the first ~70 lines
         maintainers = maintainers.splitlines()[70:]
@@ -290,11 +290,11 @@ class LinuxMaintainers:
         for line in maintainers:
             if len(line.strip()) == 0:
                 if len(tmp):
-                    add_subsystem(tmp)
+                    add_section(tmp)
                 tmp = list()
             else:
                 tmp.append(line)
-        add_subsystem(tmp)
+        add_section(tmp)
 
 def load_maintainer(repo, revision):
     maintainers = repo.get_blob(revision, 'MAINTAINERS')
