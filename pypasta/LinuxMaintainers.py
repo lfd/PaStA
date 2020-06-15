@@ -42,7 +42,7 @@ class Matcher:
         if filename in self.direct_match:
             return True
 
-        for regex in self.wildcards:
+        for regex in self.regexes:
             if regex.match(filename):
                 return True
 
@@ -52,16 +52,16 @@ class Matcher:
         # Walk over files, look for wildcard entries and convert them to proper
         # python regexes
         self.direct_match = list()
-        self.wildcards = list()
+        self.regexes = list()
 
         for entry in files:
             # If the last character is a wildcard, we need to respect subdirs
             # that could be completed from the wildcard
             if entry[-1] == '*':
-                self.wildcards.append(self.regex_rewrite(entry + '/'))
+                self.regexes.append(self.regex_rewrite(entry + '/'))
 
             if '*' in entry or '?' in entry or entry[-1] == '/':
-                self.wildcards.append(self.regex_rewrite(entry))
+                self.regexes.append(self.regex_rewrite(entry))
             else:
                 self.direct_match.append(entry)
 
