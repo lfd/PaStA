@@ -145,19 +145,19 @@ def maintainers_stats(config, argv):
     all_maintainers = LinuxMaintainers(repo, kernel_revision)
     tree = get_tree(repo.repo, kernel_revision)
     all_filenames = walk_commit_tree(tree)
+    result = list()
 
     if args.group_by == 'files':
         filenames = filter_by_files if len(filter_by_files) else all_filenames
 
         headers = [('%-30s' % 'Filename', '%-30.30s', 'filename'),
                    ('Sections of file', '%-s', 'sections')]
-        results = []
         for filename in filenames:
             sections = all_maintainers.get_sections_by_file(filename)
             sections -= {'THE REST'}
-            results.append((filename, ', '.join(sections)))
+            result.append((filename, ', '.join(sections)))
 
-        dump_csv(headers, [0, 1], results, args.csv)
+        dump_csv(headers, [0, 1], result, args.csv)
         return
 
     # We end up here in case of args.group_by in {'sections', 'maintainers'}
@@ -247,7 +247,6 @@ def maintainers_stats(config, argv):
                ('Relevant files', '%-s', 'relevant_files'),
                ('%-10s' % 'status', '%-10s', 'status')]
 
-    result = list()
     for object, counter in relevant.items():
         object_stat = object_stats[object]
         lines_percentage = counter['lines'] / object_stat['lines']
