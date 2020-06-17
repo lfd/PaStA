@@ -272,7 +272,14 @@ class LinuxMaintainers:
     def __getitem__(self, item):
         return self.sections[item]
 
-    def __init__(self, maintainers):
+    def __init__(self, repo, revision):
+        maintainers = repo.get_blob(revision, 'MAINTAINERS')
+        try:
+            maintainers = maintainers.decode('utf-8')
+        except:
+            # older versions use ISO8859
+            maintainers = maintainers.decode('iso8859')
+
         self.sections = dict()
 
         def add_section(content):
@@ -296,19 +303,9 @@ class LinuxMaintainers:
                 tmp.append(line)
         add_section(tmp)
 
-def load_maintainer(repo, revision):
-    maintainers = repo.get_blob(revision, 'MAINTAINERS')
-    try:
-        maintainers = maintainers.decode('utf-8')
-    except:
-        # older versions use ISO8859
-        maintainers = maintainers.decode('iso8859')
-
-    return LinuxMaintainers(maintainers)
-
 
 def _load_maintainer(revision):
-    return revision, load_maintainer(_repo, revision)
+    return revision, LinuxMaintainers(_repo, revision)
 
 
 def load_maintainers(config, versions):
