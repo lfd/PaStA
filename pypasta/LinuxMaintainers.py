@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+import pygit2
 import re
 
 from enum import Enum
@@ -31,17 +32,15 @@ class Matcher:
         regex = regex.replace('?', '([^/])')
         # Regexes like abc.[ch] don't need any rewrite rules.
 
-        # If the regex ends with /, then we can match anything behind the /
-        if regex[-1] == '/':
-            regex += '.*'
-
-        regex = '^%s$' % regex
-
-        return re.compile(regex)
+        return regex
 
     def match(self, filename):
         if filename in self.direct_match:
             return True
+
+        for prefix in self.dir_prefix:
+            if filename.startswith(prefix):
+                return True
 
         for regex in self.regexes:
             if regex.match(filename):
@@ -49,23 +48,43 @@ class Matcher:
 
         return False
 
-    def __init__(self, files):
+    def __init__(self, files, tree):
         # Walk over files, look for wildcard entries and convert them to proper
         # python regexes
         self.direct_match = list()
-        self.regexes = list()
+        self.dir_prefix = set()
+        self.regexes = set()
 
         for entry in files:
-            # If the last character is a wildcard, we need to respect subdirs
-            # that could be completed from the wildcard
-            if entry[-1] == '*':
-                self.regexes.append(self.regex_rewrite(entry + '/'))
+            contains_regex = any({x in entry for x in {'*', '?', '[', ']'}})
+            if not contains_regex and entry[-1] != '/':
+                if entry in tree:
+                    object = tree[entry]
+                    if isinstance(object, pygit2.Blob):
+                        self.direct_match.append(entry)
+                    elif isinstance(object, pygit2.Tree):
+                        self.dir_prefix.add(entry + '/')
+                    continue
+                else:
+                    log.debug('Referenced MAINTAINERS entry not in git tree: %s' % entry)
+                    # We can simply ignore an entry that does not even exist
+                    continue
 
-            if any({x in entry for x in {'*', '?', '[', ']'}}) or \
-               entry[-1] == '/':
-                self.regexes.append(self.regex_rewrite(entry))
-            else:
-                self.direct_match.append(entry)
+            ends_on_slash = entry[-1] == '/'
+            if ends_on_slash:
+                if contains_regex:
+                    entry = self.regex_rewrite(entry)
+                # Match everything beyond the directory
+                entry = '^%s.*$' % entry
+                self.regexes.add(re.compile(entry))
+                continue
+
+            if contains_regex:
+                entry = '^%s$' % self.regex_rewrite(entry)
+                self.regexes.add(re.compile(entry))
+                continue
+
+            raise NotImplementedError('Unknown entry: %s' % entry)
 
 
 class NMatcher:
@@ -157,7 +176,7 @@ class Section:
     def get_maintainers(self):
         return self.list, self.mail + self.person, self.reviewers
 
-    def __init__(self, entry):
+    def __init__(self, repo, revision, entry):
         self.description = list()
 
         self.mail = list()
@@ -244,8 +263,9 @@ class Section:
             else:
                 raise RuntimeError('Unknown Maintainer Entry: %s' % line)
 
-        self.matcher = Matcher(self.files)
-        self.xmatcher = Matcher(self.xfiles)
+        tree = repo.get_tree(revision)
+        self.matcher = Matcher(self.files, tree)
+        self.xmatcher = Matcher(self.xfiles, tree)
         self.nmatcher = NMatcher(self.regex_patterns)
 
 
@@ -283,7 +303,7 @@ class LinuxMaintainers:
         self.sections = dict()
 
         def add_section(content):
-            section = Section(content)
+            section = Section(repo, revision, content)
             self.sections[section.description] = section
 
         # For all versions, we can drop the first ~70 lines
