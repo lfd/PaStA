@@ -15,7 +15,10 @@ the COPYING file in the top-level directory.
 
 import argparse
 import csv
+import dask.dataframe as dd
+import flat_table
 import os
+import pandas as pd
 import pickle
 import re
 
@@ -154,7 +157,6 @@ def load_all_maintainers(ret, repo):
     if len(tags) == 0:
         return ret, False
 
-
     global _repo
     _repo = repo
     p = Pool(processes=cpu_count())
@@ -292,7 +294,7 @@ def prepare_off_list_patches():
     pass
 
 
-def prepare_patch_review(repo, clustering):
+def prepare_patch_review(config, repo, clustering):
     threads = repo.mbox.load_threads()
     clusters = list(clustering.iter_split())
 
@@ -337,10 +339,22 @@ def prepare_patch_review(repo, clustering):
             cluster_dict['responses'] = response_lst
             clusters_responses.append(cluster_dict)
 
-    with open('patch_responses.pickle', 'wb') as handle:
+    with open(config.f_responses_pkl, 'wb') as handle:
         pickle.dump(clusters_responses, handle, protocol=pickle.HIGHEST_PROTOCOL)
     log.info("Done writing response info for {} patch/commit entries!".format(len(clusters)))
     log.info("Total clusters found by pasta: {}".format(len(clusters)))
+
+
+def pre_process_response_data(config):
+    pass
+
+
+def merge_pre_processed_response_dfs():
+    pass
+
+
+def filter_bots():
+    pass
 
 
 def prepare_evaluation(config, prog, argv):
@@ -348,28 +362,25 @@ def prepare_evaluation(config, prog, argv):
                                      description='aggregate commit and patch info')
 
     parser.add_argument('--ignored',
-                        action='store_const',
-                        const='ignored',
-                        dest='mode',
+                        action='store_true',
+                        default=False,
                         help='prepare data for patch analysis \n'
                              'prepare data for ignored patch analysis \n'
                         )
 
-    parser.add_argument('--off-list',
-                        action='store_const',
-                        const='off-list',
-                        dest='mode',
+    parser.add_argument('--offlist',
+                        action='store_true',
+                        default=False,
                         help='prepare data for off-list patch analysis \n')
 
     parser.add_argument('--review',
-                        action='store_const',
-                        const='review',
-                        dest='mode',
+                        default=None,
+                        choices=['prepare', 'preprocess', 'merge', 'filter'],
                         help='prepare data for patch review analysis \n')
 
     analysis_option = parser.parse_args(argv)
 
-    if not analysis_option.mode:
+    if len(argv) == 0:
         parser.error("No action requested, one of --ignored, --off-list, or --review must be given")
 
     if config.mode != config.Mode.MBOX:
@@ -382,11 +393,19 @@ def prepare_evaluation(config, prog, argv):
 
     config.load_ccache_mbox()
 
-    if analysis_option.mode == 'ignored':
+    if analysis_option.ignored:
         prepare_ignored_patches(config, repo, clustering)
 
-    elif analysis_option.mode == 'off-list':
+    elif analysis_option.offlist:
         prepare_off_list_patches()
 
     else:
-        prepare_patch_review(repo, clustering)
+        if analysis_option.review == 'prepare':
+            prepare_patch_review(config, repo, clustering)
+        elif analysis_option.review == 'preprocess':
+            pre_process_response_data(config)
+        elif analysis_option.review == 'merge':
+            merge_pre_processed_response_dfs()
+        else:
+            filter_bots()
+

@@ -161,6 +161,7 @@ class Config:
         self.f_characteristics = path('CHARACTERISTICS')
         self.f_characteristics_pkl = path('CHARACTERISTICS_PKL')
         self.f_maintainers_pkl = path('MAINTAINERS_PKL')
+        self.f_responses_pkl = path('PATCH_RESPONSES_PKL')
 
         # R location
         self.R_resources = path('R_RESOURCES')
