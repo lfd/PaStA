@@ -292,7 +292,7 @@ def prepare_off_list_patches():
     pass
 
 
-def prepare_patch_review(repo, clustering):
+def prepare_patch_review(config, repo, clustering):
     threads = repo.mbox.load_threads()
     clusters = list(clustering.iter_split())
 
@@ -337,7 +337,7 @@ def prepare_patch_review(repo, clustering):
             cluster_dict['responses'] = response_lst
             clusters_responses.append(cluster_dict)
 
-    with open('patch_responses.pickle', 'wb') as handle:
+    with open(config.f_responses_pkl, 'wb') as handle:
         pickle.dump(clusters_responses, handle, protocol=pickle.HIGHEST_PROTOCOL)
     log.info("Done writing response info for {} patch/commit entries!".format(len(clusters)))
     log.info("Total clusters found by pasta: {}".format(len(clusters)))
