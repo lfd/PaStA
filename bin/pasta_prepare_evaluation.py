@@ -16,15 +16,26 @@ the COPYING file in the top-level directory.
 import anytree
 import argparse
 import csv
+import dask.dataframe as dd
+import email
+import flat_table
+import numpy as np
+import os
 import pandas as pd
 import pickle
 import re
+import sys
 
+from ast import literal_eval
 from logging import getLogger
 from subprocess import call
 
 from pypasta.LinuxMaintainers import load_maintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
+
+from analyses import response_analysis
+
+sys.path.append(os.path.join(os.path.abspath(os.pardir), 'analyses'))
 
 log = getLogger(__name__[-15:])
 
@@ -260,33 +271,244 @@ def prepare_patch_review(config, clustering):
                                     targets_characteristics)
 
 
+def pre_process_response_data(config):
+    # Load responses dict into dataframe, preliminary processing, indexing
+    # Idea: We do the following transformation in the preprocess step:
+    # We split the response_df into two parts: responses and upstream. This split is necessary
+    # for the following reasons:
+    # 1. responses and upstream columns have different datatypes: dict vs set, and hence need to be handled differently.
+    # 2. for bigger datasets, this also keeps the memory needs in check: we merge these two parts in the merge step,
+    # and hence the intermediate (huge) dataframes are not in memory anymore at one time making it computationally
+    # feasible given the systems' constraints with decent performance.
+    # The two parts which are output after this step: f_denorm_responses and f_denorm_upstream, need to be merged
+    # back together later such that the resulting dataframe has the following property:
+    # One row for each unique patch_id, response (and response details, e.g. parent), and upstream.
+    #
+    # Example: Entry p1, u1, u2 in patch-groups, with two responses r1, r2 for p1
+    #                               where p1 is a patch with two linked upstream commits, u1 and u2
+    # Denormalizing responses would yield the following two rows -
+    #               p1, r1
+    #               p1, r2
+    # Denormalizing upstream would yield the following two rows -
+    #               p1, u1
+    #               p1, u2
+    # The merge on patch id in the next step would then yield the following rows -
+    #               p1, r1, u1
+    #               p1, r2, u1
+    #               p1, r1, u2
+    #               p1, r2, u2
+    # Advantage of such a data transformation: possibility to aggregate a variety of statistics, e.g.:
+    # Patch to responses, and all the details for that response (authors, various email tags, message details
+    # like length etc.), upstream to responses (and response characteristics as before), upstream to patch details, etc.
+    #
+    # Index: Merge works efficiently when we join on an index.
+    #
+
+
+    with open(config.f_responses_pkl, 'rb') as handle:
+        response_df = pickle.load(handle)
+
+    # Give a name to the numerical index
+    response_df.index.name = "idx"
+
+    # Fill null patch ids with a value '_'
+    response_df.fillna({'patch_id': '_'}, inplace=True)
+    log.info("Filled NA for patch_id")
+
+    # Append patch_id to the index such that we have a MultiIndex (idx, patch_id)
+    # This is a decision for two reasons:
+    # 1. patch_id cannot uniquely identify a row, e.g. when it is null ('_')
+    # 2. Many analysis are easier with MultiIndex, without needing a groupby
+    response_df.set_index(['patch_id'], append=True, inplace=True)
+    log.info("Done setting index for response_df")
+
+    # Denormalize responses and upstream
+
+    # Denormalize responses
+    # Pandas melt is used to bring the data in the given de-normalized form.
+    # reset_index operation preserves the index as a column, which otherwise could be lost
+    df_melt_responses = pd.melt(response_df.responses.apply(pd.Series).reset_index(),
+                                id_vars=['idx', 'patch_id'],
+                                value_name='responses').sort_index()
+
+    df_melt_responses.drop('variable', axis=1, inplace=True)
+
+    log.info("melt_responses_shape {}".format(df_melt_responses.shape))
+
+    df_denorm_responses = flat_table.normalize(df_melt_responses, expand_dicts=True, expand_lists=True)
+    df_denorm_responses.drop('index', axis=1, inplace=True)
+    df_denorm_responses.drop_duplicates(subset=['responses.resp_msg_id', 'responses.parent', 'patch_id'], inplace=True)
+    log.info("Computed de-normalized responses, writing to disk...")
+
+    df_denorm_responses.to_csv(config.f_denorm_responses, index=False)
+    log.info("Processed responses!")
+
+    # Denormalize responses
+
+    # Convert set to list: This is necessary to apply pd.Series for converting set type column to individual rows
+    response_df['upstream'] = response_df['upstream'].map(list)
+
+    df_melt_upstream = pd.melt(response_df.upstream.apply(pd.Series).reset_index(),
+                               id_vars=['idx', 'patch_id'],
+                               value_name='upstream').sort_index()
+
+    df_melt_upstream.drop('variable', axis=1, inplace=True)
+    df_melt_upstream.drop_duplicates(inplace=True)
+
+    df_melt_upstream.to_csv(config.f_denorm_upstream, index=False)
+    log.info("Processed upstream!")
+    log.info("Finished processing")
+
+
+def merge_pre_processed_response_dfs(config):
+    def try_literal_eval(s):
+        try:
+            return literal_eval(s)
+        except ValueError:
+            return s
+
+    def _get_message_field(msg, field):
+        if not (np.all(pd.isnull(msg))):
+            return email.message_from_bytes(msg)[field]
+        else:
+            return None
+
+    dd1 = dd.read_csv(config.f_denorm_responses, blocksize=1e9, dtype={"idx ": "int32", "patch_id ": "category",
+                                                                       "responses.resp_msg_id": "category",
+                                                                       "responses.parent": "category"})
+
+    dd1 = dd1.set_index(['idx'])
+
+    dd2 = dd.read_csv(config.f_denorm_upstream, blocksize=1e9, dtype={"idx ": "int32", "patch_id ": "category",
+                                                                      "upstream": "category"})
+
+    dd2 = dd2.set_index(['idx'])
+
+    df_dask_final = dd.merge(dd1, dd2, left_index=True, right_index=True, how='left') \
+        .drop(['patch_id_y'], axis=1) \
+        .reset_index(drop=True) \
+        .rename(columns={"patch_id_x": "patch_id"})
+
+    df_dask_final.to_csv("df_dask_final.csv", single_file=True)
+
+    final = dd.read_csv("df_dask_final.csv", blocksize=50e7, dtype={"idx ": "int32", "patch_id ": "category",
+                                                                    "responses.resp_msg_id": "category",
+                                                                    "responses.parent": "category",
+                                                                    "upstream": "category"}).drop('Unnamed: 0', axis=1)
+
+    print("Final shape with possible duplicate rows{}".format(final.shape))
+    final.drop_duplicates(subset=['responses.resp_msg_id', 'upstream', 'patch_id'], inplace=True)
+
+    # Convert to pandas
+    df_pd_final = final.compute()
+
+    # Remove rows with no patch and other infos
+    index_names = df_pd_final[(df_pd_final['patch_id'] == '_') & (df_pd_final['responses.message'].isna()) &
+                              (df_pd_final['upstream'].isna())].index
+    df_pd_final.drop(index_names, inplace=True)
+
+    print("Final shape after removing duplicates {}".format(final.shape))
+
+    # df_pd_final.to_csv(config.f_merged_responses_upstream, index=False)
+    # print("Finished writing de-duplicated pandas merged dataframe to disk")
+
+    final = dd.from_pandas(df_pd_final, npartitions=20)
+
+    final['responses.message'] = final['responses.message'].map(try_literal_eval)
+
+    final.reset_index().rename(columns={'index': 'idx'}).compute()
+
+    final['response_author'] = final['responses.message'].map(lambda x: _get_message_field(x, 'from'),
+                                                              meta=pd.Series([], dtype=object, name='x'))
+
+    log.info("Unique response authors {}".format(final['response_author'].nunique().compute(num_workers=20)))
+
+    final.to_csv(config.f_responses_authors, single_file=True)
+
+
+def _is_response_from_bot(message):
+    lmc = LinuxMailCharacteristics(_repo, None, None, message)
+    return message, lmc.is_from_bot
+
+
+def filter_bots(config, clustering):
+    repo = config.repo
+    repo.mbox.load_threads()
+
+    final = dd.read_csv(config.f_responses_authors, blocksize=50e7,
+                        dtype={"idx ": "int32",
+                               "patch_id ": "category",
+                               "responses.resp_msg_id": "category",
+                               "responses.parent": "category",
+                               "upstream": "category",
+                               "response_author": "category"}).drop('Unnamed: 0', axis=1)
+
+    log.info("Finished reading dask dataframe {}".format(config.f_responses_authors))
+
+    # Discard null patches (coming from upstreams that were not mapped to any patch emails)
+    unique_patches = set(final.patch_id.unique().compute())
+    unique_patches.discard('_')
+
+    patch_characteristics = load_linux_mail_characteristics(config, None, clustering, unique_patches)
+
+    # Consider only relevant patches (as per given definition of relevance)
+    relevant_patches = get_relevant_patches(patch_characteristics)
+    final_filtered_1 = final[final['patch_id'].isin(relevant_patches)]
+
+    # Filter responses -- only responses to the patch itself count as a response, and not the rest of the thread emails
+    final_filtered_2 = final_filtered_1[final_filtered_1['patch_id'] == final_filtered_1['responses.parent']]
+
+    global _repo
+    _repo = repo
+
+    p1 = Pool(processes=int(cpu_count()), maxtasksperchild=1)
+    response_to_bot = p1.map(_is_response_from_bot, list(final_filtered_2['responses.resp_msg_id'].unique().compute()),
+                             chunksize=1000)
+    p1.close()
+    p1.join()
+
+    _repo = None
+
+    response_bot_df = pd.DataFrame(response_to_bot, columns=['responses.resp_msg_id', 'response_is_bot'])
+
+    final_filtered_2 = dd.merge(final_filtered_2, response_bot_df, how='left', on=['responses.resp_msg_id'])
+
+    if 'response_is_bot_x' in final_filtered_2.columns:
+        final_filtered_2 = final_filtered_2.drop(['response_is_bot_x'], axis=1) \
+            .rename(columns={"response_is_bot_y": "response_is_bot"})
+
+    # Filter out responses from bots
+    final_filtered_3 = final_filtered_2[final_filtered_2['response_is_bot'] != True]
+
+    final_filtered_3.to_csv(config.f_filtered_responses, single_file=True)
+
+    log.info("Written filtered response dataframe to disk, Done!")
+
+
 def prepare_evaluation(config, argv):
     parser = argparse.ArgumentParser(prog='prepare_evaluation',
                                      description='aggregate commit and patch info')
 
     parser.add_argument('--ignored',
-                        action='store_const',
-                        const='ignored',
-                        dest='mode',
+                        action='store_true',
+                        default=False,
                         help='prepare data for patch analysis \n'
                              'prepare data for ignored patch analysis \n'
                         )
 
-    parser.add_argument('--off-list',
-                        action='store_const',
-                        const='off-list',
-                        dest='mode',
+    parser.add_argument('--offlist',
+                        action='store_true',
+                        default=False,
                         help='prepare data for off-list patch analysis \n')
 
     parser.add_argument('--review',
-                        action='store_const',
-                        const='review',
-                        dest='mode',
+                        default=None,
+                        choices=['prepare', 'preprocess', 'merge', 'filter', 'analyze'],
                         help='prepare data for patch review analysis \n')
 
     analysis_option = parser.parse_args(argv)
 
-    if not analysis_option.mode:
+    if len(argv) == 0:
         parser.error("No action requested, one of --ignored, --off-list, or --review must be given")
 
     if config.mode != config.Mode.MBOX:
@@ -298,11 +520,20 @@ def prepare_evaluation(config, argv):
 
     config.load_ccache_mbox()
 
-    if analysis_option.mode == 'ignored':
+    if analysis_option.ignored:
         prepare_ignored_patches(config, clustering)
 
-    elif analysis_option.mode == 'off-list':
+    elif analysis_option.offlist:
         prepare_off_list_patches()
 
     else:
-        prepare_patch_review(config, clustering)
+        if analysis_option.review == 'prepare':
+            prepare_patch_review(config, clustering)
+        elif analysis_option.review == 'preprocess':
+            pre_process_response_data(config)
+        elif analysis_option.review == 'merge':
+            merge_pre_processed_response_dfs(config)
+        elif analysis_option.review == 'filter':
+            filter_bots(config, clustering)
+        else:
+            response_analysis.analyse_responses(config.f_filtered_responses)
