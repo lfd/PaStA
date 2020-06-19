@@ -71,20 +71,15 @@ class Matcher:
                     continue
 
             ends_on_slash = entry[-1] == '/'
-            if ends_on_slash:
-                if contains_regex:
-                    entry = self.regex_rewrite(entry)
-                # Match everything beyond the directory
-                entry = '^%s.*$' % entry
-                self.regexes.add(re.compile(entry))
-                continue
-
             if contains_regex:
-                entry = '^%s$' % self.regex_rewrite(entry)
-                self.regexes.add(re.compile(entry))
-                continue
+                entry = self.regex_rewrite(entry)
 
-            raise NotImplementedError('Unknown entry: %s' % entry)
+            if ends_on_slash:
+                # Match everything beyond the directory
+                entry = '%s.*' % entry
+
+            entry = '^%s$' % entry
+            self.regexes.add(re.compile(entry))
 
 
 class NMatcher:
