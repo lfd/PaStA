@@ -18,9 +18,9 @@ FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 details.
 """
 
-import errno
 import gc
 import logging
+import os
 import sys
 
 from cmd import Cmd
@@ -66,7 +66,7 @@ def usage(shell):
     print(
         'PaStA - The Patch Stack Analysis (PaStA v%s)\n'
         '\n'
-        'usage: pasta [-d] sub {[args...] | [-h|--help]}\n'
+        'usage: pasta [-d] {[-s|--script filename] | sub [args...] | [-h|--help]}\n'
         ' -d: enable debug messages\n\n'
         'By default, PaStA will choose the configuration stored in \'./config\'.\n'
         'Available subcommands are listed below. Type \'pasta sub -h\' to get\n'
@@ -321,6 +321,7 @@ def main(argv):
     # drop the name of the command
     argv.pop(0)
 
+    script = None
     shell = PastaShell()
     level = logging.INFO
     while len(argv) and argv[0].startswith('-'):
@@ -330,6 +331,20 @@ def main(argv):
         elif argument in {'-h', '--help'}:
             usage(shell)
             return 0
+        elif argument in {'-s', '--script'}:
+            if len(argv) != 1:
+                usage(shell)
+                return -1
+            f_script = argv.pop()
+            if not os.path.isfile(f_script):
+                log.error('%s: no such file' % f_script)
+            with open(f_script, 'r') as f:
+                content = f.read().splitlines()
+            script = list()
+            for lineno, line in enumerate(content):
+                if len(line) == 0 or line[0] == '#':
+                    continue
+                script.append((lineno + 1, line))
         else:
             usage(shell)
             return -1
@@ -340,6 +355,14 @@ def main(argv):
     filehandler.setFormatter(logging.Formatter(fmt))
     logging.getLogger().addHandler(filehandler)
     log.info('Cmdline: ' + ' '.join(sys.argv))
+
+    if script:
+        for lineno, line in script:
+            ret = shell.onecmd(line)
+            if ret == False:
+                log.error('Error executing line %u: %s' % (lineno, line))
+                return -1
+        return 0
 
     if not argv:
         usage(shell)
