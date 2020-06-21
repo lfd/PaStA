@@ -211,6 +211,10 @@ class PastaShell(Cmd):
         log.info('Bye')
         return True
 
+    @requires_config
+    def do_maintainers_stats(self, line):
+        maintainers_stats(config, line.split())
+
     def do_optimise_cluster(self, line):
         optimise_cluster(line.split())
 
@@ -264,6 +268,10 @@ class PastaShell(Cmd):
 
     def help_exit(self):
         print('Exit PaStA. Usual suspect shorthands: x q quit Ctrl-D')
+
+    @requires_config
+    def help_maintainers_stats(self):
+        maintainers_stats(config, ['-h'])
 
     def help_optimise_cluster(self):
         optimise_cluster(['-h'])
@@ -332,6 +340,7 @@ def main(argv):
         'compare_clusters',
         'compare_stacks',
         'config',
+        'maintainers_stats'
         'optimise_cluster',
         'patch_descriptions',
         'prepare_evaluation',
@@ -347,8 +356,6 @@ def main(argv):
         usage(me, 0)
     elif sub == 'form_patchwork_relations':
         return form_patchwork_relations(config, argv)
-    elif sub == 'maintainers_stats':
-        return maintainers_stats(config, argv)
     elif sub == 'ripup':
         return ripup(config, argv)
     elif sub == 'show_cluster':

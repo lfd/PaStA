@@ -126,7 +126,11 @@ def maintainers_stats(config, argv):
     parser.add_argument('--revision', type=str, help='Specify a commit hash or '
                         'a version name for a Linux repo')
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit:
+        return
+
     repo = config.repo
 
     kernel_revision = 'HEAD'
