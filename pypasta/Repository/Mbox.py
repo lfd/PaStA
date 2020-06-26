@@ -515,15 +515,22 @@ class Mbox:
 
         # If Patchwork projects are defined in the config, no need to load raw mboxes and pubins.
         self.patchwork_projects = []
-        if len(config.patchwork['projects']):
+        if len(config.mbox_patchwork['projects']):
             log.info('Loading Patchwork projects...')
-        for project_id, f_mbox_raw, listaddr in config.patchwork['projects']:
+            patchwork_url = config.mbox_patchwork['url']
+            patchwork_page_size = config.mbox_patchwork['page_size']
+            log.info('URL: %s - page size: %u' % (patchwork_url, patchwork_page_size))
+        for project in config.mbox_patchwork['projects']:
+            project_id = project['id']
+            listaddr = project['list_email']
             self.lists.add(listaddr)
-            f_index = os.path.join(
-                config.d_mbox, 'index', 'patchwork.%u' % project_id)
-            project = PatchworkProject(config.patchwork['url'], project_id,
-                                       config.patchwork['page_size'],
-                                       self.d_mbox, f_index, f_mbox_raw)
+            initial_archive = project.get('initial_archive')
+            if initial_archive:
+                initial_archive = path_convert_relative(
+                    os.path.join(self.d_mbox, 'patchwork'), initial_archive)
+            f_index = os.path.join(config.d_mbox, 'index', 'patchwork.%u' % project_id)
+            project = PatchworkProject(patchwork_url, project_id, patchwork_page_size,
+                                       self.d_mbox, f_index, initial_archive)
             for message_id in project.get_ids():
                 self.add_mail_to_list(message_id, listaddr)
             self.patchwork_projects.append(project)
