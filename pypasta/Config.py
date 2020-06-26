@@ -190,17 +190,13 @@ class Config:
 
             mbox = cfg['mbox']
             self.mbox_raw = mbox['raw']
-            mbox_pub_in = mbox['pubin']
+            self.mbox_pubin = mbox['pubin']
             mbox_patchwork = mbox['patchwork']
 
             # mailbox parameters
             self.mbox_mindate = parse_date_ymd(mbox['MINDATE'])
             self.mbox_maxdate = parse_date_ymd(mbox['MAXDATE'])
             self.mbox_time_window = self.mbox_mindate, self.mbox_maxdate
-
-            self.mbox_git_public_inbox = list()
-            for host, mailinglists in mbox_pub_in.items():
-                self.mbox_git_public_inbox.append((host, mailinglists))
 
             self.patchwork = dict()
             self.patchwork['url'] = mbox_patchwork.get('url')

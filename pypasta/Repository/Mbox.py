@@ -541,9 +541,9 @@ class Mbox:
                 self.mboxes_raw.append(mbox_raw)
 
         self.pub_in = []
-        if len(config.mbox_git_public_inbox):
+        if len(config.mbox_pubin):
             log.info('Loading public inboxes')
-        for host, mailinglists in config.mbox_git_public_inbox:
+        for host, mailinglists in config.mbox_pubin.items():
             for mailinglist in mailinglists:
                 listaddr = '%s@%s' % (mailinglist, host)
                 self.lists.add(listaddr)
