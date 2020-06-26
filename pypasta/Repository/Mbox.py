@@ -18,6 +18,7 @@ import pygit2
 import re
 import requests
 
+from collections import defaultdict
 from datetime import datetime
 from email.charset import CHARSETS
 from logging import getLogger
@@ -26,7 +27,7 @@ from urllib.parse import urljoin
 
 from .MailThread import MailThread
 from .MessageDiff import MessageDiff, Signature
-from ..Util import get_commit_hash_range, mail_parse_date
+from ..Util import get_commit_hash_range, mail_parse_date, path_convert_relative
 
 log = getLogger(__name__[-15:])
 
@@ -342,31 +343,30 @@ class PubInbox(MailContainer):
 
 
 class MboxRaw(MailContainer):
-    def __init__(self, d_mbox, d_index):
+    def __init__(self, d_mbox, d_index, listname, f_mboxes_raw):
+        self.listname = listname
+        self.f_mboxes_raw = f_mboxes_raw
         self.d_mbox = d_mbox
         self.d_mbox_raw = os.path.join(d_mbox, 'raw')
-        self.d_index = d_index
-        self.index = {}
-        self.raw_mboxes = []
+        self.index = defaultdict(list)
 
-    def add_mbox(self, listname, f_mbox_raw):
-        self.raw_mboxes.append((listname, f_mbox_raw))
-        f_mbox_index = os.path.join(self.d_index, 'raw.%s' % listname)
-        index = self.load_index(f_mbox_index)
-        log.info('  ↪ loaded mail index for %s: found %d mails' % (listname, len(index)))
-
-        for id, desc in index.items():
-            if id in self.index:
+        self.mboxes = list()
+        for f_mbox_raw in f_mboxes_raw:
+            f_mbox_raw = path_convert_relative(os.path.join(d_mbox, 'raw'),
+                                               f_mbox_raw)
+            mbox_id = '%s.%s' % (listname, os.path.basename(f_mbox_raw))
+            f_mbox_index = os.path.join(d_index, 'raw.%s' % mbox_id)
+            index = self.load_index(f_mbox_index)
+            for id, desc in index.items():
                 self.index[id] += desc
-            else:
-                self.index[id] = desc
 
-        return set(index.keys())
+            log.info('  ↪ loaded mail index for %s: found %d mails' % (listname, len(index)))
+            self.mboxes.append((f_mbox_raw, mbox_id))
 
     def update(self):
-        for listname, f_mbox_raw in self.raw_mboxes:
-            log.info('Processing raw mailbox %s' % listname)
-            process_mailbox_maildir(f_mbox_raw, listname, self.d_mbox, 'raw')
+        for f_mbox_raw, mbox_id in self.mboxes:
+            log.info('Processing raw mailbox %s' % mbox_id)
+            process_mailbox_maildir(f_mbox_raw, mbox_id, self.d_mbox, 'raw')
 
     def __getitem__(self, message_id):
         ret = list()
@@ -530,13 +530,15 @@ class Mbox:
 
         if len(config.mbox_raw):
             log.info('Loading raw mailboxes...')
-        self.mbox_raw = MboxRaw(self.d_mbox, self.d_index)
-        for host, listname, f_mbox_raw in config.mbox_raw:
-            listaddr = '%s@%s' % (listname, host)
-            self.lists.add(listaddr)
-            ids = self.mbox_raw.add_mbox(listaddr, f_mbox_raw)
-            for message_id in ids:
-                self.add_mail_to_list(message_id, listaddr)
+        self.mboxes_raw = list()
+        for host, listdesc in config.mbox_raw.items():
+            for listname, f_mboxes_raw in listdesc.items():
+                listaddr = '%s@%s' % (listname, host)
+                self.lists.add(listaddr)
+                mbox_raw = MboxRaw(self.d_mbox, self.d_index, listaddr, f_mboxes_raw)
+                for message_id in mbox_raw.get_ids():
+                    self.add_mail_to_list(message_id, listaddr)
+                self.mboxes_raw.append(mbox_raw)
 
         self.pub_in = []
         if len(config.mbox_git_public_inbox):
@@ -582,8 +584,9 @@ class Mbox:
             if message_id in public_inbox:
                 return True
 
-        if message_id in self.mbox_raw:
-            return True
+        for mbox in self.mboxes_raw:
+            if message_id in mbox:
+                return True
 
         for project in self.patchwork_projects:
             if message_id in project:
@@ -623,8 +626,9 @@ class Mbox:
             if message_id in public_inbox:
                 raws += public_inbox[message_id]
 
-        if message_id in self.mbox_raw:
-            raws += self.mbox_raw[message_id]
+        for mbox in self.mboxes_raw:
+            if message_id in mbox:
+                raws += mbox[message_id]
 
         return raws
 
@@ -637,7 +641,8 @@ class Mbox:
         for pub in self.pub_in:
             ids |= pub.get_ids(time_window)
 
-        ids |= self.mbox_raw.get_ids(time_window)
+        for mbox in self.mboxes_raw:
+            ids |= mbox.get_ids(time_window)
 
         if not allow_invalid:
             ids = ids - self.invalid
@@ -651,7 +656,8 @@ class Mbox:
         for project in self.patchwork_projects:
             project.update()
 
-        self.mbox_raw.update()
+        for mbox in self.mboxes_raw:
+            mbox.update()
 
         for pub in self.pub_in:
             pub.update()

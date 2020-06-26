@@ -189,7 +189,7 @@ class Config:
             self.d_mbox = path('MBOX')
 
             mbox = cfg['mbox']
-            mbox_raw = mbox['raw']
+            self.mbox_raw = mbox['raw']
             mbox_pub_in = mbox['pubin']
             mbox_patchwork = mbox['patchwork']
 
@@ -197,12 +197,6 @@ class Config:
             self.mbox_mindate = parse_date_ymd(mbox['MINDATE'])
             self.mbox_maxdate = parse_date_ymd(mbox['MAXDATE'])
             self.mbox_time_window = self.mbox_mindate, self.mbox_maxdate
-
-            self.mbox_raw = list()
-            for host, (listname, f_mbox_raw) in mbox_raw.items():
-                if not isabs(f_mbox_raw):
-                    f_mbox_raw = join(self.d_mbox, 'raw', f_mbox_raw)
-                self.mbox_raw.append((host, listname, f_mbox_raw))
 
             self.mbox_git_public_inbox = list()
             for host, mailinglists in mbox_pub_in.items():
