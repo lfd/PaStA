@@ -38,6 +38,12 @@ def pygit2_signature_to_datetime(signature):
     return dt
 
 
+def path_convert_relative(prefix, path):
+    if not os.path.isabs(path) and path[0] != '~':
+        return os.path.join(prefix, path)
+    return path
+
+
 def load_pkl_and_update(filename, update_command, *params):
     ret = None
     if os.path.isfile(filename):
