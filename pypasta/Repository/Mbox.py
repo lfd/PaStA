@@ -343,8 +343,8 @@ class PubInbox(MailContainer):
 
 
 class MboxRaw(MailContainer):
-    def __init__(self, d_mbox, d_index, listname, f_mboxes_raw):
-        self.listname = listname
+    def __init__(self, listaddr, d_mbox, d_index, f_mboxes_raw):
+        self.listaddr = listaddr
         self.f_mboxes_raw = f_mboxes_raw
         self.d_mbox = d_mbox
         self.d_mbox_raw = os.path.join(d_mbox, 'raw')
@@ -354,13 +354,13 @@ class MboxRaw(MailContainer):
         for f_mbox_raw in f_mboxes_raw:
             f_mbox_raw = path_convert_relative(os.path.join(d_mbox, 'raw'),
                                                f_mbox_raw)
-            mbox_id = '%s.%s' % (listname, os.path.basename(f_mbox_raw))
+            mbox_id = '%s.%s' % (listaddr, os.path.basename(f_mbox_raw))
             f_mbox_index = os.path.join(d_index, 'raw.%s' % mbox_id)
             index = self.load_index(f_mbox_index)
             for id, desc in index.items():
                 self.index[id] += desc
 
-            log.info('  ↪ loaded mail index for %s: found %d mails' % (listname, len(index)))
+            log.info('  ↪ loaded mail index for %s: found %d mails' % (listaddr, len(index)))
             self.mboxes.append((f_mbox_raw, mbox_id))
 
     def update(self):
@@ -382,7 +382,8 @@ class MboxRaw(MailContainer):
 class PatchworkProject(MailContainer):
     NEXT_PAGE_REGEX = re.compile('.*[&?]page=(\d+).*')
 
-    def __init__(self, url, project_id, page_size, d_mbox, f_index, f_mbox_raw):
+    def __init__(self, listaddr, url, project_id, page_size, d_mbox, f_index, f_mbox_raw):
+        self.listaddr = listaddr
         self.url = url
         self.page_size = page_size
         self.project_id = project_id
@@ -501,6 +502,7 @@ class Mbox:
         self.d_mbox = config.d_mbox
         self.d_invalid = os.path.join(self.d_mbox, 'invalid')
         self.d_index = os.path.join(self.d_mbox, 'index')
+        self.mboxes = list()
 
         log.info('Loading mailbox subsystem')
 
@@ -514,7 +516,6 @@ class Mbox:
                  % len(self.invalid))
 
         # If Patchwork projects are defined in the config, no need to load raw mboxes and pubins.
-        self.patchwork_projects = []
         if len(config.mbox_patchwork['projects']):
             log.info('Loading Patchwork projects...')
             patchwork_url = config.mbox_patchwork['url']
@@ -529,25 +530,19 @@ class Mbox:
                 initial_archive = path_convert_relative(
                     os.path.join(self.d_mbox, 'patchwork'), initial_archive)
             f_index = os.path.join(config.d_mbox, 'index', 'patchwork.%u' % project_id)
-            project = PatchworkProject(patchwork_url, project_id, patchwork_page_size,
+            project = PatchworkProject(listaddr, patchwork_url, project_id, patchwork_page_size,
                                        self.d_mbox, f_index, initial_archive)
-            for message_id in project.get_ids():
-                self.add_mail_to_list(message_id, listaddr)
-            self.patchwork_projects.append(project)
+            self.mboxes.append(project)
 
         if len(config.mbox_raw):
             log.info('Loading raw mailboxes...')
-        self.mboxes_raw = list()
         for host, listdesc in config.mbox_raw.items():
             for listname, f_mboxes_raw in listdesc.items():
                 listaddr = '%s@%s' % (listname, host)
                 self.lists.add(listaddr)
-                mbox_raw = MboxRaw(self.d_mbox, self.d_index, listaddr, f_mboxes_raw)
-                for message_id in mbox_raw.get_ids():
-                    self.add_mail_to_list(message_id, listaddr)
-                self.mboxes_raw.append(mbox_raw)
+                mbox_raw = MboxRaw(listaddr, self.d_mbox, self.d_index, f_mboxes_raw)
+                self.mboxes.append(mbox_raw)
 
-        self.pub_in = []
         if len(config.mbox_pubin):
             log.info('Loading public inboxes')
         for host, mailinglists in config.mbox_pubin.items():
@@ -564,9 +559,7 @@ class Mbox:
 
                     if os.path.isdir(d_repo):
                         inbox = PubInbox(listaddr, shard, d_repo, f_index)
-                        for message_id in inbox.get_ids():
-                            self.add_mail_to_list(message_id, listaddr)
-                        self.pub_in.append(inbox)
+                        self.mboxes.append(inbox)
                     else:
                         if shard == 0:
                             log.error('Unable to find shard 0 of list %s' %
@@ -575,6 +568,10 @@ class Mbox:
                         break
 
                     shard += 1
+
+        for mbox in self.mboxes:
+            for message_id in mbox.get_ids():
+               self.add_mail_to_list(message_id, mbox.listaddr)
 
     def load_threads(self):
         if not self.threads:
@@ -587,16 +584,8 @@ class Mbox:
         self.message_id_to_lists[message_id].add(list)
 
     def __contains__(self, message_id):
-        for public_inbox in self.pub_in:
-            if message_id in public_inbox:
-                return True
-
-        for mbox in self.mboxes_raw:
+        for mbox in self.mboxes:
             if message_id in mbox:
-                return True
-
-        for project in self.patchwork_projects:
-            if message_id in project:
                 return True
 
         return False
@@ -625,15 +614,7 @@ class Mbox:
     def get_raws(self, message_id):
         raws = list()
 
-        for project in self.patchwork_projects:
-            if message_id in project:
-                raws += project[message_id]
-
-        for public_inbox in self.pub_in:
-            if message_id in public_inbox:
-                raws += public_inbox[message_id]
-
-        for mbox in self.mboxes_raw:
+        for mbox in self.mboxes:
             if message_id in mbox:
                 raws += mbox[message_id]
 
@@ -642,13 +623,7 @@ class Mbox:
     def get_ids(self, time_window=None, allow_invalid=False, lists=None):
         ids = set()
 
-        for project in self.patchwork_projects:
-            ids |= project.get_ids(time_window)
-
-        for pub in self.pub_in:
-            ids |= pub.get_ids(time_window)
-
-        for mbox in self.mboxes_raw:
+        for mbox in self.mboxes:
             ids |= mbox.get_ids(time_window)
 
         if not allow_invalid:
@@ -660,14 +635,8 @@ class Mbox:
         return ids
 
     def update(self):
-        for project in self.patchwork_projects:
-            project.update()
-
-        for mbox in self.mboxes_raw:
+        for mbox in self.mboxes:
             mbox.update()
-
-        for pub in self.pub_in:
-            pub.update()
 
     def get_lists(self, message_id):
         return self.message_id_to_lists[message_id]
