@@ -22,6 +22,7 @@ from collections import defaultdict
 from datetime import datetime
 from email.charset import CHARSETS
 from logging import getLogger
+from os.path import basename, dirname, exists, isdir, isfile, join
 from subprocess import Popen
 from urllib.parse import urljoin
 
@@ -169,7 +170,7 @@ def parse_single_message(mail):
 
 
 def load_file(filename, must_exist=True):
-    if not os.path.isfile(filename) and must_exist is False:
+    if not isfile(filename) and must_exist is False:
         return []
 
     with open(filename) as f:
@@ -190,12 +191,12 @@ def process_mailbox_maildir(f_mbox_raw, name, d_mbox, mode):
     :param d_mbox: destination directory
     :param mode: can either be 'raw', or 'patchwork'
     """
-    if not os.path.exists(f_mbox_raw):
+    if not exists(f_mbox_raw):
         log.error('no such file or directory: %s' % f_mbox_raw)
         quit(-1)
 
     p = Popen(['./process_mailbox_maildir.sh', mode, name, d_mbox, f_mbox_raw],
-              cwd=os.path.join(os.getcwd(), 'tools'))
+              cwd=join(os.getcwd(), 'tools'))
     if p.wait():
         log.error('Mail processor failed!')
         quit(-1)
@@ -231,7 +232,7 @@ class MailContainer:
                 index.append(line)
         index.sort()
 
-        d_index = os.path.dirname(f_index)
+        d_index = dirname(f_index)
         os.makedirs(d_index, exist_ok=True)
         with open(f_index, 'w') as f:
             f.write('\n'.join(index) + '\n')
@@ -347,15 +348,14 @@ class MboxRaw(MailContainer):
         self.listaddr = listaddr
         self.f_mboxes_raw = f_mboxes_raw
         self.d_mbox = d_mbox
-        self.d_mbox_raw = os.path.join(d_mbox, 'raw')
+        self.d_mbox_raw = join(d_mbox, 'raw')
         self.index = defaultdict(list)
 
         self.mboxes = list()
         for f_mbox_raw in f_mboxes_raw:
-            f_mbox_raw = path_convert_relative(os.path.join(d_mbox, 'raw'),
-                                               f_mbox_raw)
-            mbox_id = '%s.%s' % (listaddr, os.path.basename(f_mbox_raw))
-            f_mbox_index = os.path.join(d_index, 'raw.%s' % mbox_id)
+            f_mbox_raw = path_convert_relative(join(d_mbox, 'raw'), f_mbox_raw)
+            mbox_id = '%s.%s' % (listaddr, basename(f_mbox_raw))
+            f_mbox_index = join(d_index, 'raw.%s' % mbox_id)
             index = self.load_index(f_mbox_index)
             for id, desc in index.items():
                 self.index[id] += desc
@@ -372,7 +372,7 @@ class MboxRaw(MailContainer):
         ret = list()
 
         for _, date_str, md5 in self.index[message_id]:
-            filename = os.path.join(self.d_mbox_raw, date_str, md5)
+            filename = join(self.d_mbox_raw, date_str, md5)
             with open(filename, 'rb') as f:
                 ret.append(f.read())
 
@@ -390,7 +390,7 @@ class PatchworkProject(MailContainer):
         self.f_index = f_index
         self.f_mbox_raw = f_mbox_raw
         self.d_mbox = d_mbox
-        self.d_mbox_patchwork = os.path.join(self.d_mbox, 'patchwork')
+        self.d_mbox_patchwork = join(self.d_mbox, 'patchwork')
         self.index = self.load_index(self.f_index)
         log.info('  ↪ loaded mail index for Patchwork project id %u: found %d mails' %
                  (project_id, len(self.index)))
@@ -460,10 +460,10 @@ class PatchworkProject(MailContainer):
                     md5sum, patch = self._pull_patch(url)
 
                     # Persist it
-                    d_patch = os.path.join(self.d_mbox_patchwork, format_date)
-                    f_patch = os.path.join(d_patch, md5sum)
+                    d_patch = join(self.d_mbox_patchwork, format_date)
+                    f_patch = join(d_patch, md5sum)
                     os.makedirs(d_patch, exist_ok=True)
-                    if not os.path.exists(f_patch):
+                    if not exists(f_patch):
                         with open(f_patch, 'wb') as f:
                             f.write(patch)
 
@@ -483,7 +483,7 @@ class PatchworkProject(MailContainer):
         ret = list()
 
         for _, date_str, md5, _ in self.index[message_id]:
-            filename = os.path.join(self.d_mbox_patchwork, date_str, md5)
+            filename = join(self.d_mbox_patchwork, date_str, md5)
             with open(filename, 'rb') as f:
                 ret.append(f.read())
 
@@ -500,8 +500,8 @@ class Mbox:
         self.message_id_to_lists = defaultdict(set)
         self.lists = set()
         self.d_mbox = config.d_mbox
-        self.d_invalid = os.path.join(self.d_mbox, 'invalid')
-        self.d_index = os.path.join(self.d_mbox, 'index')
+        self.d_invalid = join(self.d_mbox, 'invalid')
+        self.d_index = join(self.d_mbox, 'index')
         self.mboxes = list()
 
         log.info('Loading mailbox subsystem')
@@ -510,7 +510,7 @@ class Mbox:
         os.makedirs(self.d_index, exist_ok=True)
 
         self.invalid = set()
-        for f_inval in glob.glob(os.path.join(self.d_invalid, '*')):
+        for f_inval in glob.glob(join(self.d_invalid, '*')):
             self.invalid |= {x[0] for x in load_file(f_inval)}
         log.info('  ↪ loaded invalid mail index: found %d invalid mails'
                  % len(self.invalid))
@@ -527,9 +527,9 @@ class Mbox:
             self.lists.add(listaddr)
             initial_archive = project.get('initial_archive')
             if initial_archive:
-                initial_archive = path_convert_relative(
-                    os.path.join(self.d_mbox, 'patchwork'), initial_archive)
-            f_index = os.path.join(config.d_mbox, 'index', 'patchwork.%u' % project_id)
+                initial_archive = path_convert_relative(join(self.d_mbox, 'patchwork'),
+                                                        initial_archive)
+            f_index = join(config.d_mbox, 'index', 'patchwork.%u' % project_id)
             project = PatchworkProject(listaddr, patchwork_url, project_id, patchwork_page_size,
                                        self.d_mbox, f_index, initial_archive)
             self.mboxes.append(project)
@@ -552,12 +552,12 @@ class Mbox:
 
                 shard = 0
                 while True:
-                    d_repo = os.path.join(config.d_mbox, 'pubin', host,
-                                          mailinglist, '%u.git' % shard)
-                    f_index = os.path.join(config.d_mbox, 'index', 'pubin',
-                                           host, mailinglist, '%u' % shard)
+                    d_repo = join(config.d_mbox, 'pubin', host, mailinglist,
+                                  '%u.git' % shard)
+                    f_index = join(config.d_mbox, 'index', 'pubin', host,
+                                   mailinglist, '%u' % shard)
 
-                    if os.path.isdir(d_repo):
+                    if isdir(d_repo):
                         inbox = PubInbox(listaddr, shard, d_repo, f_index)
                         self.mboxes.append(inbox)
                     else:
@@ -660,6 +660,6 @@ class Mbox:
                    for x in range(0, len(invalid), chunksize)]
 
         for no, inv in enumerate(invalid):
-            f_invalid = os.path.join(self.d_invalid, '%d' % no)
+            f_invalid = join(self.d_invalid, '%d' % no)
             with open(f_invalid, 'w') as f:
                 f.write('\n'.join(inv) + '\n')
