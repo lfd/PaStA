@@ -446,7 +446,8 @@ class LinuxMailCharacteristics:
                 self.has_foreign_response = self._has_foreign_response(repo, thread)
 
             if self.patches_linux:
-                self.is_upstream = len(clustering.get_upstream(message_id)) != 0
+                if clustering is not None:
+                    self.is_upstream = len(clustering.get_upstream(message_id)) != 0
 
                 processes = ['linux-next', 'git pull', 'rfc']
                 self.process_mail = True in [process in self.subject for process in processes]
