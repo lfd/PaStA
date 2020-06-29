@@ -373,7 +373,7 @@ class LinuxMailCharacteristics:
 
         return True
 
-    def _is_next(self, message):
+    def _is_next(self):
         if 'linux-next' in self.lists:
             return True
 
@@ -428,7 +428,7 @@ class LinuxMailCharacteristics:
         self.date = mail_parse_date(message['Date'])
 
         self.lists = repo.mbox.get_lists(message_id)
-        self.is_next = self._is_next(message)
+        self.is_next = self._is_next()
 
         self.is_from_bot = self._is_from_bot(message)
         self._analyse_series(thread, message)
