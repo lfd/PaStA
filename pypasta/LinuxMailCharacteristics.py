@@ -19,7 +19,6 @@ from multiprocessing import Pool, cpu_count
 
 from .Util import mail_parse_date, load_pkl_and_update
 
-
 log = getLogger(__name__[-15:])
 
 _repo = None
@@ -92,7 +91,7 @@ MAILING_LISTS = {'devel@acpica.org', 'alsa-devel@alsa-project.org', 'clang-built
                  'linux-rdma@vger.kernel.org', 'linux-remoteproc@vger.kernel.org', 'linux-renesas-soc@vger.kernel.org',
                  'linux-rtc@vger.kernel.org', 'linux-s390@vger.kernel.org', 'linux-samsung-soc@vger.kernel.org',
                  'linux-scsi@vger.kernel.org', 'linux-sctp@vger.kernel.org', 'linux-security-module@vger.kernel.org',
-                 'linux-serial@vger.kernel.org',  'linux-sgx@vger.kernel.org', 'linux-sh@vger.kernel.org',
+                 'linux-serial@vger.kernel.org', 'linux-sgx@vger.kernel.org', 'linux-sh@vger.kernel.org',
                  'linux-sparse@vger.kernel.org', 'linux-spi@vger.kernel.org', 'linux-tegra@vger.kernel.org',
                  'linux-tip-commits@vger.kernel.org', 'linux-trace-devel@vger.kernel.org',
                  'linux-unionfs@vger.kernel.org', 'linux-usb@vger.kernel.org', 'linux-watchdog@vger.kernel.org',
@@ -100,7 +99,7 @@ MAILING_LISTS = {'devel@acpica.org', 'alsa-devel@alsa-project.org', 'clang-built
                  'live-patching@vger.kernel.org', 'lvs-devel@vger.kernel.org', 'netdev@vger.kernel.org',
                  'netfilter-devel@vger.kernel.org', 'platform-driver-x86@vger.kernel.org',
                  'reiserfs-devel@vger.kernel.org', 'selinux@vger.kernel.org', 'sparclinux@vger.kernel.org',
-                 'stable@vger.kernel.org','target-devel@vger.kernel.org', 'util-linux@vger.kernel.org',
+                 'stable@vger.kernel.org', 'target-devel@vger.kernel.org', 'util-linux@vger.kernel.org',
                  'xdp-newbies@vger.kernel.org'}
 
 
@@ -178,6 +177,10 @@ class MaintainerMetrics:
 
 
 class LinuxMailCharacteristics:
+    BOTS = {'tip-bot2@linutronix.de', 'tipbot@zytor.com',
+            'noreply@ciplatform.org'}
+    POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
+
     REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
     REGEX_COVER = re.compile('\[.*patch.*\s0+/.*\].*', re.IGNORECASE)
     REGEX_GREG_ADDED = re.compile('patch \".*\" added to .*')
@@ -221,23 +224,25 @@ class LinuxMailCharacteristics:
 
     def _is_from_bot(self, message):
         email = self.mail_from[1].lower()
-        bots = ['broonie@kernel.org', 'lkp@intel.com']
-        potential_bot = True in [bot in email for bot in bots]
-
-        if potential_bot and \
-           email_get_header_normalised(message, 'x-patchwork-hint') == 'ignore':
-            return True
-
         subject = email_get_header_normalised(message, 'subject')
+        uagent = email_get_header_normalised(message, 'user-agent')
+        xmailer = email_get_header_normalised(message, 'x-mailer')
+        x_pw_hint = email_get_header_normalised(message, 'x-patchwork-hint')
+        potential_bot = email in LinuxMailCharacteristics.POTENTIAL_BOTS
 
-        # Mark Brown's bot and lkp
-        if potential_bot and subject.startswith('applied'):
+        if email in LinuxMailCharacteristics.BOTS:
             return True
+
+        if potential_bot:
+            if x_pw_hint == 'ignore':
+                return True
+
+            # Mark Brown's bot and lkp
+            if subject.startswith('applied'):
+                return True
 
         if LinuxMailCharacteristics.REGEX_GREG_ADDED.match(subject):
             return True
-
-        uagent = email_get_header_normalised(message, 'user-agent')
 
         # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for
         # all other mails. That's how we can easily separate automated mails
@@ -245,20 +250,14 @@ class LinuxMailCharacteristics:
         if email == 'akpm@linux-foundation.org' and 's-nail' in uagent:
             return True
 
-        # syzbot
+        # syzbot - email format: syzbot-hash@syzkaller.appspotmail.com
         if 'syzbot' in email and 'syzkaller.appspotmail.com' in email:
             return True
 
-        # The Tip bot
-        if 'tipbot@zytor.com' in email or \
-           'noreply@ciplatform.org' in email:
-            return True
-
-        xmailer = email_get_header_normalised(message, 'x-mailer')
         if xmailer == 'tip-git-log-daemon':
             return True
 
-        # Stephen Rothwell's automated emails
+        # Stephen Rothwell's automated emails (TBD: generates false positives)
         if self.is_next and 'sfr@canb.auug.org.au' in email:
             return True
 
@@ -332,7 +331,7 @@ class LinuxMailCharacteristics:
     def _is_stable_review(self, message, patch):
         if 'X-Mailer' in message and \
            'LinuxStableQueue' in message['X-Mailer']:
-               return True
+            return True
 
         if 'X-stable' in message:
             xstable = message['X-stable'].lower()
