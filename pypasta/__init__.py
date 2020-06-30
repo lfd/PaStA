@@ -27,4 +27,4 @@ from .Util import format_date_ymd, load_commit_hashes, get_date_selector,\
 from .PatchDynamics import PatchFlow, PatchComposition
 from .Export import Export
 from .LinuxMailCharacteristics import LinuxMailCharacteristics,\
-    load_linux_mail_characteristics
+    load_linux_mail_characteristics, email_get_header_normalised, email_get_from

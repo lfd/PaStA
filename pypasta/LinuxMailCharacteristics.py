@@ -19,7 +19,6 @@ from multiprocessing import Pool, cpu_count
 
 from .Util import mail_parse_date, load_pkl_and_update
 
-
 log = getLogger(__name__[-15:])
 
 _repo = None
@@ -92,7 +91,7 @@ MAILING_LISTS = {'devel@acpica.org', 'alsa-devel@alsa-project.org', 'clang-built
                  'linux-rdma@vger.kernel.org', 'linux-remoteproc@vger.kernel.org', 'linux-renesas-soc@vger.kernel.org',
                  'linux-rtc@vger.kernel.org', 'linux-s390@vger.kernel.org', 'linux-samsung-soc@vger.kernel.org',
                  'linux-scsi@vger.kernel.org', 'linux-sctp@vger.kernel.org', 'linux-security-module@vger.kernel.org',
-                 'linux-serial@vger.kernel.org',  'linux-sgx@vger.kernel.org', 'linux-sh@vger.kernel.org',
+                 'linux-serial@vger.kernel.org', 'linux-sgx@vger.kernel.org', 'linux-sh@vger.kernel.org',
                  'linux-sparse@vger.kernel.org', 'linux-spi@vger.kernel.org', 'linux-tegra@vger.kernel.org',
                  'linux-tip-commits@vger.kernel.org', 'linux-trace-devel@vger.kernel.org',
                  'linux-unionfs@vger.kernel.org', 'linux-usb@vger.kernel.org', 'linux-watchdog@vger.kernel.org',
@@ -100,7 +99,7 @@ MAILING_LISTS = {'devel@acpica.org', 'alsa-devel@alsa-project.org', 'clang-built
                  'live-patching@vger.kernel.org', 'lvs-devel@vger.kernel.org', 'netdev@vger.kernel.org',
                  'netfilter-devel@vger.kernel.org', 'platform-driver-x86@vger.kernel.org',
                  'reiserfs-devel@vger.kernel.org', 'selinux@vger.kernel.org', 'sparclinux@vger.kernel.org',
-                 'stable@vger.kernel.org','target-devel@vger.kernel.org', 'util-linux@vger.kernel.org',
+                 'stable@vger.kernel.org', 'target-devel@vger.kernel.org', 'util-linux@vger.kernel.org',
                  'xdp-newbies@vger.kernel.org'}
 
 
@@ -152,12 +151,12 @@ class MaintainerMetrics:
         # Metric: All lists + at least one maintainer per section
         # needs to be addressed correctly
         if (not c.mtrs_has_lists or c.mtrs_has_list_per_section) and \
-           (not c.mtrs_has_maintainers or c.mtrs_has_maintainer_per_section):
+                (not c.mtrs_has_maintainers or c.mtrs_has_maintainer_per_section):
             self.all_lists_one_mtr_per_sub = True
 
         # Metric: At least one correct list + at least one correct maintainer
         if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and \
-           (not c.mtrs_has_maintainers or c.mtrs_has_one_correct_maintainer):
+                (not c.mtrs_has_maintainers or c.mtrs_has_one_correct_maintainer):
             self.one_list_and_mtr = True
 
         # Metric: One correct list + one maintainer per section
@@ -221,48 +220,35 @@ class LinuxMailCharacteristics:
 
     def _is_from_bot(self, message):
         email = self.mail_from[1].lower()
-        bots = ['broonie@kernel.org', 'lkp@intel.com']
-        potential_bot = True in [bot in email for bot in bots]
-
-        if potential_bot and \
-           email_get_header_normalised(message, 'x-patchwork-hint') == 'ignore':
-            return True
-
+        bots = ['tip-bot2@linutronix.de', 'tipbot@zytor.com', 'noreply@ciplatform.org', 'syzbot',
+                'syzkaller.appspotmail.com']
+        potential_bots = ['broonie@kernel.org', 'lkp@intel.com']
         subject = email_get_header_normalised(message, 'subject')
-
-        # Mark Brown's bot and lkp
-        if potential_bot and subject.startswith('applied'):
-            return True
-
-        if LinuxMailCharacteristics.REGEX_GREG_ADDED.match(subject):
-            return True
-
         uagent = email_get_header_normalised(message, 'user-agent')
+        xmailer = email_get_header_normalised(message, 'x-mailer')
 
+        if email in bots:
+            return True
+        elif email in potential_bots and \
+                email_get_header_normalised(message, 'x-patchwork-hint') == 'ignore':
+            return True
+        # Mark Brown's bot and lkp
+        elif email in potential_bots and subject.startswith('applied'):
+            return True
+        elif LinuxMailCharacteristics.REGEX_GREG_ADDED.match(subject):
+            return True
         # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for
         # all other mails. That's how we can easily separate automated mails
         # from real mails.
-        if email == 'akpm@linux-foundation.org' and 's-nail' in uagent:
+        elif email == 'akpm@linux-foundation.org' and 's-nail' in uagent:
             return True
-
-        # syzbot
-        if 'syzbot' in email and 'syzkaller.appspotmail.com' in email:
+        elif xmailer == 'tip-git-log-daemon':
             return True
-
-        # The Tip bot
-        if 'tipbot@zytor.com' in email or \
-           'noreply@ciplatform.org' in email:
-            return True
-
-        xmailer = email_get_header_normalised(message, 'x-mailer')
-        if xmailer == 'tip-git-log-daemon':
-            return True
-
         # Stephen Rothwell's automated emails
-        if self.is_next and 'sfr@canb.auug.org.au' in email:
+        elif self.is_next and 'sfr@canb.auug.org.au' in email:
             return True
-
-        return False
+        else:
+            return False
 
     def _has_foreign_response(self, repo, thread):
         """
@@ -331,8 +317,8 @@ class LinuxMailCharacteristics:
 
     def _is_stable_review(self, message, patch):
         if 'X-Mailer' in message and \
-           'LinuxStableQueue' in message['X-Mailer']:
-               return True
+                'LinuxStableQueue' in message['X-Mailer']:
+            return True
 
         if 'X-stable' in message:
             xstable = message['X-stable'].lower()
@@ -366,7 +352,7 @@ class LinuxMailCharacteristics:
         for affected in patch.diff.affected:
             if True in map(lambda x: affected.startswith(x),
                            LinuxMailCharacteristics.ROOT_DIRS) or \
-               affected in LinuxMailCharacteristics.ROOT_FILES:
+                    affected in LinuxMailCharacteristics.ROOT_FILES:
                 continue
 
             return False
@@ -385,10 +371,10 @@ class LinuxMailCharacteristics:
     def _analyse_series(self, thread, message):
         if self.is_patch:
             if self.message_id == thread.name or \
-               self.message_id in [x.name for x in thread.children]:
+                    self.message_id in [x.name for x in thread.children]:
                 self.is_first_patch_in_thread = True
         elif 'Subject' in message and \
-             LinuxMailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
+                LinuxMailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
             self.is_cover_letter = True
 
     def __init__(self, repo, maintainers_version, clustering, message_id):

@@ -161,6 +161,10 @@ class Config:
         self.f_characteristics_pkl = path('CHARACTERISTICS_PKL')
         self.f_maintainers_pkl = path('MAINTAINERS_PKL')
         self.f_responses_pkl = path('PATCH_RESPONSES_PKL')
+        self.f_denorm_responses = path('PATCH_DENORM_RESPONSES')
+        self.f_denorm_upstream = path('PATCH_DENORM_UPSTREAM')
+        self.f_responses_authors = path('RESPONSES_AUTHORS')
+        self.f_filtered_responses = path('FILTERED_RESPONSES')
 
         # R location
         self.R_resources = path('R_RESOURCES')
