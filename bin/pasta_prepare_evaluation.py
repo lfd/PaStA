@@ -30,7 +30,6 @@ from ast import literal_eval
 from logging import getLogger
 from subprocess import call
 
-from pypasta import email_get_header_normalised, email_get_from
 from pypasta.LinuxMaintainers import load_maintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
 
@@ -397,34 +396,9 @@ def merge_pre_processed_response_dfs(config):
     final.to_csv(config.f_responses_authors, single_file=True)
 
 
-def _is_response_from_bot(message_id):
-    message = _repo.mbox.get_messages(message_id)[0]
-    email = email_get_from(message)[1].lower()
-    bots = ['tip-bot2@linutronix.de', 'tipbot@zytor.com', 'noreply@ciplatform.org', 'syzbot',
-            'syzkaller.appspotmail.com']
-    potential_bots = ['broonie@kernel.org', 'lkp@intel.com']
-    subject = email_get_header_normalised(message, 'subject')
-    uagent = email_get_header_normalised(message, 'user-agent')
-    xmailer = email_get_header_normalised(message, 'x-mailer')
-
-    if email in bots:
-        return message_id, True
-    elif email in potential_bots and \
-            email_get_header_normalised(message, 'x-patchwork-hint') == 'ignore':
-        return message_id, True
-    elif email in potential_bots and subject.startswith('applied'):
-        return message_id, True
-    elif LinuxMailCharacteristics.REGEX_GREG_ADDED.match(subject):
-        return message_id, True
-    # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for
-    # all other mails. That's how we can easily separate automated mails
-    # from real mails.
-    elif email == 'akpm@linux-foundation.org' and 's-nail' in uagent:
-        return message_id, True
-    elif xmailer == 'tip-git-log-daemon':
-        return message_id, True
-    else:
-        return message_id, False
+def _is_response_from_bot(message):
+    lmc = LinuxMailCharacteristics(_repo, None, None, message)
+    return message, lmc.is_from_bot
 
 
 def filter_bots(config, clustering):
@@ -459,7 +433,7 @@ def filter_bots(config, clustering):
 
     p1 = Pool(processes=int(cpu_count()), maxtasksperchild=1)
     response_to_bot = p1.map(_is_response_from_bot, list(final_filtered_2['responses.resp_msg_id'].unique().compute()),
-                            chunksize=1000)
+                             chunksize=1000)
     p1.close()
     p1.join()
 
