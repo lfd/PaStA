@@ -42,7 +42,10 @@ RUN apt install -y --no-install-recommends \
 RUN pip3 --no-cache-dir install \
 	dateparser \
 	flask-bootstrap \
-	flask-nav anytree
+	flask-nav anytree \
+	flat-table \
+	pandas "dask[complete]" \
+	matplotlib seaborn
 
 RUN useradd -m -G sudo -s /bin/bash pasta && echo "pasta:pasta" | chpasswd
 
