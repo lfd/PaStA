@@ -228,12 +228,12 @@ def prepare_patch_review(config, clustering):
     clusters = list(clustering.iter_split())
 
     clusters_responses = []
-    for d, u in clusters:
+    for cluster_id, (d, u) in enumerate(clusters):
         # Handle upstream commits without patches
         if not d:
             cluster_dict = {}
             try:
-                cluster_dict['cluster_id'] = clustering.get_cluster(next(iter(u)))
+                cluster_dict['cluster_id'] = cluster_id
                 cluster_dict['upstream'] = u
                 cluster_dict['patch_id'] = None
                 cluster_dict['responses'] = None
@@ -242,7 +242,9 @@ def prepare_patch_review(config, clustering):
                 log.warning("No downstream or upstream found, bad entry?...Skipping")
         for patch_id in d:
             # Handle entries with patches
-            cluster_dict = {'cluster_id': clustering.get_cluster(patch_id), 'patch_id': patch_id, 'upstream': u}
+            cluster_dict = {'cluster_id': cluster_id,
+                            'patch_id': patch_id,
+                            'upstream': u}
 
             # Add responses for the patch
             thread = threads.get_thread(patch_id)
