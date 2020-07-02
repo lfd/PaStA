@@ -168,7 +168,8 @@ def load_all_maintainers(ret, repo):
     return ret, True
 
 
-def prepare_ignored_patches(config, repo, clustering):
+def prepare_ignored_patches(config, clustering):
+    repo = config.repo
     repo.mbox.load_threads()
 
     all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
@@ -292,7 +293,8 @@ def prepare_off_list_patches():
     pass
 
 
-def prepare_patch_review(config, repo, clustering):
+def prepare_patch_review(config, clustering):
+    repo = config.repo
     threads = repo.mbox.load_threads()
     clusters = list(clustering.iter_split())
 
@@ -376,17 +378,16 @@ def prepare_evaluation(config, argv):
         log.error("Only works in Mbox mode!")
         return -1
 
-    repo = config.repo
     _, clustering = config.load_cluster()
     clustering.optimize()
 
     config.load_ccache_mbox()
 
     if analysis_option.mode == 'ignored':
-        prepare_ignored_patches(config, repo, clustering)
+        prepare_ignored_patches(config, clustering)
 
     elif analysis_option.mode == 'off-list':
         prepare_off_list_patches()
 
     else:
-        prepare_patch_review(repo, clustering)
+        prepare_patch_review(config, clustering)
