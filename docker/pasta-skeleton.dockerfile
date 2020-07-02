@@ -26,6 +26,7 @@ RUN apt install -y --no-install-recommends \
 	python3-flaskext.wtf \
 	python3-fuzzywuzzy \
 	python3-git \
+	python3-pandas \
 	python3-pip \
 	python3-pygit2 \
 	python3-setuptools \
