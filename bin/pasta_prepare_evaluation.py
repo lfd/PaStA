@@ -234,9 +234,10 @@ def prepare_patch_review(config, clustering):
             responses = list()
             # Iterate over all subnodes, but omit the root-node (patch_id)
             for node in anytree.PreOrderIter(subthread, filter_=lambda node: node.name != patch_id):
+                response_author = repo.mbox.get_messages(node.name)[0]['from']
                 responses.append({'resp_msg_id': node.name,
                                   'parent': node.parent.name,
-                                  'message': repo.mbox.get_raws(node.name)})
+                                  'response_author': response_author})
 
             clusters_responses.append({'cluster_id': cluster_id,
                                        'patch_id': patch_id,
