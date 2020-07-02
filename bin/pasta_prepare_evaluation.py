@@ -13,6 +13,7 @@ This work is licensed under the terms of the GNU GPL, version 2. See
 the COPYING file in the top-level directory.
 """
 
+import anytree
 import argparse
 import csv
 import os
@@ -226,24 +227,6 @@ def prepare_patch_review(config, clustering):
     threads = repo.mbox.load_threads()
     clusters = list(clustering.iter_split())
 
-    def _load_responses_dict(msg_id, response_list):
-        queue = [msg_id]
-        seen = []
-        while queue:
-            next_msg = queue.pop(0)
-            if next_msg not in seen:
-                seen.append(next_msg)
-                try:
-                    next_msg_responses = list(threads.reply_to_map[next_msg])
-                    queue.extend(next_msg_responses)
-                    for resp in next_msg_responses:
-                        resp_dict = {'parent': next_msg, 'resp_msg_id': resp, 'message': repo.mbox.get_raws(resp)}
-                        response_list.append(resp_dict)
-                except KeyError:
-                    log.info("The email {} has no response".format(next_msg))
-                    continue
-        return
-
     clusters_responses = []
     for d, u in clusters:
         # Handle upstream commits without patches
@@ -262,9 +245,20 @@ def prepare_patch_review(config, clustering):
             cluster_dict = {'cluster_id': clustering.get_cluster(patch_id), 'patch_id': patch_id, 'upstream': u}
 
             # Add responses for the patch
-            response_lst = []
-            _load_responses_dict(patch_id, response_lst)
-            cluster_dict['responses'] = response_lst
+            thread = threads.get_thread(patch_id)
+            subthread = anytree.find(thread, lambda node: node.name == patch_id)
+            # This can happen in case of broken threads
+            if subthread is None:
+                continue
+
+            responses = list()
+            # Iterate over all subnodes, but omit the root-node (patch_id)
+            for node in anytree.PreOrderIter(subthread, filter_=lambda node: node.name != patch_id):
+                responses.append({'resp_msg_id': node.name,
+                                  'parent': node.parent.name,
+                                  'message': repo.mbox.get_raws(node.name)})
+
+            cluster_dict['responses'] = responses
             clusters_responses.append(cluster_dict)
 
     with open(config.f_responses_pkl, 'wb') as handle:
