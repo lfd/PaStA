@@ -16,6 +16,7 @@ the COPYING file in the top-level directory.
 import anytree
 import argparse
 import csv
+import pandas as pd
 import pickle
 import re
 
@@ -247,6 +248,8 @@ def prepare_patch_review(config, clustering):
                                        'patch_id': patch_id,
                                        'upstream': u,
                                        'responses': responses})
+
+    clusters_responses = pd.DataFrame(clusters_responses)
 
     with open(config.f_responses_pkl, 'wb') as handle:
         pickle.dump(clusters_responses, handle, protocol=pickle.HIGHEST_PROTOCOL)
