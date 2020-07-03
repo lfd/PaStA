@@ -164,7 +164,7 @@ class MaintainerMetrics:
             self.one_list_mtr_per_sub = True
 
         # Metric: One correct list
-        if not c.mtrs_has_lists or c.has_one_correct_list:
+        if not c.mtrs_has_lists or c.mtrs_has_one_correct_list:
             self.one_list = True
 
         # Metric: One correct list or one correct maintainer
