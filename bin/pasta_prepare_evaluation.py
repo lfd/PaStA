@@ -221,9 +221,12 @@ def prepare_patch_review(config, clustering):
     repo = config.repo
     threads = repo.mbox.load_threads()
     clusters = list(clustering.iter_split())
-
+    targets_characteristics = set()
     clusters_responses = list()
+
     for cluster_id, (d, u) in enumerate(clusters):
+        targets_characteristics |= d
+
         # Handle clusters w/o patches, i.e., upstream commits
         if not d:
             clusters_responses.append({'cluster_id': cluster_id,
@@ -240,6 +243,7 @@ def prepare_patch_review(config, clustering):
             responses = list()
             # Iterate over all subnodes, but omit the root-node (patch_id)
             for node in anytree.PreOrderIter(subthread, filter_=lambda node: node.name != patch_id):
+                targets_characteristics.add(node.name)
                 response_author = repo.mbox.get_messages(node.name)[0]['from']
                 responses.append({'resp_msg_id': node.name,
                                   'parent': node.parent.name,
@@ -254,6 +258,9 @@ def prepare_patch_review(config, clustering):
         pickle.dump(clusters_responses, handle, protocol=pickle.HIGHEST_PROTOCOL)
     log.info("Done writing response info for {} patch/commit entries!".format(len(clusters)))
     log.info("Total clusters found by pasta: {}".format(len(clusters)))
+
+    load_linux_mail_characteristics(config, None, clustering,
+                                    targets_characteristics)
 
 
 def prepare_evaluation(config, argv):
