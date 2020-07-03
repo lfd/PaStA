@@ -16,16 +16,11 @@ the COPYING file in the top-level directory.
 import anytree
 import argparse
 import csv
-import os
 import pickle
 import re
 
 from logging import getLogger
-
-from multiprocessing import Pool, cpu_count
 from subprocess import call
-
-from tqdm import tqdm
 
 from pypasta.LinuxMaintainers import load_maintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
