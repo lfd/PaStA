@@ -285,10 +285,7 @@ def pre_process_response_data(config):
     # Load responses dict into dataframe, preliminary processing, indexing
 
     with open(config.f_responses_pkl, 'rb') as handle:
-        data = pickle.load(handle)
-
-    response_df = pd.DataFrame(data)
-    log.info("Done reading input in pandas dataframe")
+        response_df = pickle.load(handle)
 
     # Convert set to list
     response_df['upstream'] = response_df['upstream'].map(list)
