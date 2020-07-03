@@ -222,25 +222,18 @@ def prepare_patch_review(config, clustering):
     threads = repo.mbox.load_threads()
     clusters = list(clustering.iter_split())
 
-    clusters_responses = []
+    clusters_responses = list()
     for cluster_id, (d, u) in enumerate(clusters):
-        # Handle upstream commits without patches
+        # Handle clusters w/o patches, i.e., upstream commits
         if not d:
-            cluster_dict = {}
-            try:
-                cluster_dict['cluster_id'] = cluster_id
-                cluster_dict['upstream'] = u
-                cluster_dict['patch_id'] = None
-                cluster_dict['responses'] = None
-                clusters_responses.append(cluster_dict)
-            except KeyError:
-                log.warning("No downstream or upstream found, bad entry?...Skipping")
-        for patch_id in d:
-            # Handle entries with patches
-            cluster_dict = {'cluster_id': cluster_id,
-                            'patch_id': patch_id,
-                            'upstream': u}
+            clusters_responses.append({'cluster_id': cluster_id,
+                                       'upstream': u,
+                                       'patch_id':  None,
+                                       'responses': None})
+            continue
 
+        # Handle regular clusters with patches
+        for patch_id in d:
             # Add responses for the patch
             thread = threads.get_thread(patch_id)
             subthread = anytree.find(thread, lambda node: node.name == patch_id)
@@ -255,8 +248,10 @@ def prepare_patch_review(config, clustering):
                                   'parent': node.parent.name,
                                   'message': repo.mbox.get_raws(node.name)})
 
-            cluster_dict['responses'] = responses
-            clusters_responses.append(cluster_dict)
+            clusters_responses.append({'cluster_id': cluster_id,
+                                       'patch_id': patch_id,
+                                       'upstream': u,
+                                       'responses': responses})
 
     with open(config.f_responses_pkl, 'wb') as handle:
         pickle.dump(clusters_responses, handle, protocol=pickle.HIGHEST_PROTOCOL)
