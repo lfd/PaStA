@@ -221,6 +221,10 @@ class MailContainer:
 
         return index
 
+    # Default handler for get_patchwork_ids: Assume that they are not present.
+    def get_patchwork_ids(self, message_id):
+        return set()
+
     def write_index(self, f_index):
         index = list()
         for message_id, candidates in self.index.items():
@@ -639,9 +643,9 @@ class Mbox:
     def get_patchwork_ids(self, message_id):
         ret = set()
 
-        for project in self.patchwork_projects:
-            if message_id in project:
-                ret |= project.get_patchwork_ids(message_id)
+        for mbox in self.mboxes:
+            if message_id in mbox:
+                ret |= mbox.get_patchwork_ids(message_id)
 
         return ret
 
