@@ -96,8 +96,7 @@ PaStA understands several mailbox exchange formats:
 #### Patch stack mode
 This mode uses patch stack definition files to compare succesive versions of
 patch stacks. Different patch stacks are defined in the patch stack definition.
-An example configuration, as well as script can be found in the resources of
-the PreemptRT project.
+Example configurations, as well as a scripts can be found in the [PaStA-resources project](https://github.com/lfd/PaStA-resources).
 
 
 ### Initialise PaStA's caches
