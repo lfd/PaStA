@@ -33,6 +33,10 @@ as well as results of **PaStA**'s analysis for some sample projects.
 
 ```
 $ git clone https://github.com/lfd/PaStA.git
+```
+
+**Only for Maintainers:**
+```
 $ cd PaStA
 $ ./tools/update_resources.sh # This might take some time to complete
 ```
