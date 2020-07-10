@@ -49,7 +49,7 @@ def walk_commit_tree(tree):
     return results
 
 
-def get_file_map(filename):
+def get_file_infos(filename):
     blob = _tmp_tree[filename]
     lines = blob.data.count(b'\n')
     size = blob.size
@@ -156,7 +156,7 @@ def maintainers_stats(config, argv):
     _all_maintainers = all_maintainers
     processes = int(cpu_count())
     p = Pool(processes=processes, maxtasksperchild=1)
-    file_map = p.map(get_file_map, all_filenames)
+    file_map = p.map(get_file_infos, all_filenames)
     p.close()
     p.join()
 
