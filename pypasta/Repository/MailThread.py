@@ -168,9 +168,12 @@ class MailThread:
 
         return message_id
 
-    def get_thread(self, message_id):
-        parent = self.get_parent(message_id, set())
-        head = Node(parent)
+    def get_thread(self, message_id, subthread=False):
+        if subthread:
+            head = message_id
+        else:
+            head = self.get_parent(message_id, set())
+        head = Node(head)
         self._get_thread(head, set())
         return head
 
