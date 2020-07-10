@@ -235,11 +235,7 @@ def prepare_patch_review(config, clustering):
         # Handle regular clusters with patches
         for patch_id in d:
             # Add responses for the patch
-            thread = threads.get_thread(patch_id)
-            subthread = anytree.find(thread, lambda node: node.name == patch_id)
-            # This can happen in case of broken threads
-            if subthread is None:
-                continue
+            subthread = threads.get_thread(patch_id, subthread=True)
 
             responses = list()
             # Iterate over all subnodes, but omit the root-node (patch_id)
