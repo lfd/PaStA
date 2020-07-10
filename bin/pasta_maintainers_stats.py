@@ -49,18 +49,6 @@ def walk_commit_tree(tree):
     return results
 
 
-def get_tree(repo, revision):
-    if revision == 'HEAD':
-        return repo.revparse_single(repo.head.name).tree
-
-    if revision.startswith('v'):
-        revision = repo.lookup_reference('refs/tags/%s' % revision).target
-    commit_hash = repo[revision].target
-    tree = repo[commit_hash].tree
-
-    return tree
-
-
 def get_file_map(filename):
     blob = _tmp_tree[filename]
     lines = blob.data.count(b'\n')
@@ -143,7 +131,7 @@ def maintainers_stats(config, argv):
     log.info('Working on kernel revision %s' % kernel_revision)
 
     all_maintainers = LinuxMaintainers(repo, kernel_revision)
-    tree = get_tree(repo.repo, kernel_revision)
+    tree = repo.get_tree(kernel_revision)
     all_filenames = walk_commit_tree(tree)
     result = list()
 
