@@ -47,7 +47,6 @@ def sanitise_header(message, header):
 
 def get_irts(id):
     messages = _mbox.get_messages(id)
-    ret = None
     irt = set()
     ids = set()
 
@@ -57,10 +56,7 @@ def get_irts(id):
 
     irt -= ids
 
-    if len(irt):
-        ret = set(irt)
-
-    return id, ret
+    return id, irt
 
 
 class MailThread:
