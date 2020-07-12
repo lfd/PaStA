@@ -186,18 +186,18 @@ def maintainers_stats(config, argv):
             object_files[mtr].add(file)
             object_stats[mtr].update(lines=lines, size=size)
 
-    def _filter_sections(section, lines, size):
-        relevant[section].update(lines=lines, size=size)
+    def _filter_maintainers(section, lines, size):
+        _, mtrs, _ = all_maintainers.get_maintainers(section)
+        for mtr in mtrs:
+            relevant[mtr].update(lines=lines, size=size)
 
     # Routines that are chosen in case of --group-by sections
     def _evaluator_sections(file, lines, size, section):
         object_files[section].add(file)
         object_stats[section].update(lines=lines, size=size)
 
-    def _filter_maintainers(section, lines, size):
-        _, mtrs, _ = all_maintainers.get_maintainers(section)
-        for mtr in mtrs:
-            relevant[mtr].update(lines=lines, size=size)
+    def _filter_sections(section, lines, size):
+        relevant[section].update(lines=lines, size=size)
     #############################################
 
     # Choose the right routines
