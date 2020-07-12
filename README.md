@@ -57,6 +57,7 @@ Requirements
 - procmail
 - python-anytree
 - python-dateparser
+- python-networkx
 - python scikit-learn
 - python-toml
 - python-tqdm

@@ -12,6 +12,7 @@ This work is licensed under the terms of the GNU GPL, version 2. See
 the COPYING file in the top-level directory.
 """
 
+import networkx as nx
 import os
 import pygit2
 import sys
@@ -19,6 +20,7 @@ import sys
 from argparse import ArgumentParser
 from collections import defaultdict, Counter
 from csv import writer
+from itertools import combinations
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
@@ -87,6 +89,47 @@ def dump_csv(headers, relevant_headers, data, filename):
         print(str)
 
 
+# generate_graph generates an edge list for an undirected graph that represents
+# the overlapping code that is covered by the MAINTAINERS file. Every node of
+# the graph represents a section in MAINTAINERS. A section node has an edge to
+# another section node if both sections share at least one file. An edge weighted
+# by the LoC/size in bytes of the shared content.
+def generate_graph(file_map, file_filters, f_csv):
+    filenames = file_filters
+    if not filenames:
+        filenames = file_map.keys()
+
+    G = nx.Graph()
+
+    # Iterate over all filenames, determine their size/LoC and to what sections
+    # they belong. Then, add the weight to connected sections
+    for filename in filenames:
+        lines, size, sections = file_map[filename]
+
+        # Sum up the size of each section: Each section gets a self-loop that
+        # represents the size of the node
+        for section in sections:
+            if not G.has_edge(section, section):
+                G.add_edge(section, section, weight=Counter())
+            G[section][section]['weight'].update(lines=lines, size=size)
+
+        # Update edges to all other sections
+        for c1, c2 in combinations(sections, 2):
+            if not G.has_edge(c1, c2):
+                G.add_edge(c1, c2, weight=Counter())
+            G[c1][c2]['weight'].update(lines=lines, size=size)
+
+    with open(f_csv, 'w') as csv_file:
+        csv_writer = writer(csv_file)
+        line = ["from", "to", "lines", "size"]
+        csv_writer.writerow(line)
+
+        for a, b in G.edges:
+            ctr_edge = G[a][b]['weight']
+            line = [a, b, ctr_edge['lines'], ctr_edge['size']]
+            csv_writer.writerow(line)
+
+
 def maintainers_stats(config, argv):
     parser = ArgumentParser(prog='maintainers_stats',
                             description='Display file sizes grouped by '
@@ -103,18 +146,29 @@ def maintainers_stats(config, argv):
                              'considered if --filter is not specified.')
     parser.add_argument('--group-by', type=str, default='sections',
                         choices={'files', 'maintainers', 'sections'},
-                        help='\'files\' option shows all sections that are '
+                        help='(only used in combination with --mode stats) '
+                             'files: option shows all sections that are '
                              'assigned to the input files. '
-                             '\'sections\' option groups files by sections and '
+                             'sections: option groups files by sections and '
                              'displays sections ordered by their size (LoC). '
-                             '\'maintainers\' option groups files by'
-                             'maintainers ' 'and displays each maintainer '
+                             'maintainers: option groups files by '
+                             'maintainers and shows each maintainer '
                              'ordered by the LoC they are responsible for. '
                              'Default: %(default)s')
     parser.add_argument('--revision', type=str, help='Specify a commit hash or '
                         'a version name for a Linux repo')
+    parser.add_argument('--mode', type=str, default='stats',
+                        choices={'stats', 'graph'},
+                        help='stats: dump stats to a csv-file. '
+                             'graph: generate a csv-file that serves as a basis for a graph. '
+                             'Default: %(default)s')
 
     args = parser.parse_args(argv)
+
+    if args.mode == 'graph' and not args.csv:
+        log.error('Graph mode and no given output for csv file. Exiting')
+        return
+
     repo = config.repo
 
     kernel_revision = 'HEAD'
@@ -164,6 +218,10 @@ def maintainers_stats(config, argv):
     _all_maintainers = None
 
     file_map = dict(file_map)
+
+    if args.mode == 'graph':
+        generate_graph(file_map, filter_by_files, args.csv)
+        return
 
     # An object is the kind of the analysis, and reflects the target. A target
     # can either be a section or the maintainer.

@@ -27,14 +27,15 @@ RUN apt install -y --no-install-recommends \
 	python3-flaskext.wtf \
 	python3-fuzzywuzzy \
 	python3-git \
+	python3-networkx \
 	python3-pip \
 	python3-pygit2 \
+	python3-requests \
 	python3-setuptools \
 	python3-sklearn \
 	python3-toml \
 	python3-tqdm \
 	python3-wheel \
-	python3-requests \
 	sudo \
 	vim \
 	wget
