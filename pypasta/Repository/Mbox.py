@@ -89,7 +89,8 @@ class PatchMail(MessageDiff):
 
         if len(payload) >= 2 and \
            isinstance(payload[0], str) and isinstance(payload[1], str) and \
-           True in ['diff --' in x for x in payload]:
+           (True in ['diff --' in x for x in payload] or
+            True in ['Index: ' in x for x in payload]):
             return mail, payload[0] + payload[1]
 
         for p in payload:
