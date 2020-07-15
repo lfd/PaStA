@@ -431,8 +431,12 @@ class PatchworkProject(MailContainer):
     def _pull_patch(url):
         resp = requests.get(url)
         resp.raise_for_status()
-        md5sum = hashlib.md5(resp.content).hexdigest()
-        return md5sum, resp.content
+        # Add a trailing newline. This is required that the hash that is
+        # received via API has the same MD5 sum as the ones that were
+        # imported via the initial_mbox
+        content = resp.content + b'\n'
+        md5sum = hashlib.md5(content).hexdigest()
+        return md5sum, content
 
     def update(self):
         if self.f_mbox_raw:
