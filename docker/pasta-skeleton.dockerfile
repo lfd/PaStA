@@ -21,6 +21,7 @@ RUN apt install -y --no-install-recommends \
 	build-essential \
 	git \
 	locales \
+	patchutils \
 	procmail \
 	python3-dev \
 	python3-flaskext.wtf \

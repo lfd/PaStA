@@ -9,8 +9,9 @@ Author:
 This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
-import re
 
+import re
+import subprocess
 
 class Hunk:
     def __init__(self, insertions=None, deletions=None, context=None):
@@ -38,6 +39,8 @@ class Diff:
     #r'^--- (?P<filename>[^\t\n]+)(?:\t(?P<timestamp>[^\n]+))?')
     FILE_SEPARATOR_PLUS_REGEX = re.compile(r'^\+\+\+ ([^\s]+).*$')
 
+    CONTEXT_DIFF_REGEX = re.compile(r'\*\*\*\s*\d+,\s*\d+\s*\*\*\*')
+
     # Exclude '--cc' diffs
     EXCLUDE_CC_REGEX = re.compile(r'^diff --cc (.+)$')
 
@@ -57,6 +60,18 @@ class Diff:
             self.affected |= set(filenames)
             if filenames not in self.patches:
                 self.patches[filenames] = Patch(similarity=similarity)
+
+        # Check if we have a context diff. We should see something
+        # like "**** 123, 456 ***" within the first few lines.
+        for line in diff[0:10]:
+            if Diff.CONTEXT_DIFF_REGEX.match(line):
+                ctx_diff = '\n'.join(diff).encode()
+                p = subprocess.run(['filterdiff', '--format=unified'],
+                                   input=ctx_diff, stdout=subprocess.PIPE)
+                if p.returncode != 0:
+                    raise ValueError("Unable to convert context diff to unified diff")
+                diff = p.stdout.decode().split('\n')
+                break
 
         # we pop from the list until it is empty. Copy it first, to prevent its
         # deletion
