@@ -64,7 +64,7 @@ download the required dependencies.
 Getting started
 ---------------
 - Select the active project configuration
-  `./pasta select linux`
+  `./pasta set_config linux`
 - Run PaStA `./pasta -h`
 
 Running PaStA
@@ -201,9 +201,9 @@ UPSTREAM = v1.0..v2.0
 ```
 
 ### Set active configuration
-Use the `select` command to set the active configuration. E.g.:
+Use the `set_config` command to set the active configuration. E.g.:
 ```
-$ ./pasta select linux
+$ ./pasta set_config linux
 ```
 
 All further calls on **PaStA** tools will use this configuration file. To use a
@@ -224,7 +224,7 @@ PaStA will save those patches in a commit cache file. This file can be used for
 further analysis and is compared against all 'upstream' commits (master
 branch).
 
-1. `./pasta select linux`
+1. `./pasta set_config linux`
 2. Either get mailboxes. PaStA supports raw unix-style mailboxes and public
    inboxes, and add them to the configuration. Use the linux project
    configuration as a reference. There are several possibilities to acquire
