@@ -28,10 +28,11 @@ import sys
 
 from ast import literal_eval
 from logging import getLogger
+from multiprocessing import Pool, cpu_count
 from subprocess import call
 
 from pypasta.LinuxMaintainers import load_maintainers
-from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
+from pypasta import LinuxMailCharacteristics, load_linux_mail_characteristics
 
 from analyses import response_analysis
 
@@ -366,7 +367,7 @@ def merge_pre_processed_response_dfs(config):
     df_pd_final = final.compute()
 
     # Remove rows with no patch and other infos
-    index_names = df_pd_final[(df_pd_final['patch_id'] == '_') & (df_pd_final['responses.message'].isna()) &
+    index_names = df_pd_final[(df_pd_final['patch_id'] == '_') &
                               (df_pd_final['upstream'].isna())].index
     df_pd_final.drop(index_names, inplace=True)
 
@@ -377,28 +378,22 @@ def merge_pre_processed_response_dfs(config):
 
     final = dd.from_pandas(df_pd_final, npartitions=20)
 
-    final['responses.message'] = final['responses.message'].map(try_literal_eval)
-
     final.reset_index().rename(columns={'index': 'idx'}).compute()
 
-    final['response_author'] = final['responses.message'].map(lambda x: _get_message_field(x, 'from'),
-                                                              meta=pd.Series([], dtype=object, name='x'))
-
-    log.info("Unique response authors {}".format(final['response_author'].nunique().compute(num_workers=20)))
-
-    final.to_csv(config.f_responses_authors, single_file=True)
+    final.to_csv(config.f_responses, single_file=True)
 
 
 def _is_response_from_bot(message):
     lmc = LinuxMailCharacteristics(_repo, None, None, message)
-    return message, lmc.is_from_bot
+    flag, botname = lmc.is_from_bot
+    return message, flag, botname
 
 
 def filter_bots(config, clustering):
     repo = config.repo
     repo.mbox.load_threads()
 
-    final = dd.read_csv(config.f_responses_authors, blocksize=50e7,
+    final = dd.read_csv(config.f_responses, blocksize=50e7,
                         dtype={"idx ": "int32",
                                "patch_id ": "category",
                                "responses.resp_msg_id": "category",
@@ -406,7 +401,7 @@ def filter_bots(config, clustering):
                                "upstream": "category",
                                "response_author": "category"}).drop('Unnamed: 0', axis=1)
 
-    log.info("Finished reading dask dataframe {}".format(config.f_responses_authors))
+    log.info("Finished reading dask dataframe {}".format(config.f_responses))
 
     # Discard null patches (coming from upstreams that were not mapped to any patch emails)
     unique_patches = set(final.patch_id.unique().compute())
@@ -432,7 +427,7 @@ def filter_bots(config, clustering):
 
     _repo = None
 
-    response_bot_df = pd.DataFrame(response_to_bot, columns=['responses.resp_msg_id', 'response_is_bot'])
+    response_bot_df = pd.DataFrame(response_to_bot, columns=['responses.resp_msg_id', 'response_is_bot', 'bot_name'])
 
     final_filtered_2 = dd.merge(final_filtered_2, response_bot_df, how='left', on=['responses.resp_msg_id'])
 
@@ -440,10 +435,12 @@ def filter_bots(config, clustering):
         final_filtered_2 = final_filtered_2.drop(['response_is_bot_x'], axis=1) \
             .rename(columns={"response_is_bot_y": "response_is_bot"})
 
+    #TODO: Remove this. At first we filtered out the responses from bots. It is perhaps interesting to look at those
+    # numbers as well
     # Filter out responses from bots
-    final_filtered_3 = final_filtered_2[final_filtered_2['response_is_bot'] != True]
+    #final_filtered_3 = final_filtered_2[final_filtered_2['response_is_bot'] != True]
 
-    final_filtered_3.to_csv(config.f_filtered_responses, single_file=True)
+    final_filtered_2.to_csv(config.f_filtered_responses, single_file=True)
 
     log.info("Written filtered response dataframe to disk, Done!")
 
