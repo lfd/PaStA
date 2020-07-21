@@ -548,42 +548,43 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
 
             if len(this_right_hashes):
                 preeval_result[left_hash] = this_right_hashes
-        return preeval_result
 
-    # Otherwise, take the long path...
-    log.info('Mapping filenames...')
-    f = functools.partial(preevaluate_filenames, thresholds, right_filenames)
-    if parallelise:
-        processes = int(cpu_count() * cpu_factor)
-        p = Pool(processes=processes, maxtasksperchild=1)
-        filename_mapping = p.map(f, left_filenames, chunksize=5)
-        p.close()
-        p.join()
+    # if tf < 1.0
     else:
-        filename_mapping = list(map(f, left_filenames))
+        # Otherwise, take the long path...
+        log.info('Mapping filenames...')
+        f = functools.partial(preevaluate_filenames, thresholds, right_filenames)
+        if parallelise:
+            processes = int(cpu_count() * cpu_factor)
+            p = Pool(processes=processes, maxtasksperchild=1)
+            filename_mapping = p.map(f, left_filenames, chunksize=5)
+            p.close()
+            p.join()
+        else:
+            filename_mapping = list(map(f, left_filenames))
 
-    log.info('Creating preevaluation result...')
-    for left_file, dsts in filename_mapping:
-        left_hashes = left_files[left_file]
-        right_hashes = set()
-        for right_file in dsts:
-            right_hashes |= right_files[right_file]
+        log.info('Creating preevaluation result...')
+        for left_file, dsts in filename_mapping:
+            left_hashes = left_files[left_file]
+            right_hashes = set()
+            for right_file in dsts:
+                right_hashes |= right_files[right_file]
 
-        for left_hash in left_hashes:
-            left = repo[left_hash]
-            for right_hash in right_hashes:
-                right = repo[right_hash]
-                # don't compare revert patches
-                if left.is_revert != right.is_revert:
-                    continue
-                # skip if we're comparing a patch against itself
-                if left_hash == right_hash:
-                    continue
-                # check if this wasn't already inserted the other way round
-                if right_hash in preeval_result and left_hash in preeval_result[right_hash]:
-                    continue
-                # insert result
-                preeval_result[left_hash].add(right_hash)
+            for left_hash in left_hashes:
+                left = repo[left_hash]
+                for right_hash in right_hashes:
+                    right = repo[right_hash]
+                    # don't compare revert patches
+                    if left.is_revert != right.is_revert:
+                        continue
+                    # skip if we're comparing a patch against itself
+                    if left_hash == right_hash:
+                        continue
+                    # check if this wasn't already inserted the other way round
+                    if right_hash in preeval_result and left_hash in preeval_result[right_hash]:
+                        continue
+                    # insert result
+                    preeval_result[left_hash].add(right_hash)
 
     # filter for empty entries
     preeval_result = {k: v for k, v in preeval_result.items() if len(v)}
