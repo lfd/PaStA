@@ -10,9 +10,8 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 import functools
-import os
-import pickle
 
+from collections import defaultdict
 from enum import Enum
 from fuzzywuzzy import fuzz
 from multiprocessing import Pool, cpu_count
@@ -497,12 +496,12 @@ def _evaluation_helper(thresholds, l_r, verbose=False):
 
 def preevaluate_filenames(thresholds, right_files, left_file):
     # We won't enter preevaluate_filenames, if tf >= 1.0
-    candidates = []
+    candidates = set()
     for right_file in right_files:
         sim = fuzz.token_sort_ratio(left_file, right_file) / 100
         if sim < thresholds.filename:
             continue
-        candidates.append(right_file)
+        candidates.add(right_file)
     return left_file, candidates
 
 
@@ -512,23 +511,21 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
     # Create two dictionaries - one for mails, one for commits that map
     # affected files to commit hashes resp. mailing list Message-IDs
     def file_commit_map(hashes):
-        ret = {}
+        ret = defaultdict(set)
         for hash in hashes:
             files = repo[hash].diff.affected
             for file in files:
-                if file not in ret:
-                    ret[file] = set()
-                ret[file] |= set([hash])
+                ret[file].add(hash)
         return ret
 
     log.info('Creating file maps...')
     left_files = file_commit_map(left_hashes)
-    left_filenames = list(left_files.keys())
+    left_filenames = set(left_files.keys())
 
     right_files = file_commit_map(right_hashes)
-    right_filenames = list(right_files.keys())
+    right_filenames = set(right_files.keys())
 
-    preeval_result = {}
+    preeval_result = defaultdict(set)
     # Use the quick path if tf >= 1.0
     if thresholds.filename >= 1.0:
         log.info('Creating preevaluation result...')
@@ -544,12 +541,11 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
             # respect author_date_interval. Only consider patches for
             # comparison that have at max a temporal author_date
             # distance of author_date_interval days
-            left_author_date = repo[left_hash].author.date
             if thresholds.author_date_interval:
-               this_right_hashes = {
-                    x for x in this_right_hashes
-                    if abs((repo[x].author.date - left_author_date).days) <
-                       thresholds.author_date_interval}
+                left_author_date = repo[left_hash].author.date
+                this_right_hashes = {x for x in this_right_hashes
+                                     if abs((repo[x].author.date - left_author_date).days) < thresholds.author_date_interval}
+
             if len(this_right_hashes):
                 preeval_result[left_hash] = this_right_hashes
         return preeval_result
@@ -571,14 +567,10 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
         left_hashes = left_files[left_file]
         right_hashes = set()
         for right_file in dsts:
-            right_hashes |= set(right_files[right_file])
+            right_hashes |= right_files[right_file]
 
         for left_hash in left_hashes:
             left = repo[left_hash]
-
-            if left_hash not in preeval_result:
-                preeval_result[left_hash] = set()
-
             for right_hash in right_hashes:
                 right = repo[right_hash]
                 # don't compare revert patches
