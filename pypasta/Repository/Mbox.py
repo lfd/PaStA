@@ -51,6 +51,8 @@ def decode_payload(message):
 
 
 class PatchMail(MessageDiff):
+    REGEX_RAW_DIFF = re.compile(r'---.*\n\+\+\+.*\n.*', re.MULTILINE)
+
     @staticmethod
     def extract_patch_mail(mail):
         id = mail['message-id']
@@ -90,7 +92,8 @@ class PatchMail(MessageDiff):
         if len(payload) >= 2 and \
            isinstance(payload[0], str) and isinstance(payload[1], str) and \
            (True in ['diff --' in x for x in payload] or
-            True in ['Index: ' in x for x in payload]):
+            True in ['Index: ' in x for x in payload]) or\
+           any([PatchMail.REGEX_RAW_DIFF.match(x) for x in payload]):
             return mail, payload[0] + payload[1]
 
         for p in payload:
