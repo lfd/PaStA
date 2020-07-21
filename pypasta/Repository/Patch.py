@@ -55,6 +55,8 @@ class Diff:
     LINE_IDENTIFIER_CONTEXT = ' '
     LINE_IDENTIFIER_NEWLINE = '\\'
 
+    REGEX_ORIG = re.compile(r'\.orig$')
+
     def __init__(self, diff):
         def insert_file(filenames, similarity):
             self.affected |= set(filenames)
@@ -227,6 +229,7 @@ class Diff:
         get_filename: Determine the filename of a diff of a file
         """
         def sanitise_filename(filename):
+            filename = Diff.REGEX_ORIG.sub('', filename)
             if filename == '/dev/null':
                 return filename
 
