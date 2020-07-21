@@ -24,6 +24,11 @@ and accuracy of PaStA:
 - [Observing Custom Software Modifications: A Quantitative Approach of Tracking the Evolution of Patch Stacks](https://arxiv.org/abs/1607.00905)
 - [The List is the Process: Reliable Pre-Integration Tracking of Commits on Mailing Lists](https://arxiv.org/pdf/1902.03147.pdf)
 
+Some other resources:
+- 
+- This [LPC 2019 recording](https://www.youtube.com/watch?v=QG1YDQ1HOKE) and [Embeded Linux Conference Europe 2019 recording](https://www.youtube.com/watch?v=YCfU-2dXDq0) describe core ideas behind the project. You can follow the slides [here](https://static.sched.com/hosted_files/osseu19/5c/pasta-elce19.pdf)
+- The whole presentation is summarised in [this](https://lwn.net/Articles/804511/) article.
+
 Getting PaStA
 -------------
 
