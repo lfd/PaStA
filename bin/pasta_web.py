@@ -127,14 +127,14 @@ def mbox():
     if id not in cluster:
         return render_mbox(patch)
 
-    elements = cluster.get_tagged(id) | cluster.get_untagged(id)
+    elements = cluster.get_upstream(id) | cluster.get_downstream(id)
 
     # convert ids to commit objects
     elements = {repo.get_commit(x) for x in elements}
     # sort them by author_date
     elements = sorted(elements,
                       key=lambda x: x.author.date if isinstance(x, PatchMail)
-                                    else x.commit.date,
+                                    else x.committer.date,
                       reverse=True)
 
     history = []
@@ -146,7 +146,7 @@ def mbox():
             found = sorted(config.repo.mbox.get_lists(element_id))
         else:
             message = '%s ("%s")' % (element_id[0:12], element.subject)
-            date = element.commit.date
+            date = element.committer.date
             found = ['Repository']
         date = date.strftime('%Y-%m-%d')
         history.append((element_id, date, message, found, element_id == id))
