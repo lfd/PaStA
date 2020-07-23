@@ -263,7 +263,7 @@ class Clustering:
             with open(filename, 'r') as f:
                 content = f.read()
         except FileNotFoundError:
-            log.warning('Equivalence class not found: %s' % filename)
+            log.warning('Clustering not found: %s' % filename)
             if must_exist:
                 raise
             return retval
