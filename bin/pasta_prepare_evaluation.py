@@ -308,7 +308,7 @@ def pre_process_response_data(config):
 
     df_denorm_responses = flat_table.normalize(df_melt_responses, expand_dicts=True, expand_lists=True)
     df_denorm_responses.drop('index', axis=1, inplace=True)
-    df_denorm_responses.drop_duplicates(inplace=True)
+    df_denorm_responses.drop_duplicates(subset=['responses.resp_msg_id', 'responses.parent', 'patch_id'], inplace=True)
     log.info("Computed de-normalized responses, writing to disk...")
 
     df_denorm_responses.to_csv(config.f_denorm_responses, index=False)
@@ -363,7 +363,7 @@ def merge_pre_processed_response_dfs(config):
                                                                     "upstream": "category"}).drop('Unnamed: 0', axis=1)
 
     print("Final shape with possible duplicate rows{}".format(final.shape))
-    final.drop_duplicates(inplace=True)
+    final.drop_duplicates(subset=['responses.resp_msg_id', 'upstream', 'patch_id'], inplace=True)
 
     # Convert to pandas
     df_pd_final = final.compute()
