@@ -156,7 +156,7 @@ def prepare_ignored_patches(config, clustering):
                        not characteristics[patch].has_foreign_response}
 
     # Calculate ignored patches wrt to other patches in the cluster: A patch is
-    # considered as ignored, if all related patches were ignoreed as well
+    # considered as ignored, if all related patches were ignored as well
     ignored_patches_related = \
         {patch for patch in ignored_patches if False not in
          [characteristics[x].has_foreign_response == False
