@@ -142,9 +142,9 @@ def ignore_tlds(addresses):
 
 class MaintainerMetrics:
     def __init__(self, c):
-        self.all_lists_one_mtr_per_sub = False
+        self.all_lists_one_mtr_per_sec = False
         self.one_list_and_mtr = False
-        self.one_list_mtr_per_sub = False
+        self.one_list_mtr_per_sec = False
         self.one_list = False
         self.one_list_or_mtr = False
 
@@ -152,7 +152,7 @@ class MaintainerMetrics:
         # needs to be addressed correctly
         if (not c.mtrs_has_lists or c.mtrs_has_list_per_section) and \
            (not c.mtrs_has_maintainers or c.mtrs_has_maintainer_per_section):
-            self.all_lists_one_mtr_per_sub = True
+            self.all_lists_one_mtr_per_sec = True
 
         # Metric: At least one correct list + at least one correct maintainer
         if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and \
@@ -161,7 +161,7 @@ class MaintainerMetrics:
 
         # Metric: One correct list + one maintainer per section
         if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and c.mtrs_has_maintainer_per_section:
-            self.one_list_mtr_per_sub = True
+            self.one_list_mtr_per_sec = True
 
         # Metric: One correct list
         if not c.mtrs_has_lists or c.mtrs_has_one_correct_list:
