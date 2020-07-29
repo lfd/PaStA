@@ -100,7 +100,7 @@ def get_relevant_patches(characteristics):
             skipped_not_first_patch += 1
             skip = True
 
-        if c.is_from_bot:
+        if c.is_from_bot[0]:
             skipped_bot += 1
             skip = True
         if c.is_stable_review:
@@ -413,7 +413,7 @@ def parseaddr_unicode(addr) -> (str, str):
                 except UnicodeDecodeError:
                     encoding = chardet.detect(decoded_string)['encoding']
                     try:
-                        name = decoded_string.decode(encoding)
+                        name = decoded_string.decode(encoding=encoding, errors='ignore')
                     except TypeError:
                         name = str(decoded_string, 'utf-8', errors='ignore')
             else:
