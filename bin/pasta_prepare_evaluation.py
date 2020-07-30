@@ -118,16 +118,13 @@ def get_relevant_patches(characteristics):
     return relevant
 
 
-def prepare_ignored_patches(config, clustering):
-    def _get_kv_rc(linux_version):
-        tag = linux_version.split('-rc')
-        kv = tag[0]
-        rc = 0
-        if len(tag) == 2:
-            rc = int(tag[1])
+def load_characteristics_and_maintainers(config, clustering):
+    """
+    This routine loads characteristics for ALL mails in the time window config.mbox_timewindow, and loads multiple
+    instances of maintainers for the the patches of the clustering.
 
-        return kv, rc
-
+    Returns the characteristics and maintainers_version
+    """
     repo = config.repo
     repo.mbox.load_threads()
 
@@ -140,6 +137,21 @@ def prepare_ignored_patches(config, clustering):
         load_linux_mail_characteristics(config, maintainers_version, clustering,
                                         all_messages_in_time_window)
 
+    return characteristics, maintainers_version
+
+
+def prepare_ignored_patches(config, clustering):
+    def _get_kv_rc(linux_version):
+        tag = linux_version.split('-rc')
+        kv = tag[0]
+        rc = 0
+        if len(tag) == 2:
+            rc = int(tag[1])
+
+        return kv, rc
+
+    repo = config.repo
+    characteristics, _ = load_characteristics_and_maintainers(config, clustering)
     relevant = get_relevant_patches(characteristics)
 
     log.info('Identify ignored patches...')
