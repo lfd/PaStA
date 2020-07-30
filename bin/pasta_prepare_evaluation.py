@@ -189,12 +189,7 @@ def prepare_ignored_patches(config, clustering):
             mail_from = c.mail_from[1]
 
             for list in repo.mbox.get_lists(message_id):
-                list_matches_patch = False
-                for subsys in c.maintainers.values():
-                    lists = subsys[0]
-                    if list in lists:
-                        list_matches_patch = True
-                        break
+                list_matches_patch = c.list_matches_patch(list)
 
                 row = {'id': message_id,
                        'from': mail_from,

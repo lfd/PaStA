@@ -387,6 +387,12 @@ class LinuxMailCharacteristics:
              LinuxMailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
             self.is_cover_letter = True
 
+    def list_matches_patch(self, list):
+        for lists, _, _ in self.maintainers.values():
+            if list in lists:
+                return True
+        return False
+
     def __init__(self, repo, maintainers_version, clustering, message_id):
         self.message_id = message_id
         self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
