@@ -80,7 +80,8 @@ class PatchMail(MessageDiff):
         for p in payload:
             try:
                 m = email.message_from_string(p)
-                if len(m.defects) or len(m.keys()) == 0:
+                # If there's no from, we probably have no real mail
+                if len(m.defects) or len(m.keys()) == 0 or 'From' not in m:
                     continue
 
                 # Hey, we have a valid email as attachment. Use it.
@@ -89,12 +90,26 @@ class PatchMail(MessageDiff):
             except:
                 pass
 
-        if len(payload) >= 2 and \
-           isinstance(payload[0], str) and isinstance(payload[1], str) and \
-           (True in ['diff --' in x for x in payload] or
-            True in ['Index: ' in x for x in payload]) or\
-           any([PatchMail.REGEX_RAW_DIFF.match(x) for x in payload]):
-            return mail, payload[0] + payload[1]
+        if len(payload) >= 2:
+            msg = str()
+            diff = str()
+            for p in payload:
+                if not isinstance(p, str):
+                    continue
+
+                s = p.split('\n')
+                if any(map(lambda line: line.startswith('diff --'), s)) or \
+                       any(map(lambda line: line.startswith('Index: '), s)) or \
+                       PatchMail.REGEX_RAW_DIFF.match(p):
+                    diff += p + '\n'
+                else:
+                    msg += p + '\n'
+
+            # We need at least len(diff). len(msg) doesn't make sense: The
+            # commit message may hide inside the diff part. Later, let the
+            # splitting approach decide.
+            if len(diff):
+                return mail, msg + diff + '\n'
 
         for p in payload:
             if 'From: ' in p or 'diff --' in p:
