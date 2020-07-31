@@ -12,13 +12,14 @@
 
 source("analyses/util.R")
 
-mindate <- '2017-01-01'
-maxdate <- '2020-06-01'
+mindate <- '2019-01-01'
+maxdate <- '2020-09-03'
 
 load_characteristics <- function(filename) {
   data <- read_csv(filename)
   data$list.matches_patch <- as.logical(data$list.matches_patch)
   data$ignored <- as.logical(data$ignored)
+  data$committer.correct <- as.logical(data$committer.correct)
   data <- data %>% mutate(date = as.Date(time))
 
   # Add week info
@@ -216,6 +217,63 @@ composition <- function(data, plot_name) {
   printplot(plot, filename)
 }
 
+patch_conform_analysis <- function(data){
+  commit_data <- data %>%
+    filter(type == 'patch') %>% 
+    #filter(!is.na(committer.correct)) %>%
+    select(list, committer.correct)
+    
+  # The domain name is uninteresting
+  cut_domain <- function(frame){
+    for(i in 1:length(frame[,1])){
+      frame[i, 1] <- unlist(strsplit(frame[i, 1], '@'))[1]
+    }
+    return(frame)
+  }
+  
+  patch_traffic <- count(commit_data, vars = c('list'))
+  patch_traffic <- patch_traffic[order(-patch_traffic$freq),] %>% select(list)
+  patch_traffic <- cut_domain(patch_traffic)
+  active_lists <- patch_traffic[1:15,]
+  
+  list_integration <- commit_data %>% filter(!is.na(committer.correct)) %>%
+    count(vars = c('list', 'committer.correct'))
+  
+  list_integration <- cut_domain(list_integration)
+
+  major_lists <- list_integration %>%
+    filter(list %in% active_lists) %>% group_by(list) %>%
+    transmute(percent = freq/sum(freq), committer.correct = committer.correct)
+
+  plot <- ggplot(major_lists, aes(x=committer.correct, y = percent)) +
+      theme_bw(base_size = 15) +
+      theme(legend.position = 'top',
+            axis.text.x.top = element_text(angle = 45, hjust = 0)) +
+      labs(color = '') +
+    ylab('Occurences') +
+    xlab('Correct committer') +
+    facet_wrap(~list, nrow=6) +
+    geom_bar(stat = 'identity', width = 0.5) +
+    theme_bw()
+  plot
+  printplot(plot, "major_lists", 4.5)
+
+  total_integration <- commit_data %>% filter(!is.na(committer.correct)) %>%
+    count(vars = c("committer.correct")) %>% mutate(percent = freq/sum(freq))
+  total_plot <-
+    ggplot(total_integration, aes(x=committer.correct, y = percent)) +
+      theme_bw(base_size = 15) +
+      theme(legend.position = 'top',
+            axis.text.x.top = element_text(angle = 45, hjust = 0)) +
+      labs(color = '') +
+    ylab('Occurences') +
+    xlab('Correct committer') + 
+    geom_bar(stat = 'identity', width=0.5) +
+    theme_bw()
+  total_plot
+  printplot(total_plot, "total_integration", 4.5)
+}
+
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   f_characteristics <- 'resources/linux/resources/characteristics.csv'
@@ -263,11 +321,14 @@ selection <- filtered_data %>%
 
 #ignored_by_week(selection)
 #ignored_by_week(filtered_data)
-ignored_by_week(all, 'overall')
-composition(all, 'overall')
-for (l in mailing_lists) {
-  this_data = filtered_data %>% filter(list == l)
-  ignored_by_week(this_data, l)
-}
+#ignored_by_week(all, 'overall')
+#composition(all, 'overall')
+#for (l in mailing_lists) {
+#  this_data = filtered_data %>% filter(list == l)
+#  ignored_by_week(this_data, l)
+#}
 
 #ignore_rate_by_years(all)
+
+patch_conform_analysis(filtered_data)
+
