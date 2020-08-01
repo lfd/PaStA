@@ -140,8 +140,7 @@ def prepare_ignored_patches(config, clustering):
     all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
                                                     allow_invalid=True)
 
-    tags = {x[0] for x in repo.tags if not x[0].startswith('v2.6')}
-    tags |= {x[0] for x in repo.tags if x[0].startswith('v2.6.39')}
+    tags = {repo.linux_patch_get_version(repo[x]) for x in patches}
     maintainers_version = load_maintainers(config, tags)
     characteristics = \
         load_linux_mail_characteristics(config, maintainers_version, clustering,
