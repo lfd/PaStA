@@ -45,6 +45,7 @@ from bin.pasta_upstream_duration import upstream_duration
 from bin.pasta_upstream_history import pasta_upstream_history
 from bin.pasta_web import web
 from bin.pasta_form_patchwork_relations import form_patchwork_relations
+from bin.pasta_file_change_recipients import file_change_recipients
 
 
 __author__ = 'Ralf Ramsauer'
@@ -88,6 +89,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  ripup\n'
           '  upstream_history\n'
           '  web\n'
+          '  file_change_recipients\n'
           '\n'
           'If -c is not provided, PaStA will choose ./config as config file\n'
           '\n'
@@ -184,6 +186,8 @@ def main(argv):
         return upstream_duration(config, argv)
     elif sub == 'web':
         return web(config, argv)
+    elif sub == 'file_change_recipients':
+        return file_change_recipients(config, argv)
     else:
         print('Unknown command: %s' % sub)
         usage(me)
