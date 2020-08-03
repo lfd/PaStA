@@ -125,12 +125,6 @@ def analyse(config, argv):
                              'compare representatives against upstream - '
                              '(default: %(default)s)')
 
-    parser.add_argument('-upstream', dest='upstream_range',
-                        metavar='<revision range>', default=None,
-                        help='Specify upstream revision range, '
-                             'e.g.: v0.1..v0.2 (default: %s)' %
-                             config.upstream_range)
-
     args = parser.parse_args(argv)
 
     config.thresholds.heading = args.thres_heading
@@ -277,11 +271,7 @@ def analyse(config, argv):
         log.info('  ↪ done')
 
         if mode == 'upstream':
-            if args.upstream_range is not None:
-                candidates = set(repo.get_commithash_range(args.upstream_range))
-            else:
-                candidates = set(config.upstream_hashes)
-
+            candidates = set(config.upstream_hashes)
             fill_result(candidates, True)
 
             config.load_ccache_upstream()
