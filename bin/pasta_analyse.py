@@ -83,6 +83,18 @@ def find_cherries(repo, commit_hashes, dest_list):
     return cherries
 
 
+def remove_from_cluster(message, cluster, ids):
+    log.warning('PATCH-GROUPS CONTAINS %d %s THAT ARE NOT '
+                'REACHABLE BY THE CURRENT CONFIGURATION' % (len(ids), message))
+    log.warning('Those messages will be removed from the result')
+    log.warning('Waiting 5 seconds before starting. Press Ctrl-C to '
+                'abort.')
+    sleep(5)
+    for unreachable in ids:
+        cluster.remove_element(unreachable)
+    cluster.optimize()
+
+
 def analyse(config, argv):
     parser = argparse.ArgumentParser(prog='analyse', description='Analyse patch stacks')
 
@@ -171,24 +183,15 @@ def analyse(config, argv):
             # we might have loaded invalid emails, so reload the victim list once
             # more. This time, include all patches from the pre-existing (partial)
             # result, and check if all patches are reachable
-            victims = repo.mbox.get_ids(config.mbox_time_window) | \
-                    cluster.get_downstream()
+            victims |= cluster.get_downstream()
 
             # in case of an mbox analysis, we will definitely need all untagged
             # commit hashes as we need to determine the representative system for
             # both modes, rep and upstream.
             available = repo.cache_commits(victims)
-            if available != victims:
-                missing = victims - available
-                log.warning('MAILBOX RESULT CONTAINS %d MESSAGES THAT ARE NOT '
-                            'REACHABLE BY THE MAILBOX CONFIGURATION' % len(missing))
-                log.warning('Those messages will be removed from the result')
-                log.warning('Waiting 5 seconds before starting. Press Ctrl-C to '
-                            'abort.')
-                sleep(5)
-                for miss in missing:
-                    cluster.remove_element(miss)
-                cluster.optimize()
+            unreachable = victims - available
+            if unreachable:
+                remove_from_cluster('MESSAGES', cluster, unreachable)
                 victims = available
 
             if args.linux:
@@ -272,6 +275,10 @@ def analyse(config, argv):
 
         if mode == 'upstream':
             candidates = set(config.upstream_hashes)
+            unreachable = cluster.get_upstream() - candidates
+            if unreachable:
+                remove_from_cluster('COMMITS', cluster, unreachable)
+
             fill_result(candidates, True)
 
             config.load_ccache_upstream()
