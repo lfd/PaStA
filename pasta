@@ -29,6 +29,7 @@ from pypasta import Config
 from bin.pasta_analyse import analyse
 from bin.pasta_check_connectivity import check_connectivity
 from bin.pasta_check_mbox import check_mbox
+from bin.pasta_clusterstats import clusterstats
 from bin.pasta_compare import compare
 from bin.pasta_compare_clusters import compare_clusters
 from bin.pasta_maintainers_stats import maintainers_stats
@@ -156,6 +157,8 @@ def main(argv):
         return check_connectivity(config, argv)
     elif sub == 'check_mbox':
         return check_mbox(config, argv)
+    elif sub == 'clusterstats':
+        return clusterstats(config, argv)
     elif sub == 'compare':
         return compare(config, argv)
     elif sub == 'prepare_evaluation':
