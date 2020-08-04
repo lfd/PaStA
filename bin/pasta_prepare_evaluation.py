@@ -118,6 +118,29 @@ def get_relevant_patches(characteristics):
     return relevant
 
 
+def load_characteristics_and_maintainers(config, clustering):
+    """
+    This routine loads characteristics for ALL mails in the time window config.mbox_timewindow, and loads multiple
+    instances of maintainers for the the patches of the clustering.
+
+    Returns the characteristics and maintainers_version
+    """
+    repo = config.repo
+    repo.mbox.load_threads()
+
+    all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
+                                                    allow_invalid=True)
+
+    patches = clustering.get_downstream()
+    tags = {repo.linux_patch_get_version(repo[x]) for x in patches}
+    maintainers_version = load_maintainers(config, tags)
+    characteristics = \
+        load_linux_mail_characteristics(config, maintainers_version, clustering,
+                                        all_messages_in_time_window)
+
+    return characteristics, maintainers_version
+
+
 def prepare_ignored_patches(config, clustering):
     def _get_kv_rc(linux_version):
         tag = linux_version.split('-rc')
@@ -129,22 +152,7 @@ def prepare_ignored_patches(config, clustering):
         return kv, rc
 
     repo = config.repo
-    repo.mbox.load_threads()
-
-    patches = set()
-    upstream = set()
-    for d, u in clustering.iter_split():
-        patches |= d
-        upstream |= u
-
-    all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
-                                                    allow_invalid=True)
-
-    tags = {repo.linux_patch_get_version(repo[x]) for x in patches}
-    maintainers_version = load_maintainers(config, tags)
-    characteristics = \
-        load_linux_mail_characteristics(config, maintainers_version, clustering,
-                                        all_messages_in_time_window)
+    characteristics, _ = load_characteristics_and_maintainers(config, clustering)
 
     relevant = get_relevant_patches(characteristics)
 
