@@ -16,6 +16,7 @@ the COPYING file in the top-level directory.
 import anytree
 import argparse
 import csv
+import pandas as pd
 import pickle
 import re
 
@@ -219,40 +220,33 @@ def prepare_off_list_patches():
 
 def prepare_patch_review(config, clustering):
     repo = config.repo
-    threads = repo.mbox.load_threads()
-    clusters = list(clustering.iter_split())
+    mbox = repo.mbox
+    threads = mbox.load_threads()
 
-    clusters_responses = list()
-    for cluster_id, (d, u) in enumerate(clusters):
-        # Handle clusters w/o patches, i.e., upstream commits
-        if not d:
-            clusters_responses.append({'cluster_id': cluster_id,
-                                       'upstream': u,
-                                       'patch_id':  None,
-                                       'responses': None})
-            continue
+    df_melt_upstream = list()
+    for d, u in clustering.iter_split():
+        for commit in u:
+            for patch in d:
+                df_melt_upstream.append({'patch_id': patch,
+                                         'upstream': commit})
+    df_melt_upstream = pd.DataFrame(df_melt_upstream)
+    df_melt_upstream.to_csv('/tmp/patch_denorm_upstream.csv', index=False)
 
-        # Handle regular clusters with patches
+
+    df_denorm_responses = list()
+    for d, _ in clustering.iter_split():
         for patch_id in d:
-            # Add responses for the patch
             subthread = threads.get_thread(patch_id, subthread=True)
-
-            responses = list()
-            # Iterate over all subnodes, but omit the root-node (patch_id)
-            for node in anytree.PreOrderIter(subthread, filter_=lambda node: node.name != patch_id):
-                responses.append({'resp_msg_id': node.name,
-                                  'parent': node.parent.name,
-                                  'message': repo.mbox.get_raws(node.name)})
-
-            clusters_responses.append({'cluster_id': cluster_id,
-                                       'patch_id': patch_id,
-                                       'upstream': u,
-                                       'responses': responses})
-
-    with open(config.f_responses_pkl, 'wb') as handle:
-        pickle.dump(clusters_responses, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    log.info("Done writing response info for {} patch/commit entries!".format(len(clusters)))
-    log.info("Total clusters found by pasta: {}".format(len(clusters)))
+            for node in anytree.PreOrderIter(subthread,
+                              filter_=lambda node: node.name != patch_id):
+                df_denorm_responses.append({
+                    'patch_id': patch_id,
+                    'response_author': mbox.get_messages(node.name)[0]['from'],
+                    'response_parent': node.parent.name,
+                    'response_msg_id': node.name,
+                })
+    df_denorm_responses = pd.DataFrame(df_denorm_responses)
+    df_denorm_responses.to_csv('/tmp/patch_denorm_responses.csv', index=False)
 
 
 def prepare_evaluation(config, argv):
