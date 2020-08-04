@@ -228,37 +228,37 @@ class LinuxMailCharacteristics:
         potential_bot = email in LinuxMailCharacteristics.POTENTIAL_BOTS
 
         if email in LinuxMailCharacteristics.BOTS:
-            return True
+            return True, email
 
         if potential_bot:
             if x_pw_hint == 'ignore':
-                return True
+                return True, email
 
             # Mark Brown's bot and lkp
             if subject.startswith('applied'):
-                return True
+                return True, "Mark Brown's bot + lkp"
 
         if LinuxMailCharacteristics.REGEX_GREG_ADDED.match(subject):
-            return True
+            return True, "Greg's bot"
 
         # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for
         # all other mails. That's how we can easily separate automated mails
         # from real mails.
         if email == 'akpm@linux-foundation.org' and 's-nail' in uagent:
-            return True
+            return True, "Akpm bot"
 
         # syzbot - email format: syzbot-hash@syzkaller.appspotmail.com
         if 'syzbot' in email and 'syzkaller.appspotmail.com' in email:
-            return True
+            return True, "syzbot"
 
         if xmailer == 'tip-git-log-daemon':
-            return True
+            return True, "tip-git-log-daemon"
 
         # Stephen Rothwell's automated emails (TBD: generates false positives)
         if self.is_next and 'sfr@canb.auug.org.au' in email:
-            return True
+            return True, "Stephen Rothwell's bot"
 
-        return False
+        return False, None
 
     def _has_foreign_response(self, repo, thread):
         """

@@ -15,23 +15,24 @@ the COPYING file in the top-level directory.
 
 import anytree
 import argparse
+import chardet
 import csv
 import dask.dataframe as dd
 import email
 import flat_table
-import numpy as np
 import os
 import pandas as pd
 import pickle
 import re
 import sys
 
-from ast import literal_eval
+from fuzzywuzzy import fuzz
 from logging import getLogger
+from multiprocessing import Pool, cpu_count
 from subprocess import call
 
 from pypasta.LinuxMaintainers import load_maintainers
-from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
+from pypasta import LinuxMailCharacteristics, load_linux_mail_characteristics, email_get_from
 
 from analyses import response_analysis
 
@@ -97,7 +98,7 @@ def get_relevant_patches(characteristics):
             skipped_not_first_patch += 1
             skip = True
 
-        if c.is_from_bot:
+        if c.is_from_bot[0]:
             skipped_bot += 1
             skip = True
         if c.is_stable_review:
@@ -187,7 +188,7 @@ def prepare_ignored_patches(config, clustering):
     log.info('Dumping characteristics...')
     ignored_target = ignored_patches_related
     # Alternative analysis:
-    #ignored_target = ignored_patches
+    # ignored_target = ignored_patches
 
     with open(config.f_characteristics, 'w') as csv_file:
         csv_fields = ['id', 'from', 'list', 'list_matches_patch', 'kv', 'rc',
@@ -237,7 +238,7 @@ def prepare_patch_review(config, clustering):
         if not d:
             clusters_responses.append({'cluster_id': cluster_id,
                                        'upstream': u,
-                                       'patch_id':  None,
+                                       'patch_id': None,
                                        'responses': None})
             continue
 
@@ -304,22 +305,23 @@ def pre_process_response_data(config):
     # Index: Merge works efficiently when we join on an index.
     #
 
-
     with open(config.f_responses_pkl, 'rb') as handle:
         response_df = pickle.load(handle)
 
-    # Give a name to the numerical index
-    response_df.index.name = "idx"
+    num_clusters = response_df.cluster_id.nunique()
 
     # Fill null patch ids with a value '_'
     response_df.fillna({'patch_id': '_'}, inplace=True)
     log.info("Filled NA for patch_id")
 
-    # Append patch_id to the index such that we have a MultiIndex (idx, patch_id)
-    # This is a decision for two reasons:
+    num_patch_ids = response_df.patch_id.nunique()
+
+    # Create a MultiIndex (cluster_id, patch_id)
+    # This is a decision for the following reasons:
     # 1. patch_id cannot uniquely identify a row, e.g. when it is null ('_')
     # 2. Many analysis are easier with MultiIndex, without needing a groupby
-    response_df.set_index(['patch_id'], append=True, inplace=True)
+    # 3. id_vars for melt
+    response_df.set_index(['cluster_id', 'patch_id'], inplace=True)
     log.info("Done setting index for response_df")
 
     # Denormalize responses and upstream
@@ -328,7 +330,7 @@ def pre_process_response_data(config):
     # Pandas melt is used to bring the data in the given de-normalized form.
     # reset_index operation preserves the index as a column, which otherwise could be lost
     df_melt_responses = pd.melt(response_df.responses.apply(pd.Series).reset_index(),
-                                id_vars=['idx', 'patch_id'],
+                                id_vars=['cluster_id', 'patch_id'],
                                 value_name='responses').sort_index()
 
     df_melt_responses.drop('variable', axis=1, inplace=True)
@@ -337,113 +339,151 @@ def pre_process_response_data(config):
 
     df_denorm_responses = flat_table.normalize(df_melt_responses, expand_dicts=True, expand_lists=True)
     df_denorm_responses.drop('index', axis=1, inplace=True)
-    df_denorm_responses.drop_duplicates(subset=['responses.resp_msg_id', 'responses.parent', 'patch_id'], inplace=True)
+    df_denorm_responses.drop_duplicates(subset=['responses.resp_msg_id', 'patch_id', 'cluster_id'], inplace=True)
     log.info("Computed de-normalized responses, writing to disk...")
 
     df_denorm_responses.to_csv(config.f_denorm_responses, index=False)
     log.info("Processed responses!")
 
-    # Denormalize responses
+    # Denormalize upstream
 
     # Convert set to list: This is necessary to apply pd.Series for converting set type column to individual rows
     response_df['upstream'] = response_df['upstream'].map(list)
 
     df_melt_upstream = pd.melt(response_df.upstream.apply(pd.Series).reset_index(),
-                               id_vars=['idx', 'patch_id'],
+                               id_vars=['cluster_id', 'patch_id'],
                                value_name='upstream').sort_index()
 
     df_melt_upstream.drop('variable', axis=1, inplace=True)
-    df_melt_upstream.drop_duplicates(inplace=True)
+    df_melt_upstream.drop_duplicates(subset=['cluster_id', 'patch_id', 'upstream'], inplace=True)
+    df_melt_upstream.dropna(subset=['upstream'], inplace=True)
 
     df_melt_upstream.to_csv(config.f_denorm_upstream, index=False)
     log.info("Processed upstream!")
+
+    log.info(" ---------------- Data summary ---------------- ")
+    log.info("Number of clusters: {}".format(num_clusters))
+    log.info("Number of patch_ids (including NaN): {}".format(num_patch_ids))
+    log.info("Number of upstream commits: {}".format(df_melt_upstream.upstream.nunique()))
+    log.info(" ------------------------------------------------ ")
+
+
     log.info("Finished processing")
 
 
 def merge_pre_processed_response_dfs(config):
-    def try_literal_eval(s):
-        try:
-            return literal_eval(s)
-        except ValueError:
-            return s
 
-    def _get_message_field(msg, field):
-        if not (np.all(pd.isnull(msg))):
-            return email.message_from_bytes(msg)[field]
-        else:
-            return None
-
-    dd1 = dd.read_csv(config.f_denorm_responses, blocksize=1e9, dtype={"idx ": "int32", "patch_id ": "category",
+    dd1 = dd.read_csv(config.f_denorm_responses, blocksize=1e9, dtype={"cluster_id": "int32",
+                                                                       "patch_id ": "category",
                                                                        "responses.resp_msg_id": "category",
                                                                        "responses.parent": "category"})
 
-    dd1 = dd1.set_index(['idx'])
+    dd1 = dd1.set_index(['cluster_id'])
 
-    dd2 = dd.read_csv(config.f_denorm_upstream, blocksize=1e9, dtype={"idx ": "int32", "patch_id ": "category",
+    dd2 = dd.read_csv(config.f_denorm_upstream, blocksize=1e9, dtype={"cluster_id": "int32",
+                                                                      "patch_id ": "category",
                                                                       "upstream": "category"})
 
-    dd2 = dd2.set_index(['idx'])
+    dd2 = dd2.set_index(['cluster_id'])
 
-    df_dask_final = dd.merge(dd1, dd2, left_index=True, right_index=True, how='left') \
+    df_dask_final = dd.merge(dd1, dd2, left_index=True, right_index=True, how='outer') \
         .drop(['patch_id_y'], axis=1) \
-        .reset_index(drop=True) \
+        .reset_index() \
         .rename(columns={"patch_id_x": "patch_id"})
 
     df_dask_final.to_csv("df_dask_final.csv", single_file=True)
 
-    final = dd.read_csv("df_dask_final.csv", blocksize=50e7, dtype={"idx ": "int32", "patch_id ": "category",
+    final = dd.read_csv("df_dask_final.csv", blocksize=50e7, dtype={"cluster_id": "int32",
+                                                                    "patch_id ": "category",
                                                                     "responses.resp_msg_id": "category",
                                                                     "responses.parent": "category",
                                                                     "upstream": "category"}).drop('Unnamed: 0', axis=1)
 
     print("Final shape with possible duplicate rows{}".format(final.shape))
-    final.drop_duplicates(subset=['responses.resp_msg_id', 'upstream', 'patch_id'], inplace=True)
+    final.drop_duplicates(subset=['responses.resp_msg_id', 'upstream', 'patch_id', 'cluster_id'], inplace=True)
 
     # Convert to pandas
     df_pd_final = final.compute()
 
-    # Remove rows with no patch and other infos
-    index_names = df_pd_final[(df_pd_final['patch_id'] == '_') & (df_pd_final['responses.message'].isna()) &
-                              (df_pd_final['upstream'].isna())].index
-    df_pd_final.drop(index_names, inplace=True)
-
     print("Final shape after removing duplicates {}".format(final.shape))
-
-    # df_pd_final.to_csv(config.f_merged_responses_upstream, index=False)
-    # print("Finished writing de-duplicated pandas merged dataframe to disk")
 
     final = dd.from_pandas(df_pd_final, npartitions=20)
 
-    final['responses.message'] = final['responses.message'].map(try_literal_eval)
-
     final.reset_index().rename(columns={'index': 'idx'}).compute()
 
-    final['response_author'] = final['responses.message'].map(lambda x: _get_message_field(x, 'from'),
-                                                              meta=pd.Series([], dtype=object, name='x'))
-
-    log.info("Unique response authors {}".format(final['response_author'].nunique().compute(num_workers=20)))
-
-    final.to_csv(config.f_responses_authors, single_file=True)
+    final.to_csv(config.f_responses, single_file=True)
 
 
 def _is_response_from_bot(message):
     lmc = LinuxMailCharacteristics(_repo, None, None, message)
-    return message, lmc.is_from_bot
+    flag, botname = lmc.is_from_bot
+    return message, flag, botname
+
+
+def parseaddr_unicode(addr) -> (str, str):
+
+    name, e_mail = addr
+    name_list = []
+    if name:
+        name = name.strip()
+
+        for decoded_string, charset in email.header.decode_header(name):
+            if charset is not None:
+
+                try:
+                    if isinstance(decoded_string, bytes):
+                        name = decoded_string.decode(charset or 'utf-8')
+                    else:
+                        name = str(decoded_string, 'utf-8', errors='ignore')
+                except UnicodeDecodeError:
+                    encoding = chardet.detect(decoded_string)['encoding']
+                    try:
+                        name = decoded_string.decode(encoding=encoding, errors='ignore')
+                    except TypeError:
+                        name = str(decoded_string, 'utf-8', errors='ignore')
+            else:
+                name = str(decoded_string)
+            name_list.append(name)
+
+    final_name = u''.join(name_list)
+    return final_name, e_mail
+
+
+def get_patch_author(message, repo):
+    try:
+        msg = repo.mbox.get_messages(message)[0]
+        return parseaddr_unicode(email_get_from(msg))
+    except Exception as e:
+        log.error(e)
+        return email_get_from(message)
+
+
+def check_person_duplicates(patch_id, resp_msg_id, author1, author2):
+    try:
+        name1, email1 = author1
+        name2, email2 = author2
+        if email1 == email2:
+            return True
+        if name1 == name2:
+            return True
+        return fuzz.token_sort_ratio(name1, name2) >= 80
+    except Exception as e:
+        log.error(e)
+        log.error("Error parsing authors for patch id {} and response {}: author1 {} and author2 {}"
+                 .format(patch_id, resp_msg_id, author1, author2))
+        return False
 
 
 def filter_bots(config, clustering):
     repo = config.repo
     repo.mbox.load_threads()
 
-    final = dd.read_csv(config.f_responses_authors, blocksize=50e7,
-                        dtype={"idx ": "int32",
-                               "patch_id ": "category",
-                               "responses.resp_msg_id": "category",
-                               "responses.parent": "category",
+    final = dd.read_csv(config.f_responses, blocksize=50e7,
+                        dtype={"cluster_id": "int32",
                                "upstream": "category",
                                "response_author": "category"}).drop('Unnamed: 0', axis=1)
 
-    log.info("Finished reading dask dataframe {}".format(config.f_responses_authors))
+    log.info("Finished reading dask dataframe {}".format(config.f_responses))
 
     # Discard null patches (coming from upstreams that were not mapped to any patch emails)
     unique_patches = set(final.patch_id.unique().compute())
@@ -467,9 +507,9 @@ def filter_bots(config, clustering):
     p1.close()
     p1.join()
 
-    _repo = None
+    response_bot_df = pd.DataFrame(response_to_bot, columns=['responses.resp_msg_id', 'response_is_bot', 'bot_name'])
 
-    response_bot_df = pd.DataFrame(response_to_bot, columns=['responses.resp_msg_id', 'response_is_bot'])
+    _repo = None
 
     final_filtered_2 = dd.merge(final_filtered_2, response_bot_df, how='left', on=['responses.resp_msg_id'])
 
@@ -477,10 +517,28 @@ def filter_bots(config, clustering):
         final_filtered_2 = final_filtered_2.drop(['response_is_bot_x'], axis=1) \
             .rename(columns={"response_is_bot_y": "response_is_bot"})
 
-    # Filter out responses from bots
-    final_filtered_3 = final_filtered_2[final_filtered_2['response_is_bot'] != True]
+    # Remove duplicate rows with response message id, upstream, and patch_id (artifact of denormalization?)
+    final_dedup = final_filtered_2.drop_duplicates(subset=['responses.resp_msg_id', 'upstream', 'patch_id'],
+                                                   keep='first')
 
-    final_filtered_3.to_csv(config.f_filtered_responses, single_file=True)
+    # Rename some columns, removing the 'responses.' prefix to simplify dataframe Series ops
+    new_columns = ['cluster_id', 'patch_id', 'response_author', 'resp_parent', 'resp_msg_id', 'upstream', 'response_is_bot',
+                   'bot_name']
+    final_dedup = final_dedup.rename(columns=dict(zip(final_dedup.columns, new_columns)))
+
+    final_dedup['patch_author'] = final_dedup['patch_id'].map(lambda x: get_patch_author(x, repo),
+                                                              meta=pd.Series([], dtype=object, name='x'))
+
+    final_dedup['responder'] = final_dedup['resp_msg_id'].map(lambda x: get_patch_author(x, repo),
+                                                              meta=pd.Series([], dtype=object, name='x'))
+
+    # This flag could detect authors responding themselves to the patches, e.g., responses to patches as rest
+    # of the patch series (spotted often this case)
+    final_dedup['self_response'] = final_dedup.map_partitions(lambda df: df.apply(
+        (lambda row: check_person_duplicates(row.patch_id, row.resp_msg_id, row.patch_author, row.responder)),
+        axis=1), meta=pd.Series([], dtype=object, name='row'))
+
+    final_dedup.to_csv(config.f_filtered_responses, single_file=True)
 
     log.info("Written filtered response dataframe to disk, Done!")
 

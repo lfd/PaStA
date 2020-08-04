@@ -23,6 +23,7 @@ RUN apt install -y --no-install-recommends \
 	locales \
 	patchutils \
 	procmail \
+	python3-chardet \
 	python3-dev \
 	python3-flaskext.wtf \
 	python3-fuzzywuzzy \
