@@ -20,6 +20,7 @@ import pandas as pd
 import pickle
 import re
 
+from itertools import product
 from logging import getLogger
 from subprocess import call
 
@@ -225,10 +226,12 @@ def prepare_patch_review(config, clustering):
 
     df_melt_upstream = list()
     for d, u in clustering.iter_split():
-        for commit in u:
-            for patch in d:
-                df_melt_upstream.append({'patch_id': patch,
-                                         'upstream': commit})
+        d = d or {'_'}
+        u = u or {'_'}
+        for patch, commit in product(d, u):
+            df_melt_upstream.append({'patch_id': patch,
+                                     'upstream': commit})
+
     df_melt_upstream = pd.DataFrame(df_melt_upstream)
     df_melt_upstream.to_csv('/tmp/patch_denorm_upstream.csv', index=False)
 
