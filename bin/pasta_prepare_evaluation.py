@@ -224,8 +224,12 @@ def prepare_patch_review(config, clustering):
     mbox = repo.mbox
     threads = mbox.load_threads()
 
+    characteristics, _ = load_characteristics_and_maintainers(config, clustering)
+    relevant = get_relevant_patches(characteristics)
+
     df_melt_upstream = list()
     for d, u in clustering.iter_split():
+        d &= relevant
         d = d or {'_'}
         u = u or {'_'}
         for patch, commit in product(d, u):
@@ -238,6 +242,7 @@ def prepare_patch_review(config, clustering):
 
     df_denorm_responses = list()
     for d, _ in clustering.iter_split():
+        d &= relevant
         for patch_id in d:
             subthread = threads.get_thread(patch_id, subthread=True)
             for node in anytree.PreOrderIter(subthread,
