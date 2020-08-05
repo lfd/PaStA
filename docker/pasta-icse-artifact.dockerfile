@@ -12,9 +12,9 @@ MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 
 RUN wget https://cdn.lfdr.de/PaStA/LKML-2012-05.mbox
 
-ADD https://api.github.com/repos/lfd/PaStA/git/refs/heads/icse-artifact /dev/null
+ADD https://api.github.com/repos/lfd/PaStA/git/refs/heads/old/icse-artifact /dev/null
 RUN git -C PaStA pull
-RUN git -C PaStA checkout -b icse-artifact --track origin/icse-artifact
+RUN git -C PaStA checkout -b old/icse-artifact --track origin/old/icse-artifact
 RUN git -C PaStA submodule update
 RUN cd PaStA && ./pasta mbox_prepare lkml-2012-05 ~/LKML-2012-05.mbox
 RUN cd PaStA && ./pasta cache -create all
