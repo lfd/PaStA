@@ -194,12 +194,12 @@ def prepare_ignored_patches(config, clustering):
             kv, rc = _get_kv_rc(c.linux_version)
             mail_from = c.mail_from[1]
 
-            for list in repo.mbox.get_lists(message_id):
-                list_matches_patch = c.list_matches_patch(list)
+            for ml in repo.mbox.get_lists(message_id):
+                list_matches_patch = c.list_matches_patch(ml)
 
                 row = {'id': message_id,
                        'from': mail_from,
-                       'list': list,
+                       'list': ml,
                        'list_matches_patch': list_matches_patch,
                        'kv': kv,
                        'rc': rc,
