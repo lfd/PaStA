@@ -21,6 +21,7 @@ import re
 
 from logging import getLogger
 from subprocess import call
+from tqdm import tqdm
 
 from pypasta.LinuxMaintainers import load_maintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
@@ -208,7 +209,7 @@ def prepare_process_characteristics(config, clustering):
         writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
         writer.writeheader()
 
-        for message_id in sorted(relevant):
+        for message_id in tqdm(sorted(relevant)):
             c = characteristics[message_id]
             metrics = c.maintainer_metrics
             kv, rc = _get_kv_rc(c.linux_version)
