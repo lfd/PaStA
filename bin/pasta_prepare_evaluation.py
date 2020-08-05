@@ -24,6 +24,7 @@ from subprocess import call
 
 from pypasta.LinuxMaintainers import load_maintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
+from pypasta.Util import get_first_upstream
 
 log = getLogger(__name__[-15:])
 
@@ -140,7 +141,7 @@ def load_characteristics_and_maintainers(config, clustering):
     return characteristics, maintainers_version
 
 
-def prepare_ignored_patches(config, clustering):
+def prepare_process_characteristics(config, clustering):
     def _get_kv_rc(linux_version):
         tag = linux_version.split('-rc')
         kv = tag[0]
@@ -151,7 +152,7 @@ def prepare_ignored_patches(config, clustering):
         return kv, rc
 
     repo = config.repo
-    characteristics, _ = load_characteristics_and_maintainers(config, clustering)
+    characteristics, maintainers_version = load_characteristics_and_maintainers(config, clustering)
     relevant = get_relevant_patches(characteristics)
 
     log.info('Identify ignored patches...')
@@ -159,6 +160,9 @@ def prepare_ignored_patches(config, clustering):
     ignored_patches = {patch for patch in relevant if
                        not characteristics[patch].is_upstream and
                        not characteristics[patch].has_foreign_response}
+
+    integrated_patches = {patch for patch in relevant if characteristics[patch].is_upstream}
+    log.info('Found %s integrated patches within specified time window' % len(integrated_patches))
 
     # Calculate ignored patches wrt to other patches in the cluster: A patch is
     # considered as ignored, if all related patches were ignored as well
@@ -183,28 +187,76 @@ def prepare_ignored_patches(config, clustering):
     # Alternative analysis:
     #ignored_target = ignored_patches
 
+    csv_fields = ['id', # The message-id of the patch
+                  'from', # Who sent the patch?
+                  'time', # When was the patch sent?
+                  'v.kv', # What's the closest kernel version?
+                  'v.rc', #   ... and the related release candidate?
+                  'list', # On which list was it sent to? (Multiple csv-entries for multiple lists!)
+                  'list.matches_patch', # Does that list match to what MAINTAINERS tells us?
+                  'ignored', # Was the patch ignored? See definition above.
+                  'committer', # Who committed the patch? (Can be None. If committer != None -> ignored = False)
+                  'committer.correct', # Is the committer a valid committer according to MAINTAINERS?
+                  'all_lists_one_mtr_per_sec',
+                  'one_list_and_mtr',
+                  'one_list_mtr_per_sec',
+                  'one_list_or_mtr',
+                  'one_list',
+    ]
+
     with open(config.f_characteristics, 'w') as csv_file:
-        csv_fields = ['id', 'from', 'list', 'list_matches_patch', 'kv', 'rc',
-                      'ignored', 'time']
         writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
         writer.writeheader()
 
         for message_id in sorted(relevant):
             c = characteristics[message_id]
+            metrics = c.maintainer_metrics
             kv, rc = _get_kv_rc(c.linux_version)
             mail_from = c.mail_from[1]
 
+
+            # In case the patch was integrated, fill the fields committer
+            # and integrated_by_maintainer. integrated_by_maintainer indicates
+            # if the patch was integrated by a maintainer that is responsible
+            # for a section that is affected by the patch. IOW: The field
+            # indicates if the patch was picked by the "correct" maintainer
+            committer = None
+            integrated_by_maintainer = None
+            if message_id in integrated_patches:
+                upstream = get_first_upstream(repo, clustering, message_id)
+                committer = repo[upstream].committer.name.lower()
+
+                version = c.linux_version
+                linux_maintainers = maintainers_version[version]
+                affected_files = repo[message_id].diff.affected
+                integrated_by_maintainer = False
+                for section in linux_maintainers.get_sections_by_files(affected_files):
+                    _, maintainers, _ = linux_maintainers.get_maintainers(section)
+                    if committer in [name for name, mail in maintainers]:
+                        integrated_by_maintainer = True
+                        break
+
+            # Dump an entry for each list the patch was sent to. This allows
+            # for grouping by mailing lists.
             for ml in repo.mbox.get_lists(message_id):
                 list_matches_patch = c.list_matches_patch(ml)
 
                 row = {'id': message_id,
                        'from': mail_from,
-                       'list': ml,
-                       'list_matches_patch': list_matches_patch,
-                       'kv': kv,
-                       'rc': rc,
-                       'ignored': message_id in ignored_target,
                        'time': c.date,
+                       'v.kv': kv,
+                       'v.rc': rc,
+                       'list': ml,
+                       'list.matches_patch': list_matches_patch,
+                       'ignored': message_id in ignored_target,
+                       'committer': committer,
+                       'committer.correct': integrated_by_maintainer,
+                       'all_lists_one_mtr_per_sec':
+                           metrics.all_lists_one_mtr_per_sec,
+                       'one_list_and_mtr': metrics.one_list_and_mtr,
+                       'one_list_mtr_per_sec': metrics.one_list_mtr_per_sec,
+                       'one_list_or_mtr': metrics.one_list_or_mtr,
+                       'one_list': metrics.one_list,
                        }
 
                 writer.writerow(row)
@@ -259,12 +311,12 @@ def prepare_evaluation(config, argv):
     parser = argparse.ArgumentParser(prog='prepare_evaluation',
                                      description='aggregate commit and patch info')
 
-    parser.add_argument('--ignored',
+    parser.add_argument('--process_characteristics',
                         action='store_const',
-                        const='ignored',
+                        const='process_characteristics',
                         dest='mode',
-                        help='prepare data for patch analysis \n'
-                             'prepare data for ignored patch analysis \n'
+                        help='prepare data for process characteristics.\n'
+                             'I.e., ignored and conform patch analysis \n'
                         )
 
     parser.add_argument('--off-list',
@@ -282,7 +334,7 @@ def prepare_evaluation(config, argv):
     analysis_option = parser.parse_args(argv)
 
     if not analysis_option.mode:
-        parser.error("No action requested, one of --ignored, --off-list, or --review must be given")
+        parser.error("No action requested, one of --process_characteristics, --off-list, or --review must be given")
 
     if config.mode != config.Mode.MBOX:
         log.error("Only works in Mbox mode!")
@@ -293,8 +345,8 @@ def prepare_evaluation(config, argv):
 
     config.load_ccache_mbox()
 
-    if analysis_option.mode == 'ignored':
-        prepare_ignored_patches(config, clustering)
+    if analysis_option.mode == 'process_characteristics':
+        prepare_process_characteristics(config, clustering)
 
     elif analysis_option.mode == 'off-list':
         prepare_off_list_patches()

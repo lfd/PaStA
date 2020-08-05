@@ -30,7 +30,7 @@ dir.create(d_dst, showWarnings = FALSE)
 
 load_csv <- function(filename) {
   data <- read.csv(filename, header = TRUE, sep=",")
-  data$list_matches_patch <- as.logical(data$list_matches_patch)
+  data$list.matches_patch <- as.logical(data$list.matches_patch)
   data$ignored <- as.logical(data$ignored)
   data <- data %>% mutate(date = as.Date(time))
 
@@ -191,23 +191,23 @@ ignored_by_week <- function(data) {
 }
 
 ignored_by_rc <- function(data) {
-  data <- data %>% select('list', 'kv', 'rc', 'ignored')
+  data <- data %>% select('list', 'v.kv', 'v.rc', 'ignored')
 
-  total <- ddply(data, .(list, kv, rc), nrow)
-  colnames(total) <- c('list', 'kv', 'rc', 'total')
+  total <- ddply(data, .(list, v.kv, v.rc), nrow)
+  colnames(total) <- c('list', 'v.kv', 'v.rc', 'total')
 
   ignored <- data %>% filter(ignored == TRUE)
-  ignored <- ddply(ignored, .(list, kv, rc), nrow)
-  colnames(ignored) <- c('list', 'kv', 'rc', 'ignored')
+  ignored <- ddply(ignored, .(list, v.kv, v.rc), nrow)
+  colnames(ignored) <- c('list', 'v.kv', 'v.rc', 'ignored')
 
-  df <- merge(x = total, y = ignored, by = c('list', 'kv', 'rc'))
+  df <- merge(x = total, y = ignored, by = c('list', 'v.kv', 'v.rc'))
   df$fraction <- df$ignored / df$total
-  df <- melt(df, id.vars = c('list', 'kv', 'rc'))
+  df <- melt(df, id.vars = c('list', 'v.kv', 'v.rc'))
 
-  relevant <- df %>% filter(variable == 'fraction') %>% select(list, kv, rc, value)
+  relevant <- df %>% filter(variable == 'fraction') %>% select(list, v.kv, v.rc, value)
 
   plot <- ggplot(relevant,
-                 aes(x = rc, y = value, group = rc)) +
+                 aes(x = v.rc, y = value, group = v.rc)) +
     geom_boxplot() +
     theme_bw(base_size =  15) +
     scale_x_continuous(breaks = 0:10,
@@ -290,7 +290,7 @@ selection <- filtered_data %>%
 
 all <- filtered_data
 all$list <- 'Overall'
-all <- all %>% filter(week < '2018-12-24') %>% distinct
+#all <- all %>% filter(week < '2018-12-24') %>% distinct
 
 #ignore_rate_by_years(all)
 
@@ -300,6 +300,6 @@ all <- all %>% filter(week < '2018-12-24') %>% distinct
 #ignored_by_rc(selection)
 ignored_by_rc(all)
 
-#filtered_data <- filtered_data %>% filter(kv != 'v2.6.39')
+#filtered_data <- filtered_data %>% filter(v.kv != 'v2.6.39')
 #scatterplots(all)
 #week_scatterplots(all)
