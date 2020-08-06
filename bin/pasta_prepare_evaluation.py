@@ -20,6 +20,7 @@ import csv
 import dask.dataframe as dd
 import email
 import flat_table
+import numpy as np
 import os
 import pandas as pd
 import pickle
@@ -27,6 +28,7 @@ import re
 import sys
 
 from fuzzywuzzy import fuzz
+from itertools import product
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from subprocess import call
@@ -222,6 +224,64 @@ def prepare_ignored_patches(config, clustering):
 
 def prepare_off_list_patches():
     pass
+
+
+def prepare_preprocess_merge(config, clustering):
+    repo = config.repo
+    threads = repo.mbox.load_threads()
+    clusters = list(clustering.iter_split())
+    targets_characteristics = set()
+
+    df_denorm_responses_upstream = list()
+    for cluster_id, (d, u) in enumerate(clusters):
+        targets_characteristics |= d
+        d = d or {'_'}
+        u = u or {'_'}
+        for patch_id, commit in product(d, u):
+            # Case: patch_id is non-empty
+            if patch_id != '_':
+                subthread = threads.get_thread(patch_id, subthread=True)
+                num_nodes = len(list(anytree.PreOrderIter(subthread)))
+                for node in anytree.PreOrderIter(subthread):
+                    # Sub-case: This is a patch with no-responses.
+                    # We keep this entry, else the patch info (and associated commit if any) is completely lost
+                    if num_nodes == 1:
+                        df_denorm_responses_upstream.append({
+                            'cluster_id': cluster_id,
+                            'patch_id': patch_id,
+                            'response_parent': np.nan,
+                            'response_msg_id': np.nan,
+                            'upstream': commit if commit else np.nan
+                        })
+                    # Sub-case: This patch has responses
+                    else:
+                        # Exit case: Since there are multiple responses to the patch, we may skip
+                        # the null response entry, as we would still have the info of the patch (and commit if exists)
+                        if node.name == patch_id:
+                            continue
+                        df_denorm_responses_upstream.append({
+                            'cluster_id': cluster_id,
+                            'patch_id': patch_id,
+                            'response_parent': node.parent.name if node.parent else np.nan,
+                            'response_msg_id': node.name,
+                            'upstream': commit
+                        })
+            # Case: There is no patch_id associated with the commit
+            else:
+                    df_denorm_responses_upstream.append({
+                        'cluster_id': cluster_id,
+                        'patch_id': patch_id,
+                        'response_parent': np.NaN,
+                        'response_msg_id': np.NaN,
+                        'upstream': commit
+                    })
+        df_denorm = pd.DataFrame(df_denorm_responses_upstream)
+        df_denorm.to_csv('resources/linux/resources/molten_responses_upstream.csv', index=False)
+
+    log.info("Processed clusters!")
+
+    load_linux_mail_characteristics(config, None, clustering,
+                                    targets_characteristics)
 
 
 def prepare_patch_review(config, clustering):
@@ -561,7 +621,7 @@ def prepare_evaluation(config, argv):
 
     parser.add_argument('--review',
                         default=None,
-                        choices=['prepare', 'preprocess', 'merge', 'filter', 'analyze'],
+                        choices=['prepare', 'preprocess', 'prep', 'merge', 'filter', 'analyze'],
                         help='prepare data for patch review analysis \n')
 
     analysis_option = parser.parse_args(argv)
@@ -589,6 +649,8 @@ def prepare_evaluation(config, argv):
             prepare_patch_review(config, clustering)
         elif analysis_option.review == 'preprocess':
             pre_process_response_data(config)
+        elif analysis_option.review == 'prep':
+            prepare_preprocess_merge(config, clustering)
         elif analysis_option.review == 'merge':
             merge_pre_processed_response_dfs(config)
         elif analysis_option.review == 'filter':
