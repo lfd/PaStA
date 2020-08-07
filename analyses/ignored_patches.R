@@ -2,7 +2,7 @@
 
 # PaStA - Patch Stack Analysis
 #
-# Copyright (c) OTH Regensburg, 2019
+# Copyright (c) OTH Regensburg, 2019-2020
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -21,9 +21,11 @@ args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   d_dst <- '/tmp/R'
   f_characteristics <- 'resources/linux/resources/characteristics.csv'
+  f_releases <- 'resources/linux/resources/releases.csv'
 } else {
   d_dst <- args[1]
   f_characteristics <- args[2]
+  f_releases <- args[3]
 }
 
 dir.create(d_dst, showWarnings = FALSE)
@@ -40,8 +42,17 @@ load_csv <- function(filename) {
   return(data)
 }
 
+load_releases <- function(filename) {
+  data <- read.csv(filename, header = TRUE, sep=",")
+  data <- data %>% mutate(date = as.Date(date))
+}
+
 if (!exists('raw_data')) {
   raw_data <- load_csv(f_characteristics)
+}
+
+if (!exists('releases')) {
+  releases <- load_releases(f_releases)
 }
 
 filtered_data <- raw_data
@@ -145,17 +156,21 @@ ignored_by_week <- function(data) {
                  aes(x = week, y = value, color = variable)) +
     geom_line() +
     geom_smooth() +
-    #scale_y_sqrt(breaks = c(20, 60, 100, 150, 700, 1000, 2000, 3000, 4000)) +
-    scale_y_sqrt(breaks = c(10, 50, 100, 250, 500, 1000, 3000, 5000, 7000)) +
+    geom_vline(xintercept = releases$date, linetype="dotted") +
+    scale_y_sqrt(breaks = c(10, 100, 250, 500, 1000, 2000, 3000, 4000, 5000)) +
     ylab('Number of patches per week') +
     xlab('Date') +
-    scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 sec.axis = dup_axis(name="Linux Releases",
+                                     breaks = releases$date,
+                                     labels = releases$release)
+                 ) +
     theme_bw(base_size = 15) +
-    theme(legend.position = 'none') +
+    theme(legend.position = 'top',
+          axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     labs(color = '') +
     facet_wrap(~list, scales = 'free')
   printplot(plot, 'ignored_by_week_total', 4.5)
-
 
   relevant <- df %>% filter(variable == 'ignored') #%>% select(week, value)
   plot <- ggplot(relevant,
@@ -163,11 +178,16 @@ ignored_by_week <- function(data) {
     geom_line() +
     geom_smooth(method = "lm", fill = 'green', colour = 'black') +
     geom_smooth(fill = 'blue', colour = 'black') +
+    geom_vline(xintercept = releases$date, linetype="dotted") +
     theme_bw(base_size = 15) +
-    scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 sec.axis = dup_axis(name="Linux Releases",
+                                     breaks = releases$date,
+                                     labels = releases$release)) +
     xlab('Date') +
     ylab('Total number of ignored patches per week') +
-    theme(legend.position = 'None') +
+    theme(legend.position = 'None',
+          axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     facet_wrap(~list, scales = 'free')
   printplot(plot, 'ignored_by_week_ignored_only', 4.5)
 
@@ -177,15 +197,20 @@ ignored_by_week <- function(data) {
     geom_line() +
     geom_smooth(method = "lm", fill = 'green', colour = 'black') +
     geom_smooth(fill = 'blue', colour = 'black') +
+    geom_vline(xintercept = releases$date, linetype="dotted") +
     theme_bw(base_size = 15) +
-    scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 sec.axis = dup_axis(name="Linux Releases",
+                                     breaks = releases$date,
+                                     labels = releases$release)) +
     #scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%"),
     #                   breaks = seq(0.01, 0.06, by = 0.01)) +
     scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%")) +
     xlab('Date') +
     ylab('Ratio of ignored patches') +
     #ylab('Ratio of correctly addressed maintainers') +
-    theme(legend.position = 'None') +
+    theme(legend.position = 'None',
+          axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     facet_wrap(~list, scales = 'free')
       printplot(plot, 'ignored_by_week_fraction', 4.5)
 }

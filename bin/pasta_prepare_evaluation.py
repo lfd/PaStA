@@ -153,6 +153,17 @@ def prepare_process_characteristics(config, clustering):
         return kv, rc
 
     repo = config.repo
+
+    relevant_releases = [(tag, date.strftime('%Y-%m-%d')) for tag, date in repo.tags if
+                     config.mbox_mindate < date.replace(tzinfo=None) < config.mbox_maxdate and
+                     '-rc' not in tag]
+    with open(config.f_releases, 'w') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=['release', 'date'])
+        writer.writeheader()
+        for release, date in relevant_releases:
+            writer.writerow({'release': release,
+                             'date': date})
+
     characteristics, maintainers_version = load_characteristics_and_maintainers(config, clustering)
     relevant = get_relevant_patches(characteristics)
 
@@ -215,7 +226,6 @@ def prepare_process_characteristics(config, clustering):
             kv, rc = _get_kv_rc(c.linux_version)
             mail_from = c.mail_from[1]
 
-
             # In case the patch was integrated, fill the fields committer
             # and integrated_by_maintainer. integrated_by_maintainer indicates
             # if the patch was integrated by a maintainer that is responsible
@@ -263,7 +273,7 @@ def prepare_process_characteristics(config, clustering):
                 writer.writerow(row)
 
     log.info('Calling R...')
-    call(['./analyses/ignored_patches.R', config.d_rout, config.f_characteristics])
+    call(['./analyses/ignored_patches.R', config.d_rout, config.f_characteristics, config.f_releases])
 
 
 def prepare_off_list_patches():
