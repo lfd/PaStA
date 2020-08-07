@@ -47,10 +47,10 @@ if (!exists('raw_data')) {
 filtered_data <- raw_data
 
 # Filter strong outliers
-filtered_data <- filtered_data %>% filter(from != 'baolex.ni@intel.com')
-
 filtered_data <- filtered_data %>%
-  filter(week > '2011-05-10')
+  filter(from != 'baolex.ni@intel.com') %>%
+  filter(week < '2020-06-01') %>%
+  filter(week > '2017-01-01')
 
 fname <- function(file, extension) {
   return(file.path(d_dst, paste(file, extension, sep='')))
@@ -146,7 +146,7 @@ ignored_by_week <- function(data) {
     geom_line() +
     geom_smooth() +
     #scale_y_sqrt(breaks = c(20, 60, 100, 150, 700, 1000, 2000, 3000, 4000)) +
-    scale_y_sqrt(breaks = c(10, 50, 100, 250, 500, 1000)) +
+    scale_y_sqrt(breaks = c(10, 50, 100, 250, 500, 1000, 3000, 5000, 7000)) +
     ylab('Number of patches per week') +
     xlab('Date') +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
@@ -278,27 +278,28 @@ week_scatterplots <- function(data) {
   printplot(plot, 'ignored_week_scatter', 0)
 }
 
+all <- filtered_data
+# When we consider 'all' lists, we need to remove mails that were sent to multiple lists.
+# As a consequence, we need to drop the list.matches_patch column, as this value is tied to
+# the list information.
+all <- all %>% select(-c(list.matches_patch))
+all$list <- 'Overall'
+all <- all %>% distinct()
+
 selection <- filtered_data %>%
   filter(list %in% c('linux-arm-kernel@lists.infradead.org',
                      'netdev@vger.kernel.org',
-                     #'linux-wireless@vger.kernel.org',
-                     
                      'linuxppc-dev@lists.ozlabs.org',
-                     'linux-mips@vger.kernel.org'
-                     #'linux-pci@vger.kernel.org'
+                     'alsa-devel@alsa-project.org'
                      ))
-
-all <- filtered_data
-all$list <- 'Overall'
-#all <- all %>% filter(week < '2018-12-24') %>% distinct
 
 #ignore_rate_by_years(all)
 
-#ignored_by_week(selection)
-#ignored_by_week(all)
+ignored_by_week(selection)
+ignored_by_week(all)
 
 #ignored_by_rc(selection)
-ignored_by_rc(all)
+#ignored_by_rc(all)
 
 #filtered_data <- filtered_data %>% filter(v.kv != 'v2.6.39')
 #scatterplots(all)
