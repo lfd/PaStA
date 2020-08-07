@@ -243,9 +243,12 @@ class LinuxMailCharacteristics:
 
         # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for
         # all other mails. That's how we can easily separate automated mails
-        # from real mails.
-        if email == 'akpm@linux-foundation.org' and 's-nail' in uagent:
-            return True
+        # from real mails. Secondly, akpm acts as bot if the subject contains [merged]
+        if email == 'akpm@linux-foundation.org':
+            if 's-nail' in uagent or '[merged]' in subject:
+                return True
+            if 'mm-commits@vger.kernel.org' in self.lists:
+                return True
 
         # syzbot - email format: syzbot-hash@syzkaller.appspotmail.com
         if 'syzbot' in email and 'syzkaller.appspotmail.com' in email:
