@@ -202,6 +202,7 @@ def prepare_process_characteristics(config, clustering):
     csv_fields = ['id', # The message-id of the patch
                   'from', # Who sent the patch?
                   'time', # When was the patch sent?
+                  'type', # The type of the patch
                   'v.kv', # What's the closest kernel version?
                   'v.rc', #   ... and the related release candidate?
                   'list', # On which list was it sent to? (Multiple csv-entries for multiple lists!)
@@ -220,7 +221,7 @@ def prepare_process_characteristics(config, clustering):
         writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
         writer.writeheader()
 
-        for message_id in tqdm(sorted(relevant)):
+        for message_id in tqdm(sorted(clustering.get_downstream())):
             c = characteristics[message_id]
             metrics = c.maintainer_metrics
             kv, rc = _get_kv_rc(c.linux_version)
@@ -246,27 +247,59 @@ def prepare_process_characteristics(config, clustering):
                         integrated_by_maintainer = True
                         break
 
+            ignored = None
+            if message_id in relevant:
+                # A regular patch written by a human author
+                patch_type = 'patch'
+                ignored = message_id in ignored_target
+            elif c.is_from_bot:
+                patch_type = 'bot'
+            elif c.is_next:
+                patch_type = 'linux-next'
+            elif c.is_stable_review:
+                patch_type = 'stable-review'
+            elif not c.patches_linux:
+                patch_type = 'not-linux'
+            elif c.process_mail:
+                patch_type = 'process'
+            elif not c.is_first_patch_in_thread:
+                patch_type = 'not-first'
+            else:
+                patch_type = 'other'
+
+            if metrics:
+                all_lists_one_mtr_per_sec = metrics.all_lists_one_mtr_per_sec
+                one_list_and_mtr = metrics.one_list_and_mtr
+                one_list_mtr_per_sec = metrics.one_list_mtr_per_sec
+                one_list_or_mtr = metrics.one_list_or_mtr
+                one_list = metrics.one_list
+            else:
+                all_lists_one_mtr_per_sec = None
+                one_list_and_mtr = None
+                one_list_mtr_per_sec = None
+                one_list_or_mtr = None
+                one_list = None
+
             # Dump an entry for each list the patch was sent to. This allows
             # for grouping by mailing lists.
             for ml in repo.mbox.get_lists(message_id):
                 list_matches_patch = c.list_matches_patch(ml)
-
                 row = {'id': message_id,
                        'from': mail_from,
                        'time': c.date,
+                       'type': patch_type,
                        'v.kv': kv,
                        'v.rc': rc,
                        'list': ml,
                        'list.matches_patch': list_matches_patch,
-                       'ignored': message_id in ignored_target,
+                       'ignored': ignored,
                        'committer': committer,
                        'committer.correct': integrated_by_maintainer,
-                       'all_lists_one_mtr_per_sec':
-                           metrics.all_lists_one_mtr_per_sec,
-                       'one_list_and_mtr': metrics.one_list_and_mtr,
-                       'one_list_mtr_per_sec': metrics.one_list_mtr_per_sec,
-                       'one_list_or_mtr': metrics.one_list_or_mtr,
-                       'one_list': metrics.one_list,
+                       'all_lists_one_mtr_per_sec': all_lists_one_mtr_per_sec,
+                       'one_list_and_mtr': one_list_and_mtr,
+                       'one_list_mtr_per_sec': one_list_mtr_per_sec,
+                       'one_list_or_mtr': one_list_or_mtr,
+                       'one_list': one_list,
                        }
 
                 writer.writerow(row)
