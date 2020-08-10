@@ -237,8 +237,7 @@ def prepare_process_characteristics(config, clustering):
                 upstream = get_first_upstream(repo, clustering, message_id)
                 committer = repo[upstream].committer.name.lower()
 
-                version = c.linux_version
-                linux_maintainers = maintainers_version[version]
+                linux_maintainers = maintainers_version[c.linux_version]
                 affected_files = repo[message_id].diff.affected
                 integrated_by_maintainer = False
                 for section in linux_maintainers.get_sections_by_files(affected_files):
