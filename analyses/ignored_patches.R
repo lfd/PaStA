@@ -17,20 +17,10 @@ library(plyr)
 library(reshape2)
 library(tikzDevice)
 
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) == 0) {
-  d_dst <- '/tmp/R'
-  f_characteristics <- 'resources/linux/resources/characteristics.csv'
-  f_releases <- 'resources/linux/resources/releases.csv'
-} else {
-  d_dst <- args[1]
-  f_characteristics <- args[2]
-  f_releases <- args[3]
-}
+mindate <- '2017-01-01'
+maxdate <- '2020-07-01'
 
-dir.create(d_dst, showWarnings = FALSE)
-
-load_csv <- function(filename) {
+load_characteristics <- function(filename) {
   data <- read.csv(filename, header = TRUE, sep=",")
   data$list.matches_patch <- as.logical(data$list.matches_patch)
   data$ignored <- as.logical(data$ignored)
@@ -47,22 +37,6 @@ load_releases <- function(filename) {
   data <- data %>% mutate(date = as.Date(date))
 }
 
-if (!exists('raw_data')) {
-  raw_data <- load_csv(f_characteristics)
-}
-
-if (!exists('releases')) {
-  releases <- load_releases(f_releases)
-}
-
-filtered_data <- raw_data
-
-# Filter strong outliers
-filtered_data <- filtered_data %>%
-  filter(from != 'baolex.ni@intel.com') %>%
-  filter(week < '2020-06-01') %>%
-  filter(week > '2017-01-01')
-
 fname <- function(file, extension) {
   return(file.path(d_dst, paste(file, extension, sep='')))
 }
@@ -74,12 +48,10 @@ yearpp <- function(date) {
 printplot <- function(plot, filename, width_correction) {
   print(plot)
   ggsave(fname(filename, '.pdf'), plot, dpi = 300, width = 8, device = 'pdf')
-
   tikz(fname(filename, '.tex'), width = 6.3 + width_correction, height = 5)
   print(plot)
   dev.off()
 }
-
 
 ignore_rate_by_years <- function(data) {
   calc_ign_rate <- function(data) {
@@ -88,7 +60,7 @@ ignore_rate_by_years <- function(data) {
     return(ignored / total)
   }
 
-  data <- data %>% select(date, ignored)
+  data <- data %>% filter(type == 'patch') %>% select(date, ignored)
   date_begin = as.Date(cut(min(data$date), breaks = "year"))
   date_end = yearpp(max(data$date))
   cat('Overall ignored rate: ', calc_ign_rate(data), '\n')
@@ -103,15 +75,23 @@ ignore_rate_by_years <- function(data) {
   }
 }
 
-ignored_by_week <- function(data) {
+ignored_by_week <- function(data, plot_name) {
   variable <- 'ignored'
   true_case <- 'ignored'
   false_case <- 'not_ignored'
 
-  relevant <- data %>% select(week, ignored, list)
+  relevant <- data %>% filter(type == 'patch') %>% select(week, ignored, list)
 
   count_predicate <- function(data, row, value, name) {
     ret <- relevant %>% filter(UQ(as.name(row)) == value)
+    # We have a special case if nrow(ret) == 0. R does introduce new
+    # column names in that case.
+    if (nrow(ret) == 0) {
+      # Pseudo-conversion, this is just used to get the correct data frame format
+      `$`(ret, name) <- as.integer(`$`(ret, name))
+      ret <- ret[c('week', 'list', name)]
+      return(ret)
+    }
     ret <- ddply(ret, .(week, list), nrow)
     colnames(ret) <- c('week', 'list', name)
     return(ret)
@@ -147,10 +127,11 @@ ignored_by_week <- function(data) {
   # Then, replace NA by 0
   df[is.na(df)] <- 0
 
-  df$fraction <- df$ignored / df$total
+  df$fraction <- ifelse(df$total==0, NA, df$ignored / df$total)
 
   df <- melt(df, id.vars = c('week', 'list'))
 
+  # First plot: Plot the ignored patches and the absolute amount of patches.
   relevant <- df %>% filter(variable == true_case | variable == 'total')
   plot <- ggplot(relevant,
                  aes(x = week, y = value, color = variable)) +
@@ -170,9 +151,11 @@ ignored_by_week <- function(data) {
           axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     labs(color = '') +
     facet_wrap(~list, scales = 'free')
-  printplot(plot, 'ignored_by_week_total', 4.5)
+  filename <- paste('ignored_total', plot_name, sep = '/')
+  printplot(plot, filename, 4.5)
 
-  relevant <- df %>% filter(variable == 'ignored') #%>% select(week, value)
+  # Second plot: plot ignored patches in absolute numbers
+  relevant <- df %>% filter(variable == 'ignored')
   plot <- ggplot(relevant,
                  aes(x = week, y = value, color = variable)) +
     geom_line() +
@@ -189,8 +172,10 @@ ignored_by_week <- function(data) {
     theme(legend.position = 'None',
           axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     facet_wrap(~list, scales = 'free')
-  printplot(plot, 'ignored_by_week_ignored_only', 4.5)
+  filename <- paste('ignored_absolute', plot_name, sep = '/')
+  printplot(plot, filename, 4.5)
 
+  # Third plot: plot the ignored patches as a fraction of all patches
   relevant <- df %>% filter(variable == 'fraction')
   plot <- ggplot(relevant,
                  aes(x = week, y = value, color = variable)) +
@@ -212,105 +197,84 @@ ignored_by_week <- function(data) {
     theme(legend.position = 'None',
           axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     facet_wrap(~list, scales = 'free')
-      printplot(plot, 'ignored_by_week_fraction', 4.5)
+  filename <- paste('ignored_fraction', plot_name, sep = '/')
+  printplot(plot, filename, 4.5)
 }
 
-ignored_by_rc <- function(data) {
-  data <- data %>% select('list', 'v.kv', 'v.rc', 'ignored')
+composition <- function(data, plot_name) {
+  relevant <- data %>% select(week, type, list)
 
-  total <- ddply(data, .(list, v.kv, v.rc), nrow)
-  colnames(total) <- c('list', 'v.kv', 'v.rc', 'total')
+  sum <- ddply(relevant, .(week, list), nrow)
+  sum$type <- 'sum'
+  sum <- sum[c("week", "type", "list", "V1")]
+  total <- ddply(relevant, .(week, type, list), nrow)
+  total <- rbind(sum, total)
+  colnames(total) <- c('week', 'type', 'list', 'patches')
 
-  ignored <- data %>% filter(ignored == TRUE)
-  ignored <- ddply(ignored, .(list, v.kv, v.rc), nrow)
-  colnames(ignored) <- c('list', 'v.kv', 'v.rc', 'ignored')
-
-  df <- merge(x = total, y = ignored, by = c('list', 'v.kv', 'v.rc'))
-  df$fraction <- df$ignored / df$total
-  df <- melt(df, id.vars = c('list', 'v.kv', 'v.rc'))
-
-  relevant <- df %>% filter(variable == 'fraction') %>% select(list, v.kv, v.rc, value)
-
-  plot <- ggplot(relevant,
-                 aes(x = v.rc, y = value, group = v.rc)) +
-    geom_boxplot() +
-    theme_bw(base_size =  15) +
-    scale_x_continuous(breaks = 0:10,
-                       labels = c('MW', 1:10)) +
-    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%"),
-                       breaks = seq(0.01, 0.06, by = 0.01)) +
-    xlab('Development Stage (-rc)') +
-    ylab('Probability that patch is ignored') +
-    facet_wrap(~list)
-  printplot(plot, 'ignored_by_rc', 0)
-}
-
-  scatterplots <- function(data) {
-  data <- filtered_data
-
-  ignored <- data %>% filter(ignored == TRUE) %>% select(from) %>% count
-  colnames(ignored) <- c('from', 'ignored')
-
-  not_ignored <- data %>% filter(ignored == FALSE) %>% select(from) %>% count
-  colnames(not_ignored) <- c('from', 'not_ignored')
-
-  total <- data %>% select(from) %>% count
-  colnames(total) <- c('from', 'total')
-
-  df <- merge(x = ignored, y = not_ignored, by = c('from'))
-  df <- merge(x = df, y = total, by = c('from'))
-
-  df$ratio <- df$ignored / df$total
-
-  relevant <- df %>% filter(total < 4000) %>% filter(ignored < 400)
-  # relevant <- df
-  plot <- ggplot(relevant, aes(x = total, y = ignored)) +
-    geom_point() + scale_x_sqrt() + scale_y_sqrt() + geom_smooth() +
-    xlab('Number of patches by author') +
-    ylab('Number of ignored patches') +
-    theme_bw(base_size = 15)
-  printplot(plot, 'foo5', 2)
-
-  relevant <- df %>% filter(total < 101)
-  plot <- ggplot(relevant, aes(x = total, y = ignored)) +
-    geom_point() + geom_density2d()
-  printplot(plot, 'foo6', 0)
-
-    relevant <- df %>% filter(total < 101)
-  plot <- ggplot(relevant, aes(x = total, y = ratio)) +
-    geom_point() + geom_density2d()
-  printplot(plot, 'foo7', 0)
-}
-
-week_scatterplots <- function(data) {
-  data <- filtered_data
-
-  data <- data %>% select(week, ignored)
-
-  total <- ddply(data, .(week), nrow)
-  colnames(total) <- c('week', 'total')
-
-  ignored <- ddply(data %>% filter(ignored == TRUE), .(week), nrow)
-  colnames(ignored) <- c('week', 'ignored')
-
-  df = merge(x = total, y = ignored, by = c('week'))
-
-  plot <- ggplot(df, aes(x = total, y = ignored)) +
-    geom_point() +
+  plot <- ggplot(total,
+                 aes(x = week, y = patches, color = type)) +
+    geom_line() +
+    geom_smooth() +
+    geom_vline(xintercept = releases$date, linetype="dotted") +
+    #scale_y_sqrt(breaks = c(10, 100, 250, 500, 1000, 2000, 3000, 4000, 5000)) +
+    ylab('Number of patches per week') +
+    xlab('Date') +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 sec.axis = dup_axis(name="Linux Releases",
+                                     breaks = releases$date,
+                                     labels = releases$release)
+    ) +
     theme_bw(base_size = 15) +
-    xlab('Patches per week') +
-    ylab('Number of ign. patches per week')
-  printplot(plot, 'ignored_week_scatter', 0)
+    theme(legend.position = 'top',
+          axis.text.x.top = element_text(angle = 45, hjust = 0)) +
+    labs(color = '') +
+    facet_wrap(~list, scales = 'free')
+  filename = paste('composition', plot_name, sep = '/')
+  printplot(plot, filename, 4.5)
 }
 
-all <- filtered_data
-# When we consider 'all' lists, we need to remove mails that were sent to multiple lists.
-# As a consequence, we need to drop the list.matches_patch column, as this value is tied to
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) == 0) {
+  d_dst <- '/tmp/R'
+  f_characteristics <- 'resources/linux/resources/characteristics.csv'
+  f_releases <- 'resources/linux/resources/releases.csv'
+} else {
+  d_dst <- args[1]
+  f_characteristics <- args[2]
+  f_releases <- args[3]
+}
+
+dir.create(d_dst, showWarnings = FALSE)
+for (i in c('composition', 'ignored_total', 'ignored_absolute', 'ignored_fraction')) {
+  dir.create(paste(d_dst, i, sep = '/'), showWarnings = FALSE)
+}
+
+if (!exists('raw_data')) {
+  raw_data <- load_characteristics(f_characteristics)
+}
+
+if (!exists('releases')) {
+  releases <- load_releases(f_releases)
+}
+
+# Filter strong outliers
+filtered_data <- raw_data %>%
+  filter(from != 'baolex.ni@intel.com') %>%
+  filter(week < maxdate) %>%
+  filter(week > mindate)
+
+# Prepare data for project-global analysis. When we consider 'all' lists,
+# we need to remove mails that were sent to multiple lists. As a consequence,
+# we need to drop the list.matches_patch column, as this value is tied to
 # the list information.
-all <- all %>% select(-c(list.matches_patch))
+all <- filtered_data %>% select(-c(list.matches_patch))
 all$list <- 'Overall'
 all <- all %>% distinct()
 
+# Calculate a list of all existing mailing lists
+mailing_lists <- unique(filtered_data$list)
+
+# Exemplarily, a selection of a set of mailing lists:
 selection <- filtered_data %>%
   filter(list %in% c('linux-arm-kernel@lists.infradead.org',
                      'netdev@vger.kernel.org',
@@ -318,14 +282,13 @@ selection <- filtered_data %>%
                      'alsa-devel@alsa-project.org'
                      ))
 
+#ignored_by_week(selection)
+#ignored_by_week(filtered_data)
+ignored_by_week(all, 'overall')
+composition(all, 'overall')
+for (l in mailing_lists) {
+  this_data = filtered_data %>% filter(list == l)
+  ignored_by_week(this_data, l)
+}
+
 #ignore_rate_by_years(all)
-
-ignored_by_week(selection)
-ignored_by_week(all)
-
-#ignored_by_rc(selection)
-#ignored_by_rc(all)
-
-#filtered_data <- filtered_data %>% filter(v.kv != 'v2.6.39')
-#scatterplots(all)
-#week_scatterplots(all)
