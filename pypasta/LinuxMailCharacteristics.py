@@ -450,9 +450,10 @@ class LinuxMailCharacteristics:
             if self.is_first_patch_in_thread:
                 self.has_foreign_response = self._has_foreign_response(repo, thread)
 
+            # Even if the patch does not patch Linux, we can assign it to a
+            # appropriate version
+            self.linux_version = repo.linux_patch_get_version(patch)
             if self.patches_linux:
-                self.linux_version = repo.linux_patch_get_version(patch)
-
                 if clustering is not None:
                     self.is_upstream = len(clustering.get_upstream(message_id)) != 0
 
