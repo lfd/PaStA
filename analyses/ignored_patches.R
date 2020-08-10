@@ -18,7 +18,7 @@ library(reshape2)
 library(tikzDevice)
 
 mindate <- '2017-01-01'
-maxdate <- '2020-07-01'
+maxdate <- '2020-06-01'
 
 load_characteristics <- function(filename) {
   data <- read.csv(filename, header = TRUE, sep=",")
@@ -47,7 +47,8 @@ yearpp <- function(date) {
 
 printplot <- function(plot, filename, width_correction) {
   print(plot)
-  ggsave(fname(filename, '.pdf'), plot, dpi = 300, width = 8, device = 'pdf')
+  ggsave(fname(filename, '.pdf'), plot, dpi = 300, width = 297, height = 210, units = 'mm', device = 'pdf')
+  ggsave(fname(filename, '.png'), plot, dpi = 300, width = 297, height = 210, units = 'mm', device = 'png')
   tikz(fname(filename, '.tex'), width = 6.3 + width_correction, height = 5)
   print(plot)
   dev.off()
