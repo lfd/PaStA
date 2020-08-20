@@ -29,3 +29,4 @@ from .PatchDynamics import PatchFlow, PatchComposition
 from .Export import Export
 from .LinuxMailCharacteristics import LinuxMailCharacteristics,\
     load_linux_mail_characteristics
+from .LinuxMaintainers import load_maintainers
