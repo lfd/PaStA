@@ -14,7 +14,6 @@ the COPYING file in the top-level directory.
 """
 
 import anytree
-import argparse
 import csv
 import pickle
 import re
@@ -23,9 +22,7 @@ from logging import getLogger
 from subprocess import call
 from tqdm import tqdm
 
-from pypasta.LinuxMaintainers import load_maintainers
-from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
-from pypasta.Util import get_first_upstream
+from pypasta import *
 
 log = getLogger(__name__[-15:])
 
