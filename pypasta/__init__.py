@@ -23,7 +23,8 @@ from .PatchEvaluation import EvaluationResult, EvaluationType,\
     evaluate_commit_list, SimRating, evaluate_commit_pair
 from .Config import Thresholds
 from .Util import format_date_ymd, load_commit_hashes, get_date_selector,\
-    getch, show_commit, show_commits, parse_date_ymd, get_first_upstream
+    getch, show_commit, show_commits, parse_date_ymd, get_first_upstream,\
+    get_commit_hash_range
 from .PatchDynamics import PatchFlow, PatchComposition
 from .Export import Export
 from .LinuxMailCharacteristics import LinuxMailCharacteristics,\
