@@ -261,6 +261,10 @@ PaStA and Patchwork
 --------------------
 The results of PaStA's analyses can be used by [Patchwork](http://jk.ozlabs.org/projects/patchwork/).
 
+Work on PaStA and Patchwork integration was also undertaken as a [Google Summer
+of Code](./documentation/pasta-patchwork.md) project in 2020. The work done is
+described in detail in this [blog post](./documentation/pasta-patchwork.md)
+
 ## Setting up PaStA and Patchwork
 Assuming a working setup of PaStA already exists, here are the steps necessary for Patchwork integration
 
