@@ -93,7 +93,7 @@ class Diff:
 
         # Check if we understand the diff format
         if diff and Diff.EXCLUDE_CC_REGEX.match(diff[0]):
-            return
+            raise ValueError('No support for merge diffs')
 
         # We need at least three lines for any kind of reasonable patch
         while len(diff):
