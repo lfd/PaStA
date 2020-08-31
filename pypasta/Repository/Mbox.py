@@ -601,8 +601,10 @@ class Mbox:
                 self.message_id_to_lists[message_id].add(mbox.listaddr)
 
     def load_threads(self):
+        log.info('Loading mail threads...')
         if not self.threads:
             self.threads = MailThread.load(self.f_mail_thread_cache, self)
+        log.info('  ↪ done')
         return self.threads
 
     def __contains__(self, message_id):

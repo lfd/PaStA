@@ -252,6 +252,7 @@ class Config:
     # filename of the configuration. In any case, this routine returns the tuple
     # of the cluster filename and the cluster itself.
     def load_cluster(self, must_exist=True, f_clustering=None):
+        log.info('Loading clustering...')
         if f_clustering is None:
             f_clustering = self.f_clustering
 
@@ -262,6 +263,7 @@ class Config:
             self.repo.register_mbox(self)
 
         cluster = Clustering.from_file(f_clustering, must_exist=must_exist)
+        log.info('  ↪ done')
 
         return f_clustering, cluster
 
