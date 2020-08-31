@@ -16,25 +16,21 @@ from pypasta.Linux import *
 log = getLogger(__name__[-15:])
 
 linux_directory_skeleton = {'arch',
-                          'drivers',
-                          'fs',
-                          'include',
-                          'init',
-                          'ipc',
-                          'kernel',
-                          'lib',
-                          'scripts',
-                          'Documentation',
-                            }
+                            'drivers',
+                            'fs',
+                            'include',
+                            'init',
+                            'ipc',
+                            'kernel',
+                            'lib',
+                            'scripts',
+                            'Documentation'}
 
 linux_file_skeleton = {'COPYING',
                        'CREDITS',
                        'Kbuild',
                        'Makefile',
                        'README'}
-
-def isBase64(s):
-    return b'Content-Transfer-Encoding: base64' in s
 
 def repo_get_and_write_file(repo, ref, filename, destination):
     content = repo.get_blob(ref, filename)
@@ -53,17 +49,13 @@ def compare_getmaintainers(config, argv):
                                                           'message_id\'s should be picked randomly and processed')
 
     args = parser.parse_args(argv)
-
     victims = args.m_id
     bulk = args.bulk
-
-    linusTorvaldsTuple = (
-        'torvalds@linux-foundation.org', str(Section.Status.Buried))
 
     repo = config.repo
     _, clustering = config.load_cluster()
 
-    if victims is None:
+    if not victims:
         config.load_ccache_mbox()
         characteristics, maintainers_version = load_characteristics_and_maintainers(config, clustering)
         all_message_ids = get_relevant_patches(characteristics)
@@ -72,23 +64,25 @@ def compare_getmaintainers(config, argv):
         else:
             victims = [random.choice(all_message_ids)]
 
-    tmp = defaultdict(list)
+    tmp = defaultdict(set)
     for victim in victims:
-        version = repo.linux_patch_get_version(repo[victim])
-        tmp[version].append(victim)
+        version = characteristics[victim].linux_version
+        tmp[version].add(victim)
     victims = tmp
 
+    # create temporary directory infrastructure
     d_tmp = tempfile.mkdtemp()
+    for d in linux_directory_skeleton:
+        mkdir(join(d_tmp, d))
+
+    for file in linux_file_skeleton:
+        Path(join(d_tmp, file)).touch()
+
+    accepted = 0
+    declined = 0
+    skipped = 0
+    errors = 0
     try:
-        for dir in linux_directory_skeleton:
-            mkdir(join(d_tmp, dir))
-
-        for file in linux_file_skeleton:
-            Path(join(d_tmp, file)).touch()
-
-        accepted = 0
-        declined = 0
-        skipped = 0
         for version, message_ids in victims.items():
             # build the structure anew for every different version
             repo_get_and_write_file(repo, version, 'MAINTAINERS', d_tmp)
@@ -97,11 +91,11 @@ def compare_getmaintainers(config, argv):
 
             for message_id in message_ids:
                 log.info('Processing %s (%s)' % (message_id, version))
-
                 message_raw = repo.mbox.get_raws(message_id)[0]
 
-                if isBase64(message_raw):
+                if b'Content-Transfer-Encoding: base64' in message_raw:
                     log.error('Detected base64 encoded mail, skipping it silently')
+                    skipped += 1
                     continue
 
                 f_message = join(d_tmp, 'm')
@@ -118,16 +112,15 @@ def compare_getmaintainers(config, argv):
                     , shell=True, stdout=subprocess.PIPE, stderr = subprocess.PIPE)
 
                 pl_output = pl.communicate()[0].decode('utf-8')
-
                 pl_err = pl.communicate()[1].decode('utf-8')
-
                 if 'no longer supported in regex' in pl_err:
                     log.error('silently skipping a regex error')
+                    skipped += 1
                     continue
 
                 if pl.returncode != 0 or pl_output == '\n\n':
                     log.error('Unknown error while executing perl script, skipping')
-                    skipped += 1
+                    errors += 1
                     continue
 
                 patch = repo[message_id]
@@ -143,9 +136,14 @@ def compare_getmaintainers(config, argv):
                     pasta_lists |= lists
 
                     for reviewer in reviewers:
-                        pasta_people.add((reviewer[1].lower(), 'reviewer'))#, subsystem[0:40]))
+                        pasta_people.add((reviewer[1].lower(), 'reviewer'))
 
                     for maintainer in maintainers:
+                        mtr_mail = maintainer[1].lower()
+                        # Pia, wie kann das passieren, dass das leer ist? Bzw. wann?
+                        if mtr_mail == '' or mtr_mail == 'torvalds@linux-foundation.org':
+                            continue
+
                         if len(subsystem_states) != 1:
                             log.error(
                                 'maintainer for subsystem %s had more than one status or none? '
@@ -158,11 +156,7 @@ def compare_getmaintainers(config, argv):
                             status = 'odd fixer'
                         else:
                             status = str(subsystem_states[0])
-
-                        to_be_appended = (maintainer[1].lower(), status)#, subsystem[0:40])
-
-                        if to_be_appended != linusTorvaldsTuple and to_be_appended[0] is not '':
-                            pasta_people.add(to_be_appended)
+                        pasta_people.add((maintainer[1].lower(), status))
 
                 log.info('maintainers successfully retrieved by PaStA')
 
@@ -174,7 +168,7 @@ def compare_getmaintainers(config, argv):
                 pl_lists = {list.split(' ')[0] for list in pl_people if ' list' in list}
                 pl_people = {person for person in pl_people if ' list' not in person}
 
-                # First, check if subsystems actually match. Unfortunatelly,
+                # First, check if subsystems actually match. Unfortunately,
                 # get_maintainers crops subsystem names. Hence, only compare
                 # 40 characters of the name
                 pasta_subsystems_abbrev = {subsystem[0:40] for subsystem in subsystems}
@@ -213,14 +207,12 @@ def compare_getmaintainers(config, argv):
                 for pl_person in pl_people:
                     match = pl_person_regex.match(pl_person)
                     if not match:
-                        # raise ValueError('regex did not match for person %s from message_id %s'
-                        #                 % (pl_person, message_id))
                         match = pl_system_regex.match(pl_person)
                         if not match:
                             raise ValueError('regex did not match for person %s from message_id %s'
                                              % (pl_person, message_id))
 
-                    triple = match.group(1).lower(), match.group(2).lower() #, match.group(3)[0:40]
+                    triple = match.group(1).lower(), match.group(2).lower()
 
                     if triple in pasta_people:
                         pasta_people.remove(triple)
@@ -240,17 +232,12 @@ def compare_getmaintainers(config, argv):
                     accepted += 1
                 else:
                     declined += 1
-                    with open('../my_wrong_file.txt', 'a') as f:
-                        f.write('\'' + message_id + '\' ')
 
-        total = accepted + declined + skipped
-        log.info('\nFrom a total of %s message_id\'s:\n%u passed comparison\n%u failed comparison\n%u skipped'
-                 % (total, accepted, declined, skipped))
-        if total > 0:
-            log.info('Acceptance/Reject/Skipped rate: %s / %s / %s'
-                    % ((accepted/total)*100, (declined/total)*100, (skipped/total)*100))
-        else:
-            log.info('No messages tested')
-
+        log.info('Skipped patches: %u' % skipped)
+        log.info('Errors: %u' % errors)
+        total = accepted + declined
+        log.info('Total parseable patches: %u' % total)
+        log.info('  %u (%.2f%%) passed comparisons' % (accepted, accepted * 100 / total))
+        log.info('  %u (%.2f%%) failed comparisons' % (declined, declined * 100 / total))
     finally:
         shutil.rmtree(d_tmp)
