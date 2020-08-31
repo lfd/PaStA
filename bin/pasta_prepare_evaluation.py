@@ -23,6 +23,7 @@ from subprocess import call
 from tqdm import tqdm
 
 from pypasta import *
+from pypasta.Linux import load_characteristics_and_maintainers
 
 log = getLogger(__name__[-15:])
 
@@ -115,28 +116,6 @@ def get_relevant_patches(characteristics):
     log.info('Relevant patches: %u' % len(relevant))
 
     return relevant
-
-
-def load_characteristics_and_maintainers(config, clustering):
-    """
-    This routine loads characteristics for ALL mails in the time window config.mbox_timewindow, and loads multiple
-    instances of maintainers for the the patches of the clustering.
-
-    Returns the characteristics and maintainers_version
-    """
-    repo = config.repo
-    repo.mbox.load_threads()
-
-    all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
-                                                    allow_invalid=True)
-
-    tags = {repo.linux_patch_get_version(repo[x]) for x in clustering.get_downstream()}
-    maintainers_version = load_maintainers(config, tags)
-    characteristics = \
-        load_linux_mail_characteristics(config, maintainers_version, clustering,
-                                        all_messages_in_time_window)
-
-    return characteristics, maintainers_version
 
 
 def prepare_process_characteristics(config, clustering):
