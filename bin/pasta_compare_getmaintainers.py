@@ -4,16 +4,14 @@ import re
 import shutil
 import subprocess
 import tempfile
-import base64
 
 from collections import defaultdict
-from logging import getLogger
 from os.path import join
 from os import chdir, mkdir
 from pathlib import Path
 
-from pypasta import LinuxMailCharacteristics
-from pypasta.LinuxMaintainers import load_maintainers, Section
+from pypasta.LinuxMaintainers import Section
+from pypasta.Linux import *
 
 log = getLogger(__name__[-15:])
 
@@ -63,29 +61,22 @@ def compare_getmaintainers(config, argv):
         'torvalds@linux-foundation.org', str(Section.Status.Buried))
 
     repo = config.repo
-    repo.register_mbox(config)
-
-    all_message_ids = None
+    _, clustering = config.load_cluster()
 
     if victims is None:
-        all_message_ids = list(repo.mbox.get_ids(
-            time_window=(config.mbox_mindate, config.mbox_maxdate),
-            allow_invalid=False))
-        all_message_ids = [x for x in all_message_ids if
-                           LinuxMailCharacteristics._patches_linux(repo[x]) and 
-                           LinuxMailCharacteristics._process_mail(x, repo)]
-        if bulk is None:
-            victims = [random.choice(all_message_ids)]
-        else:
+        config.load_ccache_mbox()
+        characteristics, maintainers_version = load_characteristics_and_maintainers(config, clustering)
+        all_message_ids = get_relevant_patches(characteristics)
+        if bulk:
             victims = random.sample(all_message_ids, bulk)
+        else:
+            victims = [random.choice(all_message_ids)]
 
     tmp = defaultdict(list)
     for victim in victims:
         version = repo.linux_patch_get_version(repo[victim])
         tmp[version].append(victim)
     victims = tmp
-
-    maintainers_version = load_maintainers(config, victims.keys())
 
     d_tmp = tempfile.mkdtemp()
     try:
