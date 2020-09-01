@@ -306,19 +306,6 @@ def prepare_process_characteristics(config, clustering):
 
 
 def prepare_off_list_patches(config, clustering):
-    def get_youngest_commit(repo, commits):
-        commits = list(commits)
-        youngest = commits[0]
-        youngest_date = repo[youngest].committer.date
-
-        for commit in commits[1:]:
-            date = repo[commit].committer.date
-            if date > youngest_date:
-                youngest = commit
-                youngest_date = date
-
-        return youngest
-
     repo = config.repo
     # We need information of upstream commits, so warm up caches
     config.load_ccache_upstream()
@@ -348,7 +335,7 @@ def prepare_off_list_patches(config, clustering):
 
         # Determine the youngest upstream commit (in most cases we only
         # have one upstream candidate in any case)
-        upstream = get_youngest_commit(repo, upstream)
+        upstream = get_first_upstream(repo, clustering, list(upstream)[0])
         offlist.add(upstream)
 
     csv_fields = ['commit',
