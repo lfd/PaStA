@@ -321,8 +321,6 @@ def prepare_off_list_patches(config, clustering):
         return youngest
 
     repo = config.repo
-    repo.mbox.load_threads()
-
     # We need information of upstream commits, so warm up caches
     config.load_ccache_upstream()
 
