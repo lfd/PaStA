@@ -359,7 +359,7 @@ def prepare_off_list_patches(config, clustering):
     with open(config.f_offlist, 'w') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
         writer.writeheader()
-        for o in offlist:
+        for o in sorted(offlist):
             patch = repo[o]
             writer.writerow({'commit': o,
                              'author': patch.author.email.lower(),
