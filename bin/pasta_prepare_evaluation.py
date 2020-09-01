@@ -18,7 +18,6 @@ import csv
 import pickle
 import re
 
-from collections import defaultdict
 from logging import getLogger
 from subprocess import call
 from tqdm import tqdm
@@ -329,32 +328,27 @@ def prepare_off_list_patches(config, clustering):
 
     offlist = set()
     for downstream, upstream in tqdm(clustering.iter_split()):
-        l_upsteam = len(upstream)
         # We're not interested in clusters with no upstream hash
         # Filter for patches with too many upstream commits. They're very
         # likely no off-list patches.
+        l_upsteam = len(upstream)
         if l_upsteam == 0 or l_upsteam > 2:
             continue
 
-        # Across downstream patches: filter for backports and for next patches
-        # or patches from bots
+        # Across downstream patches: drop all irrelevant patches
         downstream = {x for x in downstream if
-                      not characteristics[x].is_stable_review}
+                      not characteristics[x].is_from_bot and
+                      not characteristics[x].is_next and
+                      not characteristics[x].is_stable_review and
+                      not characteristics[x].process_mail}
 
-        # We must NOT exclude bots. E.g., bots DO write patches that are
-        # accepted E.g., kbuild test robot write coccinelle patches.
-        #downstream = {x for x in downstream if
-        #              not characteristics[x].is_from_bot}
-        downstream = {x for x in downstream if
-                      not characteristics[x].is_next}
-
-        upstream = get_youngest_commit(repo, upstream)
-        #upstream_commit_date = repo[upstream].committer.date
-
+        # We don't have an offlist patch if anything is left in downstream
         if len(downstream):
             continue
 
-        # We have an off-list patch if len(downstream) == 0
+        # Determine the youngest upstream commit (in most cases we only
+        # have one upstream candidate in any case)
+        upstream = get_youngest_commit(repo, upstream)
         offlist.add(upstream)
 
     csv_fields = ['commit',
