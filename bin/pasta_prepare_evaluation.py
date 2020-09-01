@@ -355,7 +355,9 @@ def prepare_off_list_patches(config, clustering):
                   'author',
                   'committer',
                   'subject',
-                  'l_down']
+                  'l_down',
+                  'adate',
+                  'cdate']
     with open(config.f_offlist, 'w') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
         writer.writeheader()
@@ -365,7 +367,9 @@ def prepare_off_list_patches(config, clustering):
                              'author': patch.author.email.lower(),
                              'committer': patch.committer.email.lower(),
                              'subject': patch.subject,
-                             'l_down': len(clustering.get_downstream(o))})
+                             'l_down': len(clustering.get_downstream(o)),
+                             'adate': format_date_ymd(patch.author.date),
+                             'cdate': format_date_ymd(patch.committer.date)})
 
 
 def prepare_patch_review(config, clustering):
