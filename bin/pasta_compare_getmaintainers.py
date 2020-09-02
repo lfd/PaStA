@@ -10,7 +10,7 @@ from os.path import join
 from os import chdir, mkdir
 from pathlib import Path
 
-from pypasta.LinuxMaintainers import Section
+from pypasta.LinuxMaintainers import load_maintainers, Section
 from pypasta.Linux import *
 
 log = getLogger(__name__[-15:])
@@ -55,7 +55,14 @@ def compare_getmaintainers(config, argv):
     repo = config.repo
     _, clustering = config.load_cluster()
 
-    if not victims:
+    if victims:
+        tmp = defaultdict(set)
+        for victim in victims:
+            version = repo.linux_patch_get_version(repo[victim])
+            tmp[version].add(victim)
+        victims = tmp
+        maintainers_version = load_maintainers(config, victims.keys())
+    else:
         config.load_ccache_mbox()
         characteristics, maintainers_version = load_characteristics_and_maintainers(config, clustering)
         all_message_ids = get_relevant_patches(characteristics)
@@ -63,12 +70,6 @@ def compare_getmaintainers(config, argv):
             victims = random.sample(all_message_ids, bulk)
         else:
             victims = [random.choice(all_message_ids)]
-
-    tmp = defaultdict(set)
-    for victim in victims:
-        version = characteristics[victim].linux_version
-        tmp[version].add(victim)
-    victims = tmp
 
     # create temporary directory infrastructure
     d_tmp = tempfile.mkdtemp()
