@@ -233,10 +233,11 @@ def prepare_process_characteristics(config, clustering):
             integrated_by_maintainer = None
             if message_id in integrated_patches:
                 upstream = get_first_upstream(repo, clustering, message_id)
-                committer = repo[upstream].committer.name.lower()
+                upstream = repo[upstream]
+                committer = upstream.committer.name.lower()
 
                 linux_maintainers = maintainers_version[c.linux_version]
-                affected_files = repo[message_id].diff.affected
+                affected_files = upstream.diff.affected
                 integrated_by_maintainer = False
                 for section in linux_maintainers.get_sections_by_files(affected_files):
                     _, maintainers, _ = linux_maintainers.get_maintainers(section)
