@@ -129,7 +129,7 @@ class Section:
     def parse_person(value):
         match = Section.EMAIL_DEFAULT_REGEX.match(value)
         if match:
-            return [(match.group(1).strip(), match.group(2))]
+            return [(match.group(1).strip().strip('"'), match.group(2))]
 
         match = Section.EMAIL_MM_REGEX.match(value)
         if match:
