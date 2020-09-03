@@ -58,8 +58,7 @@ def compare_getmaintainers(config, argv):
     if victims:
         tmp = defaultdict(set)
         for victim in victims:
-            version = repo.linux_patch_get_version(repo[victim])
-            tmp[version].add(victim)
+            tmp[version].add(repo.linux_patch_get_version(repo[victim]))
         victims = tmp
         maintainers_version = load_maintainers(config, victims.keys())
     else:
@@ -70,6 +69,11 @@ def compare_getmaintainers(config, argv):
             victims = random.sample(all_message_ids, bulk)
         else:
             victims = [random.choice(all_message_ids)]
+
+        tmp = defaultdict(set)
+        for victim in victims:
+            tmp[version].add(characteristics[victim].linux_version)
+        victims = tmp
 
     # create temporary directory infrastructure
     d_tmp = tempfile.mkdtemp()
