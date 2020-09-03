@@ -36,6 +36,7 @@ RUN apt install -y --no-install-recommends \
 	python3-toml \
 	python3-tqdm \
 	python3-wheel \
+	r-base \
 	sudo \
 	vim \
 	wget
@@ -45,6 +46,8 @@ RUN pip3 --no-cache-dir install \
 	dateparser \
 	flask-bootstrap \
 	flask-nav anytree
+
+RUN R -e "install.packages(c('dplyr', 'ggplot2', 'lubridate', 'plyr', 'reshape2', 'tikzDevice'), clean = TRUE)"
 
 RUN useradd -m -G sudo -s /bin/bash pasta && echo "pasta:pasta" | chpasswd
 
