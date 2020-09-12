@@ -35,7 +35,6 @@ def _evaluate_patch_list_wrapper(thresholds, args):
                                 orig, cand,
                                 parallelise=False)
 
-
 def find_cherries(repo, commit_hashes, dest_list):
     """
     find_cherries() takes a list of commit hashes, a list of potential
@@ -133,6 +132,10 @@ def analyse(config, argv):
                              'compare representatives against upstream - '
                              '(default: %(default)s)')
 
+    parser.add_argument('-differential', dest='differential', action='store_true',
+                        default=False,
+                        help='Perform a differential analysis')
+
     args = parser.parse_args(argv)
 
     config.thresholds.heading = args.thres_heading
@@ -147,6 +150,9 @@ def analyse(config, argv):
     if mbox and mode == 'succ':
         log.error('Analysis mode succ is not available in mailbox mode!')
         return -1
+
+    if not mbox and args.differential:
+        log.error('Differential analysis can only be performed in mailbox mode')
 
     f_cluster, cluster = config.load_cluster(must_exist=False)
 
@@ -167,6 +173,7 @@ def analyse(config, argv):
         # exists.
         config.load_ccache_mbox()
 
+        new_patches = set()
         if mode == 'rep':
             victims = repo.mbox.get_ids(config.mbox_time_window)
 
@@ -202,6 +209,9 @@ def analyse(config, argv):
                 victims = linux_patches
                 repo.cache_evict_except(victims)
 
+            
+            # get new downstream patches since previous analysis
+            new_patches = victims - cluster.get_downstream()
             log.info('Cached %d relevant mails' % len(available))
             fill_result(victims, False)
 
@@ -275,6 +285,8 @@ def analyse(config, argv):
             if unreachable:
                 remove_from_cluster('COMMITS', cluster, unreachable)
 
+            # get new upstream patches since last analysis
+            new_patches |= candidates - cluster.get_upstream()
             fill_result(candidates, True)
 
             config.load_ccache_upstream()
@@ -295,7 +307,13 @@ def analyse(config, argv):
 
             type = EvaluationType.PatchStack
 
-        log.info('Starting evaluation')
+        if args.differential:
+            representatives = representatives | new_patches
+            candidates = new_patches
+            log.info('Starting differential evaluation of %u new patches' % len(new_patches))
+        else:
+            log.info('Starting evaluation')
+
         evaluation_result = evaluate_commit_list(repo, config.thresholds,
                                                  mbox, type,
                                                  representatives, candidates,
