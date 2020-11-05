@@ -15,13 +15,13 @@ library(ggplot2)
 library(lubridate)
 library(plyr)
 library(reshape2)
-library(tikzDevice)
+source("analyses/util.R")
 
 mindate <- '2017-01-01'
 maxdate <- '2020-06-01'
 
 load_characteristics <- function(filename) {
-  data <- read.csv(filename, header = TRUE, sep=",")
+  data <- read_csv(filename)
   data$list.matches_patch <- as.logical(data$list.matches_patch)
   data$ignored <- as.logical(data$ignored)
   data <- data %>% mutate(date = as.Date(time))
@@ -33,25 +33,12 @@ load_characteristics <- function(filename) {
 }
 
 load_releases <- function(filename) {
-  data <- read.csv(filename, header = TRUE, sep=",")
+  data <- read_csv(filename)
   data <- data %>% mutate(date = as.Date(date))
 }
 
-fname <- function(file, extension) {
-  return(file.path(d_dst, paste(file, extension, sep='')))
-}
-
 yearpp <- function(date) {
-  ymd(paste((year(date) + 1), '0101', sep = ''))
-}
-
-printplot <- function(plot, filename, width_correction) {
-  print(plot)
-  ggsave(fname(filename, '.pdf'), plot, dpi = 300, width = 297, height = 210, units = 'mm', device = 'pdf')
-  ggsave(fname(filename, '.png'), plot, dpi = 300, width = 297, height = 210, units = 'mm', device = 'png')
-  tikz(fname(filename, '.tex'), width = 6.3 + width_correction, height = 5)
-  print(plot)
-  dev.off()
+  ymd(paste0((year(date) + 1), '0101'))
 }
 
 ignore_rate_by_years <- function(data) {
@@ -152,7 +139,7 @@ ignored_by_week <- function(data, plot_name) {
           axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     labs(color = '') +
     facet_wrap(~list, scales = 'free')
-  filename <- paste('ignored_total', plot_name, sep = '/')
+  filename <- file.path('ignored_total', plot_name)
   printplot(plot, filename, 4.5)
 
   # Second plot: plot ignored patches in absolute numbers
@@ -173,7 +160,7 @@ ignored_by_week <- function(data, plot_name) {
     theme(legend.position = 'None',
           axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     facet_wrap(~list, scales = 'free')
-  filename <- paste('ignored_absolute', plot_name, sep = '/')
+  filename <- file.path('ignored_absolute', plot_name)
   printplot(plot, filename, 4.5)
 
   # Third plot: plot the ignored patches as a fraction of all patches
@@ -198,7 +185,7 @@ ignored_by_week <- function(data, plot_name) {
     theme(legend.position = 'None',
           axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     facet_wrap(~list, scales = 'free')
-  filename <- paste('ignored_fraction', plot_name, sep = '/')
+  filename <- file.path('ignored_fraction', plot_name)
   printplot(plot, filename, 4.5)
 }
 
@@ -230,7 +217,7 @@ composition <- function(data, plot_name) {
           axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     labs(color = '') +
     facet_wrap(~list, scales = 'free')
-  filename = paste('composition', plot_name, sep = '/')
+  filename = file.path('composition', plot_name)
   printplot(plot, filename, 4.5)
 }
 
@@ -245,10 +232,11 @@ if (length(args) == 0) {
   f_releases <- args[3]
 }
 
-dir.create(d_dst, showWarnings = FALSE)
-for (i in c('composition', 'ignored_total', 'ignored_absolute', 'ignored_fraction')) {
-  dir.create(paste(d_dst, i, sep = '/'), showWarnings = FALSE)
-}
+paths = c(d_dst, file.path(d_dst, 'composition'),
+	  file.path(d_dst, 'ignored_total'),
+	  file.path(d_dst, 'ignored_absolute'),
+	  file.path(d_dst, 'ignored_fraction'))
+create_tmpdir(paths)
 
 if (!exists('raw_data')) {
   raw_data <- load_characteristics(f_characteristics)
