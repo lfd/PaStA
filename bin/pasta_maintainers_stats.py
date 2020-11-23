@@ -23,6 +23,7 @@ from csv import writer
 from itertools import combinations
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
+from subprocess import call
 
 sys.path.insert(0,os.path.abspath(os.path.join(os.path.dirname(__file__),'..')))
 
@@ -128,7 +129,7 @@ def generate_graph(file_map, file_filters, f_csv):
             ctr_edge = G[a][b]['weight']
             line = [a, b, ctr_edge['lines'], ctr_edge['size']]
             csv_writer.writerow(line)
-
+    call(['./analyses/maintainers_section_graph.R', f_csv])
 
 def maintainers_stats(config, argv):
     parser = ArgumentParser(prog='maintainers_stats',
