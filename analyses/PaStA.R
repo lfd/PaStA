@@ -84,12 +84,11 @@ commitcount <- function() {
     scale_x_date(date_labels = "%b %Y",
                  limits = c(mindate, maxdate),
                  breaks = xticks) +
-    theme_bw(base_size = 15) +
     scale_color_manual(values = cols) +
     xlab("Timeline") +
     ylab("Number of Patches") +
-    theme(legend.position = "top",
-          legend.title = element_blank(),
+    my.theme +
+    theme(legend.title = element_blank(),
           axis.line = element_line(),
           axis.text.x = element_text(angle = 65,
                                      hjust = 1))
@@ -128,12 +127,11 @@ diffstat <- function() {
     scale_x_date(date_labels = "%b %Y",
                  limits = c(mindate, maxdate),
                  breaks = xticks) +
-    theme_bw(base_size = 15) +
     scale_color_manual(values = cols) +
     xlab("Timeline") +
     ylab("LOC deleted + inserted") +
-    theme(legend.position = "top",
-          legend.title = element_blank(),
+    my.theme +
+    theme(legend.title = element_blank(),
           axis.line = element_line(),
           axis.text.x = element_text(angle = 65,
                                      hjust = 1))
@@ -145,12 +143,12 @@ upstream_analysis <- function() {
   p <- ggplot(upstream, aes(upstream$DateDiff)) +
     xlab("Days between release and upstream") +
     ylab("Upstream patch density [a.u.]") +
-    theme_bw(base_size = 15) +
-    theme(axis.line = element_line()) +
     #geom_histogram()
     geom_density() +
     geom_vline(xintercept = 0,
-               colour = "red")
+               colour = "red") +
+    my.theme +
+    theme(axis.line = element_line())
 
   printplot(p, 'upstream')
 }
@@ -183,11 +181,12 @@ branch_observation <- function() {
                    aes(x = StackVersion, y = V1, fill = Type)) +
       geom_bar(stat = "identity") +
       xlab("Stack Version") +
+      scale_fill_discrete(name = version) +
+      my.theme +
       theme(legend.position = "right",
             axis.title.y = element_blank(),
             axis.text.x = element_text(angle = 90,
-                                       hjust = 1)) +
-      scale_fill_discrete(name = version)
+                                       hjust = 1))
     printplot(plot, paste0('branch-observation-', version))
   }
 }
@@ -220,12 +219,11 @@ stack_future <- function(stack_versions, filename) {
     geom_bar(stat = "identity") +
     xlab("Stack Version") +
     ylab("Number of commits") +
-    theme_bw(base_size = 15) +
-    theme(legend.position = "top",
-          axis.line = element_line(),
+    scale_fill_discrete(name = "Types of patches") +
+    my.theme +
+    theme(axis.line = element_line(),
           axis.text.x = element_text(angle = 65,
-                                     hjust = 1)) +
-    scale_fill_discrete(name = "Types of patches")
+                                     hjust = 1))
 
   printplot(plot, paste0('stack-future-', filename))
 }
