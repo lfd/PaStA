@@ -2,18 +2,15 @@
 
 # PaStA - Patch Stack Analysis
 #
-# Copyright (c) OTH Regensburg, 2016
+# Copyright (c) OTH Regensburg, 2016, 2020
 #
 # Author:
-#   Ralf Ramsauer <ralf.ramsauer@othr.de>
+#   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 #
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-library(tikzDevice)
-library(ggplot2)
-library(reshape2)
-library(dplyr)
+source("analyses/util.R")
 
 # Global color palette
 cols <- c("coral1",
@@ -259,38 +256,28 @@ args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   project_name <- "SAMPLE"
   output_dir <- "foo"
-
-  release_sort_filename <- '/home/ralf/workspace/PaStA/foo/release-sort'
-  mainline_release_dates_filename <- '/home/ralf/workspace/PaStA/foo/mainline-release-dates'
-  stack_release_dates_filename <- '/home/ralf/workspace/PaStA/foo/stack-release-dates'
-  patch_groups_filename <- '/home/ralf/workspace/PaStA/foo/patches'
-  upstream_filename <- '/home/ralf/workspace/PaStA/foo/upstream'
-  occurrence_filename <- '/home/ralf/workspace/PaStA/foo/patch-occurrence'
-  diffstat_filename <- '/home/ralf/workspace/PaStA/foo/diffstat'
+  srcdir <- 'resources/PreemptRT/resources/R'
   persistent = FALSE
 } else {
   project_name <- args[1]
   output_dir <- args[2]
-
-  release_sort_filename <- args[3]
-  mainline_release_dates_filename <- args[4]
-  stack_release_dates_filename <- args[5]
-  patch_groups_filename <- args[6]
-  upstream_filename <- args[7]
-  occurrence_filename <- args[8]
-  diffstat_filename <- args[9]
+  srcdir <- args[3]
 
   persistent = TRUE
 }
 
+get_csv <- function(file) {
+  return(read_csv(file.path(srcdir, file)))
+}
+
 # Load all csv files
-mainline_release_dates <- read_csv(mainline_release_dates_filename)
-stack_release_dates <- read_csv(stack_release_dates_filename)
-patch_groups <- read_csv(patch_groups_filename)
-upstream <- read_csv(upstream_filename)
-occurrence <- read_csv(occurrence_filename)
-release_sort <- read_csv(release_sort_filename)
-diffstats <- read_csv(diffstat_filename)
+mainline_release_dates <- get_csv('mainline-release-dates')
+stack_release_dates <- get_csv('stack-release-dates')
+patch_groups <- get_csv('patches')
+upstream <- get_csv('upstream')
+occurrence <- get_csv('patch-occurrence')
+release_sort <- get_csv('release-sort')
+diffstats <- get_csv('diffstat')
 
 # Convert columns containing dates
 mainline_release_dates <- convertDate(mainline_release_dates,
