@@ -14,6 +14,11 @@ source("analyses/util.R")
 library(plyr)
 
 drop_versions <- c('3.0.9-rt26', '4.14.63-rt43')
+relevant_releases <- c('3.0-rt', '3.2-rt', '3.4-rt', '3.6-rt', '3.8-rt',
+                       '3.10-rt', '3.12-rt', '3.14-rt', '3.18-rt',
+                       '4.1-rt', '4.4-rt', '4.9-rt', '4.14-rt', '4.19-rt',
+                       '5.4-rt', '5.9-rt')
+
 
 # Global color palette
 cols <- c("coral1",
@@ -62,6 +67,9 @@ commitcount <- function() {
   # some sugar
   data <- data[, c(3,1,4,2)]
 
+  # select relevant groups
+  if (exists('relevant_releases')) {data <- data %>% filter(VersionGroup %in% relevant_releases)}
+
   mindate <- min(data$ReleaseDate)
   maxdate <- max(data$ReleaseDate)
 
@@ -105,6 +113,9 @@ diffstat <- function() {
                 by.y = "Version")
 
   data$Sum <- data$Insertions + data$Deletions
+
+  # select relevant groups
+  if (exists('relevant_releases')) {data <- data %>% filter(VersionGroup %in% relevant_releases)}
 
   mindate <- min(data$ReleaseDate)
   maxdate <- max(data$ReleaseDate)
@@ -200,6 +211,9 @@ stack_future <- function(stack_versions, filename) {
               by.y = "Version",
               all.x = TRUE,
               all.y = FALSE)
+
+  # select relevant groups
+  if (exists('relevant_releases')) {pg <- pg %>% filter(VersionGroup %in% relevant_releases)}
 
   pg <- merge(x = pg,
               y = upstream[, c("PatchGroup", "Type")],
