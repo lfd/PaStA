@@ -303,7 +303,7 @@ def prepare_process_characteristics(config, clustering):
                 writer.writerow(row)
 
     log.info('Calling R...')
-    call(['./analyses/ignored_patches.R', config.d_rout, config.f_characteristics, config.f_releases])
+    call(['./analyses/ignored_patches.R', config.d_R, config.f_characteristics, config.f_releases])
 
 
 def prepare_off_list_patches(config, clustering):

@@ -106,8 +106,6 @@ class Config:
         default_cfg = toml.load(Config.DEFAULT_CONFIG)
         cfg = toml.load(self._config_file)
 
-        self.d_rout = join(self.project_root, 'Rout')
-
         # Merge configs
         merge_dicts(default_cfg, cfg)
 
@@ -165,7 +163,7 @@ class Config:
         self.f_responses_pkl = path('PATCH_RESPONSES_PKL')
 
         # R location
-        self.R_resources = path('R_RESOURCES')
+        self.d_R = path('R_RESOURCES')
 
         if self.upstream_blacklist:
             self.upstream_blacklist = join(Config.BLACKLIST_LOCATION,

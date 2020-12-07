@@ -34,17 +34,17 @@ def statistics(config, argv):
     psd = config.psd
     repo = config.repo
 
-    r_resources = config.d_rout
-    if not os.path.exists(r_resources):
-        os.makedirs(r_resources)
+    d_R = config.d_R
+    if not os.path.exists(d_R):
+        os.makedirs(d_R)
 
-    release_sort_filename = os.path.join(r_resources, "release-sort")
-    mainline_release_dates_filename = os.path.join(r_resources, 'mainline-release-dates')
-    stack_release_dates_filename = os.path.join(r_resources, 'stack-release-dates')
-    patches_filename = os.path.join(r_resources, 'patches')
-    upstream_filename = os.path.join(r_resources, 'upstream')
-    occurrence_filename = os.path.join(r_resources, 'patch-occurrence')
-    diffstat_filename = os.path.join(r_resources, 'diffstat')
+    release_sort_filename = os.path.join(d_R, "release-sort")
+    mainline_release_dates_filename = os.path.join(d_R, 'mainline-release-dates')
+    stack_release_dates_filename = os.path.join(d_R, 'stack-release-dates')
+    patches_filename = os.path.join(d_R, 'patches')
+    upstream_filename = os.path.join(d_R, 'upstream')
+    occurrence_filename = os.path.join(d_R, 'patch-occurrence')
+    diffstat_filename = os.path.join(d_R, 'diffstat')
 
     date_selector = get_date_selector(repo, psd, args.date_selector)
 
@@ -82,11 +82,5 @@ def statistics(config, argv):
         print('Invoke R')
         call(['./analyses/PaStA.R',
               config.project_name,
-              r_resources,
-              release_sort_filename,
-              mainline_release_dates_filename,
-              stack_release_dates_filename,
-              patches_filename,
-              upstream_filename,
-              occurrence_filename,
-              diffstat_filename])
+              d_R,
+             ])
