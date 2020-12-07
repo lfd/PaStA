@@ -223,7 +223,6 @@ composition <- function(data, plot_name) {
 
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  d_dst <- '/tmp/R'
   f_characteristics <- 'resources/linux/resources/characteristics.csv'
   f_releases <- 'resources/linux/resources/releases.csv'
 } else {
@@ -232,11 +231,7 @@ if (length(args) == 0) {
   f_releases <- args[3]
 }
 
-paths = c(d_dst, file.path(d_dst, 'composition'),
-	  file.path(d_dst, 'ignored_total'),
-	  file.path(d_dst, 'ignored_absolute'),
-	  file.path(d_dst, 'ignored_fraction'))
-create_tmpdir(paths)
+create_dstdir(c('composition', 'ignored_total', 'ignored_absolute', 'ignored_fraction'))
 
 if (!exists('raw_data')) {
   raw_data <- load_characteristics(f_characteristics)
