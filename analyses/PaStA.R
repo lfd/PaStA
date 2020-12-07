@@ -13,7 +13,7 @@
 library(tikzDevice)
 library(ggplot2)
 library(reshape2)
-library(plyr)
+library(dplyr)
 
 # Global color palette
 cols <- c("coral1",
@@ -79,6 +79,8 @@ num_commits <- function() {
 
   # some sugar
   commitcount <- commitcount[, c(3,1,4,2)]
+
+  commitcount <- commitcount %>% filter(Version != '4.14.63-rt43')
 
   mindate <- min(commitcount$ReleaseDate)
   maxdate <- max(commitcount$ReleaseDate)
