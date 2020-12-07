@@ -1,21 +1,18 @@
-library(ggplot2)
-library(tikzDevice)
-library(lubridate)
+#!/usr/bin/env Rscript
+
+# PaStA - Patch Stack Analysis
+#
+# Copyright (c) OTH Regensburg, 2019-2020
+#
+# Author:
+#   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+
+source("analyses/util.R")
 
 RESULT = '/tmp/upstream-duration'
-dst = '/tmp/R'
-
-fname <- function(file, extension) {
-  return(file.path(dst, paste(file, extension, sep="")))
-}
-
-printplot <- function(plot, filename) {
-  print(plot)
-  ggsave(fname(filename, '.pdf'), plot, dpi=300, width = 8, device="pdf")
-  #tikz(fname(filename, '.tex'), width = 7.5, height = 5)
-  #print(plot)
-  #dev.off()
-}
 
 #upstream_duration_orig <- read.table(RESULT, header=TRUE, sep=' ')
 binwidth <- 1

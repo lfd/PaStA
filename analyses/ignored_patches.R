@@ -10,11 +10,6 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-library(dplyr)
-library(ggplot2)
-library(lubridate)
-library(plyr)
-library(reshape2)
 source("analyses/util.R")
 
 mindate <- '2017-01-01'
