@@ -61,6 +61,7 @@ def check_mbox(config, argv):
 
     global repo
     repo = config.repo
+    # !FIXME Not aligned with current API
     _, cluster = config.load_patch_groups()
 
     range = repo.get_commithash_range(args.range[0])

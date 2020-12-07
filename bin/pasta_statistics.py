@@ -30,11 +30,9 @@ def statistics(config, argv):
     args = parser.parse_args(argv)
 
     # !FIXME Not aligned with current API
-    config.fail_no_patch_groups()
+    _, cluster = config.load_cluster()
     psd = config.psd
     repo = config.repo
-
-    cluster = config.patch_groups
 
     r_resources = config.d_rout
     if not os.path.exists(r_resources):

@@ -105,33 +105,35 @@ class Export:
         occurrence.write('PatchGroup OldestVersion LatestVersion FirstReleasedIn LastReleasedIn\n')
 
         cntr = 0
-        for group, _ in cluster.iter_split():
-            group = list(group)
+        for d, _ in cluster.iter_split():
+            if len(d) == 0:
+                continue
+            d = list(d)
             cntr += 1
 
             # write stack patches
-            for patch in group:
+            for patch in d:
                 stack_of_patch = psd.get_stack_of_commit(patch)
                 stack_version = stack_of_patch.stack_version
                 base_version = stack_of_patch.base_version
                 patches.write('%d %s %s %s\n' % (cntr, patch, stack_version, base_version))
 
             # optional: write upstream information
-            commit = get_first_upstream(self.repo, cluster, group[0])
+            commit = get_first_upstream(self.repo, cluster, d[0])
             if commit:
                 commit = self.repo[commit]
-                first_stack_occurence = min(map(date_selector, group))
+                first_stack_occurence = min(map(date_selector, d))
 
                 upstream.write('%d %s %s %s\n' % (cntr,
                                                   commit.identifier,
-                                                  format_date_ymd(commit.commit.date),
+                                                  format_date_ymd(commit.committer.date),
                                                   format_date_ymd(first_stack_occurence)))
 
             # Patch occurrence
-            latest_version = oldest_version = psd.get_stack_of_commit(group[0])
-            first_released = last_released = date_selector(group[0]), psd.get_stack_of_commit(group[0])
+            latest_version = oldest_version = psd.get_stack_of_commit(d[0])
+            first_released = last_released = date_selector(d[0]), psd.get_stack_of_commit(d[0])
 
-            for patch in group[1:]:
+            for patch in d[1:]:
                 # Get stack of current patch
                 stack = psd.get_stack_of_commit(patch)
 
