@@ -18,6 +18,10 @@ library(tikzDevice)
 
 d_dst <- '/tmp/R'
 
+DPI <- 300
+WIDTH <- 6.3
+HEIGHT <- 5
+
 create_dstdir <- function(path_vec){
 	for (i in path_vec) {
 	  dir.create(file.path(d_dst, i), showWarnings = FALSE)
@@ -31,9 +35,8 @@ read_csv <- function(filename){
 printplot <- function(plot, filename, width_correction) {
   print(plot)
   filename <- file.path(d_dst, filename)
-  ggsave(paste0(filename, '.pdf'), plot, dpi = 300, width = 297, height = 210, units = 'mm', device = 'pdf')
-  ggsave(paste0(filename, '.png'), plot, dpi = 300, width = 297, height = 210, units = 'mm', device = 'png')
-  tikz(paste0(filename, '.tex'), width = 6.3 + width_correction, height = 5)
-  print(plot)
-  dev.off()
+  ggsave(paste0(filename, '.png'), plot, dpi = DPI, width = 297, height = 210, units = 'mm', device = 'png')
+  #tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT)
+  #print(plot)
+  #dev.off()
 }

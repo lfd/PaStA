@@ -11,6 +11,9 @@
 # the COPYING file in the top-level directory.
 
 source("analyses/util.R")
+library(plyr)
+
+drop_versions <- c('3.0.9-rt26', '4.14.63-rt43')
 
 # Global color palette
 cols <- c("coral1",
@@ -34,7 +37,12 @@ cols <- c("coral1",
           "#009E73",
           "#0072B2",
           "#D55E00",
-          "#CC79A7")
+          "#CC79A7",
+          "coral1",
+          "cyan3",
+          "#E69F00",
+          "#56B4E9",
+          "#009E73")
 
 # Y-m-d Date converter
 convertDate <- function(table, columns) {
@@ -43,61 +51,36 @@ convertDate <- function(table, columns) {
   return(table)
 }
 
-# Save as ggplot as tikz and png
-savePlot <- function(filename, plot) {
-  TEXWIDTH <- 5.87614
-  tex_filename <- file.path(output_dir, paste(project_name, "-", filename, ".tex", sep = ""))
-  png_filename <- file.path(output_dir, paste(project_name, "-", filename, ".png", sep = ""))
-
-  tikz(tex_filename, standAlone = FALSE, width = 5, height = 5, sanitize = TRUE)
-  print(plot)
-  dev.off()
-
-  png(png_filename, width = 800, height = 640)
-  print(plot)
-  dev.off()
-}
-
-# Read a CSV file
-read_csv <- function(filename) {
-  read.csv(filename,
-           header=TRUE,
-           sep=' ')
-}
-
-# The num_commit plot
-num_commits <- function() {
-  commitcount <- as.data.frame(table(patch_groups$StackVersion))
-  colnames(commitcount) <- c("Version", "NumCommits")
-  commitcount <- merge(x = commitcount,
-                       y =  stack_release_dates,
-                       by.x = "Version",
-                       by.y = "Version")
+commitcount <- function() {
+  data <- as.data.frame(table(patch_groups$StackVersion))
+  colnames(data) <- c("Version", "NumCommits")
+  data <- merge(x = data,
+                y =  stack_release_dates,
+                by.x = "Version",
+                by.y = "Version")
 
   # some sugar
-  commitcount <- commitcount[, c(3,1,4,2)]
+  data <- data[, c(3,1,4,2)]
 
-  commitcount <- commitcount %>% filter(Version != '4.14.63-rt43')
+  mindate <- min(data$ReleaseDate)
+  maxdate <- max(data$ReleaseDate)
 
-  mindate <- min(commitcount$ReleaseDate)
-  maxdate <- max(commitcount$ReleaseDate)
-
-  vgs <- unique(commitcount$VersionGroup)
+  vgs <- unique(data$VersionGroup)
   vgs <- sort(vgs)
 
   xticks <- do.call("c", lapply(vgs, function(x)
-    c(min(subset(commitcount, VersionGroup == x)$ReleaseDate)#,
+    c(min(subset(data, VersionGroup == x)$ReleaseDate)#,
       #max(subset(commitcount, VersionGroup == x)$ReleaseDate)
     )
   ))
 
-  p <- ggplot(commitcount,
+  p <- ggplot(data,
               aes(x = ReleaseDate,
                   y = NumCommits,
                   group = VersionGroup,
                   colour = VersionGroup)) +
     geom_line(size = 1.2) +
-    ylim(200, max(commitcount$NumCommits)) +
+    ylim(200, max(data$NumCommits)) +
     scale_x_date(date_labels = "%b %Y",
                  limits = c(mindate, maxdate),
                  breaks = xticks) +
@@ -110,38 +93,38 @@ num_commits <- function() {
           axis.line = element_line(),
           axis.text.x = element_text(angle = 65,
                                      hjust = 1))
-  return(p)
+
+  printplot(p, 'commitcount')
 }
 
 # Diffstat analysis
 diffstat <- function() {
-  my_diffstats = diffstats
+  data <- diffstats
+  data <- merge(x = data,
+                y =  stack_release_dates,
+                by.x = "Version",
+                by.y = "Version")
 
-  my_diffstats <- merge(x = my_diffstats,
-                        y =  stack_release_dates,
-                        by.x = "Version",
-                        by.y = "Version")
+  data$Sum <- data$Insertions + data$Deletions
 
-  my_diffstats$Sum <- my_diffstats$Insertions + my_diffstats$Deletions
+  mindate <- min(data$ReleaseDate)
+  maxdate <- max(data$ReleaseDate)
 
-  mindate <- min(my_diffstats$ReleaseDate)
-  maxdate <- max(my_diffstats$ReleaseDate)
-
-  vgs <- unique(my_diffstats$VersionGroup)
+  vgs <- unique(data$VersionGroup)
   vgs <- sort(vgs)
 
   xticks <- do.call("c", lapply(vgs, function(x)
-    c(min(subset(my_diffstats, VersionGroup == x)$ReleaseDate))
+    c(min(subset(data, VersionGroup == x)$ReleaseDate))
   ))
 
-  p <- ggplot(my_diffstats) +
+  p <- ggplot(data) +
     geom_line(size = 1.2,
               aes(x = ReleaseDate,
                   y = Sum,
                   group = VersionGroup,
                   colour = VersionGroup)) +
-    ylim(min(my_diffstats$Sum),
-         max(my_diffstats$Sum)) +
+    ylim(min(data$Sum),
+         max(data$Sum)) +
     scale_x_date(date_labels = "%b %Y",
                  limits = c(mindate, maxdate),
                  breaks = xticks) +
@@ -154,22 +137,22 @@ diffstat <- function() {
           axis.line = element_line(),
           axis.text.x = element_text(angle = 65,
                                      hjust = 1))
-  return(p)
+  printplot(p, 'diffstat')
 }
 
 # Upstream analysis
-upstream_analysis <- function(binwidth) {
+upstream_analysis <- function() {
   p <- ggplot(upstream, aes(upstream$DateDiff)) +
     xlab("Days between release and upstream") +
     ylab("Upstream patch density [a.u.]") +
     theme_bw(base_size = 15) +
     theme(axis.line = element_line()) +
-    #geom_histogram(binwidth = binwidth)
+    #geom_histogram()
     geom_density() +
     geom_vline(xintercept = 0,
                colour = "red")
 
-  return(p)
+  printplot(p, 'upstream')
 }
 
 # Branch observation
@@ -194,8 +177,8 @@ branch_observation <- function() {
 
   branch_observation <- ddply(pg, .(VersionGroup, StackVersion, Type), nrow)
 
-  create_plot <- function(ver_grp) {
-    observation <- subset(branch_observation, VersionGroup == ver_grp)
+  for (version in ord_version_grps) {
+    observation <- subset(branch_observation, VersionGroup == version)
     plot <- ggplot(observation,
                    aes(x = StackVersion, y = V1, fill = Type)) +
       geom_bar(stat = "identity") +
@@ -204,16 +187,13 @@ branch_observation <- function() {
             axis.title.y = element_blank(),
             axis.text.x = element_text(angle = 90,
                                        hjust = 1)) +
-      scale_fill_discrete(name = ver_grp)
-    return(list(ver_grp, plot))
+      scale_fill_discrete(name = version)
+    printplot(plot, paste0('branch-observation-', version))
   }
-
-  results <- lapply(ord_version_grps, create_plot)
-  return(results)
 }
 
 # Stack future (maybe merge with branch observation)
-stack_future <- function(stack_versions) {
+stack_future <- function(stack_versions, filename) {
 
   pg <- merge(x = patch_groups[, c("PatchGroup", "StackVersion")],
               y = stack_release_dates[, c("VersionGroup", "Version")],
@@ -246,7 +226,8 @@ stack_future <- function(stack_versions) {
           axis.text.x = element_text(angle = 65,
                                      hjust = 1)) +
     scale_fill_discrete(name = "Types of patches")
-  return(plot)
+
+  printplot(plot, paste0('stack-future-', filename))
 }
 
 
@@ -296,6 +277,11 @@ upstream$Type <- sapply(upstream$DateDiff, function(x) {
     "forwardport"
 })
 
+# Filter strong outliers
+diffstats <- diffstats %>% filter(!Version %in% drop_versions)
+patch_groups <- patch_groups %>% filter(!StackVersion %in% drop_versions)
+stack_release_dates <- stack_release_dates %>% filter(!Version %in% drop_versions)
+
 # Set Version as ord. factors
 ord_stack_ver = factor(unique(release_sort$Version),
                        ordered = TRUE,
@@ -304,14 +290,6 @@ ord_stack_ver = factor(unique(release_sort$Version),
 ord_version_grps = factor(unique(release_sort$VersionGroup),
                           ordered = TRUE,
                           levels = unique(release_sort$VersionGroup))
-
-release_sort$VersionGroup <- factor(release_sort$VersionGroup,
-                                    ordered = TRUE,
-                                    levels = ord_stack_ver)
-
-release_sort$Version <- factor(release_sort$Version,
-                               ordered = TRUE,
-                               levels = ord_stack_ver)
 
 occurrence$OldestVersion <- factor(occurrence$OldestVersion,
                                    ordered = TRUE,
@@ -361,37 +339,10 @@ for (i in ord_version_grps) {
   l_stack_versions[length(l_stack_versions)+1] <- maxver [1]
 }
 
-binwidth <- 7
-
-commitcount_plot <- num_commits()
-diffstat_plot <- diffstat()
-upstream_analysis_plot <- upstream_analysis(binwidth)
-branch_observation_plots <- branch_observation()
-
-fl_sf_plot <- stack_future(fl_stack_versions)
-f_sf_plot <- stack_future(f_stack_versions)
-l_sf_plot <- stack_future(l_stack_versions)
-
-if (persistent) {
-  savePlot("commitcount", commitcount_plot)
-  savePlot("diffstat", diffstat_plot)
-  savePlot("upstream-analysis", upstream_analysis_plot)
-  for (i in branch_observation_plots) {
-    savePlot(paste("branch-observation-",
-                   i[[1]],
-                   sep = ""), i[[2]])
-  }
-  savePlot("fl_sf_plot", fl_sf_plot)
-  savePlot("f_sf_plot", f_sf_plot)
-  savePlot("l_sf_plot", l_sf_plot)
-} else {
-  print(commitcount_plot)
-  print(diffstat_plot)
-  print(upstream_analysis_plot)
-  for(i in branch_observation_plots) {
-    print(i[[2]])
-  }
-  print(fl_sf_plot)
-  print(f_sf_plot)
-  print(l_sf_plot)
-}
+commitcount()
+diffstat()
+upstream_analysis()
+branch_observation()
+stack_future(fl_stack_versions, 'first-last')
+stack_future(f_stack_versions, 'first')
+stack_future(l_stack_versions, 'last')
