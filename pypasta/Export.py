@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2016-2019
+Copyright (c) OTH Regensburg, 2016-2020
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -59,9 +59,10 @@ class Export:
         _tmp_repo = None
 
         with open(f_diffstat, 'w') as f:
-            f.write('Version Deletions Insertions\n')
+            f.write('Version,Deletions,Insertions\n')
             for version_name, deletions, insertions in results:
-                    f.write('%s %d %d\n' % (version_name, deletions, insertions))
+                    f.write('%s,%d,%d\n' %
+                            (version_name, deletions, insertions))
 
     def release_dates(self, f_mainline_release_dates, f_stack_release_dates):
         stacks = dict()
@@ -73,24 +74,23 @@ class Export:
                 base[stack.base_version] = stack.base_release_date
 
         with open(f_mainline_release_dates, 'w') as f:
-            f.write('Version ReleaseDate\n')
+            f.write('Version,ReleaseDate\n')
             for version, date in base.items():
-                f.write('%s %s\n' %
+                f.write('%s,%s\n' %
                         (version, format_date_ymd(date)))
 
         with open(f_stack_release_dates, 'w') as f:
-            f.write('VersionGroup Version ReleaseDate\n')
+            f.write('VersionGroup, Version, ReleaseDate\n')
             for version, (group, date) in stacks.items():
-                f.write('%s %s %s\n' % (group,
-                                        version,
-                                        format_date_ymd(date)))
+                f.write('%s,%s,%s\n' %
+                        (group, version, format_date_ymd(date)))
 
     def sorted_release_names(self, f_release_sort):
         with open(f_release_sort, 'w') as f:
-            f.write('VersionGroup Version\n')
+            f.write('VersionGroup, Version\n')
             for version_group, stacks in self.psd.iter_groups():
                 for stack in stacks:
-                    f.write('%s %s\n' % (version_group, stack.stack_version))
+                    f.write('%s,%s\n' % (version_group, stack.stack_version))
 
     def patch_groups(self, f_upstream, f_patches, f_occurrence,
                      cluster, date_selector):
@@ -100,9 +100,9 @@ class Export:
         occurrence = open(f_occurrence, 'w')
 
         # Write CSV Headers
-        upstream.write('PatchGroup UpstreamHash UpstreamCommitDate FirstStackOccurence\n')
-        patches.write('PatchGroup CommitHash StackVersion BaseVersion\n')
-        occurrence.write('PatchGroup OldestVersion LatestVersion FirstReleasedIn LastReleasedIn\n')
+        upstream.write('PatchGroup, UpstreamHash, UpstreamCommitDate, FirstStackOccurence\n')
+        patches.write('PatchGroup, CommitHash, StackVersion, BaseVersion\n')
+        occurrence.write('PatchGroup, OldestVersion, LatestVersion, FirstReleasedIn, LastReleasedIn\n')
 
         cntr = 0
         for d, _ in cluster.iter_split():
@@ -116,7 +116,8 @@ class Export:
                 stack_of_patch = psd.get_stack_of_commit(patch)
                 stack_version = stack_of_patch.stack_version
                 base_version = stack_of_patch.base_version
-                patches.write('%d %s %s %s\n' % (cntr, patch, stack_version, base_version))
+                patches.write('%d,%s,%s,%s\n' %
+                              (cntr, patch, stack_version, base_version))
 
             # optional: write upstream information
             commit = get_first_upstream(self.repo, cluster, d[0])
@@ -124,10 +125,10 @@ class Export:
                 commit = self.repo[commit]
                 first_stack_occurence = min(map(date_selector, d))
 
-                upstream.write('%d %s %s %s\n' % (cntr,
-                                                  commit.identifier,
-                                                  format_date_ymd(commit.committer.date),
-                                                  format_date_ymd(first_stack_occurence)))
+                upstream.write('%d,%s,%s,%s\n' %
+                               (cntr, commit.identifier,
+                                format_date_ymd(commit.committer.date),
+                                format_date_ymd(first_stack_occurence)))
 
             # Patch occurrence
             latest_version = oldest_version = psd.get_stack_of_commit(d[0])
@@ -159,9 +160,9 @@ class Export:
             first_released = first_released[1].stack_version
             last_released = last_released[1].stack_version
 
-            occurrence.write('%d %s %s %s %s\n' % (cntr,
-                                                   oldest_version, latest_version,
-                                                   first_released, last_released))
+            occurrence.write('%d,%s,%s,%s,%s\n' %
+                             (cntr, oldest_version, latest_version,
+                              first_released, last_released))
 
         upstream.close()
         patches.close()
