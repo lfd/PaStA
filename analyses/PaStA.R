@@ -235,16 +235,9 @@ stack_future <- function(stack_versions, filename) {
 args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) == 0) {
-  project_name <- "SAMPLE"
-  output_dir <- "foo"
   srcdir <- 'resources/PreemptRT/resources/R'
-  persistent = FALSE
 } else {
-  project_name <- args[1]
-  output_dir <- args[2]
-  srcdir <- args[3]
-
-  persistent = TRUE
+  srcdir <- args[1]
 }
 
 get_csv <- function(file) {
