@@ -72,21 +72,21 @@ def get_status(all_maintainers, section_name):
         return ''
 
 
-def dump_csv(headers, relevant_headers, data, filename):
-    if filename:
-        with open(filename, 'w+') as csv_file:
-            csv_writer = writer(csv_file)
-            csv_writer.writerow([h[2] for h in headers])
-            csv_writer.writerows(data)
-        return
-
+def dump_csv(headers, relevant_headers, data, f_csv, verbose):
     headers_pretty = '\t\t'.join([headers[x][0] for x in relevant_headers])
-    print(headers_pretty)
-    for entry in data:
-        str = ''
-        for num in relevant_headers:
-            str += headers[num][1] % entry[num] + '\t\t'
-        print(str)
+    if verbose:
+        print(headers_pretty)
+        for entry in data:
+            str = ''
+            for num in relevant_headers:
+                str += headers[num][1] % entry[num] + '\t\t'
+            if verbose:
+                print(str)
+
+    with open(f_csv, 'w+') as csv_file:
+        csv_writer = writer(csv_file)
+        csv_writer.writerow([h[2] for h in headers])
+        csv_writer.writerows(data)
 
 
 # generate_graph generates an edge list for an undirected graph that represents
@@ -137,8 +137,6 @@ def maintainers_stats(config, argv):
     parser.add_argument('--smallstat', action='store_true', help='Simple view')
     parser.add_argument('--size', action='store_true',
                         help='Show sizes (in bytes)')
-    parser.add_argument('--csv', type=str,
-                        help='Write result to a csv file')
     parser.add_argument('--filter', type=str,
                         help='Only respect files named in FILTER. The first '
                              'line of FILTER must contain ther kernel version. '
@@ -162,12 +160,9 @@ def maintainers_stats(config, argv):
                         help='stats: dump stats to a csv-file. '
                              'graph: generate a csv-file that serves as a basis for a graph. '
                              'Default: %(default)s')
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose mode.')
 
     args = parser.parse_args(argv)
-
-    if args.mode == 'graph' and not args.csv:
-        log.error('Graph mode and no given output for csv file. Exiting')
-        return
 
     repo = config.repo
 
@@ -199,7 +194,7 @@ def maintainers_stats(config, argv):
             sections -= {'THE REST'}
             result.append((filename, ', '.join(sections)))
 
-        dump_csv(headers, [0, 1], result, args.csv)
+        dump_csv(headers, [0, 1], result, config.f_maintainers_stats, args.verbose)
         return
 
     # We end up here in case of args.group_by in {'sections', 'maintainers'}
@@ -220,7 +215,7 @@ def maintainers_stats(config, argv):
     file_map = dict(file_map)
 
     if args.mode == 'graph':
-        generate_graph(file_map, filter_by_files, args.csv)
+        generate_graph(file_map, filter_by_files, config.f_maintainers_section_graph)
         return
 
     # An object is the kind of the analysis, and reflects the target. A target
@@ -329,4 +324,4 @@ def maintainers_stats(config, argv):
     if filter_by_files:
         relevant_headers += [3, 4, 5]
 
-    dump_csv(headers, relevant_headers, result, args.csv)
+    dump_csv(headers, relevant_headers, result, config.f_maintainers_stats, args.verbose)
