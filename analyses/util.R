@@ -1,5 +1,3 @@
-#!/usr/bin/env Rscript
-
 # PaStA - Patch Stack Analysis
 #
 # Copyright (c) OTH Regensburg, 2020
