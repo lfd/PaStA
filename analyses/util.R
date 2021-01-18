@@ -42,3 +42,5 @@ printplot <- function(plot, filename, width_correction) {
   #print(plot)
   #dev.off()
 }
+
+dir.create(d_dst)
