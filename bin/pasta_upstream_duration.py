@@ -14,6 +14,7 @@ import sys
 
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from pypasta import *
@@ -32,15 +33,15 @@ def get_youngest(repo, commits, commit_date):
 
     if commit_date:
         for commit in commits[1:]:
-            if repo[youngest].commit.date > repo[commit].commit.date:
+            if repo[youngest].committer.date > repo[commit].committer.date:
                 youngest = commit
-            if repo[oldest].commit.date < repo[commit].commit.date:
+            if repo[oldest].committer.date < repo[commit].committer.date:
                 oldest = commit
     else:
         for commit in commits[1:]:
-            if repo[youngest].author_date > repo[commit].author_date:
+            if repo[youngest].author.date > repo[commit].author.date:
                 youngest = commit
-            if repo[oldest].author_date < repo[commit].author_date:
+            if repo[oldest].author.date < repo[commit].author.date:
                 oldest = commit
 
     return oldest, youngest
@@ -56,10 +57,10 @@ def upstream_duration_of_group(group):
     oldest_mail, youngest_mail = get_youngest(repo, untagged, False)
     _, youngest_upstream = get_youngest(repo, tagged, True)
 
-    oldest_mail_date = repo[oldest_mail].author_date
-    youngest_mail_date = repo[youngest_mail].author_date
+    oldest_mail_date = repo[oldest_mail].author.date
+    youngest_mail_date = repo[youngest_mail].author.date
 
-    youngest_upstream_date = repo[youngest_upstream].commit.date
+    youngest_upstream_date = repo[youngest_upstream].committer.date
 
     delta = youngest_upstream_date - youngest_mail_date
 
@@ -79,15 +80,15 @@ def upstream_duration(config, argv):
 
     _, cluster = config.load_cluster()
 
-    if args.mbox:
+    if config.mode == Config.Mode.MBOX:
         config.load_ccache_mbox()
     else:
         config.load_ccache_stack()
 
     log.info('Starting evaluation.')
     pool = Pool(cpu_count())
-    tagged_only = [(d, u) for d, u in cluster.iter_split() if len(u)]
-    result = pool.map(upstream_duration_of_group, tagged_only)
+    tagged_only = [(d, u) for d, u in cluster.iter_split() if len(u) and len(d)]
+    result = list(tqdm(pool.imap(upstream_duration_of_group, tagged_only), total=len(tagged_only)))
     pool.close()
     pool.join()
     log.info('  ↪ done.')
