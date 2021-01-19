@@ -20,6 +20,7 @@ RUN apt update && apt -y dist-upgrade
 RUN apt install -y --no-install-recommends \
 	build-essential \
 	git \
+	libpng-dev \
 	locales \
 	patchutils \
 	procmail \
