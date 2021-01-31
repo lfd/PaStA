@@ -66,42 +66,6 @@ def ignore_tlds(addresses):
     return {ignore_tld(address) for address in addresses if address}
 
 
-class MaintainerMetrics:
-    def __init__(self, c):
-        self.all_lists_one_mtr_per_sec = False
-        self.one_list_and_mtr = False
-        self.one_list_mtr_per_sec = False
-        self.one_list = False
-        self.one_list_or_mtr = False
-
-        # Metric: All lists + at least one maintainer per section
-        # needs to be addressed correctly
-        if (not c.mtrs_has_lists or c.mtrs_has_list_per_section) and \
-           (not c.mtrs_has_maintainers or c.mtrs_has_maintainer_per_section):
-            self.all_lists_one_mtr_per_sec = True
-
-        # Metric: At least one correct list + at least one correct maintainer
-        if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and \
-           (not c.mtrs_has_maintainers or c.mtrs_has_one_correct_maintainer):
-            self.one_list_and_mtr = True
-
-        # Metric: One correct list + one maintainer per section
-        if (not c.mtrs_has_lists or c.mtrs_has_one_correct_list) and c.mtrs_has_maintainer_per_section:
-            self.one_list_mtr_per_sec = True
-
-        # Metric: One correct list
-        if not c.mtrs_has_lists or c.mtrs_has_one_correct_list:
-            self.one_list = True
-
-        # Metric: One correct list or one correct maintainer
-        if c.mtrs_has_lists and c.mtrs_has_one_correct_list:
-            self.one_list_or_mtr = True
-        elif c.mtrs_has_maintainers and c.mtrs_has_one_correct_maintainer:
-            self.one_list_or_mtr = True
-        if not c.mtrs_has_lists and not c.mtrs_has_maintainers:
-            self.one_list_or_mtr = c.mtrs_has_linux_kernel
-
-
 class LinuxMailCharacteristics:
     BOTS = {'tip-bot2@linutronix.de', 'tipbot@zytor.com',
             'noreply@ciplatform.org', 'patchwork@emeril.freedesktop.org'}
@@ -211,52 +175,6 @@ class LinuxMailCharacteristics:
                 return True
         return False
 
-    def _get_maintainer(self, maintainer, patch):
-        sections = maintainer.get_sections_by_files(patch.diff.affected)
-        for section in sections:
-            s_lists, s_maintainers, s_reviewers = maintainer.get_maintainers(section)
-            s_maintainers = {x[1] for x in s_maintainers if x[1]}
-            s_reviewers = {x[1] for x in s_reviewers if x[1]}
-            self.maintainers[section] = s_lists, s_maintainers, s_reviewers
-
-        self.mtrs_has_lists = False
-        self.mtrs_has_maintainers = False
-        self.mtrs_has_one_correct_list = False
-        self.mtrs_has_one_correct_maintainer = False
-        self.mtrs_has_maintainer_per_section = True
-        self.mtrs_has_list_per_section = True
-        self.mtrs_has_linux_kernel = 'linux-kernel@vger.kernel.org' in self.recipients_lists
-
-        recipients = self.recipients_lists | self.recipients_other | \
-                     {self.mail_from[1]}
-        recipients = ignore_tlds(recipients)
-        for section, (s_lists, s_maintainers, s_reviewers) in self.maintainers.items():
-            if section == 'THE REST':
-                continue
-
-            s_lists = ignore_tlds(s_lists)
-            s_maintainers = ignore_tlds(s_maintainers) | ignore_tlds(s_reviewers)
-
-            if len(s_lists):
-                self.mtrs_has_lists = True
-
-            if len(s_maintainers):
-                self.mtrs_has_maintainers = True
-
-            if len(s_lists & recipients):
-                self.mtrs_has_one_correct_list = True
-
-            if len(s_maintainers & recipients):
-                self.mtrs_has_one_correct_maintainer = True
-
-            if len(s_maintainers) and len(s_maintainers & recipients) == 0:
-                self.mtrs_has_maintainer_per_section = False
-
-            if len(s_lists) and len(s_lists & recipients) == 0:
-                self.mtrs_has_list_per_section = False
-
-        self.maintainer_metrics = MaintainerMetrics(self)
-
     def _is_stable_review(self, message, patch):
         if 'X-Mailer' in message and \
            'LinuxStableQueue' in message['X-Mailer']:
@@ -341,14 +259,6 @@ class LinuxMailCharacteristics:
 
         # stuff for maintainers analysis
         self.maintainers = dict()
-        self.mtrs_has_lists = None
-        self.mtrs_has_maintainers = None
-        self.mtrs_has_one_correct_list = None
-        self.mtrs_has_one_correct_maintainer = None
-        self.mtrs_has_maintainer_per_section = None
-        self.mtrs_has_list_per_section = None
-        self.mtrs_has_linux_kernel = None
-        self.maintainer_metrics = None
 
         message = repo.mbox.get_messages(message_id)[0]
         thread = repo.mbox.threads.get_thread(message_id)
@@ -391,7 +301,12 @@ class LinuxMailCharacteristics:
 
                 if maintainers_version is not None:
                     maintainers = maintainers_version[self.linux_version]
-                    self._get_maintainer(maintainers, patch)
+                    sections = maintainers.get_sections_by_files(patch.diff.affected)
+                    for section in sections:
+                        s_lists, s_maintainers, s_reviewers = maintainers.get_maintainers(section)
+                        s_maintainers = {x[1] for x in s_maintainers if x[1]}
+                        s_reviewers = {x[1] for x in s_reviewers if x[1]}
+                        self.maintainers[section] = s_lists, s_maintainers, s_reviewers
 
 
 def _load_mail_characteristic(message_id):

@@ -207,11 +207,6 @@ def prepare_process_characteristics(config, clustering):
                   'ignored', # Was the patch ignored? See definition above.
                   'committer', # Who committed the patch? (Can be None. If committer != None -> ignored = False)
                   'committer.correct', # Is the committer a valid committer according to MAINTAINERS?
-                  'all_lists_one_mtr_per_sec',
-                  'one_list_and_mtr',
-                  'one_list_mtr_per_sec',
-                  'one_list_or_mtr',
-                  'one_list',
     ]
 
     with open(config.f_characteristics, 'w') as csv_file:
@@ -220,7 +215,6 @@ def prepare_process_characteristics(config, clustering):
 
         for message_id in tqdm(sorted(clustering.get_downstream())):
             c = characteristics[message_id]
-            metrics = c.maintainer_metrics
             kv, rc = _get_kv_rc(c.linux_version)
             mail_from = c.mail_from[1]
 
@@ -265,19 +259,6 @@ def prepare_process_characteristics(config, clustering):
             else:
                 patch_type = 'other'
 
-            if metrics:
-                all_lists_one_mtr_per_sec = metrics.all_lists_one_mtr_per_sec
-                one_list_and_mtr = metrics.one_list_and_mtr
-                one_list_mtr_per_sec = metrics.one_list_mtr_per_sec
-                one_list_or_mtr = metrics.one_list_or_mtr
-                one_list = metrics.one_list
-            else:
-                all_lists_one_mtr_per_sec = None
-                one_list_and_mtr = None
-                one_list_mtr_per_sec = None
-                one_list_or_mtr = None
-                one_list = None
-
             # Dump an entry for each list the patch was sent to. This allows
             # for grouping by mailing lists.
             for ml in repo.mbox.get_lists(message_id):
@@ -293,11 +274,6 @@ def prepare_process_characteristics(config, clustering):
                        'ignored': ignored,
                        'committer': committer,
                        'committer.correct': integrated_by_maintainer,
-                       'all_lists_one_mtr_per_sec': all_lists_one_mtr_per_sec,
-                       'one_list_and_mtr': one_list_and_mtr,
-                       'one_list_mtr_per_sec': one_list_mtr_per_sec,
-                       'one_list_or_mtr': one_list_or_mtr,
-                       'one_list': one_list,
                        }
 
                 writer.writerow(row)
