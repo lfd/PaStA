@@ -13,7 +13,9 @@
 source("analyses/util.R")
 
 mindate <- '2019-01-01'
-maxdate <- '2020-09-03'
+maxdate <- '2021-01-01'
+
+conform.top.n = 15
 
 load_characteristics <- function(filename) {
   data <- read_csv(filename)
@@ -218,60 +220,54 @@ composition <- function(data, plot_name) {
 }
 
 patch_conform_analysis <- function(data){
+  # Filter for relevant patches written by humans (i.e., no bots, no stable-review, ...)
   commit_data <- data %>%
     filter(type == 'patch') %>% 
-    #filter(!is.na(committer.correct)) %>%
     select(list, committer.correct)
-    
-  # The domain name is uninteresting
-  cut_domain <- function(frame){
-    for(i in 1:length(frame[,1])){
-      frame[i, 1] <- unlist(strsplit(frame[i, 1], '@'))[1]
-    }
-    return(frame)
-  }
   
-  patch_traffic <- count(commit_data, vars = c('list'))
-  patch_traffic <- patch_traffic[order(-patch_traffic$freq),] %>% select(list)
-  patch_traffic <- cut_domain(patch_traffic)
-  active_lists <- patch_traffic[1:15,]
+  # Remove TLDs
+  commit_data$list <- sapply(strsplit(commit_data$list, '@'), '[', 1)
   
-  list_integration <- commit_data %>% filter(!is.na(committer.correct)) %>%
-    count(vars = c('list', 'committer.correct'))
+  total_data <- commit_data %>%
+    select(committer.correct) %>%
+    count(committer.correct, name = 'freq') %>%
+    mutate(proportion = freq / sum(freq))
   
-  list_integration <- cut_domain(list_integration)
+  list_data <- commit_data %>%
+    group_by(list) %>%
+    count(committer.correct, name = 'freq') %>%
+    mutate(proportion = freq / sum(freq))
+  
+  high_freq_lists <- (list_data %>%
+    select(list, freq) %>%
+    group_by(list) %>%
+    summarise(sum = sum(freq)) %>%
+    slice_max(sum, n = conform.top.n))$list
+  
+  top_n_data <- (list_data %>% filter(list %in% high_freq_lists))
 
-  major_lists <- list_integration %>%
-    filter(list %in% active_lists) %>% group_by(list) %>%
-    transmute(percent = freq/sum(freq), committer.correct = committer.correct)
-
-  plot <- ggplot(major_lists, aes(x=committer.correct, y = percent)) +
-      theme_bw(base_size = 15) +
-      theme(legend.position = 'top',
-            axis.text.x.top = element_text(angle = 45, hjust = 0)) +
-      labs(color = '') +
-    ylab('Occurences') +
-    xlab('Correct committer') +
-    facet_wrap(~list, nrow=6) +
+  plot <- ggplot(top_n_data, aes(x=committer.correct, y = proportion)) +
     geom_bar(stat = 'identity', width = 0.5) +
-    theme_bw()
-  plot
-  printplot(plot, "major_lists", 4.5)
+    scale_x_discrete(breaks = c(FALSE, TRUE, NA),
+                     labels = c('No', 'Yes', 'N.I.')) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%"),
+                       limits = c(0, 1)) +
+    facet_wrap(~list, nrow=3) +
+    my.theme +
+    theme(axis.title.x=element_blank(),
+          axis.title.y=element_blank())
+  printplot(plot, "major_lists")
 
-  total_integration <- commit_data %>% filter(!is.na(committer.correct)) %>%
-    count(vars = c("committer.correct")) %>% mutate(percent = freq/sum(freq))
-  total_plot <-
-    ggplot(total_integration, aes(x=committer.correct, y = percent)) +
-      theme_bw(base_size = 15) +
-      theme(legend.position = 'top',
-            axis.text.x.top = element_text(angle = 45, hjust = 0)) +
-      labs(color = '') +
-    ylab('Occurences') +
-    xlab('Correct committer') + 
+  plot <- ggplot(total_data, aes(x=committer.correct, y = proportion)) +
     geom_bar(stat = 'identity', width=0.5) +
-    theme_bw()
-  total_plot
-  printplot(total_plot, "total_integration", 4.5)
+    scale_x_discrete(breaks = c(FALSE, TRUE, NA),
+                     labels = c('No', 'Yes', 'Not integrated')) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%")) +
+    labs(color = '') +
+    xlab('Correctly Integrated?') +
+    my.theme +
+    theme(axis.title.y = element_blank())
+  printplot(plot, "total_integration")
 }
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -331,4 +327,3 @@ selection <- filtered_data %>%
 #ignore_rate_by_years(all)
 
 patch_conform_analysis(filtered_data)
-

@@ -11,15 +11,15 @@
 library(dplyr)
 library(ggplot2)
 library(lubridate)
-library(plyr)
+#library(plyr)
 library(reshape2)
 library(tikzDevice)
 
 d_dst <- '/tmp/R'
 
 DPI <- 300
-WIDTH <- 6.3
-HEIGHT <- 5
+WIDTH <-5.5129
+HEIGHT <- 2.72816
 
 my.theme <- theme_bw(base_size = 8) +
             theme(legend.position = "top")
