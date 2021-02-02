@@ -166,7 +166,7 @@ if (PRINT_ENTIRE_GRAPH) {
                 layout = LO
                 )
   }
-  printplot(plot, 'complete_graph', 4.5)
+  printplot(plot, 'complete_graph')
 }
 
 comm_groups <- igraph::groups(wt_comm)
@@ -209,6 +209,6 @@ if (PRINT_CLUSTERS) {
                 vertex.label.cex=LABEL_SIZE,
                 layout = layout_with_cluster_edges(cluster_graph, 0.01)
                 )
-    printplot(plot, toString(i), 4.5)
+    printplot(plot, toString(i))
   }
 }

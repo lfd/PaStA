@@ -135,7 +135,7 @@ ignored_by_week <- function(data, plot_name) {
     labs(color = '') +
     facet_wrap(~list, scales = 'free')
   filename <- file.path('ignored_total', plot_name)
-  printplot(plot, filename, 4.5)
+  printplot(plot, filename)
 
   # Second plot: plot ignored patches in absolute numbers
   relevant <- df %>% filter(variable == 'ignored')
@@ -156,7 +156,7 @@ ignored_by_week <- function(data, plot_name) {
           axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     facet_wrap(~list, scales = 'free')
   filename <- file.path('ignored_absolute', plot_name)
-  printplot(plot, filename, 4.5)
+  printplot(plot, filename)
 
   # Third plot: plot the ignored patches as a fraction of all patches
   relevant <- df %>% filter(variable == 'fraction')
@@ -181,7 +181,7 @@ ignored_by_week <- function(data, plot_name) {
           axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     facet_wrap(~list, scales = 'free')
   filename <- file.path('ignored_fraction', plot_name)
-  printplot(plot, filename, 4.5)
+  printplot(plot, filename)
 }
 
 composition <- function(data, plot_name) {
@@ -213,7 +213,7 @@ composition <- function(data, plot_name) {
     labs(color = '') +
     facet_wrap(~list, scales = 'free')
   filename = file.path('composition', plot_name)
-  printplot(plot, filename, 4.5)
+  printplot(plot, filename)
 }
 
 args <- commandArgs(trailingOnly = TRUE)
