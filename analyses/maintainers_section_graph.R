@@ -42,7 +42,7 @@ args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   file_name <- 'resources/linux/resources/maintainers_section_graph.csv'
 } else {
-  file_name <- args[2]
+  file_name <- args[1]
 }
 
 data_frame <- read_csv(file_name)
