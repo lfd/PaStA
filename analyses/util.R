@@ -21,7 +21,7 @@ DPI <- 300
 WIDTH <- 6.3
 HEIGHT <- 5
 
-my.theme <- theme_bw(base_size = 15) +
+my.theme <- theme_bw(base_size = 8) +
             theme(legend.position = "top")
 
 create_dstdir <- function(path_vec){
