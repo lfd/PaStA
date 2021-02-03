@@ -68,7 +68,6 @@ probes <- seq(0, 1, 0.05)
 global_edge_quantiles <- quantile(E(g)$weight, probs=probes)
 global_vertex_quantiles <- quantile(V(g)$size, probs=probes)
 
-
 print_graph_information <- function(param) {
   print("Number of vertices:")
   print(length(V(g)))
@@ -146,27 +145,23 @@ layout_with_cluster_edges <- function(param, attraction) {
 
 if (PRINT_ENTIRE_GRAPH) {
   LO = layout_with_cluster_edges(g, 0.1)
-  plot <- NULL
-  if (DISPLAY_LABELS) {
-    plot <- plot.igraph(g,
-                mark.groups = igraph::groups(wt_comm),
-                mark.col = PALETTE,
-                vertex.size = VERTEX_SIZE,
-                vertex.label.dist = 0.5,
-                vertex.label.cex = LABEL_SIZE,
-                vertex.label.family = FONT_FAMILY,
-                layout = LO
-                )
-  } else {
-    plot <- plot.igraph(g,
-                mark.groups = igraph::groups(wt_comm),
-                mark.col = PALETTE,
-                vertex.size = VERTEX_SIZE,
-                vertex.label = NA,
-                layout = LO
-                )
-  }
-  printplot(plot, 'complete_graph')
+  printplot(g, 'complete_graph_labels',
+              mark.groups = igraph::groups(wt_comm),
+              mark.col = PALETTE,
+              vertex.size = VERTEX_SIZE,
+              vertex.label.dist = 0.5,
+              vertex.label.cex = LABEL_SIZE,
+              vertex.label.family = FONT_FAMILY,
+              layout = LO
+              )
+
+  printplot(g, 'complete_graph',
+              mark.groups = igraph::groups(wt_comm),
+              mark.col = PALETTE,
+              vertex.size = VERTEX_SIZE,
+              vertex.label = NA,
+              layout = LO
+              )
 }
 
 comm_groups <- igraph::groups(wt_comm)
@@ -200,7 +195,7 @@ if (PRINT_CLUSTERS) {
     wt_clusters <- cluster_walktrap(cluster_graph)
     print_graph_information(cluster_graph)
 
-    plot <- plot.igraph(cluster_graph,
+    printplot(cluster_graph, toString(i),
                 mark.groups=igraph::groups(wt_clusters),
                 mark.col = PALETTE,
                 vertex.size=VERTEX_SIZE,
@@ -209,6 +204,5 @@ if (PRINT_CLUSTERS) {
                 vertex.label.cex=LABEL_SIZE,
                 layout = layout_with_cluster_edges(cluster_graph, 0.01)
                 )
-    printplot(plot, toString(i))
   }
 }
