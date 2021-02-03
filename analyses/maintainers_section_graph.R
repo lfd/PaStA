@@ -146,27 +146,49 @@ layout_with_cluster_edges <- function(param, attraction) {
 
 if (PRINT_ENTIRE_GRAPH) {
   LO = layout_with_cluster_edges(g, 0.1)
-  plot <- NULL
-  if (DISPLAY_LABELS) {
-    plot <- plot.igraph(g,
-                mark.groups = igraph::groups(wt_comm),
-                mark.col = PALETTE,
-                vertex.size = VERTEX_SIZE,
-                vertex.label.dist = 0.5,
-                vertex.label.cex = LABEL_SIZE,
-                vertex.label.family = FONT_FAMILY,
-                layout = LO
-                )
-  } else {
-    plot <- plot.igraph(g,
-                mark.groups = igraph::groups(wt_comm),
-                mark.col = PALETTE,
-                vertex.size = VERTEX_SIZE,
-                vertex.label = NA,
-                layout = LO
-                )
-  }
-  printplot(plot, 'complete_graph')
+  filename <- file.path(d_dst, 'complete_graph_labels')
+  tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT)
+  plot.igraph(g,
+              mark.groups = igraph::groups(wt_comm),
+              mark.col = PALETTE,
+              vertex.size = VERTEX_SIZE,
+              vertex.label.dist = 0.5,
+              vertex.label.cex = LABEL_SIZE,
+              vertex.label.family = FONT_FAMILY,
+              layout = LO
+              )
+  dev.off()
+  filename <- file.path(d_dst, 'complete_graph')
+  tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT)
+  plot.igraph(g,
+              mark.groups = igraph::groups(wt_comm),
+              mark.col = PALETTE,
+              vertex.size = VERTEX_SIZE,
+              vertex.label = NA,
+              layout = LO
+              )
+  dev.off()
+  #printplot(plot, 'complete_graph')
+  #if (DISPLAY_LABELS) {
+  #  graph_plot <<- plot.igraph(g,
+  #              mark.groups = igraph::groups(wt_comm),
+  #              mark.col = PALETTE,
+  #              vertex.size = VERTEX_SIZE,
+  #              vertex.label.dist = 0.5,
+  #              vertex.label.cex = LABEL_SIZE,
+  #              vertex.label.family = FONT_FAMILY,
+  #              layout = LO
+  #              )
+  #} else {
+  #  graph_plot <<- plot.igraph(g,
+  #              mark.groups = igraph::groups(wt_comm),
+  #              mark.col = PALETTE,
+  #              vertex.size = VERTEX_SIZE,
+  #              vertex.label = NA,
+  #              layout = LO
+  #              )
+  #}
+  #printplot(graph_plot, 'complete_graph')
 }
 
 comm_groups <- igraph::groups(wt_comm)
