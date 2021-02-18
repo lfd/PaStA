@@ -12,8 +12,8 @@
 
 source("analyses/util.R")
 
-mindate <- '2011-07-21' # v3.0
-maxdate <- '2020-12-13' # v5.10
+date.min <- '2011-07-21' # v3.0
+date.max <- '2020-12-13' # v5.10
 
 load_characteristics <- function(filename) {
   data <- read_csv(filename)
@@ -43,7 +43,7 @@ ignore_rate_by_years <- function(data) {
     return(ignored / total)
   }
 
-  data <- data %>% filter(type == 'patch') %>% select(date, ignored)
+  data <- data %>% select(date, ignored)
   date_begin = as.Date(cut(min(data$date), breaks = "year"))
   date_end = yearpp(max(data$date))
   cat('Overall ignored rate: ', calc_ign_rate(data), '\n')
@@ -59,9 +59,7 @@ ignore_rate_by_years <- function(data) {
 }
 
 ignored_by_week <- function(data, plot_name) {
-  relevant <- data %>%
-    filter(type == 'patch') %>%
-    select(week, ignored, list)
+  relevant <- data %>% select(week, ignored, list)
 
   true <- relevant %>% filter(ignored == TRUE) %>% select(-ignored) %>% group_by(week, list) %>% count(name = 'ignored')
   false <- relevant %>% filter(ignored == FALSE) %>% select(-ignored) %>% group_by(week, list) %>% count(name = 'not_ignored')
@@ -219,11 +217,14 @@ if (!exists('releases')) {
   releases <- load_releases(f_releases)
 }
 
-# Filter strong outliers
+# Filter strong outliers, select the appropriate time window
+# and only patches with type 'patch'
 filtered_data <- raw_data %>%
+  filter(type == 'patch') %>%
   filter(from != 'baolex.ni@intel.com') %>%
-  filter(week < maxdate) %>%
-  filter(week > mindate)
+  filter(week < date.max) %>%
+  filter(week > date.min) %>%
+  select(-type)
 
 # Prepare data for project-global analysis. When we consider 'all' lists,
 # we need to remove mails that were sent to multiple lists. As a consequence,
