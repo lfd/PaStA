@@ -14,6 +14,7 @@ source("analyses/util.R")
 
 date.min <- '2011-07-21' # v3.0
 date.max <- '2020-12-13' # v5.10
+top_n.num_lists <- 4
 
 load_characteristics <- function(filename) {
   data <- read_csv(filename)
@@ -220,37 +221,42 @@ if (!exists('releases')) {
 # Filter strong outliers, select the appropriate time window
 # and only patches with type 'patch'
 filtered_data <- raw_data %>%
-  filter(type == 'patch') %>%
   filter(from != 'baolex.ni@intel.com') %>%
   filter(week < date.max) %>%
-  filter(week > date.min) %>%
+  filter(week > date.min)
+
+# Calculate the top-n lists with highest patch traffic. Note that we are only
+# interested in high-traffic Linux lists, so filter for the type 'patch'
+top_n.data <- filtered_data %>%
+  filter(type == 'patch') %>%
+  select(list) %>%
+  count(list, name = 'sum_patches') %>%
+  slice_max(sum_patches, n = top_n.num_lists)
+top_n.lists = top_n.data$list
+
+# Plot the composition, before we filter drop everything but patches
+composition(filtered_data %>% filter(list %in% top_n.lists), 'composition.top_n')
+
+# Plot the composition for the whole project
+all <- filtered_data %>% select(-c(list.matches_patch))
+all$list <- 'Overall'
+all <- all %>% distinct()
+composition(all, 'composition.overall')
+
+# Once the composition is plotted, we can limit on the type 'patch'. For the
+# ignored patches analysis, we're only interested in patches that patch Linux,
+# and were written by real humans.
+filtered_data <- filtered_data %>%
+  filter(type == 'patch') %>%
   select(-type)
 
-# Prepare data for project-global analysis. When we consider 'all' lists,
-# we need to remove mails that were sent to multiple lists. As a consequence,
-# we need to drop the list.matches_patch column, as this value is tied to
-# the list information.
+# Again, give a project-global overview. Simply merge all lists, and remove
+# duplicates.
 all <- filtered_data %>% select(-c(list.matches_patch))
 all$list <- 'Overall'
 all <- all %>% distinct()
 ignore_rate_by_years(all)
-ignored_by_week(all, 'overall')
+ignored_by_week(all, 'ignored.overall')
 
-# Calculate a list of all existing mailing lists
-mailing_lists <- unique(filtered_data$list)
-
-# Exemplarily, a selection of a set of mailing lists:
-selection <- filtered_data %>%
-  filter(list %in% c('linux-arm-kernel@lists.infradead.org',
-                     'netdev@vger.kernel.org',
-                     'linuxppc-dev@lists.ozlabs.org',
-                     'alsa-devel@alsa-project.org'
-                     ))
-
-#ignored_by_week(selection)
-#ignored_by_week(filtered_data)
-#composition(all, 'overall')
-#for (l in mailing_lists) {
-#  this_data = filtered_data %>% filter(list == l)
-#  ignored_by_week(this_data, l)
-#}
+# Create a plot for the top-n Linux lists
+ignored_by_week(filtered_data %>% filter(list %in% top_n.lists), 'top_n')
