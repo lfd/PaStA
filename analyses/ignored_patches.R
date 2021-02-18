@@ -2,7 +2,7 @@
 
 # PaStA - Patch Stack Analysis
 #
-# Copyright (c) OTH Regensburg, 2019-2020
+# Copyright (c) OTH Regensburg, 2019-2021
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -12,8 +12,8 @@
 
 source("analyses/util.R")
 
-mindate <- '2017-01-01'
-maxdate <- '2020-06-01'
+mindate <- '2011-07-21' # v3.0
+maxdate <- '2020-12-13' # v5.10
 
 load_characteristics <- function(filename) {
   data <- read_csv(filename)
@@ -59,32 +59,13 @@ ignore_rate_by_years <- function(data) {
 }
 
 ignored_by_week <- function(data, plot_name) {
-  variable <- 'ignored'
-  true_case <- 'ignored'
-  false_case <- 'not_ignored'
+  relevant <- data %>%
+    filter(type == 'patch') %>%
+    select(week, ignored, list)
 
-  relevant <- data %>% filter(type == 'patch') %>% select(week, ignored, list)
-
-  count_predicate <- function(data, row, value, name) {
-    ret <- relevant %>% filter(UQ(as.name(row)) == value)
-    # We have a special case if nrow(ret) == 0. R does introduce new
-    # column names in that case.
-    if (nrow(ret) == 0) {
-      # Pseudo-conversion, this is just used to get the correct data frame format
-      `$`(ret, name) <- as.integer(`$`(ret, name))
-      ret <- ret[c('week', 'list', name)]
-      return(ret)
-    }
-    ret <- ddply(ret, .(week, list), nrow)
-    colnames(ret) <- c('week', 'list', name)
-    return(ret)
-  }
-
-  true <- count_predicate(relevant, variable, TRUE, true_case)
-  false <- count_predicate(relevant, variable, FALSE, false_case)
-
-  total <- ddply(relevant, .(week, list), nrow)
-  colnames(total) <- c('week', 'list', 'total')
+  true <- relevant %>% filter(ignored == TRUE) %>% select(-ignored) %>% group_by(week, list) %>% count(name = 'ignored')
+  false <- relevant %>% filter(ignored == FALSE) %>% select(-ignored) %>% group_by(week, list) %>% count(name = 'not_ignored')
+  total <- relevant %>% select(week, list) %>% group_by(week, list) %>% count(name = 'total')
 
   fillup_missing_weeks <- function(data, key) {
     min.week <- min(data$week)
@@ -115,7 +96,7 @@ ignored_by_week <- function(data, plot_name) {
   df <- melt(df, id.vars = c('week', 'list'))
 
   # First plot: Plot the ignored patches and the absolute amount of patches.
-  relevant <- df %>% filter(variable == true_case | variable == 'total')
+  relevant <- df %>% filter(variable == 'ignored' | variable == 'total')
   plot <- ggplot(relevant,
                  aes(x = week, y = value, color = variable)) +
     geom_line() +
@@ -187,15 +168,17 @@ ignored_by_week <- function(data, plot_name) {
 composition <- function(data, plot_name) {
   relevant <- data %>% select(week, type, list)
 
-  sum <- ddply(relevant, .(week, list), nrow)
-  sum$type <- 'sum'
-  sum <- sum[c("week", "type", "list", "V1")]
-  total <- ddply(relevant, .(week, type, list), nrow)
-  total <- rbind(sum, total)
-  colnames(total) <- c('week', 'type', 'list', 'patches')
+  total <- relevant %>%
+    group_by(week, type, list) %>%
+    count(list, name = 'num')
+  sum <- total %>%
+    group_by(week, list) %>%
+    summarise(num = sum(num)) %>%
+    mutate(type = 'sum', .before = 'list')
+  total <- bind_rows(total, sum)
 
   plot <- ggplot(total,
-                 aes(x = week, y = patches, color = type)) +
+                 aes(x = week, y = num, color = type)) +
     geom_line() +
     geom_smooth() +
     geom_vline(xintercept = releases$date, linetype="dotted") +
@@ -249,6 +232,8 @@ filtered_data <- raw_data %>%
 all <- filtered_data %>% select(-c(list.matches_patch))
 all$list <- 'Overall'
 all <- all %>% distinct()
+ignore_rate_by_years(all)
+ignored_by_week(all, 'overall')
 
 # Calculate a list of all existing mailing lists
 mailing_lists <- unique(filtered_data$list)
@@ -263,11 +248,8 @@ selection <- filtered_data %>%
 
 #ignored_by_week(selection)
 #ignored_by_week(filtered_data)
-ignored_by_week(all, 'overall')
-composition(all, 'overall')
-for (l in mailing_lists) {
-  this_data = filtered_data %>% filter(list == l)
-  ignored_by_week(this_data, l)
-}
-
-#ignore_rate_by_years(all)
+#composition(all, 'overall')
+#for (l in mailing_lists) {
+#  this_data = filtered_data %>% filter(list == l)
+#  ignored_by_week(this_data, l)
+#}

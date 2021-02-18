@@ -51,7 +51,7 @@ RUN pip3 --no-cache-dir install \
 	flask-bootstrap \
 	flask-nav anytree
 
-RUN R -e "install.packages(c('dplyr', 'ggplot2', 'igraph', 'lubridate', 'plyr', 'reshape2', 'RColorBrewer', 'tikzDevice'), clean = TRUE)"
+RUN R -e "install.packages(c('dplyr', 'ggplot2', 'igraph', 'lubridate', 'reshape2', 'RColorBrewer', 'tikzDevice'), clean = TRUE)"
 
 RUN useradd -m -G sudo -s /bin/bash pasta && echo "pasta:pasta" | chpasswd
 

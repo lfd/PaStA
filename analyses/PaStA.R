@@ -11,7 +11,6 @@
 # the COPYING file in the top-level directory.
 
 source("analyses/util.R")
-library(plyr)
 
 drop_versions <- c('3.0.9-rt26', '4.14.63-rt43')
 relevant_releases <- c('3.0-rt', '3.2-rt', '3.4-rt', '3.6-rt', '3.8-rt',
@@ -151,7 +150,7 @@ diffstat <- function() {
 
 # Upstream analysis
 upstream_analysis <- function() {
-  p <- ggplot(upstream, aes(upstream$DateDiff)) +
+  p <- ggplot(upstream, aes(DateDiff)) +
     xlab("Days between release and upstream") +
     ylab("Upstream patch density [a.u.]") +
     #geom_histogram()
@@ -184,12 +183,12 @@ branch_observation <- function() {
 
   pg$Type <- replace(pg$Type, is.na(pg$Type), "invariant")
 
-  branch_observation <- ddply(pg, .(VersionGroup, StackVersion, Type), nrow)
+  branch_observation <- pg %>% group_by(VersionGroup, StackVersion, Type) %>% count(name = 'num')
 
   for (version in ord_version_grps) {
     observation <- subset(branch_observation, VersionGroup == version)
     plot <- ggplot(observation,
-                   aes(x = StackVersion, y = V1, fill = Type)) +
+                   aes(x = StackVersion, y = num, fill = Type)) +
       geom_bar(stat = "identity") +
       xlab("Stack Version") +
       scale_fill_discrete(name = version) +
@@ -225,11 +224,11 @@ stack_future <- function(stack_versions, filename) {
 
   pg$Type <- replace(pg$Type, is.na(pg$Type), "invariant")
 
-  branch_observation <- ddply(pg, .(VersionGroup, StackVersion, Type), nrow)
+  branch_observation <- pg %>% group_by(VersionGroup, StackVersion, Type) %>% count(name = 'num')
 
   observation <- subset(branch_observation, StackVersion %in% stack_versions)
   plot <- ggplot(observation,
-                 aes(x = StackVersion, y = V1, fill = Type)) +
+                 aes(x = StackVersion, y = num, fill = Type)) +
     geom_bar(stat = "identity") +
     xlab("Stack Version") +
     ylab("Number of commits") +

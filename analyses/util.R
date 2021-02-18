@@ -11,7 +11,6 @@
 library(dplyr)
 library(ggplot2)
 library(lubridate)
-library(plyr)
 library(reshape2)
 library(tikzDevice)
 
