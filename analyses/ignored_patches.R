@@ -109,11 +109,10 @@ ignored_by_week <- function(data, plot_name) {
                                      breaks = releases$date,
                                      labels = releases$release)
                  ) +
-    theme_bw(base_size = 15) +
-    theme(legend.position = 'top',
-          axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     labs(color = '') +
-    facet_wrap(~list, scales = 'free')
+    facet_wrap(~list, scales = 'free') +
+    my.theme +
+    theme(axis.text.x.top = element_text(angle = 45, hjust = 0))
   filename <- file.path('ignored_total', plot_name)
   printplot(plot, filename)
 
@@ -132,9 +131,10 @@ ignored_by_week <- function(data, plot_name) {
                                      labels = releases$release)) +
     xlab('Date') +
     ylab('Total number of ignored patches per week') +
+    facet_wrap(~list, scales = 'free') +
+    my.theme +
     theme(legend.position = 'None',
-          axis.text.x.top = element_text(angle = 45, hjust = 0)) +
-    facet_wrap(~list, scales = 'free')
+          axis.text.x.top = element_text(angle = 45, hjust = 0))
   filename <- file.path('ignored_absolute', plot_name)
   printplot(plot, filename)
 
@@ -156,10 +156,10 @@ ignored_by_week <- function(data, plot_name) {
     scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%")) +
     xlab('Date') +
     ylab('Ratio of ignored patches') +
-    #ylab('Ratio of correctly addressed maintainers') +
+    facet_wrap(~list, scales = 'free') +
+    my.theme +
     theme(legend.position = 'None',
-          axis.text.x.top = element_text(angle = 45, hjust = 0)) +
-    facet_wrap(~list, scales = 'free')
+          axis.text.x.top = element_text(angle = 45, hjust = 0))
   filename <- file.path('ignored_fraction', plot_name)
   printplot(plot, filename)
 }
@@ -189,11 +189,10 @@ composition <- function(data, plot_name) {
                                      breaks = releases$date,
                                      labels = releases$release)
     ) +
-    theme_bw(base_size = 15) +
-    theme(legend.position = 'top',
-          axis.text.x.top = element_text(angle = 45, hjust = 0)) +
     labs(color = '') +
-    facet_wrap(~list, scales = 'free')
+    facet_wrap(~list, scales = 'free') +
+    my.theme +
+    theme(axis.text.x.top = element_text(angle = 45, hjust = 0))
   filename = file.path('composition', plot_name)
   printplot(plot, filename)
 }
