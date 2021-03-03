@@ -17,7 +17,7 @@ from anytree import LevelOrderIter
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
-from .Util import mail_parse_date, load_pkl_and_update
+from .Util import get_first_upstream, mail_parse_date, load_pkl_and_update
 
 log = getLogger(__name__[-15:])
 
@@ -250,6 +250,8 @@ class LinuxMailCharacteristics:
         self.patches_linux = False
         self.has_foreign_response = None
         self.is_upstream = None
+        self.committer = None
+        self.integrated_by_maintainer = None
 
         self.version = None
 
@@ -299,8 +301,9 @@ class LinuxMailCharacteristics:
         if not self.patches_linux:
             return
 
+        upstream = clustering.get_upstream(message_id)
         if clustering is not None:
-            self.is_upstream = len(clustering.get_upstream(message_id)) != 0
+            self.is_upstream = len(upstream) != 0
 
         processes = ['linux-next', 'git pull', 'rfc']
         self.process_mail = True in [process in self.subject for process in processes]
@@ -315,6 +318,24 @@ class LinuxMailCharacteristics:
             s_maintainers = {x[1] for x in s_maintainers if x[1]}
             s_reviewers = {x[1] for x in s_reviewers if x[1]}
             self.maintainers[section] = s_lists, s_maintainers, s_reviewers
+
+        if not self.is_upstream:
+            return
+
+        # In case the patch was integrated, fill the fields committer
+        # and integrated_by_maintainer. integrated_by_maintainer indicates
+        # if the patch was integrated by a maintainer that is responsible
+        # for a section that is affected by the patch. IOW: The field
+        # indicates if the patch was picked by the "correct" maintainer
+        upstream = get_first_upstream(repo, clustering, message_id)
+        upstream = repo[upstream]
+        self.committer = upstream.committer.name.lower()
+        self.integrated_by_maintainer = False
+        for section in maintainers.get_sections_by_files(upstream.diff.affected):
+            _, s_maintainers, _ = maintainers.get_maintainers(section)
+            if self.committer in [name for name, mail in s_maintainers]:
+                self.integrated_by_maintainer = True
+                break
 
 
 def _load_mail_characteristic(message_id):
