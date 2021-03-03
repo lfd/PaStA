@@ -62,7 +62,7 @@ def get_relevant_patches(characteristics):
     all_messages = 0
     skipped_bot = 0
     skipped_stable = 0
-    skipped_not_linux = 0
+    skipped_not_project = 0
     skipped_no_patch = 0
     skipped_not_first_patch = 0
     skipped_process = 0
@@ -76,8 +76,8 @@ def get_relevant_patches(characteristics):
             skipped_no_patch += 1
             continue
 
-        if not c.patches_linux:
-            skipped_not_linux += 1
+        if not c.patches_project:
+            skipped_not_project += 1
             skip = True
         if not c.is_first_patch_in_thread:
             skipped_not_first_patch += 1
@@ -106,7 +106,7 @@ def get_relevant_patches(characteristics):
     log.info('All messages: %u' % all_messages)
     log.info('  No patches: %u' % skipped_no_patch)
     log.info('Skipped patches:')
-    log.info('  Not Linux: %u' % skipped_not_linux)
+    log.info('  Patches other project: %u' % skipped_not_project)
     log.info('  Bot: %u' % skipped_bot)
     log.info('  Stable: %u' % skipped_stable)
     log.info('  Process mail: %u' % skipped_process)
@@ -214,7 +214,7 @@ def prepare_process_characteristics(config, clustering):
                 patch_type = 'linux-next'
             elif c.is_stable_review:
                 patch_type = 'stable-review'
-            elif not c.patches_linux:
+            elif not c.patches_project:
                 patch_type = 'not-linux'
             elif c.process_mail:
                 patch_type = 'process'

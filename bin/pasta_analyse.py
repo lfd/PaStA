@@ -118,10 +118,6 @@ def analyse(config, argv):
                         default=1.0, help='CPU factor for parallelisation '
                                           '(default: %(default)s)')
 
-    parser.add_argument('-linux', dest='linux', action='store_true',
-                        default=False,
-                        help='Make a Linux kernel specific analysis')
-
     # choose analysis mode
     parser.add_argument('mode', default='succ',
                         choices=['succ', 'rep', 'upstream'],
@@ -189,18 +185,6 @@ def analyse(config, argv):
             if unreachable:
                 remove_from_cluster('MESSAGES', cluster, unreachable)
                 victims = available
-
-            if args.linux:
-                log.info('Searching for non-Linux patches...')
-                repo.mbox.load_threads()
-                characteristic = load_linux_mail_characteristics(repo, victims)
-                linux_patches= {victim for victim in victims if
-                                characteristic[victim].patches_linux}
-                log.info('Will consider only %u/%u patches (%0.3f%%) as Linux'
-                        'patches' % (len(linux_patches), len(victims),
-                        len(linux_patches) * 100.0 / len(victims)))
-                victims = linux_patches
-                repo.cache_evict_except(victims)
 
             log.info('Cached %d relevant mails' % len(available))
             fill_result(victims, False)

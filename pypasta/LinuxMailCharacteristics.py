@@ -208,7 +208,7 @@ class LinuxMailCharacteristics:
         return False
 
     @staticmethod
-    def _patches_linux(patch):
+    def _patches_project(patch):
         for affected in patch.diff.affected:
             if True in map(lambda x: affected.startswith(x),
                            LinuxMailCharacteristics.ROOT_DIRS) or \
@@ -247,7 +247,7 @@ class LinuxMailCharacteristics:
         self.message_id = message_id
         self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
         self.is_stable_review = False
-        self.patches_linux = False
+        self.patches_project = False
         self.has_foreign_response = None
         self.is_upstream = None
         self.committer = None
@@ -283,7 +283,7 @@ class LinuxMailCharacteristics:
             return
 
         patch = repo[message_id]
-        self.patches_linux = self._patches_linux(patch)
+        self.patches_project = self._patches_project(patch)
         self.is_stable_review = self._is_stable_review(message, patch)
 
         # We must only analyse foreign responses of patches if the patch is
@@ -298,7 +298,7 @@ class LinuxMailCharacteristics:
         self.version = repo.linux_patch_get_version(patch)
 
         # Exit, if we don't patch Linux
-        if not self.patches_linux:
+        if not self.patches_project:
             return
 
         upstream = clustering.get_upstream(message_id)
