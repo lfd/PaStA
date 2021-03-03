@@ -277,36 +277,44 @@ class LinuxMailCharacteristics:
         self.is_from_bot = self._is_from_bot(message)
         self._analyse_series(thread, message)
 
-        if self.is_patch:
-            patch = repo[message_id]
-            self.patches_linux = self._patches_linux(patch)
-            self.is_stable_review = self._is_stable_review(message, patch)
+        if not self.is_patch:
+            return
 
-            # We must only analyse foreign responses of patches if the patch is
-            # the first patch in a thread. Otherwise, we might not be able to
-            # determine the original author of a thread. Reason: That mail
-            # might be missing.
-            if self.is_first_patch_in_thread:
-                self.has_foreign_response = self._has_foreign_response(repo, thread)
+        patch = repo[message_id]
+        self.patches_linux = self._patches_linux(patch)
+        self.is_stable_review = self._is_stable_review(message, patch)
 
-            # Even if the patch does not patch Linux, we can assign it to a
-            # appropriate version
-            self.version = repo.linux_patch_get_version(patch)
-            if self.patches_linux:
-                if clustering is not None:
-                    self.is_upstream = len(clustering.get_upstream(message_id)) != 0
+        # We must only analyse foreign responses of patches if the patch is
+        # the first patch in a thread. Otherwise, we might not be able to
+        # determine the original author of a thread. Reason: That mail
+        # might be missing.
+        if self.is_first_patch_in_thread:
+            self.has_foreign_response = self._has_foreign_response(repo, thread)
 
-                processes = ['linux-next', 'git pull', 'rfc']
-                self.process_mail = True in [process in self.subject for process in processes]
+        # Even if the patch does not patch Linux, we can assign it to a
+        # appropriate version
+        self.version = repo.linux_patch_get_version(patch)
 
-                if maintainers_version is not None:
-                    maintainers = maintainers_version[self.version]
-                    sections = maintainers.get_sections_by_files(patch.diff.affected)
-                    for section in sections:
-                        s_lists, s_maintainers, s_reviewers = maintainers.get_maintainers(section)
-                        s_maintainers = {x[1] for x in s_maintainers if x[1]}
-                        s_reviewers = {x[1] for x in s_reviewers if x[1]}
-                        self.maintainers[section] = s_lists, s_maintainers, s_reviewers
+        # Exit, if we don't patch Linux
+        if not self.patches_linux:
+            return
+
+        if clustering is not None:
+            self.is_upstream = len(clustering.get_upstream(message_id)) != 0
+
+        processes = ['linux-next', 'git pull', 'rfc']
+        self.process_mail = True in [process in self.subject for process in processes]
+
+        if maintainers_version is None:
+            return
+
+        maintainers = maintainers_version[self.version]
+        sections = maintainers.get_sections_by_files(patch.diff.affected)
+        for section in sections:
+            s_lists, s_maintainers, s_reviewers = maintainers.get_maintainers(section)
+            s_maintainers = {x[1] for x in s_maintainers if x[1]}
+            s_reviewers = {x[1] for x in s_reviewers if x[1]}
+            self.maintainers[section] = s_lists, s_maintainers, s_reviewers
 
 
 def _load_mail_characteristic(message_id):
