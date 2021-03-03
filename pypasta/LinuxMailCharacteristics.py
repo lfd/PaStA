@@ -251,7 +251,7 @@ class LinuxMailCharacteristics:
         self.has_foreign_response = None
         self.is_upstream = None
 
-        self.linux_version = None
+        self.version = None
 
         self.is_cover_letter = False
         self.is_first_patch_in_thread = False
@@ -291,7 +291,7 @@ class LinuxMailCharacteristics:
 
             # Even if the patch does not patch Linux, we can assign it to a
             # appropriate version
-            self.linux_version = repo.linux_patch_get_version(patch)
+            self.version = repo.linux_patch_get_version(patch)
             if self.patches_linux:
                 if clustering is not None:
                     self.is_upstream = len(clustering.get_upstream(message_id)) != 0
@@ -300,7 +300,7 @@ class LinuxMailCharacteristics:
                 self.process_mail = True in [process in self.subject for process in processes]
 
                 if maintainers_version is not None:
-                    maintainers = maintainers_version[self.linux_version]
+                    maintainers = maintainers_version[self.version]
                     sections = maintainers.get_sections_by_files(patch.diff.affected)
                     for section in sections:
                         s_lists, s_maintainers, s_reviewers = maintainers.get_maintainers(section)

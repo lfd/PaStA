@@ -139,15 +139,6 @@ def load_characteristics_and_maintainers(config, clustering):
 
 
 def prepare_process_characteristics(config, clustering):
-    def _get_kv_rc(linux_version):
-        tag = linux_version.split('-rc')
-        kv = tag[0]
-        rc = 0
-        if len(tag) == 2:
-            rc = int(tag[1])
-
-        return kv, rc
-
     repo = config.repo
 
     relevant_releases = [(tag, date.strftime('%Y-%m-%d')) for tag, date in repo.tags if
@@ -199,8 +190,7 @@ def prepare_process_characteristics(config, clustering):
                   'from', # Who sent the patch?
                   'time', # When was the patch sent?
                   'type', # The type of the patch
-                  'v.kv', # What's the closest kernel version?
-                  'v.rc', #   ... and the related release candidate?
+                  'version', # What's the closest kernel version?
                   'list', # On which list was it sent to? (Multiple csv-entries for multiple lists!)
                   'list.matches_patch', # Does that list match to what MAINTAINERS tells us?
                   'ignored', # Was the patch ignored? See definition above.
@@ -214,7 +204,6 @@ def prepare_process_characteristics(config, clustering):
 
         for message_id in tqdm(sorted(clustering.get_downstream())):
             c = characteristics[message_id]
-            kv, rc = _get_kv_rc(c.linux_version)
             mail_from = c.mail_from[1]
 
             # In case the patch was integrated, fill the fields committer
@@ -229,7 +218,7 @@ def prepare_process_characteristics(config, clustering):
                 upstream = repo[upstream]
                 committer = upstream.committer.name.lower()
 
-                linux_maintainers = maintainers_version[c.linux_version]
+                linux_maintainers = maintainers_version[c.version]
                 affected_files = upstream.diff.affected
                 integrated_by_maintainer = False
                 for section in linux_maintainers.get_sections_by_files(affected_files):
@@ -266,8 +255,7 @@ def prepare_process_characteristics(config, clustering):
                        'from': mail_from,
                        'time': c.date,
                        'type': patch_type,
-                       'v.kv': kv,
-                       'v.rc': rc,
+                       'version': c.version,
                        'list': ml,
                        'list.matches_patch': list_matches_patch,
                        'ignored': ignored,
