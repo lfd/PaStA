@@ -160,9 +160,6 @@ def prepare_process_characteristics(config, clustering):
                        not characteristics[patch].is_upstream and
                        not characteristics[patch].has_foreign_response}
 
-    integrated_patches = {patch for patch in relevant if characteristics[patch].is_upstream}
-    log.info('Found %s integrated patches within specified time window' % len(integrated_patches))
-
     # Calculate ignored patches wrt to other patches in the cluster: A patch is
     # considered as ignored, if all related patches were ignored as well
     ignored_patches_related = \
@@ -206,27 +203,6 @@ def prepare_process_characteristics(config, clustering):
             c = characteristics[message_id]
             mail_from = c.mail_from[1]
 
-            # In case the patch was integrated, fill the fields committer
-            # and integrated_by_maintainer. integrated_by_maintainer indicates
-            # if the patch was integrated by a maintainer that is responsible
-            # for a section that is affected by the patch. IOW: The field
-            # indicates if the patch was picked by the "correct" maintainer
-            committer = None
-            integrated_by_maintainer = None
-            if message_id in integrated_patches:
-                upstream = get_first_upstream(repo, clustering, message_id)
-                upstream = repo[upstream]
-                committer = upstream.committer.name.lower()
-
-                linux_maintainers = maintainers_version[c.version]
-                affected_files = upstream.diff.affected
-                integrated_by_maintainer = False
-                for section in linux_maintainers.get_sections_by_files(affected_files):
-                    _, maintainers, _ = linux_maintainers.get_maintainers(section)
-                    if committer in [name for name, mail in maintainers]:
-                        integrated_by_maintainer = True
-                        break
-
             ignored = None
             if message_id in relevant:
                 # A regular patch written by a human author
@@ -259,8 +235,8 @@ def prepare_process_characteristics(config, clustering):
                        'list': ml,
                        'list.matches_patch': list_matches_patch,
                        'ignored': ignored,
-                       'committer': committer,
-                       'committer.correct': integrated_by_maintainer,
+                       'committer': c.committer,
+                       'committer.correct': c.integrated_by_maintainer,
                        }
 
                 writer.writerow(row)
