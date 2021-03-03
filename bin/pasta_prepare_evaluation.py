@@ -28,7 +28,6 @@ log = getLogger(__name__[-15:])
 
 _repo = None
 _config = None
-_p = None
 
 MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
 
