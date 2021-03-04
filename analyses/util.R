@@ -33,12 +33,16 @@ read_csv <- function(filename){
   return(read.csv(filename, header = TRUE, sep=","))
 }
 
-printplot <- function(plot, filename) {
-  print(plot)
+printplot <- function(p, filename, ...) {
+  plot(p, ...)
+
   filename <- file.path(d_dst, filename)
-  ggsave(paste0(filename, '.png'), plot, dpi = DPI, width = 297, height = 210, units = 'mm', device = 'png')
+  png(paste0(filename, '.png'), width = 1920, height = 1080)
+  plot(p, ...)
+  dev.off()
+
   #tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT)
-  #print(plot)
+  #plot(p, ...)
   #dev.off()
 }
 
