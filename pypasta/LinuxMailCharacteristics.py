@@ -13,6 +13,7 @@ the COPYING file in the top-level directory.
 import email
 import re
 
+from enum import Enum
 from anytree import LevelOrderIter
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
@@ -64,6 +65,18 @@ def ignore_tld(address):
 
 def ignore_tlds(addresses):
     return {ignore_tld(address) for address in addresses if address}
+
+
+# TBD, leave more comments here
+class LinuxPatchType(Enum):
+    PATCH = 'patch' # A regular patch written by a human author
+    BOT = 'bot'
+    NEXT = 'linux-next'
+    STABLE = 'stable-review'
+    NOT_LINUX = 'not-linux'
+    PROCESS = 'process'
+    NOT_FIRST = 'not-first' # Mail contains a patch, but it's not the first patch in the thread
+    OTHER = 'other'
 
 
 class LinuxMailCharacteristics:
@@ -252,6 +265,8 @@ class LinuxMailCharacteristics:
         self.is_upstream = None
         self.committer = None
         self.integrated_by_maintainer = None
+        # By default, assume type 'other'
+        self.type = LinuxPatchType.OTHER
 
         self.version = None
 
@@ -275,9 +290,15 @@ class LinuxMailCharacteristics:
 
         self.lists = repo.mbox.get_lists(message_id)
         self.is_next = self._is_next()
-
         self.is_from_bot = self._is_from_bot(message)
         self._analyse_series(thread, message)
+
+        # Messages can be received by bots, or linux-next, even if they
+        # don't contain patches
+        if self.is_next:
+            self.type = LinuxPatchType.NEXT
+        elif self.is_from_bot:
+            self.type = LinuxPatchType.BOT
 
         if not self.is_patch:
             return
@@ -285,6 +306,8 @@ class LinuxMailCharacteristics:
         patch = repo[message_id]
         self.patches_project = self._patches_project(patch)
         self.is_stable_review = self._is_stable_review(message, patch)
+        if self.is_stable_review:
+            self.type = LinuxPatchType.STABLE
 
         # We must only analyse foreign responses of patches if the patch is
         # the first patch in a thread. Otherwise, we might not be able to
@@ -292,6 +315,8 @@ class LinuxMailCharacteristics:
         # might be missing.
         if self.is_first_patch_in_thread:
             self.has_foreign_response = self._has_foreign_response(repo, thread)
+        elif self.type == LinuxPatchType.OTHER:
+            self.type = LinuxPatchType.NOT_FIRST
 
         # Even if the patch does not patch Linux, we can assign it to a
         # appropriate version
@@ -299,6 +324,7 @@ class LinuxMailCharacteristics:
 
         # Exit, if we don't patch Linux
         if not self.patches_project:
+            self.type = LinuxPatchType.NOT_LINUX
             return
 
         upstream = clustering.get_upstream(message_id)
@@ -307,6 +333,12 @@ class LinuxMailCharacteristics:
 
         processes = ['linux-next', 'git pull', 'rfc']
         self.process_mail = True in [process in self.subject for process in processes]
+        if self.process_mail:
+            self.type = LinuxPatchType.PROCESS
+
+        # Now we can say it's a regular patch, if we still have the type 'other'
+        if self.type == LinuxPatchType.OTHER:
+            self.type = LinuxPatchType.PATCH
 
         if maintainers_version is None:
             return

@@ -205,23 +205,7 @@ def prepare_process_characteristics(config, clustering):
 
             ignored = None
             if message_id in relevant:
-                # A regular patch written by a human author
-                patch_type = 'patch'
                 ignored = message_id in ignored_target
-            elif c.is_from_bot:
-                patch_type = 'bot'
-            elif c.is_next:
-                patch_type = 'linux-next'
-            elif c.is_stable_review:
-                patch_type = 'stable-review'
-            elif not c.patches_project:
-                patch_type = 'not-linux'
-            elif c.process_mail:
-                patch_type = 'process'
-            elif not c.is_first_patch_in_thread:
-                patch_type = 'not-first'
-            else:
-                patch_type = 'other'
 
             # Dump an entry for each list the patch was sent to. This allows
             # for grouping by mailing lists.
@@ -230,8 +214,8 @@ def prepare_process_characteristics(config, clustering):
                 row = {'id': message_id,
                        'from': mail_from,
                        'time': c.date,
-                       'type': patch_type,
                        'version': c.version,
+                       'type': c.type.value,
                        'list': ml,
                        'list.matches_patch': list_matches_patch,
                        'ignored': ignored,
