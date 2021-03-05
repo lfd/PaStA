@@ -2,7 +2,7 @@
 PaStA - Patch Stack Analysis
 
 Copyright (c) Bayerische Motoren Werke Aktiengesellschaft (BMW AG), 2019
-Copyright (c) OTH Regensburg, 2019-2020
+Copyright (c) OTH Regensburg, 2019-2021
 
 Authors:
   Sebastian Duda <sebastian.duda@fau.de>
@@ -24,6 +24,8 @@ from tqdm import tqdm
 
 from pypasta import *
 
+from pypasta.LinuxMailCharacteristics import LinuxMailCharacteristics, LinuxPatchType
+
 log = getLogger(__name__[-15:])
 
 _repo = None
@@ -32,33 +34,12 @@ _config = None
 MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
 
 
-def load_characteristics_and_maintainers(config, clustering):
-    """
-    This routine loads characteristics for ALL mails in the time window config.mbox_timewindow, and loads multiple
-    instances of maintainers for the the patches of the clustering.
-
-    Returns the characteristics and maintainers_version
-    """
-    repo = config.repo
-    repo.mbox.load_threads()
-
-    all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
-                                                    allow_invalid=True)
-
-    tags = {repo.linux_patch_get_version(repo[x]) for x in clustering.get_downstream()}
-    maintainers_version = load_maintainers(config, tags)
-    characteristics = \
-        load_linux_mail_characteristics(config, maintainers_version, clustering,
-                                        all_messages_in_time_window)
-
-    return characteristics, maintainers_version
-
-
 def prepare_process_characteristics(config, clustering):
     repo = config.repo
 
+    characteristics = load_characteristics(config, clustering)
+
     LinuxMailCharacteristics.dump_release_info(config)
-    characteristics, maintainers_version = load_characteristics_and_maintainers(config, clustering)
 
     # These patches are relevant for the "ignored patches" analysis
     relevant_ignored = {mid for mid, c in characteristics.items() if
@@ -144,8 +125,7 @@ def prepare_off_list_patches(config, clustering):
     # We need information of upstream commits, so warm up caches
     config.load_ccache_upstream()
 
-    characteristics, maintainers_version = \
-        load_characteristics_and_maintainers(config, clustering)
+    characteristics = load_characteristics(config, clustering)
 
     offlist = set()
     for downstream, upstream in tqdm(clustering.iter_split()):
