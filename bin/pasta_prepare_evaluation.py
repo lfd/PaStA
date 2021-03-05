@@ -57,16 +57,7 @@ def load_characteristics_and_maintainers(config, clustering):
 def prepare_process_characteristics(config, clustering):
     repo = config.repo
 
-    relevant_releases = [(tag, date.strftime('%Y-%m-%d')) for tag, date in repo.tags if
-                     config.mbox_mindate < date.replace(tzinfo=None) < config.mbox_maxdate and
-                     '-rc' not in tag]
-    with open(config.f_releases, 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=['release', 'date'])
-        writer.writeheader()
-        for release, date in relevant_releases:
-            writer.writerow({'release': release,
-                             'date': date})
-
+    LinuxMailCharacteristics.dump_release_info(config)
     characteristics, maintainers_version = load_characteristics_and_maintainers(config, clustering)
 
     # These patches are relevant for the "ignored patches" analysis
