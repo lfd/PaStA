@@ -32,90 +32,6 @@ _config = None
 MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
 
 
-def get_relevant_patches(characteristics):
-    # First, we have to define the term 'relevant patch'. For our analysis, we
-    # must only consider patches that either fulfil rule 1 or 2:
-    #
-    # 1. Patch is the parent of a thread.
-    #    This covers classic one-email patches
-    #
-    # 2. Patch is the 1st level child of the parent of a thread
-    #    In this case, the parent can either be a patch (e.g., a series w/o
-    #    cover letter) or not a patch (e.g., parent is a cover letter)
-    #
-    # 3. The patch must not be sent from a bot (e.g., tip-bot)
-    #
-    # 4. Ignore stable review patches
-    #
-    # All other patches MUST be ignored. Rationale: Maintainers may re-send
-    # the patch as a reply of the discussion. Such patches must be ignored.
-    # Example: Look at the thread of
-    #     <20190408072929.952A1441D3B@finisterre.ee.mobilebroadband>
-    #
-    # Furthermore, only consider patches that actually patch Linux (~14% of all
-    # patches on Linux MLs patch other projects). Then only consider patches
-    # that are not for next, not from bots (there are a lot of bots) and that
-    # are no 'process mails' (e.g., pull requests)
-
-    relevant = set()
-
-    all_messages = 0
-    skipped_bot = 0
-    skipped_stable = 0
-    skipped_not_project = 0
-    skipped_no_patch = 0
-    skipped_not_first_patch = 0
-    skipped_process = 0
-    skipped_next = 0
-
-    for m, c in characteristics.items():
-        skip = False
-        all_messages += 1
-
-        if not c.is_patch:
-            skipped_no_patch += 1
-            continue
-
-        if not c.patches_project:
-            skipped_not_project += 1
-            skip = True
-        if not c.is_first_patch_in_thread:
-            skipped_not_first_patch += 1
-            skip = True
-
-        if c.is_from_bot:
-            skipped_bot += 1
-            skip = True
-        if c.is_stable_review:
-            skipped_stable += 1
-            skip = True
-        if c.process_mail:
-            skipped_process += 1
-            skip = True
-        if c.is_next:
-            skipped_next += 1
-            skip = True
-
-        if skip:
-            continue
-
-        relevant.add(m)
-
-    log.info('')
-    log.info('=== Calculation of relevant patches ===')
-    log.info('All messages: %u' % all_messages)
-    log.info('  No patches: %u' % skipped_no_patch)
-    log.info('Skipped patches:')
-    log.info('  Patches other project: %u' % skipped_not_project)
-    log.info('  Bot: %u' % skipped_bot)
-    log.info('  Stable: %u' % skipped_stable)
-    log.info('  Process mail: %u' % skipped_process)
-    log.info('  Next: %u' % skipped_next)
-    log.info('Relevant patches: %u' % len(relevant))
-
-    return relevant
-
-
 def load_characteristics_and_maintainers(config, clustering):
     """
     This routine loads characteristics for ALL mails in the time window config.mbox_timewindow, and loads multiple
@@ -152,11 +68,14 @@ def prepare_process_characteristics(config, clustering):
                              'date': date})
 
     characteristics, maintainers_version = load_characteristics_and_maintainers(config, clustering)
-    relevant = get_relevant_patches(characteristics)
+
+    # These patches are relevant for the "ignored patches" analysis
+    relevant_ignored = {mid for mid, c in characteristics.items() if
+                        c.type == LinuxPatchType.PATCH}
 
     log.info('Identify ignored patches...')
     # Calculate ignored patches
-    ignored_patches = {patch for patch in relevant if
+    ignored_patches = {patch for patch in relevant_ignored if
                        not characteristics[patch].is_upstream and
                        not characteristics[patch].has_foreign_response}
 
@@ -165,9 +84,9 @@ def prepare_process_characteristics(config, clustering):
     ignored_patches_related = \
         {patch for patch in ignored_patches if False not in
          [characteristics[x].has_foreign_response == False
-          for x in (clustering.get_downstream(patch) & relevant)]}
+          for x in (clustering.get_downstream(patch) & relevant_ignored)]}
 
-    num_relevant = len(relevant)
+    num_relevant = len(relevant_ignored)
     num_ignored_patches = len(ignored_patches)
     num_ignored_patches_related = len(ignored_patches_related)
 
@@ -204,7 +123,7 @@ def prepare_process_characteristics(config, clustering):
             mail_from = c.mail_from[1]
 
             ignored = None
-            if message_id in relevant:
+            if message_id in relevant_ignored:
                 ignored = message_id in ignored_target
 
             # Dump an entry for each list the patch was sent to. This allows
