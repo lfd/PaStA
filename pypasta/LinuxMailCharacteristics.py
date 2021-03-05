@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2019-2020
+Copyright (c) OTH Regensburg, 2019-2021
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
