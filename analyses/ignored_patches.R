@@ -20,6 +20,7 @@ load_characteristics <- function(filename) {
   data <- read_csv(filename)
   data$list.matches_patch <- as.logical(data$list.matches_patch)
   data$ignored <- as.logical(data$ignored)
+  data$committer.correct <- as.logical(data$committer.correct)
   data <- data %>% mutate(date = as.Date(time))
 
   # Add week info
@@ -193,7 +194,33 @@ composition <- function(data, plot_name) {
     facet_wrap(~list, scales = 'free') +
     my.theme +
     theme(axis.text.x.top = element_text(angle = 45, hjust = 0))
-  filename = file.path('composition', plot_name)
+  filename <- file.path('composition', plot_name)
+  printplot(plot, filename)
+}
+
+patch_conform_analysis <- function(data, plot_name) {
+  # Filter for relevant patches written by humans (i.e., no bots, no stable-review, ...)
+  commit_data <- data %>% select(list, committer.correct)
+  
+  # Remove TLDs
+  commit_data$list <- sapply(strsplit(commit_data$list, '@'), '[', 1)
+  
+  list_data <- commit_data %>%
+    group_by(list) %>%
+    count(committer.correct, name = 'freq') %>%
+    mutate(proportion = freq / sum(freq))
+  
+  plot <- ggplot(list_data, aes(x=committer.correct, y = proportion)) +
+    geom_bar(stat = 'identity', width = 0.5) +
+    scale_x_discrete(breaks = c(FALSE, TRUE, NA),
+                     labels = c('No', 'Yes', 'N.I.')) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%"),
+                       limits = c(0, 1)) +
+    facet_wrap(~list, nrow=3) +
+    my.theme +
+    theme(axis.title.x=element_blank(),
+          axis.title.y=element_blank())
+  filename <- file.path('conform', plot_name)
   printplot(plot, filename)
 }
 
@@ -207,7 +234,7 @@ if (length(args) == 0) {
   f_releases <- args[3]
 }
 
-create_dstdir(c('composition', 'ignored_total', 'ignored_absolute', 'ignored_fraction'))
+create_dstdir(c('composition', 'conform', 'ignored_total', 'ignored_absolute', 'ignored_fraction'))
 
 if (!exists('raw_data')) {
   raw_data <- load_characteristics(f_characteristics)
@@ -257,5 +284,10 @@ all <- all %>% distinct()
 ignore_rate_by_years(all)
 ignored_by_week(all, 'ignored.overall')
 
-# Create a plot for the top-n Linux lists
-ignored_by_week(filtered_data %>% filter(list %in% top_n.lists), 'top_n')
+# Create plots for the top-n Linux lists
+top_n.list_data <- filtered_data %>% filter(list %in% top_n.lists)
+ignored_by_week(top_n.list_data, 'top_n')
+
+# Create plots for conform integration
+patch_conform_analysis(top_n.list_data, 'conform.top_n')
+patch_conform_analysis(all, 'conform.overall')
