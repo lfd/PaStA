@@ -202,13 +202,41 @@ patch_conform_analysis <- function(data, plot_name) {
   # Filter for relevant patches written by humans (i.e., no bots, no stable-review, ...)
   commit_data <- data %>% select(list, committer.correct)
   
+  # Uncomment this line to exclude not-integrated patches
+  #commit_data <- commit_data %>% filter(!is.na(committer.correct))
+
   # Remove TLDs
   commit_data$list <- sapply(strsplit(commit_data$list, '@'), '[', 1)
-  
+
+  commit_data <- commit_data %>% group_by(list)
+
   list_data <- commit_data %>%
-    group_by(list) %>%
     count(committer.correct, name = 'freq') %>%
     mutate(proportion = freq / sum(freq))
+
+  sum <- commit_data %>%
+    count(name = 'freq') %>%
+    mutate(committer.correct = 'Sum', proportion = 1.0, .before = freq)
+
+  top <- sum %>%
+    select(list, freq) %>%
+    group_by(list) %>%
+    arrange(desc(freq))
+
+  tmp <- list_data %>% mutate(committer.correct = as.character(committer.correct))
+  sum <- bind_rows(tmp, sum) %>% ungroup()
+
+  cat("ignored rates for: ", plot_name, "\n")
+  cat("list; correct; incorrect; sum patches\n")
+  for (l in top$list) {
+    lst <- sum %>% filter(list == l) %>% select(-list)
+
+    false <- (lst %>% filter(committer.correct == FALSE))$proportion
+    true <- (lst %>% filter(committer.correct == TRUE))$proportion
+    all <- (lst %>% filter(committer.correct == 'Sum'))$freq
+
+    cat(sprintf("%s; %.2f; %.2f; %d\n", l, false, true, all))
+  }
   
   plot <- ggplot(list_data, aes(x=committer.correct, y = proportion)) +
     geom_bar(stat = 'identity', width = 0.5) +
@@ -290,4 +318,5 @@ ignored_by_week(top_n.list_data, 'top_n')
 
 # Create plots for conform integration
 patch_conform_analysis(top_n.list_data, 'conform.top_n')
+patch_conform_analysis(filtered_data, 'conform.all')
 patch_conform_analysis(all, 'conform.overall')
