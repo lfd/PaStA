@@ -60,27 +60,27 @@ ignore_rate_by_years <- function(data) {
   }
 }
 
+fillup_missing_weeks <- function(data, key) {
+  min.week <- min(data$week)
+  delta.weeks <- days(max(data$week) - min.week)$day / 7
+
+  all.weeks <- as.Date(sapply(0:delta.weeks, function(n) {
+    return (as.character(min.week + weeks(n)))
+  }))
+
+  missing.weeks <- !(all.weeks %in% data$week)
+  if (any(missing.weeks)) {
+    return(rbind(data, data.frame(week=all.weeks[missing.weeks], total=0)))
+  }
+  return (data)
+}
+
 ignored_by_week <- function(data, plot_name) {
   relevant <- data %>% select(week, ignored, list)
 
   true <- relevant %>% filter(ignored == TRUE) %>% select(-ignored) %>% group_by(week, list) %>% count(name = 'ignored')
   false <- relevant %>% filter(ignored == FALSE) %>% select(-ignored) %>% group_by(week, list) %>% count(name = 'not_ignored')
   total <- relevant %>% select(week, list) %>% group_by(week, list) %>% count(name = 'total')
-
-  fillup_missing_weeks <- function(data, key) {
-    min.week <- min(data$week)
-    delta.weeks <- days(max(data$week) - min.week)$day / 7
-
-    all.weeks <- as.Date(sapply(0:delta.weeks, function(n) {
-      return (as.character(min.week + weeks(n)))
-    }))
-
-    missing.weeks <- !(all.weeks %in% data$week)
-    if (any(missing.weeks)) {
-      return(rbind(data, data.frame(week=all.weeks[missing.weeks], total=0)))
-    }
-    return (data)
-  }
 
   # Fill up weeks with no values with zeroes
   total <- total %>% group_by(list) %>% group_modify(fillup_missing_weeks)
@@ -198,12 +198,53 @@ composition <- function(data, plot_name) {
   printplot(plot, filename)
 }
 
+patch_conform_by_week <- function(data, plot_name) {
+  data <- top_n.list_data
+
+  relevant <- data %>% select(week, committer.correct, list)
+
+  true <- relevant %>% filter(committer.correct == TRUE) %>% select(-committer.correct) %>% group_by(week, list) %>% count(name = 'correct')
+  false <- relevant %>% filter(committer.correct == FALSE) %>% select(-committer.correct) %>% group_by(week, list) %>% count(name = 'incorrect')
+  not_integrated <- relevant %>% filter(is.na(committer.correct)) %>% select(-committer.correct) %>% group_by(week, list) %>% count(name = 'not_integrated')
+  total <- relevant %>% select(week, list) %>% group_by(week, list) %>% count(name = 'total')
+
+  # Fill up weeks with no values with zeroes
+  total <- total %>% group_by(list) %>% group_modify(fillup_missing_weeks)
+
+  # We must also merge weeks with no ignored patches, so all.x/y = TRUE
+  df <- merge(x = true, y = false, by = c('week', 'list'), all.x = TRUE, all.y = TRUE)
+  df <- merge(x = df, y = not_integrated, by = c('week', 'list'), all.x = TRUE, all.y = TRUE)
+  df <- merge(x = df, y = total, by = c('week', 'list'), all.x = TRUE, all.y = TRUE)
+  # Then, replace NA by 0
+  df[is.na(df)] <- 0
+
+  df <- melt(df, id.vars = c('week', 'list'))
+
+  p <- ggplot(df, aes(x = week, y = value, color = variable)) +
+    #geom_line() +
+    geom_smooth() +
+    geom_vline(xintercept = releases$date, linetype="dotted") +
+    ylab('Number of patches per week') +
+    xlab('Date') +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 sec.axis = dup_axis(name="Linux Releases",
+                                     breaks = releases$date,
+                                     labels = releases$release)
+    ) +
+    facet_wrap(~list, scales = 'free') +
+    my.theme +
+    theme(axis.text.x.top = element_text(angle = 90, hjust = 0),
+          legend.title = element_blank())
+  filename <- file.path('conform', plot_name)
+  printplot(p, filename)
+}
+
 patch_conform_analysis <- function(data, plot_name) {
   # Filter for relevant patches written by humans (i.e., no bots, no stable-review, ...)
   commit_data <- data %>% select(list, committer.correct)
   
   # Uncomment this line to exclude not-integrated patches
-  #commit_data <- commit_data %>% filter(!is.na(committer.correct))
+  commit_data <- commit_data %>% filter(!is.na(committer.correct))
 
   # Remove TLDs
   commit_data$list <- sapply(strsplit(commit_data$list, '@'), '[', 1)
@@ -238,7 +279,7 @@ patch_conform_analysis <- function(data, plot_name) {
     cat(sprintf("%s; %.2f; %.2f; %d\n", l, false, true, all))
   }
   
-  plot <- ggplot(list_data, aes(x=committer.correct, y = proportion)) +
+  p <- ggplot(list_data, aes(x=committer.correct, y = proportion)) +
     geom_bar(stat = 'identity', width = 0.5) +
     scale_x_discrete(breaks = c(FALSE, TRUE, NA),
                      labels = c('No', 'Yes', 'N.I.')) +
@@ -249,7 +290,7 @@ patch_conform_analysis <- function(data, plot_name) {
     theme(axis.title.x=element_blank(),
           axis.title.y=element_blank())
   filename <- file.path('conform', plot_name)
-  printplot(plot, filename)
+  printplot(p, filename)
 }
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -320,3 +361,5 @@ ignored_by_week(top_n.list_data, 'top_n')
 patch_conform_analysis(top_n.list_data, 'conform.top_n')
 patch_conform_analysis(filtered_data, 'conform.all')
 patch_conform_analysis(all, 'conform.overall')
+
+patch_conform_by_week(top_n.list_data, 'conform.week.top_n')
