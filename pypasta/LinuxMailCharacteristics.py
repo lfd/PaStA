@@ -19,6 +19,7 @@ from anytree import LevelOrderIter
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
+from .MAINTAINERS import load_maintainers
 from .Util import get_first_upstream, mail_parse_date, load_pkl_and_update
 
 log = getLogger(__name__[-15:])
@@ -390,9 +391,12 @@ def _load_mail_characteristic(message_id):
                                                 _clustering, message_id)
 
 
-def load_linux_mail_characteristics(config, maintainers_version, clustering,
+def load_linux_mail_characteristics(config, clustering,
                                     ids):
     repo = config.repo
+
+    tags = {repo.linux_patch_get_version(repo[x]) for x in clustering.get_downstream()}
+    maintainers_version = load_maintainers(config, tags)
 
     def _load_characteristics(ret):
         if ret is None:

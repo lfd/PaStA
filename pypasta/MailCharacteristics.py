@@ -30,10 +30,7 @@ def load_characteristics(config, clustering):
                                                     allow_invalid=True)
 
     if config.project_name == 'linux':
-        tags = {repo.linux_patch_get_version(repo[x]) for x in clustering.get_downstream()}
-        maintainers_version = load_maintainers(config, tags)
-        characteristics = load_linux_mail_characteristics(
-            config, maintainers_version, clustering, all_messages_in_time_window)
+        characteristics = load_linux_mail_characteristics(config, clustering, all_messages_in_time_window)
     else:
         raise NotImplementedError('Missing code for project %s' % config.project_name)
 
