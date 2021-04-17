@@ -18,6 +18,7 @@ from enum import Enum
 from anytree import LevelOrderIter
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
 
 from .MAINTAINERS import load_maintainers
 from .MailCharacteristics import MailCharacteristics
@@ -413,7 +414,7 @@ def load_linux_mail_characteristics(config, clustering,
         _repo = repo
         p = Pool(processes=int(cpu_count()), maxtasksperchild=1)
 
-        missing = p.map(_load_mail_characteristic, missing, chunksize=1000)
+        missing = p.map(_load_mail_characteristic, tqdm(missing), chunksize=1000)
         missing = dict(missing)
         print('Done')
         p.close()
