@@ -20,6 +20,7 @@ from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
 from .MAINTAINERS import load_maintainers
+from .MailCharacteristics import MailCharacteristics
 from .Util import get_first_upstream, mail_parse_date, load_pkl_and_update
 
 log = getLogger(__name__[-15:])
@@ -81,7 +82,7 @@ class LinuxPatchType(Enum):
     OTHER = 'other'
 
 
-class LinuxMailCharacteristics:
+class LinuxMailCharacteristics (MailCharacteristics):
     BOTS = {'tip-bot2@linutronix.de', 'tipbot@zytor.com',
             'noreply@ciplatform.org', 'patchwork@emeril.freedesktop.org'}
     POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
@@ -273,7 +274,7 @@ class LinuxMailCharacteristics:
         return False
 
     def __init__(self, repo, maintainers_version, clustering, message_id):
-        self.message_id = message_id
+        super().__init__(repo, clustering, message_id)
         self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
         self.is_stable_review = False
         self.patches_project = False

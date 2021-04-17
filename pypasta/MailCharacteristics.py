@@ -10,8 +10,11 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-from .LinuxMailCharacteristics import load_linux_mail_characteristics
 from .MAINTAINERS import load_maintainers
+
+class MailCharacteristics:
+    def __init__(self, repo, clustering, message_id):
+        self.message_id = message_id
 
 
 def load_characteristics(config, clustering):
