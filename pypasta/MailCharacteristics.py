@@ -20,6 +20,10 @@ def load_characteristics(config, clustering):
     config.mbox_timewindow, and loads multiple instances of maintainers for the
     patches of the clustering.
     """
+    from .LinuxMailCharacteristics import load_linux_mail_characteristics
+    _load_characteristics = {
+        'linux': load_linux_mail_characteristics,
+    }
 
     repo = config.repo
 
@@ -29,10 +33,7 @@ def load_characteristics(config, clustering):
     all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
                                                     allow_invalid=True)
 
-    if config.project_name == 'linux':
-        characteristics = load_linux_mail_characteristics(config, clustering, all_messages_in_time_window)
+    if config.project_name in _load_characteristics:
+        return _load_characteristics[config.project_name](config, clustering, all_messages_in_time_window)
     else:
         raise NotImplementedError('Missing code for project %s' % config.project_name)
-
-    return characteristics
-
