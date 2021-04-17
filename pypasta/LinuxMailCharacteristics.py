@@ -11,7 +11,6 @@ the COPYING file in the top-level directory.
 """
 
 import csv
-import email
 import re
 
 from enum import Enum
@@ -21,7 +20,7 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
 from .MAINTAINERS import load_maintainers
-from .MailCharacteristics import MailCharacteristics
+from .MailCharacteristics import MailCharacteristics, email_get_header_normalised, email_get_from
 from .Util import get_first_upstream, mail_parse_date, load_pkl_and_update
 
 log = getLogger(__name__[-15:])
@@ -31,32 +30,6 @@ _maintainers_version = None
 _clustering = None
 
 MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
-VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
-
-
-def email_get_recipients(message):
-    recipients = message.get_all('To', []) + message.get_all('Cc', [])
-    recipients = list(filter(None, recipients))
-    # get_all might return Header objects. Convert them all to strings.
-    recipients = [str(x) for x in recipients]
-
-    # Only accept valid email addresses
-    recipients = {x[1].lower() for x in email.utils.getaddresses(recipients)
-                  if VALID_EMAIL_REGEX.match(x[1])}
-
-    return recipients
-
-
-def email_get_header_normalised(message, header):
-    header = str(message[header] or '').lower()
-    header = header.replace('\n', '').replace('\t', ' ')
-
-    return header
-
-
-def email_get_from(message):
-    mail_from = email_get_header_normalised(message, 'From')
-    return email.utils.parseaddr(mail_from)
 
 
 def ignore_tld(address):
@@ -275,7 +248,7 @@ class LinuxMailCharacteristics (MailCharacteristics):
         return False
 
     def __init__(self, repo, maintainers_version, clustering, message_id):
-        super().__init__(message_id)
+        super().__init__(message_id, repo)
         self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
         self.is_stable_review = False
         self.patches_project = False
@@ -295,21 +268,9 @@ class LinuxMailCharacteristics (MailCharacteristics):
         # stuff for maintainers analysis
         self.maintainers = dict()
 
-        message = repo.mbox.get_messages(message_id)[0]
-        thread = repo.mbox.threads.get_thread(message_id)
-        recipients = email_get_recipients(message)
-
-        self.recipients_lists = recipients & repo.mbox.lists
-        self.recipients_other = recipients - repo.mbox.lists
-
-        self.mail_from = email_get_from(message)
-        self.subject = email_get_header_normalised(message, 'Subject')
-        self.date = mail_parse_date(message['Date'])
-
-        self.lists = repo.mbox.get_lists(message_id)
         self.is_next = self._is_next()
-        self.is_from_bot = self._is_from_bot(message)
-        self._analyse_series(thread, message)
+        self.is_from_bot = self._is_from_bot(self.message)
+        self._analyse_series(self.thread, self.message)
 
         # Messages can be received by bots, or linux-next, even if they
         # don't contain patches
@@ -323,7 +284,7 @@ class LinuxMailCharacteristics (MailCharacteristics):
 
         patch = repo[message_id]
         self.patches_project = self._patches_project(patch)
-        self.is_stable_review = self._is_stable_review(message, patch)
+        self.is_stable_review = self._is_stable_review(self.message, patch)
         if self.is_stable_review:
             self.type = LinuxPatchType.STABLE
 
@@ -332,7 +293,7 @@ class LinuxMailCharacteristics (MailCharacteristics):
         # determine the original author of a thread. Reason: That mail
         # might be missing.
         if self.is_first_patch_in_thread:
-            self.has_foreign_response = self._has_foreign_response(repo, thread)
+            self.has_foreign_response = self._has_foreign_response(repo, self.thread)
         elif self.type == LinuxPatchType.OTHER:
             self.type = LinuxPatchType.NOT_FIRST
 

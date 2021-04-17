@@ -10,11 +10,55 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+import email
+import re
+
 from .MAINTAINERS import load_maintainers
+from .Util import mail_parse_date
+
+VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
+
+
+def email_get_recipients(message):
+    recipients = message.get_all('To', []) + message.get_all('Cc', [])
+    recipients = list(filter(None, recipients))
+    # get_all might return Header objects. Convert them all to strings.
+    recipients = [str(x) for x in recipients]
+
+    # Only accept valid email addresses
+    recipients = {x[1].lower() for x in email.utils.getaddresses(recipients)
+                  if VALID_EMAIL_REGEX.match(x[1])}
+
+    return recipients
+
+
+def email_get_header_normalised(message, header):
+    header = str(message[header] or '').lower()
+    header = header.replace('\n', '').replace('\t', ' ')
+
+    return header
+
+
+def email_get_from(message):
+    mail_from = email_get_header_normalised(message, 'From')
+    return email.utils.parseaddr(mail_from)
 
 class MailCharacteristics:
-    def __init__(self, message_id):
+    def __init__(self, message_id, repo):
         self.message_id = message_id
+
+        self.message = repo.mbox.get_messages(message_id)[0]
+        self.thread = repo.mbox.threads.get_thread(message_id)
+        self.recipients = email_get_recipients(self.message)
+
+        self.recipients_lists = self.recipients & repo.mbox.lists
+        self.recipients_other = self.recipients - repo.mbox.lists
+
+        self.mail_from = email_get_from(self.message)
+        self.subject = email_get_header_normalised(self.message, 'Subject')
+        self.date = mail_parse_date(self.message['Date'])
+
+        self.lists = repo.mbox.get_lists(message_id)
 
 
 def load_characteristics(config, clustering):
