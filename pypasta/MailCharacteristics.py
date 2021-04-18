@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+import csv
 import email
 import re
 from enum import Enum
@@ -57,6 +58,20 @@ def email_get_from(message):
 
 class MailCharacteristics:
     REGEX_COVER = re.compile('\[.*patch.*\s0+/.*\].*', re.IGNORECASE)
+
+    @staticmethod
+    def dump_release_info(config):
+        relevant_releases = [
+            (tag, date.strftime('%Y-%m-%d')) for tag, date in config.repo.tags if
+                config.mbox_mindate < date.replace(tzinfo=None) < config.mbox_maxdate and
+                '-rc' not in tag
+        ]
+        with open(config.f_releases, 'w') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=['release', 'date'])
+            writer.writeheader()
+            for release, date in relevant_releases:
+                writer.writerow({'release': release,
+                                 'date': date})
 
     def _analyse_series(self, thread, message):
         if self.is_patch:

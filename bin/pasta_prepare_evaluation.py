@@ -24,8 +24,7 @@ from tqdm import tqdm
 
 from pypasta import *
 
-from pypasta.MailCharacteristics import PatchType
-from pypasta.LinuxMailCharacteristics import LinuxMailCharacteristics
+from pypasta.MailCharacteristics import MailCharacteristics, PatchType
 
 log = getLogger(__name__[-15:])
 
@@ -40,7 +39,7 @@ def prepare_process_characteristics(config, clustering):
 
     characteristics = load_characteristics(config, clustering)
 
-    LinuxMailCharacteristics.dump_release_info(config)
+    MailCharacteristics.dump_release_info(config)
 
     # These patches are relevant for the "ignored patches" analysis
     relevant_ignored = {mid for mid, c in characteristics.items() if
