@@ -44,6 +44,17 @@ def email_get_from(message):
     return email.utils.parseaddr(mail_from)
 
 class MailCharacteristics:
+    REGEX_COVER = re.compile('\[.*patch.*\s0+/.*\].*', re.IGNORECASE)
+
+    def _analyse_series(self, thread, message):
+        if self.is_patch:
+            if self.message_id == thread.name or \
+               self.message_id in [x.name for x in thread.children]:
+                self.is_first_patch_in_thread = True
+        elif 'Subject' in message and \
+             MailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
+            self.is_cover_letter = True
+
     def __init__(self, message_id, repo):
         self.message_id = message_id
 
@@ -59,6 +70,24 @@ class MailCharacteristics:
         self.date = mail_parse_date(self.message['Date'])
 
         self.lists = repo.mbox.get_lists(message_id)
+
+        # Patch characteristics
+        self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
+
+        self.patches_project = False
+        self.has_foreign_response = None
+        self.is_upstream = None
+        self.committer = None
+        self.integrated_by_maintainer = None
+
+        self.version = None
+
+        self.is_cover_letter = False
+        self.is_first_patch_in_thread = False
+        self.process_mail = False
+
+        self.is_from_bot = None
+        self._analyse_series(self.thread, self.message)
 
 
 def load_characteristics(config, clustering):
