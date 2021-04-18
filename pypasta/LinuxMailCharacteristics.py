@@ -149,13 +149,13 @@ class LinuxMailCharacteristics (MailCharacteristics):
                 return True
         return False
 
-    def _is_stable_review(self, message, patch):
-        if 'X-Mailer' in message and \
-           'LinuxStableQueue' in message['X-Mailer']:
+    def _is_stable_review(self):
+        if 'X-Mailer' in self.message and \
+           'LinuxStableQueue' in self.message['X-Mailer']:
             return True
 
-        if 'X-stable' in message:
-            xstable = message['X-stable'].lower()
+        if 'X-stable' in self.message:
+            xstable = self.message['X-stable'].lower()
             if xstable == 'commit' or xstable == 'review':
                 return True
 
@@ -164,7 +164,7 @@ class LinuxMailCharacteristics (MailCharacteristics):
                 'stable@vger.kernel.org' in self.recipients_lists):
             return False
 
-        message_flattened = '\n'.join(patch.message).lower()
+        message_flattened = '\n'.join(self.patch.message).lower()
 
         if 'review patch' in message_flattened:
             return True
@@ -182,8 +182,8 @@ class LinuxMailCharacteristics (MailCharacteristics):
         return False
 
     @staticmethod
-    def _patches_project(patch):
-        for affected in patch.diff.affected:
+    def _patches_project(self):
+        for affected in self.patch.diff.affected:
             if True in map(lambda x: affected.startswith(x),
                            LinuxMailCharacteristics.ROOT_DIRS) or \
                affected in LinuxMailCharacteristics.ROOT_FILES:
@@ -230,9 +230,8 @@ class LinuxMailCharacteristics (MailCharacteristics):
         if not self.is_patch:
             return
 
-        patch = repo[message_id]
-        self.patches_project = self._patches_project(patch)
-        self.is_stable_review = self._is_stable_review(self.message, patch)
+        self.patches_project = self._patches_project()
+        self.is_stable_review = self._is_stable_review()
         if self.is_stable_review:
             self.type = PatchType.STABLE
 
@@ -271,7 +270,7 @@ class LinuxMailCharacteristics (MailCharacteristics):
             return
 
         maintainers = maintainers_version[self.version]
-        sections = maintainers.get_sections_by_files(patch.diff.affected)
+        sections = maintainers.get_sections_by_files(self.patch.diff.affected)
         for section in sections:
             s_lists, s_maintainers, s_reviewers = maintainers.get_maintainers(section)
             s_maintainers = {x[1] for x in s_maintainers if x[1]}
@@ -306,7 +305,7 @@ def load_linux_mail_characteristics(config, clustering,
                                     ids):
     repo = config.repo
 
-    tags = {repo.linux_patch_get_version(repo[x]) for x in clustering.get_downstream()}
+    tags = {repo.patch_get_version(repo[x]) for x in clustering.get_downstream()}
     maintainers_version = load_maintainers(config, tags)
 
     def _load_characteristics(ret):
