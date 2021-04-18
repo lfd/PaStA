@@ -61,7 +61,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
     POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
 
     REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
-    REGEX_COVER = re.compile('\[.*patch.*\s0+/.*\].*', re.IGNORECASE)
     REGEX_GREG_ADDED = re.compile('patch \".*\" added to .*')
     ROOT_FILES = ['.clang-format',
                   '.cocciconfig',
@@ -231,15 +230,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
 
         return False
 
-    def _analyse_series(self, thread, message):
-        if self.is_patch:
-            if self.message_id == thread.name or \
-               self.message_id in [x.name for x in thread.children]:
-                self.is_first_patch_in_thread = True
-        elif 'Subject' in message and \
-             LinuxMailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
-            self.is_cover_letter = True
-
     def list_matches_patch(self, list):
         for lists, _, _ in self.maintainers.values():
             if list in lists:
@@ -248,28 +238,15 @@ class LinuxMailCharacteristics (MailCharacteristics):
 
     def __init__(self, repo, maintainers_version, clustering, message_id):
         super().__init__(repo, clustering, message_id)
-        self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
         self.is_stable_review = False
-        self.patches_project = False
-        self.has_foreign_response = None
-        self.is_upstream = None
-        self.committer = None
-        self.integrated_by_maintainer = None
         # By default, assume type 'other'
         self.type = LinuxPatchType.OTHER
-
-        self.version = None
-
-        self.is_cover_letter = False
-        self.is_first_patch_in_thread = False
-        self.process_mail = False
 
         # stuff for maintainers analysis
         self.maintainers = dict()
 
         self.is_next = self._is_next()
         self.is_from_bot = self._is_from_bot(self.message)
-        self._analyse_series(self.thread, self.message)
 
         # Messages can be received by bots, or linux-next, even if they
         # don't contain patches
