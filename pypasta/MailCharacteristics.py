@@ -12,11 +12,23 @@ the COPYING file in the top-level directory.
 
 import email
 import re
+from enum import Enum
 
 from .MAINTAINERS import load_maintainers
 from .Util import mail_parse_date
 
 VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
+
+
+class PatchType(Enum):
+    PATCH = 'patch' # A regular patch written by a human author
+    BOT = 'bot'
+    NEXT = 'linux-next'
+    STABLE = 'stable-review'
+    NOT_LINUX = 'not-linux'
+    PROCESS = 'process'
+    NOT_FIRST = 'not-first' # Mail contains a patch, but it's not the first patch in the thread
+    OTHER = 'other'
 
 
 def email_get_recipients(message):
