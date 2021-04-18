@@ -231,9 +231,8 @@ class LinuxMailCharacteristics (MailCharacteristics):
         if not self.is_patch:
             return
 
-        patch = repo[message_id]
-        self.patches_project = self._patches_project(patch)
-        self.is_stable_review = self._is_stable_review(self.message, patch)
+        self.patches_project = self._patches_project(self.patch)
+        self.is_stable_review = self._is_stable_review(self.message, self.patch)
         if self.is_stable_review:
             self.type = PatchType.STABLE
 
@@ -245,10 +244,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
             self.has_foreign_response = self._has_foreign_response(repo, self.thread)
         elif self.type == PatchType.OTHER:
             self.type = PatchType.NOT_FIRST
-
-        # Even if the patch does not patch Linux, we can assign it to a
-        # appropriate version
-        self.version = repo.linux_patch_get_version(patch)
 
         # Exit, if we don't patch Linux
         if not self.patches_project:
@@ -272,7 +267,7 @@ class LinuxMailCharacteristics (MailCharacteristics):
             return
 
         maintainers = maintainers_version[self.version]
-        sections = maintainers.get_sections_by_files(patch.diff.affected)
+        sections = maintainers.get_sections_by_files(self.patch.diff.affected)
         for section in sections:
             s_lists, s_maintainers, s_reviewers = maintainers.get_maintainers(section)
             s_maintainers = {x[1] for x in s_maintainers if x[1]}
@@ -307,7 +302,7 @@ def load_linux_mail_characteristics(config, clustering,
                                     ids):
     repo = config.repo
 
-    tags = {repo.linux_patch_get_version(repo[x]) for x in clustering.get_downstream()}
+    tags = {repo.patch_get_version(repo[x]) for x in clustering.get_downstream()}
     maintainers_version = load_maintainers(config, tags)
 
     def _load_characteristics(ret):

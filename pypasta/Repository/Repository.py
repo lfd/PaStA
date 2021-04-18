@@ -121,7 +121,7 @@ class Repository:
         self.linux_mainline_tags = list(filter(lambda x : MAINLINE_REGEX.match(x[0]),
                                          self.tags))
 
-    def linux_patch_get_version(self, patch):
+    def patch_get_version(self, patch):
         tag = None
         date = patch.author.date
 

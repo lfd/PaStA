@@ -116,6 +116,15 @@ class MailCharacteristics:
         self.is_from_bot = None
         self._analyse_series(self.thread, self.message)
 
+        if not self.is_patch:
+            return
+
+        self.patch = repo[message_id]
+
+        # Even if the patch does not patch Linux, we can assign it to a
+        # appropriate version
+        self.version = repo.patch_get_version(self.patch)
+
 
 def load_characteristics(config, clustering):
     """
