@@ -281,7 +281,7 @@ class Section:
         self.nmatcher = NMatcher(self.regex_patterns)
 
 
-class LinuxMaintainers:
+class MAINTAINERS:
     def get_sections_by_files(self, filenames):
         sections = set()
         for file in filenames:
@@ -338,7 +338,7 @@ class LinuxMaintainers:
 
 
 def _load_maintainer(revision, project_name):
-    return revision, LinuxMaintainers(project_name, _repo, revision)
+    return revision, MAINTAINERS(project_name, _repo, revision)
 
 
 def load_maintainers(config, versions):

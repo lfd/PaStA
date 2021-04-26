@@ -27,7 +27,7 @@ from subprocess import call
 
 sys.path.insert(0,os.path.abspath(os.path.join(os.path.dirname(__file__),'..')))
 
-from pypasta.LinuxMaintainers import LinuxMaintainers
+from pypasta.MAINTAINERS import MAINTAINERS
 from pypasta.Util import file_to_string
 
 log = getLogger(__name__[-15:])
@@ -180,7 +180,7 @@ def maintainers_stats(config, argv):
         kernel_revision = args.revision
     log.info('Working on kernel revision %s' % kernel_revision)
 
-    all_maintainers = LinuxMaintainers(config.project_name, repo, kernel_revision)
+    all_maintainers = MAINTAINERS(config.project_name, repo, kernel_revision)
     tree = repo.get_tree(kernel_revision)
     all_filenames = walk_commit_tree(tree)
     result = list()
