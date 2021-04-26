@@ -35,8 +35,61 @@ def _prepare_linux(maintainers):
     return maintainers
 
 
+def prepare_qemu(maintainers):
+    maintainers_new = list()
+
+    def append_subtopic(topic, subtopic, content):
+        nonlocal maintainers_new
+        if subtopic:
+            maintainers_new.append('%s - %s' % (topic, subtopic))
+        else:
+            maintainers_new.append('%s' % topic)
+        maintainers_new += content + ['']
+
+    while not maintainers[0].startswith('General'):
+        maintainers.pop(0)
+
+    # Remove empty lines
+    maintainers = list(filter(None, maintainers))
+
+    topic = None
+    subtopic = None
+    content = list()
+    no = 0
+    while no < len(maintainers):
+        line = maintainers[no]
+        line_next = ''
+        if no + 1 < len(maintainers):
+            line_next = maintainers[no+1]
+
+        if line_next.startswith('-----'):
+            if topic:
+                append_subtopic(topic, subtopic, content)
+                content = list()
+                subtopic = None
+
+            topic = line
+            no += 2
+            continue
+
+        if line[1] == ':':
+            content.append(line)
+        else:
+            if subtopic:
+                append_subtopic(topic, subtopic, content)
+                content = list()
+            subtopic = line
+        no += 1
+
+    # Remove last trailing newline
+    maintainers_new.pop()
+
+    return maintainers_new
+
+
 _prepare_maintainers = {
     'linux': _prepare_linux,
+    'qemu': prepare_qemu,
 }
 
 
