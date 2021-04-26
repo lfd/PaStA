@@ -1,7 +1,7 @@
 """
 PaStA - Patch Stack Analysis
 
-Copyright (c) OTH Regensburg, 2019-2020
+Copyright (c) OTH Regensburg, 2019-2021
 
 Author:
   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -14,6 +14,7 @@ import pygit2
 import re
 
 from enum import Enum
+from functools import partial
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
@@ -21,6 +22,22 @@ from tqdm import tqdm
 from .Util import load_pkl_and_update
 
 log = getLogger(__name__[-15:])
+
+
+def _prepare_linux(maintainers):
+    # For all versions, we can drop the first ~70 lines
+    maintainers = maintainers[70:]
+
+    # We always look for a line that starts with 3C
+    while not maintainers[0].startswith('3C'):
+        maintainers.pop(0)
+
+    return maintainers
+
+
+_prepare_maintainers = {
+    'linux': _prepare_linux,
+}
 
 
 class Matcher:
@@ -287,7 +304,7 @@ class LinuxMaintainers:
     def __getitem__(self, item):
         return self.sections[item]
 
-    def __init__(self, repo, revision):
+    def __init__(self, project_name, repo, revision):
         maintainers = repo.get_blob(revision, 'MAINTAINERS')
         try:
             maintainers = maintainers.decode('utf-8')
@@ -295,18 +312,19 @@ class LinuxMaintainers:
             # older versions use ISO8859
             maintainers = maintainers.decode('iso8859')
 
+        maintainers = maintainers.splitlines()
+
+        if project_name in _prepare_maintainers:
+            maintainers = _prepare_maintainers[project_name](maintainers)
+        else:
+            raise NotImplementedError(
+                'No MAINTAINERS implementation for project' % project_name)
+
         self.sections = dict()
 
         def add_section(content):
             section = Section(repo, revision, content)
             self.sections[section.description] = section
-
-        # For all versions, we can drop the first ~70 lines
-        maintainers = maintainers.splitlines()[70:]
-
-        # We always look for a line that starts with 3C
-        while not maintainers[0].startswith('3C'):
-            maintainers.pop(0)
 
         tmp = list()
         for line in maintainers:
@@ -319,8 +337,8 @@ class LinuxMaintainers:
         add_section(tmp)
 
 
-def _load_maintainer(revision):
-    return revision, LinuxMaintainers(_repo, revision)
+def _load_maintainer(revision, project_name):
+    return revision, LinuxMaintainers(project_name, _repo, revision)
 
 
 def load_maintainers(config, versions):
@@ -337,8 +355,8 @@ def load_maintainers(config, versions):
         global _repo
         _repo = config.repo
         p = Pool(processes=cpu_count())
-        for tag, maintainers in tqdm(p.imap_unordered(_load_maintainer,
-                                                      versions),
+        function = partial(_load_maintainer, project_name = config.project_name)
+        for tag, maintainers in tqdm(p.imap_unordered(function, versions),
                                      total=len(versions), desc='MAINTAINERS'):
             ret[tag] = maintainers
 

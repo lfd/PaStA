@@ -180,7 +180,7 @@ def maintainers_stats(config, argv):
         kernel_revision = args.revision
     log.info('Working on kernel revision %s' % kernel_revision)
 
-    all_maintainers = LinuxMaintainers(repo, kernel_revision)
+    all_maintainers = LinuxMaintainers(config.project_name, repo, kernel_revision)
     tree = repo.get_tree(kernel_revision)
     all_filenames = walk_commit_tree(tree)
     result = list()
