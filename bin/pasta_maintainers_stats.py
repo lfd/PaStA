@@ -46,6 +46,9 @@ def walk_commit_tree(tree):
         elif type(entry) == pygit2.Tree:
             results |= {os.path.join(entry.name, item)
                         for item in walk_commit_tree(entry)}
+        elif type(entry) == pygit2.Commit:
+            # We hit a submodule. Simply continue.
+            continue
         else:
             raise TypeError('Unknown type: %s' % type(entry))
 
