@@ -35,7 +35,7 @@ def _prepare_linux(maintainers):
     return maintainers
 
 
-def prepare_qemu(maintainers):
+def _prepare_qemu(maintainers):
     maintainers_new = list()
 
     def append_subtopic(topic, subtopic, content):
@@ -104,7 +104,7 @@ def _prepare_uboot(maintainers):
 
 _prepare_maintainers = {
     'linux': _prepare_linux,
-    'qemu': prepare_qemu,
+    'qemu': _prepare_qemu,
     'u-boot': _prepare_uboot,
 }
 
