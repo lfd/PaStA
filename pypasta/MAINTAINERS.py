@@ -87,9 +87,25 @@ def prepare_qemu(maintainers):
     return maintainers_new
 
 
+def _prepare_uboot(maintainers):
+    # We always look for a line that starts with ----
+    while not maintainers[0].strip().startswith('---'):
+        maintainers.pop(0)
+
+    # throw away the --- line, in order to have maintainers start on the
+    # first section
+    maintainers.pop(0)
+
+    maintainers = [re.sub('Maintainted', 'Maintained', x) for x in maintainers]
+    maintainers = [re.sub('Orphan.*', 'Orphan', x, flags=re.IGNORECASE) for x in maintainers]
+
+    return maintainers
+
+
 _prepare_maintainers = {
     'linux': _prepare_linux,
     'qemu': prepare_qemu,
+    'u-boot': _prepare_uboot,
 }
 
 
