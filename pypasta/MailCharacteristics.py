@@ -94,6 +94,15 @@ class MailCharacteristics:
                 return True
         return False
 
+    def _patches_project(self):
+        for affected in self.patch.diff.affected:
+            if True in map(lambda x: affected.startswith(x),
+                           self.ROOT_DIRS) or \
+               affected in self.ROOT_FILES:
+                continue
+            return False
+        return True
+
     def _analyse_series(self, thread, message):
         if self.is_patch:
             if self.message_id == thread.name or \
@@ -146,6 +155,7 @@ class MailCharacteristics:
         # appropriate version
         self.version = repo.patch_get_version(self.patch)
 
+        self.patches_project = self._patches_project()
         self.process_mail = True in [process in self.subject for process in self.PROCESSES]
         if self.process_mail:
             self.type = PatchType.PROCESS

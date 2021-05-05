@@ -163,18 +163,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
 
         return False
 
-    @staticmethod
-    def _patches_project(self):
-        for affected in self.patch.diff.affected:
-            if True in map(lambda x: affected.startswith(x),
-                           LinuxMailCharacteristics.ROOT_DIRS) or \
-               affected in LinuxMailCharacteristics.ROOT_FILES:
-                continue
-
-            return False
-
-        return True
-
     def _is_next(self):
         if 'linux-next' in self.lists:
             return True
