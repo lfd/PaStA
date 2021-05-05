@@ -181,8 +181,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
     def __init__(self, repo, maintainers_version, clustering, message_id):
         super().__init__(repo, clustering, message_id)
         self.is_stable_review = False
-        # By default, assume type 'other'
-        self.type = PatchType.OTHER
 
         # stuff for maintainers analysis
         self.maintainers = dict()
@@ -192,35 +190,20 @@ class LinuxMailCharacteristics (MailCharacteristics):
 
         # Messages can be received by bots, or linux-next, even if they
         # don't contain patches
-        if self.is_next:
-            self.type = PatchType.NEXT
-        elif self.is_from_bot:
+        if self.is_from_bot:
             self.type = PatchType.BOT
+        elif self.is_next:
+            self.type = PatchType.NEXT
 
         if not self.is_patch:
             return
 
-        self.patches_project = self._patches_project()
         self.is_stable_review = self._is_stable_review()
         if self.is_stable_review:
             self.type = PatchType.STABLE
 
-        # We must only analyse foreign responses of patches if the patch is
-        # the first patch in a thread. Otherwise, we might not be able to
-        # determine the original author of a thread. Reason: That mail
-        # might be missing.
-        if self.is_first_patch_in_thread:
-            self.has_foreign_response = self._has_foreign_response(repo, self.thread)
-        elif self.type == PatchType.OTHER:
-            self.type = PatchType.NOT_FIRST
-
-        # Even if the patch does not patch Linux, we can assign it to a
-        # appropriate version
-        self.version = repo.linux_patch_get_version(patch)
-
-        # Exit, if we don't patch the project
+        # Exit, if we don't patch Linux
         if not self.patches_project:
-            self.type = LinuxPatchType.NOT_PROJECT
             return
 
         upstream = clustering.get_upstream(message_id)
