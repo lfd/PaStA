@@ -146,6 +146,9 @@ class MailCharacteristics:
         self.is_from_bot = None
         self._analyse_series(self.thread, self.message)
 
+        # By default, assume type 'other'
+        self.type = PatchType.OTHER
+
         if not self.is_patch:
             return
 
@@ -159,6 +162,15 @@ class MailCharacteristics:
         self.process_mail = True in [process in self.subject for process in self.PROCESSES]
         if self.process_mail:
             self.type = PatchType.PROCESS
+
+        # We must only analyse foreign responses of patches if the patch is
+        # the first patch in a thread. Otherwise, we might not be able to
+        # determine the original author of a thread. Reason: That mail
+        # might be missing.
+        if self.is_first_patch_in_thread:
+            self.has_foreign_response = self._has_foreign_response(repo, self.thread)
+        elif self.type == PatchType.OTHER:
+            self.type = PatchType.NOT_FIRST
 
 
 def load_characteristics(config, clustering):

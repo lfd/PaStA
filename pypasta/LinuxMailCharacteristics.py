@@ -182,21 +182,19 @@ class LinuxMailCharacteristics (MailCharacteristics):
     def __init__(self, repo, maintainers_version, clustering, message_id):
         super().__init__(message_id, repo)
         self.is_stable_review = False
-        # By default, assume type 'other'
-        self.type = PatchType.OTHER
 
         # stuff for maintainers analysis
         self.maintainers = dict()
 
         self.is_next = self._is_next()
         self.is_from_bot = self._is_from_bot(self.message)
+        if self.is_from_bot:
+            self.type = PatchType.BOT
 
         # Messages can be received by bots, or linux-next, even if they
         # don't contain patches
         if self.is_next:
             self.type = PatchType.NEXT
-        elif self.is_from_bot:
-            self.type = PatchType.BOT
 
         if not self.is_patch:
             return
@@ -206,15 +204,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
         if self.is_stable_review:
             self.type = PatchType.STABLE
 
-        # We must only analyse foreign responses of patches if the patch is
-        # the first patch in a thread. Otherwise, we might not be able to
-        # determine the original author of a thread. Reason: That mail
-        # might be missing.
-        if self.is_first_patch_in_thread:
-            self.has_foreign_response = self._has_foreign_response(repo, self.thread)
-        elif self.type == PatchType.OTHER:
-            self.type = PatchType.NOT_FIRST
-
         # Exit, if we don't patch Linux
         if not self.patches_project:
             self.type = PatchType.NOT_LINUX
@@ -223,10 +212,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
         upstream = clustering.get_upstream(message_id)
         if clustering is not None:
             self.is_upstream = len(upstream) != 0
-
-        # Now we can say it's a regular patch, if we still have the type 'other'
-        if self.type == PatchType.OTHER:
-            self.type = PatchType.PATCH
 
         if maintainers_version is None:
             return
