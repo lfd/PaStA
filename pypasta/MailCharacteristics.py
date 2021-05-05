@@ -152,11 +152,13 @@ class MailCharacteristics:
         if not self.is_patch:
             return
 
-        self.patch = repo[message_id]
+        # We can already set this here, since the value will be changed when it is a special patch
+        self.type = PatchType.PATCH
+        patch = repo[message_id]
 
         # Even if the patch does not patch Linux, we can assign it to a
         # appropriate version
-        self.version = repo.patch_get_version(self.patch)
+        self.version = repo.patch_get_version(patch)
 
         self.patches_project = self._patches_project(patch)
         self.process_mail = True in [process in self.subject for process in self.PROCESSES]
