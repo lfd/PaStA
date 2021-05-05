@@ -85,6 +85,8 @@ class LinuxMailCharacteristics (MailCharacteristics):
                  # not yet merged subsystems
                  'kunit/']
 
+    PROCESSES = ['linux-next', 'git pull', 'rfc']
+
     def _is_from_bot(self):
         email = self.mail_from[1].lower()
         subject = email_get_header_normalised(self.message, 'subject')
@@ -236,11 +238,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
         upstream = clustering.get_upstream(message_id)
         if clustering is not None:
             self.is_upstream = len(upstream) != 0
-
-        processes = ['linux-next', 'git pull', 'rfc']
-        self.process_mail = True in [process in self.subject for process in processes]
-        if self.process_mail:
-            self.type = PatchType.PROCESS
 
         # Now we can say it's a regular patch, if we still have the type 'other'
         if self.type == PatchType.OTHER:

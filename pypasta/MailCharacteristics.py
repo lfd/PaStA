@@ -146,6 +146,10 @@ class MailCharacteristics:
         # appropriate version
         self.version = repo.patch_get_version(self.patch)
 
+        self.process_mail = True in [process in self.subject for process in self.PROCESSES]
+        if self.process_mail:
+            self.type = PatchType.PROCESS
+
 
 def load_characteristics(config, clustering):
     """
