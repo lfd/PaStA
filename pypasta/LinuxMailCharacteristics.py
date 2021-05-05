@@ -12,7 +12,6 @@ the COPYING file in the top-level directory.
 
 import re
 
-from anytree import LevelOrderIter
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
@@ -129,25 +128,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
         if self.is_next and 'sfr@canb.auug.org.au' in email:
             return True
 
-        return False
-
-    def _has_foreign_response(self, repo, thread):
-        """
-        This function will return True, if there's another author in this
-        thread, other than the ORIGINAL author. (NOT the author of this
-        email)
-        """
-        if len(thread.children) == 0:
-            return False  # If there is no response the check is trivial
-
-        for mail in list(LevelOrderIter(thread)):
-            # Beware, the mail might be virtual
-            if mail.name not in repo:
-                continue
-
-            this_email = email_get_from(repo.mbox.get_messages(mail.name)[0])[1]
-            if this_email != self.mail_from[1]:
-                return True
         return False
 
     def _is_stable_review(self, message, patch):
