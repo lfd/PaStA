@@ -13,10 +13,12 @@ the COPYING file in the top-level directory.
 import csv
 import email
 import re
+from anytree import LevelOrderIter
 from enum import Enum
 
 from .MAINTAINERS import load_maintainers
 from .Util import mail_parse_date
+
 
 VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
 
@@ -72,6 +74,25 @@ class MailCharacteristics:
             for release, date in relevant_releases:
                 writer.writerow({'release': release,
                                  'date': date})
+
+    def _has_foreign_response(self, repo, thread):
+        """
+        This function will return True, if there's another author in this
+        thread, other than the ORIGINAL author. (NOT the author of this
+        email)
+        """
+        if len(thread.children) == 0:
+            return False  # If there is no response the check is trivial
+
+        for mail in list(LevelOrderIter(thread)):
+            # Beware, the mail might be virtual
+            if mail.name not in repo:
+                continue
+
+            this_email = email_get_from(repo.mbox.get_messages(mail.name)[0])[1]
+            if this_email != self.mail_from[1]:
+                return True
+        return False
 
     def _analyse_series(self, thread, message):
         if self.is_patch:
