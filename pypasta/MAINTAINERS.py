@@ -104,11 +104,12 @@ def _prepare_uboot(maintainers):
 
     return maintainers
 
-
 _prepare_maintainers = {
     'linux': _prepare_linux,
     'qemu': _prepare_qemu,
     'u-boot': _prepare_uboot,
+    # we can use the exact same routine as u-boot
+    'xen': _prepare_uboot,
 }
 
 
