@@ -98,6 +98,9 @@ def _prepare_uboot(maintainers):
 
     maintainers = [re.sub('Maintainted', 'Maintained', x) for x in maintainers]
     maintainers = [re.sub('Orphan.*', 'Orphan', x, flags=re.IGNORECASE) for x in maintainers]
+    # Orphaned sections will often have maintainters 'commented out'. We need to remove
+    # them manually to prevent them from appearing in the section name
+    maintainers = [x for x in maintainers if not x.strip().startswith('#M:')]
 
     return maintainers
 
