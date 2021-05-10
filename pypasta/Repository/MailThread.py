@@ -101,6 +101,9 @@ class MailThread:
             for irt in irts:
                 self.reply_to_dict[irt].add(id)
 
+        for key in self.reply_to_dict.keys():
+            self.reply_to_dict[key] = sorted(self.reply_to_dict[key])
+
         log.info('Writing mailbox thread cache...')
         _mbox = self.mbox
         self.mbox = None
@@ -117,9 +120,9 @@ class MailThread:
 
         if this_id not in self.reply_to_dict:
             return
-        responses = self.reply_to_dict[this_id]
 
-        for response in responses:
+        responses = self.reply_to_dict[this_id]
+        for response in sorted(responses):
             if response in visited:
                 continue
 
