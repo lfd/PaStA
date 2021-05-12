@@ -128,7 +128,7 @@ def prepare_process_characteristics(config, clustering):
 
             # Dump an entry for each list the patch was sent to. This allows
             # for grouping by mailing lists.
-            for ml in sorted(repo.mbox.get_lists(message_id)):
+            for ml in sorted(c.lists):
                 list_matches_patch = c.list_matches_patch(ml)
                 row = {'id': message_id,
                        'from': mail_from,
