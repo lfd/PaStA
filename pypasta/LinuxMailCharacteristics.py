@@ -86,12 +86,12 @@ class LinuxMailCharacteristics (MailCharacteristics):
                  # not yet merged subsystems
                  'kunit/']
 
-    def _is_from_bot(self, message):
+    def _is_from_bot(self):
         email = self.mail_from[1].lower()
-        subject = email_get_header_normalised(message, 'subject')
-        uagent = email_get_header_normalised(message, 'user-agent')
-        xmailer = email_get_header_normalised(message, 'x-mailer')
-        x_pw_hint = email_get_header_normalised(message, 'x-patchwork-hint')
+        subject = email_get_header_normalised(self.message, 'subject')
+        uagent = email_get_header_normalised(self.message, 'user-agent')
+        xmailer = email_get_header_normalised(self.message, 'x-mailer')
+        x_pw_hint = email_get_header_normalised(self.message, 'x-patchwork-hint')
         potential_bot = email in LinuxMailCharacteristics.POTENTIAL_BOTS
 
         if email in LinuxMailCharacteristics.BOTS:
@@ -218,7 +218,7 @@ class LinuxMailCharacteristics (MailCharacteristics):
         self.maintainers = dict()
 
         self.is_next = self._is_next()
-        self.is_from_bot = self._is_from_bot(self.message)
+        self.is_from_bot = self._is_from_bot()
 
         # Messages can be received by bots, or linux-next, even if they
         # don't contain patches
