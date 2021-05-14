@@ -75,16 +75,16 @@ class MailCharacteristics:
                 writer.writerow({'release': release,
                                  'date': date})
 
-    def _has_foreign_response(self, repo, thread):
+    def _has_foreign_response(self, repo):
         """
         This function will return True, if there's another author in this
         thread, other than the ORIGINAL author. (NOT the author of this
         email)
         """
-        if len(thread.children) == 0:
+        if len(self.thread.children) == 0:
             return False  # If there is no response the check is trivial
 
-        for mail in list(LevelOrderIter(thread)):
+        for mail in list(LevelOrderIter(self.thread)):
             # Beware, the mail might be virtual
             if mail.name not in repo:
                 continue
@@ -103,13 +103,13 @@ class MailCharacteristics:
             return False
         return True
 
-    def _analyse_series(self, thread, message):
+    def _analyse_series(self):
         if self.is_patch:
-            if self.message_id == thread.name or \
-               self.message_id in [x.name for x in thread.children]:
+            if self.message_id == self.thread.name or \
+               self.message_id in [x.name for x in self.thread.children]:
                 self.is_first_patch_in_thread = True
-        elif 'Subject' in message and \
-             MailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
+        elif 'Subject' in self.message and \
+             MailCharacteristics.REGEX_COVER.match(str(self.message['Subject'])):
             self.is_cover_letter = True
 
     def _cleanup(self):
@@ -149,7 +149,7 @@ class MailCharacteristics:
         self.process_mail = False
 
         self.is_from_bot = None
-        self._analyse_series(self.thread, self.message)
+        self._analyse_series()
 
         # By default, assume type 'other'
         self.type = PatchType.OTHER
@@ -164,7 +164,7 @@ class MailCharacteristics:
         # determine the original author of a thread. Reason: That mail
         # might be missing.
         if self.is_first_patch_in_thread:
-            self.has_foreign_response = self._has_foreign_response(repo, self.thread)
+            self.has_foreign_response = self._has_foreign_response(repo)
         elif self.type == PatchType.OTHER:
             self.type = PatchType.NOT_FIRST
 
