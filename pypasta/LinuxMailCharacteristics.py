@@ -17,7 +17,7 @@ from multiprocessing import Pool, cpu_count
 
 from .MAINTAINERS import load_maintainers
 from .MailCharacteristics import MailCharacteristics, PatchType, email_get_header_normalised, email_get_from
-from .Util import get_first_upstream, mail_parse_date, load_pkl_and_update
+from .Util import mail_parse_date, load_pkl_and_update
 
 log = getLogger(__name__[-15:])
 
@@ -206,10 +206,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
         if not self.patches_project:
             return
 
-        upstream = clustering.get_upstream(message_id)
-        if clustering is not None:
-            self.is_upstream = len(upstream) != 0
-
         # Now we can say it's a regular patch, if we still have the type 'other'
         if self.type == PatchType.OTHER:
             self.type = PatchType.PATCH
@@ -225,7 +221,7 @@ class LinuxMailCharacteristics (MailCharacteristics):
             s_reviewers = {x[1] for x in s_reviewers if x[1]}
             self.maintainers[section] = s_lists, s_maintainers, s_reviewers
 
-        if not self.is_upstream:
+        if not self.first_upstream:
             return
 
         # In case the patch was integrated, fill the fields committer
@@ -233,8 +229,7 @@ class LinuxMailCharacteristics (MailCharacteristics):
         # if the patch was integrated by a maintainer that is responsible
         # for a section that is affected by the patch. IOW: The field
         # indicates if the patch was picked by the "correct" maintainer
-        upstream = get_first_upstream(repo, clustering, message_id)
-        upstream = repo[upstream]
+        upstream = repo[self.first_upstream]
         self.committer = upstream.committer.name.lower()
         self.integrated_by_maintainer = False
         for section in maintainers.get_sections_by_files(upstream.diff.affected):

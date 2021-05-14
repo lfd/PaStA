@@ -17,7 +17,7 @@ from anytree import LevelOrderIter
 from enum import Enum
 
 from .MAINTAINERS import load_maintainers
-from .Util import mail_parse_date
+from .Util import get_first_upstream, mail_parse_date
 
 
 VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
@@ -133,7 +133,7 @@ class MailCharacteristics:
 
         self.patches_project = False
         self.has_foreign_response = None
-        self.is_upstream = None
+        self.first_upstream = None
         self.committer = None
         self.integrated_by_maintainer = None
 
@@ -173,6 +173,8 @@ class MailCharacteristics:
         # Even if the patch does not patch Linux, we can assign it to a
         # appropriate version
         self.version = repo.patch_get_version(self.patch)
+
+        self.first_upstream = get_first_upstream(repo, clustering, message_id)
 
 
 def load_characteristics(config, clustering):

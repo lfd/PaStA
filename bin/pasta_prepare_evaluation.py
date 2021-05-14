@@ -48,7 +48,7 @@ def prepare_process_characteristics(config, clustering):
     log.info('Identify ignored patches...')
     # Calculate ignored patches
     ignored_patches = {patch for patch in relevant_ignored if
-                       not characteristics[patch].is_upstream and
+                       not characteristics[patch].first_upstream and
                        not characteristics[patch].has_foreign_response}
 
     # Calculate ignored patches wrt to other patches in the cluster: A patch is
