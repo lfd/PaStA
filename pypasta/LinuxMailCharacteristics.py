@@ -73,7 +73,7 @@ class LinuxPatchType(Enum):
     BOT = 'bot'
     NEXT = 'linux-next'
     STABLE = 'stable-review'
-    NOT_LINUX = 'not-linux'
+    NOT_PROJECT = 'not-project'
     PROCESS = 'process'
     NOT_FIRST = 'not-first' # Mail contains a patch, but it's not the first patch in the thread
     OTHER = 'other'
@@ -322,9 +322,9 @@ class LinuxMailCharacteristics:
         # appropriate version
         self.version = repo.linux_patch_get_version(patch)
 
-        # Exit, if we don't patch Linux
+        # Exit, if we don't patch the project
         if not self.patches_project:
-            self.type = LinuxPatchType.NOT_LINUX
+            self.type = LinuxPatchType.NOT_PROJECT
             return
 
         upstream = clustering.get_upstream(message_id)
