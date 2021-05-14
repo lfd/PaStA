@@ -112,6 +112,10 @@ class MailCharacteristics:
              MailCharacteristics.REGEX_COVER.match(str(message['Subject'])):
             self.is_cover_letter = True
 
+    def _cleanup(self):
+        del self.message
+        del self.patch
+
     def __init__(self, repo, clustering, message_id):
         self.message_id = message_id
 
@@ -130,6 +134,7 @@ class MailCharacteristics:
 
         # Patch characteristics
         self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
+        self.patch = None
 
         self.patches_project = False
         self.has_foreign_response = None
