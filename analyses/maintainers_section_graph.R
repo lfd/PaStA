@@ -51,8 +51,17 @@ data_frame <- read_csv(file_name)
 data_frame$weight <- data_frame$lines
 
 g  <- igraph::graph_from_data_frame(data_frame, directed = FALSE)
-# removing this because it's trivial that the rest includes everything
-g <- igraph::delete.vertices(g, "THE REST")
+
+# We need to remove THE REST because it's trivial that this section contains
+# everything. In case of QEMU, since this node is QEMU's equivalent of THE REST
+# whereas THE REST doesn't exist, we need to remove General Project
+# Administration instead
+if (project == 'qemu') {
+  g <- igraph::delete.vertices(g, which(grepl("General Project Administration",
+                                            V(g)$name)))
+} else {
+  g <- igraph::delete.vertices(g, "THE REST")
+}
 
 # retrieve vertex size by finding edge weight of self loop
 for (e in which(which_loop(g))) {
