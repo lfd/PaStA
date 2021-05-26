@@ -38,6 +38,8 @@ PRINT_DEGREE_INFO <- FALSE
 PRINT_INFORMATION <- FALSE
 DISPLAY_LABELS <- FALSE
 
+CLUSTER_DESTINATION <- file.path(d_resources, 'maintainers_clusters.txt')
+
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   file_name <- file.path(d_resources, 'maintainers_section_graph.csv')
@@ -206,3 +208,21 @@ if (PRINT_CLUSTERS) {
                 )
   }
 }
+
+write_cluster_file <- function(g, dst) {
+  sink(dst)
+
+  for (i in bounds) {
+    group <- comm_groups[i]
+    group_list <- unname(group)[[1]]
+
+    for (section in group_list) {
+      cat(section)
+      cat('\n')
+    }
+    cat('\n')
+  }
+  sink()
+}
+
+write_cluster_file(g, CLUSTER_DESTINATION)
