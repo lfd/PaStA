@@ -295,8 +295,8 @@ patch_conform_analysis <- function(data, plot_name) {
 
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  f_characteristics <- 'resources/linux/resources/characteristics.csv'
-  f_releases <- 'resources/linux/resources/releases.csv'
+  f_characteristics <- file.path(d_resources, 'characteristics.csv')
+  f_releases <- file.path(d_resources, 'releases.csv')
 } else {
   d_dst <- args[1]
   f_characteristics <- args[2]

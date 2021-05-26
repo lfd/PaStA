@@ -15,6 +15,8 @@ library(reshape2)
 library(tikzDevice)
 
 d_dst <- '/tmp/R'
+project <- read.csv('config', header=FALSE)$V1
+d_resources <- file.path('resources', project, 'resources')
 
 DPI <- 300
 WIDTH <- 6.3

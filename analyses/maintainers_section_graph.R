@@ -40,7 +40,7 @@ DISPLAY_LABELS <- FALSE
 
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  file_name <- 'resources/linux/resources/maintainers_section_graph.csv'
+  file_name <- file.path(d_resources, 'maintainers_section_graph.csv')
 } else {
   file_name <- args[1]
 }
