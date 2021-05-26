@@ -16,7 +16,7 @@ library("RColorBrewer")
 source("analyses/util.R")
 
 # delete all vertices below this quantile
-VERTEX_QUANTILE <- '80%'
+VERTEX_QUANTILE <- '0%'
 # delete all edges below this quantile, also used for linder edge density layout
 EDGE_QUANTILE <- '0%'
 
