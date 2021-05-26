@@ -142,6 +142,7 @@ class MailCharacteristics:
         self.first_upstream = None
         self.committer = None
         self.integrated_correct = None
+        self.integrated_xcorrect = None
 
         self.version = None
 

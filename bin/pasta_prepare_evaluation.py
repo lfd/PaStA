@@ -82,6 +82,7 @@ def prepare_process_characteristics(config, clustering):
                   'ignored', # Was the patch ignored? See definition above.
                   'committer', # Who committed the patch? (Can be None. If committer != None -> ignored = False)
                   'committer.correct', # Is the committer a valid committer according to MAINTAINERS?
+                  'committer.xcorrect', # Is the committer a valid committer in the cluster of the maintainer?
     ]
 
     with open(config.f_characteristics, 'w') as csv_file:
@@ -110,6 +111,7 @@ def prepare_process_characteristics(config, clustering):
                        'ignored': ignored,
                        'committer': c.committer,
                        'committer.correct': c.integrated_correct,
+                       'committer.xcorrect': c.integrated_xcorrect,
                        }
 
                 writer.writerow(row)

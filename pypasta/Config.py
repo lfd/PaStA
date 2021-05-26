@@ -158,6 +158,7 @@ class Config:
         self.f_characteristics = path('CHARACTERISTICS')
         self.f_maintainers_stats = path('MAINTAINERS_STATS')
         self.f_maintainers_section_graph = path('MAINTAINERS_SECTION_GRAPH')
+        self.d_maintainers_cluster = path('MAINTAINERS_CLUSTER')
         self.f_offlist = path('OFFLIST')
         self.f_releases = path('RELEASES')
         self.f_characteristics_pkl = path('CHARACTERISTICS_PKL')
