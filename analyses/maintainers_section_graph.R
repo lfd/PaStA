@@ -120,6 +120,11 @@ print_graph_information(g)
 g <- igraph::delete.vertices(g, which(V(g)$size < unname(global_vertex_quantiles[VERTEX_QUANTILE])))
 g <- igraph::delete.edges(g, which(E(g)$weight < unname(global_edge_quantiles[EDGE_QUANTILE])))
 
+# in case of Linux delete all entries with DRIVER
+#if (project == 'linux') {
+#  g <- igraph::delete.vertices(g, V(g)[grepl("DRIVER", toupper(V(g)$name))])
+#}
+
 wt_comm <- cluster_walktrap(g)
 V(g)$comm <- membership(wt_comm)
 
