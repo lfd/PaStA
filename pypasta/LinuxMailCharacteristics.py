@@ -16,8 +16,8 @@ from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
 from .MAINTAINERS import load_maintainers
-from .MailCharacteristics import MailCharacteristics, PatchType, email_get_header_normalised, email_get_from
-from .Util import mail_parse_date, load_pkl_and_update
+from .MailCharacteristics import MailCharacteristics, PatchType, email_get_header_normalised
+from .Util import load_pkl_and_update
 
 log = getLogger(__name__[-15:])
 
