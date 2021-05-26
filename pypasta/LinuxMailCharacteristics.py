@@ -180,11 +180,10 @@ class LinuxMailCharacteristics (MailCharacteristics):
 
     def __init__(self, repo, maintainers_version, clustering, message_id):
         super().__init__(repo, clustering, message_id)
-        self.__init(repo, maintainers_version, clustering)
+        self.__init(repo, maintainers_version)
         self._cleanup()
 
-
-    def __init(self, repo, maintainers_version, clustering):
+    def __init(self, repo, maintainers_version):
         self.is_stable_review = False
 
         # stuff for maintainers analysis
