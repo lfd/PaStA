@@ -58,6 +58,7 @@ def email_get_from(message):
     mail_from = email_get_header_normalised(message, 'From')
     return email.utils.parseaddr(mail_from)
 
+
 class MailCharacteristics:
     REGEX_COVER = re.compile('\[.*patch.*\s0+/.*\].*', re.IGNORECASE)
 
