@@ -128,7 +128,11 @@ def generate_graph(file_map, file_filters, f_csv):
         line = ["from", "to", "lines", "size"]
         csv_writer.writerow(line)
 
-        for a, b in G.edges:
+        pairs = []
+        for connection in G.edges:
+            pairs.append(sorted(connection))
+
+        for a, b in sorted(pairs):
             ctr_edge = G[a][b]['weight']
             line = [a, b, ctr_edge['lines'], ctr_edge['size']]
             csv_writer.writerow(line)
