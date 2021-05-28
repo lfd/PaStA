@@ -13,14 +13,24 @@ the COPYING file in the top-level directory.
 import csv
 import email
 import re
+
 from anytree import LevelOrderIter
 from enum import Enum
+from logging import getLogger
+from multiprocessing import Pool, cpu_count
 
 from .MAINTAINERS import load_maintainers
-from .Util import get_first_upstream, mail_parse_date
+from .Util import get_first_upstream, load_pkl_and_update, mail_parse_date
+
+log = getLogger(__name__[-15:])
 
 
 VALID_EMAIL_REGEX = re.compile(r'.+@.+\..+')
+
+_repo = None
+_maintainers_version = None
+_clustering = None
+_characteristics_class = None
 
 
 class PatchType(Enum):
@@ -188,6 +198,9 @@ class MailCharacteristics:
 
         self.lists = repo.mbox.get_lists(message_id)
 
+        # stuff for maintainers analysis
+        self.maintainers = dict()
+
         # Patch characteristics
         self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
         self.patch = None
@@ -239,15 +252,61 @@ class MailCharacteristics:
         self.first_upstream = get_first_upstream(repo, clustering, message_id)
 
 
+def _load_mail_characteristic(message_id):
+    return message_id, _characteristics_class(_repo, _maintainers_version,
+                                              _clustering, message_id)
+
+
+def load_maintainers_characteristics(config, characteristics_class, clustering,
+                                     ids):
+    repo = config.repo
+
+    tags = {repo.patch_get_version(repo[x]) for x in clustering.get_downstream()}
+    maintainers_version = load_maintainers(config, tags)
+
+    def _load_characteristics(ret):
+        if ret is None:
+            ret = dict()
+
+        missing = ids - ret.keys()
+        if len(missing) == 0:
+            return ret, False
+
+        global _repo, _maintainers_version, _clustering, _characteristics_class
+        _maintainers_version = maintainers_version
+        _clustering = clustering
+        _repo = repo
+        _characteristics_class = characteristics_class
+        p = Pool(processes=int(0.25*cpu_count()), maxtasksperchild=4)
+
+        missing = p.map(_load_mail_characteristic, missing, chunksize=1000)
+        missing = dict(missing)
+        print('Done')
+        p.close()
+        p.join()
+        _repo = None
+        _maintainers_version = None
+        _clustering = None
+        _characteristics_class = None
+
+        return {**ret, **missing}, True
+
+    log.info('Loading/Updating Linux patch characteristics...')
+    characteristics = load_pkl_and_update(config.f_characteristics_pkl,
+                                          _load_characteristics)
+
+    return characteristics
+
+
 def load_characteristics(config, clustering):
     """
     This routine loads characteristics for ALL mails in the time window
     config.mbox_timewindow, and loads multiple instances of maintainers for the
     patches of the clustering.
     """
-    from .LinuxMailCharacteristics import load_linux_mail_characteristics
+    from .LinuxMailCharacteristics import LinuxMailCharacteristics
     _load_characteristics = {
-        'linux': load_linux_mail_characteristics,
+        'linux': (load_maintainers_characteristics, LinuxMailCharacteristics),
     }
 
     repo = config.repo
@@ -259,6 +318,8 @@ def load_characteristics(config, clustering):
                                                     allow_invalid=True)
 
     if config.project_name in _load_characteristics:
-        return _load_characteristics[config.project_name](config, clustering, all_messages_in_time_window)
+        loader, characteristics_class = _load_characteristics[config.project_name]
+        return loader(config, characteristics_class, clustering,
+                      all_messages_in_time_window)
     else:
         raise NotImplementedError('Missing code for project %s' % config.project_name)

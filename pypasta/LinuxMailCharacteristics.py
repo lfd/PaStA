@@ -13,17 +13,10 @@ the COPYING file in the top-level directory.
 import re
 
 from logging import getLogger
-from multiprocessing import Pool, cpu_count
 
-from .MAINTAINERS import load_maintainers
 from .MailCharacteristics import MailCharacteristics, PatchType, email_get_header_normalised
-from .Util import load_pkl_and_update
 
 log = getLogger(__name__[-15:])
-
-_repo = None
-_maintainers_version = None
-_clustering = None
 
 MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
 
@@ -186,9 +179,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
     def __init(self, repo, maintainers_version):
         self.is_stable_review = False
 
-        # stuff for maintainers analysis
-        self.maintainers = dict()
-
         self.is_next = self._is_next()
         self.is_from_bot = self._is_from_bot()
 
@@ -215,47 +205,3 @@ class LinuxMailCharacteristics (MailCharacteristics):
             self.type = PatchType.PATCH
 
         self._integrated_correct(repo, maintainers_version)
-
-
-def _load_mail_characteristic(message_id):
-    return message_id, LinuxMailCharacteristics(_repo, _maintainers_version,
-                                                _clustering, message_id)
-
-
-def load_linux_mail_characteristics(config, clustering,
-                                    ids):
-    repo = config.repo
-
-    tags = {repo.patch_get_version(repo[x]) for x in clustering.get_downstream()}
-    maintainers_version = load_maintainers(config, tags)
-
-    def _load_characteristics(ret):
-        if ret is None:
-            ret = dict()
-
-        missing = ids - ret.keys()
-        if len(missing) == 0:
-            return ret, False
-
-        global _repo, _maintainers_version, _clustering
-        _maintainers_version = maintainers_version
-        _clustering = clustering
-        _repo = repo
-        p = Pool(processes=int(cpu_count()), maxtasksperchild=1)
-
-        missing = p.map(_load_mail_characteristic, missing, chunksize=1000)
-        missing = dict(missing)
-        print('Done')
-        p.close()
-        p.join()
-        _repo = None
-        _maintainers_version = None
-        _clustering = None
-
-        return {**ret, **missing}, True
-
-    log.info('Loading/Updating Linux patch characteristics...')
-    characteristics = load_pkl_and_update(config.f_characteristics_pkl,
-                                          _load_characteristics)
-
-    return characteristics
