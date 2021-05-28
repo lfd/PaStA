@@ -276,7 +276,7 @@ patch_conform_analysis <- function(data, plot_name) {
     true <- (lst %>% filter(committer.correct == TRUE))$proportion
     all <- (lst %>% filter(committer.correct == 'Sum'))$freq
 
-    cat(sprintf("%s; %.2f; %.2f; %d\n", l, false, true, all))
+    cat(sprintf("%s; %.2f; %.2f; %d\n", l, true, false, all))
   }
   
   p <- ggplot(list_data, aes(x=committer.correct, y = proportion)) +
