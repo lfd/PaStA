@@ -30,7 +30,9 @@ log = getLogger(__name__[-15:])
 # We need this global variable, as pygit2 Repository objects are not pickleable
 _tmp_repo = None
 
-MAINLINE_REGEX = re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$')
+mainline_regex = {
+    'linux': re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$'),
+}
 
 class PygitCredentials(pygit2.RemoteCallbacks):
     def credentials(self, url, username_from_url, allowed_types):
@@ -86,7 +88,7 @@ def _load_commit_subst(commit_hash):
 class Repository:
     REGEX_TAGS = re.compile('^refs/tags')
 
-    def __init__(self, repo_location):
+    def __init__(self, project_name, repo_location):
         self.repo_location = repo_location
         self.ccache = {}
         self.repo = pygit2.Repository(repo_location)
@@ -118,8 +120,13 @@ class Repository:
         # Sort tags - by date
         self.tags.sort(key=lambda x: x[1])
 
-        self.mainline_tags = list(filter(lambda x : MAINLINE_REGEX.match(x[0]),
-                                         self.tags))
+        if project_name not in mainline_regex:
+            log.warning('No Version support for %s' % project_name)
+            self.mainline_tags = []
+            return
+
+        self.mainline_tags = list(filter(
+            lambda x : mainline_regex[project_name].match(x[0]), self.tags))
 
     def patch_get_version(self, patch):
         tag = None
