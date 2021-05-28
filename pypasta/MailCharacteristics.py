@@ -291,7 +291,7 @@ def load_maintainers_characteristics(config, characteristics_class, clustering,
 
         return {**ret, **missing}, True
 
-    log.info('Loading/Updating Linux patch characteristics...')
+    log.info('Loading/Updating patch characteristics...')
     characteristics = load_pkl_and_update(config.f_characteristics_pkl,
                                           _load_characteristics)
 
