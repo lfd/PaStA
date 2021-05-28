@@ -228,18 +228,18 @@ class LinuxMailCharacteristics (MailCharacteristics):
         if not self.first_upstream:
             return
 
-        # In case the patch was integrated, fill the fields committer
-        # and integrated_by_maintainer. integrated_by_maintainer indicates
-        # if the patch was integrated by a maintainer that is responsible
-        # for a section that is affected by the patch. IOW: The field
-        # indicates if the patch was picked by the "correct" maintainer
+        # In case the patch was integrated, fill the fields committer and
+        # integrated_correct. integrated_correct indicates if the patch was
+        # integrated by a maintainer that is responsible for a section that is
+        # affected by the patch. IOW: The field indicates if the patch was
+        # picked by the "correct" maintainer
         upstream = repo[self.first_upstream]
         self.committer = upstream.committer.name.lower()
-        self.integrated_by_maintainer = False
+        self.integrated_correct = False
         for section in maintainers.get_sections_by_files(upstream.diff.affected):
             _, s_maintainers, _ = maintainers.get_maintainers(section)
             if self.committer in [name for name, mail in s_maintainers]:
-                self.integrated_by_maintainer = True
+                self.integrated_correct = True
                 break
 
 

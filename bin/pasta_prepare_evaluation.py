@@ -109,7 +109,7 @@ def prepare_process_characteristics(config, clustering):
                        'list.matches_patch': list_matches_patch,
                        'ignored': ignored,
                        'committer': c.committer,
-                       'committer.correct': c.integrated_by_maintainer,
+                       'committer.correct': c.integrated_correct,
                        }
 
                 writer.writerow(row)

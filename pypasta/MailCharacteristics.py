@@ -141,7 +141,7 @@ class MailCharacteristics:
         self.has_foreign_response = None
         self.first_upstream = None
         self.committer = None
-        self.integrated_by_maintainer = None
+        self.integrated_correct = None
 
         self.version = None
 
