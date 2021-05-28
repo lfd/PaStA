@@ -35,8 +35,6 @@ MAIL_STRIP_TLD_REGEX = re.compile(r'(.*)\..+')
 
 
 def prepare_process_characteristics(config, clustering):
-    repo = config.repo
-
     characteristics = load_characteristics(config, clustering)
 
     MailCharacteristics.dump_release_info(config)
