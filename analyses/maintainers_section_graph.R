@@ -210,10 +210,14 @@ if (PRINT_CLUSTERS) {
 }
 
 write_cluster_file <- function(g, dst) {
+  for (name in names(comm_groups)) {
+    comm_groups[[name]] <- sort(comm_groups[[name]])
+  }
+  sorted_comm_groups <- comm_groups[order(sapply(comm_groups,function(x) x[[1]]))]
   sink(dst)
 
   for (i in bounds) {
-    group <- comm_groups[i]
+    group <- sorted_comm_groups[i]
     group_list <- unname(group)[[1]]
 
     for (section in group_list) {
