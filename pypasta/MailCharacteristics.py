@@ -178,6 +178,12 @@ class MailCharacteristics:
             if self.integrated_xcorrect:
                 break
 
+    def list_matches_patch(self, list):
+        for lists, _, _ in self.maintainers.values():
+            if list in lists:
+                return True
+        return False
+
     def _cleanup(self):
         del self.message
         del self.patch
