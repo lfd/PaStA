@@ -34,15 +34,10 @@ def ignore_tlds(addresses):
 
 
 class LinuxMailCharacteristics (MailCharacteristics):
-    BOTS = {'tip-bot2@linutronix.de', 'tipbot@zytor.com',
-            'noreply@ciplatform.org', 'patchwork@emeril.freedesktop.org'}
-    POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
-
     # Additional lists that are not known by pasta
     LISTS = set()
 
     REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
-    REGEX_GREG_ADDED = re.compile('patch \".*\" added to .*')
     ROOT_FILES = ['.clang-format',
                   '.cocciconfig',
                   '.get_maintainer.ignore',
@@ -80,52 +75,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
                  'virt/',
                  # not yet merged subsystems
                  'kunit/']
-
-    PROCESSES = ['linux-next', 'git pull', 'rfc']
-
-    def _is_from_bot(self):
-        email = self.mail_from[1].lower()
-        subject = email_get_header_normalised(self.message, 'subject')
-        uagent = email_get_header_normalised(self.message, 'user-agent')
-        xmailer = email_get_header_normalised(self.message, 'x-mailer')
-        x_pw_hint = email_get_header_normalised(self.message, 'x-patchwork-hint')
-        potential_bot = email in LinuxMailCharacteristics.POTENTIAL_BOTS
-
-        if email in LinuxMailCharacteristics.BOTS:
-            return True
-
-        if potential_bot:
-            if x_pw_hint == 'ignore':
-                return True
-
-            # Mark Brown's bot and lkp
-            if subject.startswith('applied'):
-                return True
-
-        if LinuxMailCharacteristics.REGEX_GREG_ADDED.match(subject):
-            return True
-
-        # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for
-        # all other mails. That's how we can easily separate automated mails
-        # from real mails. Secondly, akpm acts as bot if the subject contains [merged]
-        if email == 'akpm@linux-foundation.org':
-            if 's-nail' in uagent or '[merged]' in subject:
-                return True
-            if 'mm-commits@vger.kernel.org' in self.lists:
-                return True
-
-        # syzbot - email format: syzbot-hash@syzkaller.appspotmail.com
-        if 'syzbot' in email and 'syzkaller.appspotmail.com' in email:
-            return True
-
-        if xmailer == 'tip-git-log-daemon':
-            return True
-
-        # Stephen Rothwell's automated emails (TBD: generates false positives)
-        if self.is_next and 'sfr@canb.auug.org.au' in email:
-            return True
-
-        return False
 
     def _is_stable_review(self):
         if 'X-Mailer' in self.message and \
@@ -177,7 +126,6 @@ class LinuxMailCharacteristics (MailCharacteristics):
         self.is_stable_review = False
 
         self.is_next = self._is_next()
-        self.is_from_bot = self._is_from_bot()
 
         # Messages can be received by bots, or linux-next, even if they
         # don't contain patches
