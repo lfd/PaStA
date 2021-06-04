@@ -117,8 +117,8 @@ print_graph_information <- function(param) {
 print_graph_information(g)
 
 # deleting all vertices and edges that are below the specified quantile
-g <- igraph::delete.vertices(g, which(V(g)$size <= unname(global_vertex_quantiles[VERTEX_QUANTILE])))
-g <- igraph::delete.edges(g, which(E(g)$weight <= unname(global_edge_quantiles[EDGE_QUANTILE])))
+g <- igraph::delete.vertices(g, which(V(g)$size < unname(global_vertex_quantiles[VERTEX_QUANTILE])))
+g <- igraph::delete.edges(g, which(E(g)$weight < unname(global_edge_quantiles[EDGE_QUANTILE])))
 
 wt_comm <- cluster_walktrap(g)
 V(g)$comm <- membership(wt_comm)
