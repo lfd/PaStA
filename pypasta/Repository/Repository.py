@@ -32,6 +32,8 @@ _tmp_repo = None
 
 mainline_regex = {
     'linux': re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$'),
+    'qemu': re.compile(r'^v.*$'),
+    'u-boot': re.compile(r'^v201.*$'),
     'xen': re.compile(r'^(RELEASE-)?\d+\.\d+\.0.*$'),
 }
 
