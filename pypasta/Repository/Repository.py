@@ -35,6 +35,7 @@ mainline_regex = {
     'xen': re.compile(r'^(RELEASE-)?\d+\.\d+\.0.*$'),
 }
 
+
 class PygitCredentials(pygit2.RemoteCallbacks):
     def credentials(self, url, username_from_url, allowed_types):
         if allowed_types & pygit2.credentials.GIT_CREDTYPE_SSH_KEY:
