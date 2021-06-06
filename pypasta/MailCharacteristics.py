@@ -364,9 +364,11 @@ def load_characteristics(config, clustering):
     patches of the clustering.
     """
     from .LinuxMailCharacteristics import LinuxMailCharacteristics
+    from .UBootMailCharacteristics import UBootMailCharacteristics
     from .XenMailCharacteristics import XenMailCharacteristics
     _load_characteristics = {
         'linux': (load_maintainers_characteristics, LinuxMailCharacteristics),
+        'u-boot': (load_maintainers_characteristics, UBootMailCharacteristics),
         'xen': (load_maintainers_characteristics, XenMailCharacteristics),
     }
 
