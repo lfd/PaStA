@@ -96,9 +96,9 @@ def dump_csv(headers, relevant_headers, data, f_csv, verbose):
 # generate_graph generates an edge list for an undirected graph that represents
 # the overlapping code that is covered by the MAINTAINERS file. Every node of
 # the graph represents a section in MAINTAINERS. A section node has an edge to
-# another section node if both sections share at least one file. An edge weighted
-# by the LoC/size in bytes of the shared content.
-def generate_graph(file_map, file_filters, f_csv):
+# another section node if both sections share at least one file. An edge
+# weighted by the LoC/size in bytes of the shared content.
+def generate_graph(maintainers, file_map, file_filters, f_csv):
     filenames = file_filters
     if not filenames:
         filenames = file_map.keys()
@@ -122,6 +122,14 @@ def generate_graph(file_map, file_filters, f_csv):
             if not G.has_edge(c1, c2):
                 G.add_edge(c1, c2, weight=Counter())
             G[c1][c2]['weight'].update(lines=lines, size=size)
+
+    # There can be sections that are not assigned to a single file. Hence, they
+    # won't share any line with any section, and we missed them so far. Detect
+    # and add those sections.
+    missing = maintainers.sections.keys() - G.nodes
+    for miss in missing:
+        G.add_edge(miss, miss, weight=Counter())
+        G[miss][miss]['weight'].update(lines=0, size=0)
 
     with open(f_csv, 'w') as csv_file:
         csv_writer = writer(csv_file)
@@ -223,7 +231,8 @@ def maintainers_stats(config, argv):
     file_map = dict(file_map)
 
     if args.mode == 'graph':
-        generate_graph(file_map, filter_by_files, config.f_maintainers_section_graph)
+        generate_graph(all_maintainers, file_map, filter_by_files,
+                       config.f_maintainers_section_graph)
         return
 
     # An object is the kind of the analysis, and reflects the target. A target
