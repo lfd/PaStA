@@ -53,6 +53,9 @@ def _prepare_qemu(maintainers):
     # Remove empty lines
     maintainers = list(filter(None, maintainers))
 
+    maintainers = [re.sub('^S: Support$', 'S: Supported', x) for x in maintainers]
+    maintainers = [re.sub('Orphan.*', 'Orphan', x, flags=re.IGNORECASE) for x in maintainers]
+
     topic = None
     subtopic = None
     content = list()
