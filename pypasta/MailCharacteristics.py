@@ -217,8 +217,15 @@ class MailCharacteristics:
                     return cluster
             raise ValueError('Unable to find a cluster for section %s (Version: %s)' % (section, self.version))
 
-        # Search for the cluster
-        for section in sections - {'THE REST'}:
+        # THE REST - Quirk: Ignore the cluster THE REST. The clusterfile won't
+        # contain THE REST, as it would match for any cluster. Simply remove it.
+        sections = sections - {'THE REST'}
+        # At QEMU, we basically have the same situation. Here, THE REST is
+        # called "General Project Administration ……". Simply ignore anything
+        # that starts with that string.
+        sections = {x for x in sections if
+                    not x.startswith('General Project Administration')}
+        for section in sections:
             cluster = get_cluster(section)
             for c in cluster:
                 self.integrated_xcorrect = check_maintainer(c, self.committer)
