@@ -22,6 +22,7 @@ load_characteristics <- function(filename) {
   data$list.matches_patch <- as.logical(data$list.matches_patch)
   data$ignored <- as.logical(data$ignored)
   data$committer.correct <- as.logical(data$committer.correct)
+  data$committer.xcorrect <- as.logical(data$committer.xcorrect)
   data <- data %>% mutate(date = as.Date(time))
 
   # Add week info
@@ -202,14 +203,14 @@ composition <- function(data, plot_name) {
   printplot(plot, filename)
 }
 
-patch_conform_by_week <- function(data, plot_name) {
+patch_conform_by_week <- function(data, plot_name, field) {
   data <- top_n.list_data
 
-  relevant <- data %>% select(week, committer.correct, list)
+  relevant <- data %>% select(week, !!field, list)
 
-  true <- relevant %>% filter(committer.correct == TRUE) %>% select(-committer.correct) %>% group_by(week, list) %>% count(name = 'correct')
-  false <- relevant %>% filter(committer.correct == FALSE) %>% select(-committer.correct) %>% group_by(week, list) %>% count(name = 'incorrect')
-  not_integrated <- relevant %>% filter(is.na(committer.correct)) %>% select(-committer.correct) %>% group_by(week, list) %>% count(name = 'not_integrated')
+  true <- relevant %>% filter(!!field == TRUE) %>% select(-!!field) %>% group_by(week, list) %>% count(name = 'correct')
+  false <- relevant %>% filter(!!field == FALSE) %>% select(-!!field) %>% group_by(week, list) %>% count(name = 'incorrect')
+  not_integrated <- relevant %>% filter(is.na(!!field)) %>% select(-!!field) %>% group_by(week, list) %>% count(name = 'not_integrated')
   total <- relevant %>% select(week, list) %>% group_by(week, list) %>% count(name = 'total')
 
   # Fill up weeks with no values with zeroes
@@ -243,12 +244,14 @@ patch_conform_by_week <- function(data, plot_name) {
   printplot(p, filename)
 }
 
-patch_conform_analysis <- function(data, plot_name) {
+patch_conform_analysis <- function(data, plot_name, field) {
   # Filter for relevant patches written by humans (i.e., no bots, no stable-review, ...)
-  commit_data <- data %>% select(list, committer.correct)
+  commit_data <- data %>% select(list, !!field)
   
   # Uncomment this line to exclude not-integrated patches
-  commit_data <- commit_data %>% filter(!is.na(committer.correct))
+  #commit_data <- commit_data %>% filter(!is.na(committer.correct))
+  commit_data <- commit_data %>% filter(!is.na(!!field))
+  #commit_data <- commit_data %>% filter(!interp(~is.na(v), v=as.name(field)))
 
   # Remove TLDs
   commit_data$list <- sapply(strsplit(commit_data$list, '@'), '[', 1)
@@ -256,19 +259,19 @@ patch_conform_analysis <- function(data, plot_name) {
   commit_data <- commit_data %>% group_by(list)
 
   list_data <- commit_data %>%
-    count(committer.correct, name = 'freq') %>%
+    count(!!field, name = 'freq') %>%
     mutate(proportion = freq / sum(freq))
 
   sum <- commit_data %>%
     count(name = 'freq') %>%
-    mutate(committer.correct = 'Sum', proportion = 1.0, .before = freq)
+    mutate(!!field := 'Sum', proportion = 1.0, .before = freq)
 
   top <- sum %>%
     select(list, freq) %>%
     group_by(list) %>%
     arrange(desc(freq))
 
-  tmp <- list_data %>% mutate(committer.correct = as.character(committer.correct))
+  tmp <- list_data %>% mutate(!!field := as.character(!!field))
   sum <- bind_rows(tmp, sum) %>% ungroup()
 
   cat("ignored rates for: ", plot_name, "\n")
@@ -276,14 +279,14 @@ patch_conform_analysis <- function(data, plot_name) {
   for (l in top$list) {
     lst <- sum %>% filter(list == l) %>% select(-list)
 
-    false <- (lst %>% filter(committer.correct == FALSE))$proportion
-    true <- (lst %>% filter(committer.correct == TRUE))$proportion
-    all <- (lst %>% filter(committer.correct == 'Sum'))$freq
+    false <- (lst %>% filter(!!field == FALSE))$proportion
+    true <- (lst %>% filter(!!field == TRUE))$proportion
+    all <- (lst %>% filter(!!field == 'Sum'))$freq
 
     cat(sprintf("%s; %.2f; %.2f; %d\n", l, true, false, all))
   }
   
-  p <- ggplot(list_data, aes(x=committer.correct, y = proportion)) +
+  p <- ggplot(list_data, aes(x=!!field, y = proportion)) +
     geom_bar(stat = 'identity', width = 0.5) +
     scale_x_discrete(breaks = c(FALSE, TRUE, NA),
                      labels = c('No', 'Yes', 'N.I.')) +
@@ -362,8 +365,14 @@ top_n.list_data <- filtered_data %>% filter(list %in% top_n.lists)
 ignored_by_week(top_n.list_data, 'top_n')
 
 # Create plots for conform integration
-patch_conform_analysis(top_n.list_data, 'conform.top_n')
-patch_conform_analysis(filtered_data, 'conform.all')
-patch_conform_analysis(all, 'conform.overall')
+patch_conform_analysis(top_n.list_data, 'conform.top_n', quo(committer.correct))
+patch_conform_analysis(filtered_data, 'conform.all', quo(committer.correct))
+patch_conform_analysis(all, 'conform.overall', quo(committer.correct))
 
-patch_conform_by_week(top_n.list_data, 'conform.week.top_n')
+patch_conform_analysis(top_n.list_data, 'xconform.top_n', quo(committer.xcorrect))
+patch_conform_analysis(filtered_data, 'xconform.all', quo(committer.xcorrect))
+patch_conform_analysis(all, 'xconform.overall', quo(committer.xcorrect))
+
+patch_conform_by_week(top_n.list_data, 'conform.week.top_n', quo(committer.correct))
+patch_conform_by_week(top_n.list_data, 'xconform.week.top_n', quo(committer.xcorrect))
+
