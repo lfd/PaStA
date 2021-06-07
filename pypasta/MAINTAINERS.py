@@ -103,6 +103,9 @@ def _prepare_uboot(maintainers):
     # them manually to prevent them from appearing in the section name
     maintainers = [x for x in maintainers if not x.strip().startswith('#M:')]
 
+    # In some versions of u-boot, we find a ^F. instead of ^F: . Replace it.
+    maintainers = [re.sub('^F\.', 'F:', x) for x in maintainers]
+
     return maintainers
 
 _prepare_maintainers = {
