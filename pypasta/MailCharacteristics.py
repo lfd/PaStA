@@ -113,6 +113,35 @@ class MailCharacteristics:
              MailCharacteristics.REGEX_COVER.match(str(self.message['Subject'])):
             self.is_cover_letter = True
 
+    def _integrated_correct(self, repo, maintainers_version):
+        if maintainers_version is None:
+            return
+
+        maintainers = maintainers_version[self.version]
+        sections = maintainers.get_sections_by_files(self.patch.diff.affected)
+        for section in sections:
+            s_lists, s_maintainers, s_reviewers = maintainers.get_maintainers(section)
+            s_maintainers = {x[1] for x in s_maintainers if x[1]}
+            s_reviewers = {x[1] for x in s_reviewers if x[1]}
+            self.maintainers[section] = s_lists, s_maintainers, s_reviewers
+
+        if not self.first_upstream:
+            return
+
+        # In case the patch was integrated, fill the fields committer and
+        # integrated_correct. integrated_correct indicates if the patch was
+        # integrated by a maintainer that is responsible for a section that is
+        # affected by the patch. IOW: The field indicates if the patch was
+        # picked by the "correct" maintainer
+        upstream = repo[self.first_upstream]
+        self.committer = upstream.committer.name.lower()
+        self.integrated_correct = False
+        for section in maintainers.get_sections_by_files(upstream.diff.affected):
+            _, s_maintainers, _ = maintainers.get_maintainers(section)
+            if self.committer in [name for name, mail in s_maintainers]:
+                self.integrated_correct = True
+                break
+
     def _cleanup(self):
         del self.message
         del self.patch
