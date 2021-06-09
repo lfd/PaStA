@@ -203,6 +203,53 @@ composition <- function(data, plot_name) {
   printplot(plot, filename)
 }
 
+patch_conform_ratio <- function(data, plot_name) {
+  relevant <- data %>% select(week, committer.correct, committer.xcorrect, list)
+
+  true <- relevant %>% filter(committer.correct == TRUE) %>% select(week, list) %>% group_by(week, list) %>% count(name = 'correct')
+  false <- relevant %>% filter(committer.correct == FALSE) %>% select(week, list) %>% group_by(week, list) %>% count(name = 'incorrect')
+
+  xtrue <- relevant %>% filter(committer.xcorrect == TRUE) %>% select(week, list) %>% group_by(week, list) %>% count(name = 'xcorrect')
+  xfalse <- relevant %>% filter(committer.xcorrect == FALSE) %>% select(week, list) %>% group_by(week, list) %>% count(name = 'xincorrect')
+
+
+  # Fill up weeks with no values with zeroes
+  true <- true %>% group_by(list) %>% group_modify(fillup_missing_weeks)
+
+  # We must also merge weeks with no ignored patches, so all.x/y = TRUE
+  df <- merge(x = true, y = false, by = c('week', 'list'), all.x = TRUE, all.y = TRUE)
+  df <- merge(x = df, y = xtrue, by = c('week', 'list'), all.x = TRUE, all.y = TRUE)
+  df <- merge(x = df, y = xfalse, by = c('week', 'list'), all.x = TRUE, all.y = TRUE)
+  # Then, replace NA by 0
+  df[is.na(df)] <- 0
+
+  df <- df %>%
+    mutate(ratio_correct = correct / (correct + incorrect)) %>%
+    mutate(ratio_xcorrect = xcorrect / (xcorrect + xincorrect)) %>%
+    select(week, list, ratio_correct, ratio_xcorrect)
+
+  df <- melt(df, id.vars = c('week', 'list'))
+
+  p <- ggplot(df, aes(x = week, y = value, color = variable)) +
+    geom_line() +
+    geom_smooth() +
+    geom_vline(xintercept = releases$date, linetype="dotted") +
+    ylab('Ratio of correctly integrated patches') +
+    xlab('Date') +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 sec.axis = dup_axis(name = prj_releases,
+                                     breaks = releases$date,
+                                     labels = releases$release)
+    ) +
+    facet_wrap(~list, scales = 'free') +
+    my.theme +
+    theme(axis.text.x.top = element_text(angle = 90, hjust = 0),
+          legend.title = element_blank())
+  filename <- file.path('conform', plot_name)
+  printplot(p, filename)
+
+}
+
 patch_conform_by_week <- function(data, plot_name, field) {
   data <- top_n.list_data
 
@@ -376,3 +423,5 @@ patch_conform_analysis(all, 'xconform.overall', quo(committer.xcorrect))
 patch_conform_by_week(top_n.list_data, 'conform.week.top_n', quo(committer.correct))
 patch_conform_by_week(top_n.list_data, 'xconform.week.top_n', quo(committer.xcorrect))
 
+patch_conform_ratio(top_n.list_data, 'conform_ratio.top_n')
+patch_conform_ratio(all, 'conform_ratio.all')
