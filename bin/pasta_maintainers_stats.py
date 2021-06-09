@@ -146,6 +146,7 @@ def generate_graph(maintainers, file_map, file_filters, f_csv):
             csv_writer.writerow(line)
     call(['./analyses/maintainers_section_graph.R', f_csv])
 
+
 def maintainers_stats(config, argv):
     parser = ArgumentParser(prog='maintainers_stats',
                             description='Display file sizes grouped by '
@@ -195,7 +196,8 @@ def maintainers_stats(config, argv):
         kernel_revision = args.revision
     log.info('Working on kernel revision %s' % kernel_revision)
 
-    all_maintainers = MAINTAINERS(config.project_name, repo, kernel_revision)
+    all_maintainers = MAINTAINERS(config.d_maintainers_cluster,
+                                  config.project_name, repo, kernel_revision)
     tree = repo.get_tree(kernel_revision)
     all_filenames = walk_commit_tree(tree)
     result = list()

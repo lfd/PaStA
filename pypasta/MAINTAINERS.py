@@ -10,6 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+import os
 import pygit2
 import re
 
@@ -380,7 +381,7 @@ class MAINTAINERS:
     def __getitem__(self, item):
         return self.sections[item]
 
-    def __init__(self, project_name, repo, revision):
+    def __init__(self, d_cluster, project_name, repo, revision):
         maintainers = repo.get_blob(revision, 'MAINTAINERS')
         try:
             maintainers = maintainers.decode('utf-8')
@@ -412,9 +413,19 @@ class MAINTAINERS:
                 tmp.append(line)
         add_section(tmp)
 
+        f_maintainers_cluster = os.path.join(d_cluster, '%s.txt' % revision)
+        self.cluster = None
+        if os.path.exists(f_maintainers_cluster):
+            with open(f_maintainers_cluster, 'r') as f:
+                cluster = f.read()
+            cluster = list(filter(None, cluster.split('\n\n')))
+            self.cluster = [set(x.split('\n')) for x in cluster]
+        else:
+            log.warning('No MAINTAINERS cluster for %s' % revision)
 
-def _load_maintainer(revision, project_name):
-    return revision, MAINTAINERS(project_name, _repo, revision)
+
+def _load_maintainer(revision, d_cluster, project_name):
+    return revision, MAINTAINERS(d_cluster, project_name, _repo, revision)
 
 
 def load_maintainers(config, versions):
@@ -431,7 +442,10 @@ def load_maintainers(config, versions):
         global _repo
         _repo = config.repo
         p = Pool(processes=cpu_count())
-        function = partial(_load_maintainer, project_name = config.project_name)
+        function = partial(_load_maintainer,
+                           d_cluster = config.d_maintainers_cluster,
+                           project_name = config.project_name)
+
         for tag, maintainers in tqdm(p.imap_unordered(function, versions),
                                      total=len(versions), desc='MAINTAINERS'):
             ret[tag] = maintainers
