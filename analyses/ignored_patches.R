@@ -71,7 +71,10 @@ fillup_missing_weeks <- function(data, key) {
 
   missing.weeks <- !(all.weeks %in% data$week)
   if (any(missing.weeks)) {
-    return(rbind(data, data.frame(week=all.weeks[missing.weeks], total=0)))
+    frame <- data.frame(week = all.weeks[missing.weeks], col = 0)
+    colnames(frame) <- colnames(data)
+
+    return(rbind(data, frame))
   }
   return (data)
 }
