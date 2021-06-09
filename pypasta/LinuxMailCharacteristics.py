@@ -38,6 +38,9 @@ class LinuxMailCharacteristics (MailCharacteristics):
             'noreply@ciplatform.org', 'patchwork@emeril.freedesktop.org'}
     POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
 
+    # Additional lists that are not known by pasta
+    LISTS = set()
+
     REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
     REGEX_GREG_ADDED = re.compile('patch \".*\" added to .*')
     ROOT_FILES = ['.clang-format',

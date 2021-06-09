@@ -189,8 +189,8 @@ class MailCharacteristics:
         self.thread = repo.mbox.threads.get_thread(message_id)
         self.recipients = email_get_recipients(self.message)
 
-        self.recipients_lists = self.recipients & repo.mbox.lists
-        self.recipients_other = self.recipients - repo.mbox.lists
+        self.recipients_lists = self.recipients & (repo.mbox.lists | self.LISTS)
+        self.recipients_other = self.recipients - (repo.mbox.lists | self.LISTS)
 
         self.mail_from = email_get_from(self.message)
         self.subject = email_get_header_normalised(self.message, 'Subject')
