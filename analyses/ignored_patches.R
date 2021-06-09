@@ -15,6 +15,7 @@ source("analyses/util.R")
 date.min <- '2011-07-21' # v3.0
 date.max <- '2020-12-13' # v5.10
 top_n.num_lists <- 4
+prj_releases <- paste(project, "Releases")
 
 load_characteristics <- function(filename) {
   data <- read_csv(filename)
@@ -106,7 +107,7 @@ ignored_by_week <- function(data, plot_name) {
     ylab('Number of patches per week') +
     xlab('Date') +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y',
-                 sec.axis = dup_axis(name="Linux Releases",
+                 sec.axis = dup_axis(name = prj_releases,
                                      breaks = releases$date,
                                      labels = releases$release)
                  ) +
@@ -127,7 +128,7 @@ ignored_by_week <- function(data, plot_name) {
     geom_vline(xintercept = releases$date, linetype="dotted") +
     theme_bw(base_size = 15) +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y',
-                 sec.axis = dup_axis(name="Linux Releases",
+                 sec.axis = dup_axis(name = prj_releases,
                                      breaks = releases$date,
                                      labels = releases$release)) +
     xlab('Date') +
@@ -149,7 +150,7 @@ ignored_by_week <- function(data, plot_name) {
     geom_vline(xintercept = releases$date, linetype="dotted") +
     theme_bw(base_size = 15) +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y',
-                 sec.axis = dup_axis(name="Linux Releases",
+                 sec.axis = dup_axis(name = prj_releases,
                                      breaks = releases$date,
                                      labels = releases$release)) +
     #scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%"),
@@ -186,7 +187,7 @@ composition <- function(data, plot_name) {
     ylab('Number of patches per week') +
     xlab('Date') +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y',
-                 sec.axis = dup_axis(name="Linux Releases",
+                 sec.axis = dup_axis(name = prj_releases,
                                      breaks = releases$date,
                                      labels = releases$release)
     ) +
@@ -227,7 +228,7 @@ patch_conform_by_week <- function(data, plot_name) {
     ylab('Number of patches per week') +
     xlab('Date') +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y',
-                 sec.axis = dup_axis(name="Linux Releases",
+                 sec.axis = dup_axis(name = prj_releases,
                                      breaks = releases$date,
                                      labels = releases$release)
     ) +
@@ -321,7 +322,7 @@ filtered_data <- raw_data %>%
   filter(week > date.min)
 
 # Calculate the top-n lists with highest patch traffic. Note that we are only
-# interested in high-traffic Linux lists, so filter for the type 'patch'
+# interested in high-traffic lists, so filter for the type 'patch'
 top_n.data <- filtered_data %>%
   filter(type == 'patch') %>%
   select(list) %>%
@@ -339,7 +340,7 @@ all <- all %>% distinct()
 composition(all, 'composition.overall')
 
 # Once the composition is plotted, we can limit on the type 'patch'. For the
-# ignored patches analysis, we're only interested in patches that patch Linux,
+# ignored patches analysis, we're only interested in patches that patch the project,
 # and were written by real humans.
 filtered_data <- filtered_data %>%
   filter(type == 'patch') %>%
@@ -353,7 +354,7 @@ all <- all %>% distinct()
 ignore_rate_by_years(all)
 ignored_by_week(all, 'ignored.overall')
 
-# Create plots for the top-n Linux lists
+# Create plots for the top-n lists
 top_n.list_data <- filtered_data %>% filter(list %in% top_n.lists)
 ignored_by_week(top_n.list_data, 'top_n')
 
