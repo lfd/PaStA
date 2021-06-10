@@ -327,7 +327,7 @@ def load_maintainers_characteristics(config, characteristics_class, clustering,
                                      ids):
     repo = config.repo
 
-    tags = {repo.patch_get_version(repo[x]) for x in clustering.get_downstream()}
+    tags = {repo.patch_get_version(repo[x]) for x in ids}
     maintainers_version = load_maintainers(config, tags)
 
     def _load_characteristics(ret):
@@ -364,7 +364,7 @@ def load_maintainers_characteristics(config, characteristics_class, clustering,
     return characteristics
 
 
-def load_characteristics(config, clustering):
+def load_characteristics(config, clustering, message_ids = None):
     """
     This routine loads characteristics for ALL mails in the time window
     config.mbox_timewindow, and loads multiple instances of maintainers for the
@@ -386,12 +386,12 @@ def load_characteristics(config, clustering):
     # Characteristics need thread information. Ensure it's loaded.
     repo.mbox.load_threads()
 
-    all_messages_in_time_window = repo.mbox.get_ids(config.mbox_time_window,
-                                                    allow_invalid=True)
+    if not message_ids:
+        message_ids = repo.mbox.get_ids(config.mbox_time_window,
+                                        allow_invalid=True)
 
     if config.project_name in _load_characteristics:
         loader, characteristics_class = _load_characteristics[config.project_name]
-        return loader(config, characteristics_class, clustering,
-                      all_messages_in_time_window)
+        return loader(config, characteristics_class, clustering, message_ids)
     else:
         raise NotImplementedError('Missing code for project %s' % config.project_name)
