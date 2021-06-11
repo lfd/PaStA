@@ -13,6 +13,7 @@ the COPYING file in the top-level directory.
 import anytree
 
 from logging import getLogger
+from tqdm import tqdm
 
 from pypasta import *
 from pypasta.MailCharacteristics import PatchType, email_get_from
@@ -36,7 +37,7 @@ def hannover(config, argv):
         commits = f.read().split()
 
     # TBD remove this
-    commits = commits[0:50]
+    #commits = commits[0:500]
 
     downstreams = set()
     for commit in commits:
@@ -54,7 +55,7 @@ def hannover(config, argv):
     mbox = repo.mbox
     threads = mbox.threads
 
-    for commit in commits:
+    for commit in tqdm(commits):
         downstream = clustering.get_downstream(commit)
 
         # filter for regular patches written by humans
@@ -73,7 +74,7 @@ def hannover(config, argv):
 
         for d in downstream:
             thread = threads.get_thread(d, subthread=True)
-            threads.pretty_print(thread)
+            #threads.pretty_print(thread)
 
             if thread.height > max_height:
                 max_height = thread.height
@@ -81,7 +82,6 @@ def hannover(config, argv):
             for node in anytree.PreOrderIter(thread):
                 # Even if we didn't capture the real mail, we can count it
                 mails_total += 1
-
                 msg_id = node.name
 
                 try:
