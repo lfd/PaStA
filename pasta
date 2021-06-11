@@ -32,6 +32,7 @@ from bin.pasta_check_mbox import check_mbox
 from bin.pasta_clusterstats import clusterstats
 from bin.pasta_compare import compare
 from bin.pasta_compare_clusters import compare_clusters
+from bin.pasta_hannover import hannover
 from bin.pasta_maintainers_stats import maintainers_stats
 from bin.pasta_optimise_cluster import optimise_cluster
 from bin.pasta_prepare_evaluation import prepare_evaluation
@@ -75,6 +76,7 @@ def usage(me, exit_code=errno.EINVAL):
           '  check_mbox\n'
           '  compare\n'
           '  form_patchwork_relations\n'
+          '  hannover\n'
           '  maintainers_stats\n'
           '  optimise_cluster\n'
           '  prepare_evaluation\n'
@@ -161,6 +163,8 @@ def main(argv):
         return clusterstats(config, argv)
     elif sub == 'compare':
         return compare(config, argv)
+    elif sub == 'hannover':
+        return hannover(config, argv)
     elif sub == 'prepare_evaluation':
         return prepare_evaluation(config, argv)
     elif sub == 'rate':
