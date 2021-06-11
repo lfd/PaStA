@@ -48,22 +48,25 @@ class LinuxMailCharacteristics (MailCharacteristics):
                   'CREDITS',
                   'Kbuild',
                   'Kconfig',
-                  'README',
                   'MAINTAINERS',
-                  'Makefile']
-    ROOT_DIRS = ['Documentation/',
-                 'LICENSES/',
-                 'arch/',
+                  'Makefile',
+                  'README',
+                  'REPORTING-BUGS',
+    ]
+    ROOT_DIRS = ['arch/',
                  'block/',
                  'certs/',
                  'crypto/',
+                 'Documentation/',
                  'drivers/',
+                 'firmware/',
                  'fs/',
                  'include/',
                  'init/',
                  'ipc/',
                  'kernel/',
                  'lib/',
+                 'LICENSES/',
                  'mm/',
                  'net/',
                  'samples/',
@@ -74,7 +77,8 @@ class LinuxMailCharacteristics (MailCharacteristics):
                  'usr/',
                  'virt/',
                  # not yet merged subsystems
-                 'kunit/']
+                 'kunit/',
+    ]
 
     def _is_stable_review(self):
         if 'X-Mailer' in self.message and \
