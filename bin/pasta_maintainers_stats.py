@@ -156,8 +156,8 @@ def maintainers_stats(config, argv):
                         help='Show sizes (in bytes)')
     parser.add_argument('--filter', type=str,
                         help='Only respect files named in FILTER. The first '
-                             'line of FILTER must contain ther kernel version. '
-                             'All files of the kernel version will be '
+                             'line of FILTER must contain the revision. '
+                             'All files of the revision will be '
                              'considered if --filter is not specified.')
     parser.add_argument('--group-by', type=str, default='sections',
                         choices={'files', 'maintainers', 'sections'},
@@ -183,22 +183,22 @@ def maintainers_stats(config, argv):
 
     repo = config.repo
 
-    kernel_revision = 'HEAD'
+    revision = 'HEAD'
     filter_by_files = list()
     if args.filter:
         filter_by_files = file_to_string(args.filter).splitlines()
-        # The first line of the file must contain a valid kernel version,
-        # tag or commit hash
-        kernel_revision = filter_by_files.pop(0)
+        # The first line of the file must contain a valid revision, tag or
+        # commit hash
+        revision = filter_by_files.pop(0)
 
-    # arguments may override the kernel revision, if it is not already set
+    # arguments may override the revision, if it is not already set
     if args.revision:
-        kernel_revision = args.revision
-    log.info('Working on kernel revision %s' % kernel_revision)
+        revision = args.revision
+    log.info('Working on revision %s' % revision)
 
     all_maintainers = MAINTAINERS(config.d_maintainers_cluster,
-                                  config.project_name, repo, kernel_revision)
-    tree = repo.get_tree(kernel_revision)
+                                  config.project_name, repo, revision)
+    tree = repo.get_tree(revision)
     all_filenames = walk_commit_tree(tree)
     result = list()
 
