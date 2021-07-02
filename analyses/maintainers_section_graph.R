@@ -199,11 +199,7 @@ if (PRINT_CLUSTERS) {
     print(paste0("ITERATION: ", toString(i)))
 
     #dplyr doesn't work that well in lambda-like functions such as which
-    my_in <- function(vertex) {
-      return(vertex %in% group_list)
-    }
-
-    cluster_graph <- igraph::delete_vertices(g, which(!my_in(V(g)$name)))
+    cluster_graph <- igraph::delete_vertices(g, which(!(V(g)$name %in% group_list)))
     if (PRINT_INFORMATION) {
       print_graph_information(cluster_graph)
     }
