@@ -38,14 +38,17 @@ PRINT_DEGREE_INFO <- FALSE
 PRINT_INFORMATION <- FALSE
 DISPLAY_LABELS <- FALSE
 
-CLUSTER_DESTINATION <- file.path(d_resources, 'maintainers_clusters.txt')
-
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  file_name <- file.path(d_resources, 'maintainers_section_graph.csv')
+  file_name <- file.path(d_resources, 'maintainers_section_graph', 'HEAD.csv')
 } else {
   file_name <- args[1]
 }
+
+d_maintainers_cluster <- file.path(d_resources, 'maintainers_cluster')
+dir.create(d_maintainers_cluster, showWarnings = FALSE)
+CLUSTER_DESTINATION <- file.path(d_maintainers_cluster,
+                                 gsub(".csv$", ".txt", basename(file_name)))
 
 data_frame <- read_csv(file_name)
 data_frame$weight <- data_frame$lines

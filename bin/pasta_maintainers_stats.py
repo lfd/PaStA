@@ -233,8 +233,10 @@ def maintainers_stats(config, argv):
     file_map = dict(file_map)
 
     if args.mode == 'graph':
-        generate_graph(all_maintainers, file_map, filter_by_files,
-                       config.f_maintainers_section_graph)
+        os.makedirs(config.d_maintainers_section_graph, exist_ok=True)
+        filename = os.path.join(config.d_maintainers_section_graph,
+                                '%s.csv' % revision)
+        generate_graph(all_maintainers, file_map, filter_by_files, filename)
         return
 
     # An object is the kind of the analysis, and reflects the target. A target

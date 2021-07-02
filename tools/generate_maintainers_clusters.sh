@@ -22,5 +22,4 @@ for tag in $tags; do
 		continue
 	fi
 	./pasta maintainers_stats --mode graph --revision $tag
-	mv $RES/maintainers_clusters.txt $CLSTRS/${tag}.txt
 done
