@@ -49,7 +49,8 @@ RUN apt install -y --no-install-recommends \
 RUN pip3 --no-cache-dir install \
 	dateparser \
 	flask-bootstrap \
-	flask-nav anytree
+	flask-nav anytree \
+	Levenshtein
 
 RUN R -e "install.packages(c('assertthat', 'dplyr', 'ggplot2', 'igraph', 'lubridate', 'reshape2', 'RColorBrewer', 'tikzDevice'), clean = TRUE)"
 
