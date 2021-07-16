@@ -1,4 +1,4 @@
-# Copyright (c) OTH Regensburg, 2017-2018
+# Copyright (c) OTH Regensburg, 2017-2021
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -6,7 +6,7 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-FROM ubuntu:20.04
+FROM ubuntu:21.04
 
 MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 
