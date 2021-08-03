@@ -76,7 +76,7 @@ class MailCharacteristics:
     BOTS = {'tip-bot2@linutronix.de', 'tipbot@zytor.com',
             'noreply@ciplatform.org', 'patchwork@emeril.freedesktop.org'}
     POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
-    PROCESSES = ['linux-next', 'git pull', 'rfc']
+    PROCESSES = ['linux-next', 'git pull', 'rfc', '[PULL]']
 
     @staticmethod
     def dump_release_info(config):
@@ -171,11 +171,30 @@ class MailCharacteristics:
         if self.is_next and 'sfr@canb.auug.org.au' in email:
             return True
 
+        # Github Bot
+        if 'noreply@github.com' in email:
+            return True
+
+        # Buildroot's daily results bot
+        if '[autobuild.buildroot.net] Daily results' in subject:
+            return True
+
+        # Buildroot's daily results bot
+        if 'oe-core cve metrics' in subject.lower():
+            return True
+
         return False
 
     def _integrated_correct(self, repo, maintainers_version):
+        if self.first_upstream in repo:
+            upstream = repo[self.first_upstream]
+            self.committer = upstream.committer.name.lower()
+
         if maintainers_version is None:
             return
+
+        # stuff for maintainers analysis
+        self.maintainers = dict()
 
         maintainers = maintainers_version[self.version]
         sections = maintainers.get_sections_by_files(self.patch.diff.affected)
@@ -197,8 +216,6 @@ class MailCharacteristics:
         # integrated by a maintainer that is responsible for a section that is
         # affected by the patch. IOW: The field indicates if the patch was
         # picked by the "correct" maintainer
-        upstream = repo[self.first_upstream]
-        self.committer = upstream.committer.name.lower()
         self.integrated_correct = False
         self.integrated_xcorrect = False
         sections = maintainers.get_sections_by_files(upstream.diff.affected)
@@ -236,6 +253,9 @@ class MailCharacteristics:
                 break
 
     def list_matches_patch(self, list):
+        if not self.maintainers:
+            return None
+
         for lists, _, _ in self.maintainers.values():
             if list in lists:
                 return True
@@ -262,7 +282,7 @@ class MailCharacteristics:
         self.lists = repo.mbox.get_lists(message_id)
 
         # stuff for maintainers analysis
-        self.maintainers = dict()
+        self.maintainers = None
 
         # Patch characteristics
         self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
@@ -327,11 +347,13 @@ def load_maintainers_characteristics(config, characteristics_class, clustering,
                                      ids):
     repo = config.repo
 
-    # We can safely limit to patches only, as only patches will be used for the
-    # maintainers analysis.
-    patches = ids - repo.mbox.invalid
-    tags = {repo.patch_get_version(repo[x]) for x in patches}
-    maintainers_version = load_maintainers(config, tags)
+    maintainers_version = None
+    if characteristics_class.HAS_MAINTAINERS:
+        # We can safely limit to patches only, as only patches will be used for the
+        # maintainers analysis.
+        patches = ids - repo.mbox.invalid
+        tags = {repo.patch_get_version(repo[x]) for x in patches}
+        maintainers_version = load_maintainers(config, tags)
 
     def _load_characteristics(ret):
         if ret is None:
@@ -373,11 +395,13 @@ def load_characteristics(config, clustering, message_ids = None):
     config.mbox_timewindow, and loads multiple instances of maintainers for the
     patches of the clustering.
     """
+    from .JailhouseMailCharacteristics import JailhouseMailCharacteristics
     from .LinuxMailCharacteristics import LinuxMailCharacteristics
     from .QemuMailCharacteristics import QemuMailCharacteristics
     from .UBootMailCharacteristics import UBootMailCharacteristics
     from .XenMailCharacteristics import XenMailCharacteristics
     _load_characteristics = {
+        'jailhouse': (load_maintainers_characteristics, JailhouseMailCharacteristics),
         'linux': (load_maintainers_characteristics, LinuxMailCharacteristics),
         'qemu': (load_maintainers_characteristics, QemuMailCharacteristics),
         'u-boot': (load_maintainers_characteristics, UBootMailCharacteristics),
