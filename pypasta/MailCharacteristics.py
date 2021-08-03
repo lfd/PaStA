@@ -76,7 +76,7 @@ class MailCharacteristics:
     BOTS = {'tip-bot2@linutronix.de', 'tipbot@zytor.com',
             'noreply@ciplatform.org', 'patchwork@emeril.freedesktop.org'}
     POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
-    PROCESSES = ['linux-next', 'git pull', 'rfc']
+    PROCESSES = ['linux-next', 'git pull', 'rfc', '[PULL]']
 
     @staticmethod
     def dump_release_info(config):
@@ -169,6 +169,18 @@ class MailCharacteristics:
 
         # Stephen Rothwell's automated emails (TBD: generates false positives)
         if self.is_next and 'sfr@canb.auug.org.au' in email:
+            return True
+
+        # Github Bot
+        if 'noreply@github.com' in email:
+            return True
+
+        # Buildroot's daily results bot
+        if '[autobuild.buildroot.net] Daily results' in subject:
+            return True
+
+        # Buildroot's daily results bot
+        if 'oe-core cve metrics' in subject.lower():
             return True
 
         return False
