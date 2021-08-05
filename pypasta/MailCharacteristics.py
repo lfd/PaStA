@@ -323,13 +323,37 @@ def _load_mail_characteristic(message_id):
                                               _clustering, message_id)
 
 
-def load_maintainers_characteristics(config, characteristics_class, clustering,
-                                     ids):
+def load_characteristics(config, clustering, message_ids = None):
+    """
+    This routine loads characteristics for ALL mails in the time window
+    config.mbox_timewindow, and loads multiple instances of maintainers for the
+    patches of the clustering.
+    """
+    from .LinuxMailCharacteristics import LinuxMailCharacteristics
+    from .QemuMailCharacteristics import QemuMailCharacteristics
+    from .UBootMailCharacteristics import UBootMailCharacteristics
+    from .XenMailCharacteristics import XenMailCharacteristics
+    _characteristics_classes = {
+        'linux': LinuxMailCharacteristics,
+        'qemu': QemuMailCharacteristics,
+        'u-boot': UBootMailCharacteristics,
+        'xen': XenMailCharacteristics,
+    }
+
+    if config.project_name not in _characteristics_classes:
+        raise NotImplementedError('Missing code for project %s' % config.project_name)
+
+    # Characteristics need thread information. Ensure it's loaded.
     repo = config.repo
+    repo.mbox.load_threads()
+
+    if not message_ids:
+        message_ids = repo.mbox.get_ids(config.mbox_time_window,
+                                        allow_invalid=True)
 
     # We can safely limit to patches only, as only patches will be used for the
     # maintainers analysis.
-    patches = ids - repo.mbox.invalid
+    patches = message_ids - repo.mbox.invalid
     tags = {repo.patch_get_version(repo[x]) for x in patches}
     maintainers_version = load_maintainers(config, tags)
 
@@ -337,7 +361,7 @@ def load_maintainers_characteristics(config, characteristics_class, clustering,
         if ret is None:
             ret = dict()
 
-        missing = ids - ret.keys()
+        missing = message_ids - ret.keys()
         if len(missing) == 0:
             return ret, False
 
@@ -345,7 +369,8 @@ def load_maintainers_characteristics(config, characteristics_class, clustering,
         _maintainers_version = maintainers_version
         _clustering = clustering
         _repo = repo
-        _characteristics_class = characteristics_class
+        _characteristics_class = _characteristics_classes[config.project_name]
+
         p = Pool(processes=int(0.25*cpu_count()), maxtasksperchild=4)
 
         missing = p.map(_load_mail_characteristic, missing, chunksize=1000)
@@ -366,35 +391,3 @@ def load_maintainers_characteristics(config, characteristics_class, clustering,
 
     return characteristics
 
-
-def load_characteristics(config, clustering, message_ids = None):
-    """
-    This routine loads characteristics for ALL mails in the time window
-    config.mbox_timewindow, and loads multiple instances of maintainers for the
-    patches of the clustering.
-    """
-    from .LinuxMailCharacteristics import LinuxMailCharacteristics
-    from .QemuMailCharacteristics import QemuMailCharacteristics
-    from .UBootMailCharacteristics import UBootMailCharacteristics
-    from .XenMailCharacteristics import XenMailCharacteristics
-    _load_characteristics = {
-        'linux': (load_maintainers_characteristics, LinuxMailCharacteristics),
-        'qemu': (load_maintainers_characteristics, QemuMailCharacteristics),
-        'u-boot': (load_maintainers_characteristics, UBootMailCharacteristics),
-        'xen': (load_maintainers_characteristics, XenMailCharacteristics),
-    }
-
-    repo = config.repo
-
-    # Characteristics need thread information. Ensure it's loaded.
-    repo.mbox.load_threads()
-
-    if not message_ids:
-        message_ids = repo.mbox.get_ids(config.mbox_time_window,
-                                        allow_invalid=True)
-
-    if config.project_name in _load_characteristics:
-        loader, characteristics_class = _load_characteristics[config.project_name]
-        return loader(config, characteristics_class, clustering, message_ids)
-    else:
-        raise NotImplementedError('Missing code for project %s' % config.project_name)
