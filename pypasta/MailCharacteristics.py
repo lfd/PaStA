@@ -76,7 +76,7 @@ class MailCharacteristics:
     BOTS = {'tip-bot2@linutronix.de', 'tipbot@zytor.com',
             'noreply@ciplatform.org', 'patchwork@emeril.freedesktop.org'}
     POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
-    PROCESSES = ['linux-next', 'git pull', 'rfc']
+    PROCESSES = ['linux-next', 'git pull', 'rfc', '[pull]']
 
     # Assume that the project does not have a MAINTAINERS by default.
     HAS_MAINTAINERS = False
@@ -172,6 +172,15 @@ class MailCharacteristics:
 
         # Stephen Rothwell's automated emails (TBD: generates false positives)
         if self.is_next and 'sfr@canb.auug.org.au' in email:
+            return True
+
+        # Github Bot
+        if 'noreply@github.com' in email:
+            return True
+
+        # Buildroot's daily results bot
+        if '[autobuild.buildroot.net] daily results' in subject or \
+           'oe-core cve metrics' in subject:
             return True
 
         return False
