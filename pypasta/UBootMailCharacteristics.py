@@ -101,6 +101,8 @@ class UBootMailCharacteristics(MailCharacteristics):
                   'sparc_config.mk',
     ]
 
+    HAS_MAINTAINERS = True
+
     # Additional lists that are not known by pasta
     LISTS = set()
 

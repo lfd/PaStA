@@ -80,6 +80,8 @@ class LinuxMailCharacteristics (MailCharacteristics):
                  'kunit/',
     ]
 
+    HAS_MAINTAINERS = True
+
     def _is_stable_review(self):
         if 'X-Mailer' in self.message and \
            'LinuxStableQueue' in self.message['X-Mailer']:

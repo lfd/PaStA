@@ -52,6 +52,8 @@ class XenMailCharacteristics(MailCharacteristics):
                   'version.sh',
     ]
 
+    HAS_MAINTAINERS = True
+
     # Additional lists that are not known by pasta
     LISTS = {'osstest-admin@xenproject.org',
              'security@xen.org',

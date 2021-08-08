@@ -78,6 +78,9 @@ class MailCharacteristics:
     POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
     PROCESSES = ['linux-next', 'git pull', 'rfc']
 
+    # Assume that the project does not have a MAINTAINERS by default.
+    HAS_MAINTAINERS = False
+
     @staticmethod
     def dump_release_info(config):
         relevant_releases = [
@@ -177,6 +180,9 @@ class MailCharacteristics:
         if maintainers_version is None:
             return
 
+        # stuff for maintainers analysis
+        self.maintainers = dict()
+
         maintainers = maintainers_version[self.version]
         sections = maintainers.get_sections_by_files(self.patch.diff.affected)
         for section in sections:
@@ -192,16 +198,14 @@ class MailCharacteristics:
             _, s_maintainers, _ = maintainers.get_maintainers(section)
             return committer in [name for name, mail in s_maintainers]
 
-        # In case the patch was integrated, fill the fields committer and
-        # integrated_correct. integrated_correct indicates if the patch was
-        # integrated by a maintainer that is responsible for a section that is
-        # affected by the patch. IOW: The field indicates if the patch was
-        # picked by the "correct" maintainer
-        upstream = repo[self.first_upstream]
-        self.committer = upstream.committer.name.lower()
+        # If the patch was integrated, fill the field integrated_(x)correct.
+        # integrated_(x)correct indicates if the patch was integrated by a
+        # maintainer that is responsible for a section that is affected by the
+        # patch. IOW: The field indicates if the patch was picked by the
+        # "correct" maintainer
         self.integrated_correct = False
         self.integrated_xcorrect = False
-        sections = maintainers.get_sections_by_files(upstream.diff.affected)
+        sections = maintainers.get_sections_by_files(self.upstream.diff.affected)
         for section in sections:
             if check_maintainer(section, self.committer):
                 self.integrated_correct = True
@@ -236,6 +240,9 @@ class MailCharacteristics:
                 break
 
     def list_matches_patch(self, list):
+        if not self.maintainers:
+            return None
+
         for lists, _, _ in self.maintainers.values():
             if list in lists:
                 return True
@@ -244,6 +251,7 @@ class MailCharacteristics:
     def _cleanup(self):
         del self.message
         del self.patch
+        del self.upstream
 
     def __init__(self, repo, clustering, message_id):
         self.message_id = message_id
@@ -262,7 +270,7 @@ class MailCharacteristics:
         self.lists = repo.mbox.get_lists(message_id)
 
         # stuff for maintainers analysis
-        self.maintainers = dict()
+        self.maintainers = None
 
         # Patch characteristics
         self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
@@ -271,6 +279,7 @@ class MailCharacteristics:
         self.patches_project = False
         self.has_foreign_response = None
         self.first_upstream = None
+        self.upstream = None
         self.committer = None
         self.integrated_correct = None
         self.integrated_xcorrect = None
@@ -316,6 +325,10 @@ class MailCharacteristics:
         self.version = repo.patch_get_version(self.patch)
 
         self.first_upstream = get_first_upstream(repo, clustering, message_id)
+        if self.first_upstream:
+            # In case the patch was integrated, fill the field committer
+            self.upstream = repo[self.first_upstream]
+            self.committer = self.upstream.committer.name.lower()
 
 
 def _load_mail_characteristic(message_id):
@@ -351,11 +364,13 @@ def load_characteristics(config, clustering, message_ids = None):
         message_ids = repo.mbox.get_ids(config.mbox_time_window,
                                         allow_invalid=True)
 
-    # We can safely limit to patches only, as only patches will be used for the
-    # maintainers analysis.
-    patches = message_ids - repo.mbox.invalid
-    tags = {repo.patch_get_version(repo[x]) for x in patches}
-    maintainers_version = load_maintainers(config, tags)
+    maintainers_version = None
+    if _characteristics_classes[config.project_name].HAS_MAINTAINERS:
+        # We can safely limit to patches only, as only patches will be used for the
+        # maintainers analysis.
+        patches = message_ids - repo.mbox.invalid
+        tags = {repo.patch_get_version(repo[x]) for x in patches}
+        maintainers_version = load_maintainers(config, tags)
 
     def _load_characteristics(ret):
         if ret is None:

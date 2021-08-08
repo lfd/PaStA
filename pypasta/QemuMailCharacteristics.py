@@ -509,6 +509,8 @@ class QemuMailCharacteristics(MailCharacteristics):
                   'xtensa-semi.c',
     ]
 
+    HAS_MAINTAINERS = True
+
     # Additional lists that are not known by pasta
     LISTS = set()
 
