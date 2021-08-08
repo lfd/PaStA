@@ -31,6 +31,7 @@ log = getLogger(__name__[-15:])
 _tmp_repo = None
 
 mainline_regex = {
+    'jailhouse': re.compile(r'^v.*$'),
     'linux': re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$'),
     'qemu': re.compile(r'^v.*$'),
     'u-boot': re.compile(r'^v201.*$'),
