@@ -69,5 +69,4 @@ class XenMailCharacteristics(MailCharacteristics):
         self._cleanup(maintainers_version)
 
     def __init(self):
-        if self.is_from_bot:
-            self.type = PatchType.BOT
+        pass

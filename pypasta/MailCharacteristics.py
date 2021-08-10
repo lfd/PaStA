@@ -318,36 +318,38 @@ class MailCharacteristics:
 
         self.is_from_bot = self._is_from_bot()
 
-        if not self.is_patch:
-            return
+        if self.is_patch:
+            self.patch = repo[message_id]
+            # We must only analyse foreign responses of patches if the patch is
+            # the first patch in a thread. Otherwise, we might not be able to
+            # determine the original author of a thread. Reason: That mail
+            # might be missing.
+            if self.is_first_patch_in_thread:
+                self.has_foreign_response = self._has_foreign_response(repo)
+            elif self.type == PatchType.OTHER:
+                self.type = PatchType.NOT_FIRST
 
-        self.patch = repo[message_id]
+            self.process_mail = True in [process in self.subject for process in self.PROCESSES]
+            if self.process_mail:
+                self.type = PatchType.PROCESS
 
-        # We must only analyse foreign responses of patches if the patch is
-        # the first patch in a thread. Otherwise, we might not be able to
-        # determine the original author of a thread. Reason: That mail
-        # might be missing.
-        if self.is_first_patch_in_thread:
-            self.has_foreign_response = self._has_foreign_response(repo)
-        elif self.type == PatchType.OTHER:
-            self.type = PatchType.NOT_FIRST
+            self.patches_project = self._patches_project()
+            if not self.patches_project:
+                self.type = PatchType.NOT_PROJECT
+            # Even if the patch does not patch Linux, we can assign it to a
+            # appropriate version
+            self.version = repo.patch_get_version(self.patch)
 
-        self.process_mail = True in [process in self.subject for process in self.PROCESSES]
-        if self.process_mail:
-            self.type = PatchType.PROCESS
+            self.first_upstream = get_first_upstream(repo, clustering, message_id)
+            if self.first_upstream:
+                # In case the patch was integrated, fill the field committer
+                self.upstream = repo[self.first_upstream]
+                self.committer = self.upstream.committer.name.lower()
 
-        self.patches_project = self._patches_project()
-        if not self.patches_project:
-            self.type = PatchType.NOT_PROJECT
-        # Even if the patch does not patch Linux, we can assign it to a
-        # appropriate version
-        self.version = repo.patch_get_version(self.patch)
-
-        self.first_upstream = get_first_upstream(repo, clustering, message_id)
-        if self.first_upstream:
-            # In case the patch was integrated, fill the field committer
-            self.upstream = repo[self.first_upstream]
-            self.committer = self.upstream.committer.name.lower()
+        # Messages can be received by bots, or linux-next, even if they
+        # don't contain patches
+        if self.is_from_bot:
+            self.type = PatchType.BOT
 
 
 def _load_mail_characteristic(message_id):

@@ -130,14 +130,9 @@ class LinuxMailCharacteristics (MailCharacteristics):
 
     def __init(self):
         self.is_stable_review = False
-
         self.is_next = self._is_next()
 
-        # Messages can be received by bots, or linux-next, even if they
-        # don't contain patches
-        if self.is_from_bot:
-            self.type = PatchType.BOT
-        elif self.is_next:
+        if (not self.is_from_bot) and self.is_next:
             self.type = PatchType.NEXT
 
         if not self.is_patch:
