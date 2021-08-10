@@ -264,6 +264,14 @@ class MailCharacteristics:
         del self.patch
         del self.upstream
 
+        if not self.is_patch:
+            return
+
+        # Now we can say it's a regular patch, if we stilll have the type 'other'
+        if self.type == PatchType.OTHER:
+            self.type = PatchType.PATCH
+
+
     def __init__(self, repo, clustering, message_id):
         self.message_id = message_id
 

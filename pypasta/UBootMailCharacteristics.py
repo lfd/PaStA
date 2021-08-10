@@ -114,9 +114,3 @@ class UBootMailCharacteristics(MailCharacteristics):
     def __init(self):
         if self.is_from_bot:
             self.type = PatchType.BOT
-
-        if not self.is_patch:
-            return
-
-        if self.type == PatchType.OTHER:
-            self.type = PatchType.PATCH

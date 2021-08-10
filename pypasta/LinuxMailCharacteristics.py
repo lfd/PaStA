@@ -146,11 +146,3 @@ class LinuxMailCharacteristics (MailCharacteristics):
         self.is_stable_review = self._is_stable_review()
         if self.is_stable_review:
             self.type = PatchType.STABLE
-
-        # Exit, if we don't patch Linux
-        if not self.patches_project:
-            return
-
-        # Now we can say it's a regular patch, if we still have the type 'other'
-        if self.type == PatchType.OTHER:
-            self.type = PatchType.PATCH
