@@ -516,10 +516,10 @@ class QemuMailCharacteristics(MailCharacteristics):
 
     def __init__(self, repo, maintainers_version, clustering, message_id):
         super().__init__(repo, clustering, message_id)
-        self.__init(repo, maintainers_version)
-        self._cleanup()
+        self.__init()
+        self._cleanup(maintainers_version)
 
-    def __init(self, repo, maintainers_version):
+    def __init(self):
         if self.is_from_bot:
             self.type = PatchType.BOT
 
@@ -528,5 +528,3 @@ class QemuMailCharacteristics(MailCharacteristics):
 
         if self.type == PatchType.OTHER:
             self.type = PatchType.PATCH
-
-        self._integrated_correct(repo, maintainers_version)

@@ -125,10 +125,10 @@ class LinuxMailCharacteristics (MailCharacteristics):
 
     def __init__(self, repo, maintainers_version, clustering, message_id):
         super().__init__(repo, clustering, message_id)
-        self.__init(repo, maintainers_version)
-        self._cleanup()
+        self.__init()
+        self._cleanup(maintainers_version)
 
-    def __init(self, repo, maintainers_version):
+    def __init(self):
         self.is_stable_review = False
 
         self.is_next = self._is_next()
@@ -154,5 +154,3 @@ class LinuxMailCharacteristics (MailCharacteristics):
         # Now we can say it's a regular patch, if we still have the type 'other'
         if self.type == PatchType.OTHER:
             self.type = PatchType.PATCH
-
-        self._integrated_correct(repo, maintainers_version)

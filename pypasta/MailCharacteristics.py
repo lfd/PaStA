@@ -176,7 +176,7 @@ class MailCharacteristics:
 
         return False
 
-    def _integrated_correct(self, repo, maintainers_version):
+    def _integrated_correct(self, maintainers_version):
         if maintainers_version is None:
             return
 
@@ -248,7 +248,9 @@ class MailCharacteristics:
                 return True
         return False
 
-    def _cleanup(self):
+    def _cleanup(self, maintainers_version):
+        self._integrated_correct(maintainers_version)
+
         del self.message
         del self.patch
         del self.upstream
