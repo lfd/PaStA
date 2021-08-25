@@ -370,6 +370,7 @@ def load_characteristics(config, clustering, message_ids = None):
     config.mbox_timewindow, and loads multiple instances of maintainers for the
     patches of the clustering.
     """
+    from .DPDKMailCharacteristics import DPDKMailCharacteristics
     from .GitMailCharacteristics import GitMailCharacteristics
     from .JailhouseMailCharacteristics import JailhouseMailCharacteristics
     from .LinuxMailCharacteristics import LinuxMailCharacteristics
@@ -377,6 +378,7 @@ def load_characteristics(config, clustering, message_ids = None):
     from .UBootMailCharacteristics import UBootMailCharacteristics
     from .XenMailCharacteristics import XenMailCharacteristics
     _characteristics_classes = {
+        'dpdk': DPDKMailCharacteristics,
         'git': GitMailCharacteristics,
         'jailhouse': JailhouseMailCharacteristics,
         'linux': LinuxMailCharacteristics,
