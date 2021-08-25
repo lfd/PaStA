@@ -31,6 +31,7 @@ log = getLogger(__name__[-15:])
 _tmp_repo = None
 
 mainline_regex = {
+    'buildroot': re.compile(r'^(\d{4}\.\d{2})(_rc\d+)?$'),
     'dpdk': re.compile(r'^v\d+\.\d+.*$'),
     'git': re.compile(r'^v\d+\.\d+.*$'),
     'jailhouse': re.compile(r'^v.*$'),
