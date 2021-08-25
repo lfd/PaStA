@@ -10,7 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-from .MailCharacteristics import MailCharacteristics, PatchType
+from .MailCharacteristics import MailCharacteristics
 
 
 class JailhouseMailCharacteristics(MailCharacteristics):
