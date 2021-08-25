@@ -375,6 +375,7 @@ def load_characteristics(config, clustering, message_ids = None):
     from .GitMailCharacteristics import GitMailCharacteristics
     from .JailhouseMailCharacteristics import JailhouseMailCharacteristics
     from .LinuxMailCharacteristics import LinuxMailCharacteristics
+    from .OpenembeddedMailCharacteristics import OpenembeddedMailCharacteristics
     from .QemuMailCharacteristics import QemuMailCharacteristics
     from .UBootMailCharacteristics import UBootMailCharacteristics
     from .XenMailCharacteristics import XenMailCharacteristics
@@ -384,6 +385,7 @@ def load_characteristics(config, clustering, message_ids = None):
         'git': GitMailCharacteristics,
         'jailhouse': JailhouseMailCharacteristics,
         'linux': LinuxMailCharacteristics,
+        'openembedded': OpenembeddedMailCharacteristics,
         'qemu': QemuMailCharacteristics,
         'u-boot': UBootMailCharacteristics,
         'xen': XenMailCharacteristics,

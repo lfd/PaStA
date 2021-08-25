@@ -36,6 +36,7 @@ mainline_regex = {
     'git': re.compile(r'^v\d+\.\d+.*$'),
     'jailhouse': re.compile(r'^v.*$'),
     'linux': re.compile(r'^v(\d+\.\d+|2\.6\.\d+)(-rc\d+)?$'),
+    'openembedded': re.compile('^(\d{4}-\d+)(\.\d+)?(-[a-z]+)$'),
     'qemu': re.compile(r'^v.*$'),
     'u-boot': re.compile(r'^v201.*$'),
     'xen': re.compile(r'^(RELEASE-)?\d+\.\d+\.0.*$'),
