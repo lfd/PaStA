@@ -370,12 +370,14 @@ def load_characteristics(config, clustering, message_ids = None):
     config.mbox_timewindow, and loads multiple instances of maintainers for the
     patches of the clustering.
     """
+    from .GitMailCharacteristics import GitMailCharacteristics
     from .JailhouseMailCharacteristics import JailhouseMailCharacteristics
     from .LinuxMailCharacteristics import LinuxMailCharacteristics
     from .QemuMailCharacteristics import QemuMailCharacteristics
     from .UBootMailCharacteristics import UBootMailCharacteristics
     from .XenMailCharacteristics import XenMailCharacteristics
     _characteristics_classes = {
+        'git': GitMailCharacteristics,
         'jailhouse': JailhouseMailCharacteristics,
         'linux': LinuxMailCharacteristics,
         'qemu': QemuMailCharacteristics,
