@@ -1,0 +1,46 @@
+From 3b70e9141fa7e8ed89cf35864552aefd391598d9 Mon Sep 17 00:00:00 2001
+From: Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+Date: Sun, 6 Mar 2022 23:56:12 +0100
+Subject: [PATCH] RANDOMISE_CLUSTERS
+
+---
+ pypasta/MAINTAINERS.py | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/pypasta/MAINTAINERS.py b/pypasta/MAINTAINERS.py
+index 934e087..cd7c22f 100644
+--- a/pypasta/MAINTAINERS.py
++++ b/pypasta/MAINTAINERS.py
+@@ -14,6 +14,7 @@ import csv
+ import networkx as nx
+ import os
+ import pygit2
++import random
+ import re
+ 
+ from collections import Counter, defaultdict
+@@ -462,6 +463,21 @@ class MAINTAINERS:
+             self.cluster = list()
+             for value in tmp.values():
+                 self.cluster.append(value)
++
++            all_sections = set()
++            lengths = list()
++            for cluster in self.cluster:
++                all_sections |= cluster
++                lengths.append(len(cluster))
++
++            self.cluster = list()
++            for l in lengths:
++                p = set(random.sample(list(all_sections), l))
++                all_sections -= p
++                self.cluster.append(p)
++
++            for cluster in self.cluster:
++                print(cluster)
+         else:
+             log.warning('No MAINTAINERS cluster for %s' % revision)
+ 
+-- 
+2.32.0
+

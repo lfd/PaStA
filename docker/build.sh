@@ -28,6 +28,21 @@ case $type in
 "linux")
 	build_container base
 	;;
+"fse22-stage1")
+	build_container base
+	build_container linux
+	;;
+"fse22-stage2")
+	build_container base
+	build_container linux
+	build_container fse22-stage1
+	;;
+"fse22-stage3")
+	build_container base
+	build_container linux
+	build_container fse22-stage1
+	build_container fse22-stage2
+	;;
 "icse-artifact")
 	build_container base
 	build_container linux

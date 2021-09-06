@@ -22,8 +22,8 @@ d_maintainers_section <- file.path(d_resources, 'maintainers_section_graph')
 d_maintainers_cluster <- file.path(d_resources, 'maintainers_cluster')
 d_maintainers_cluster_img <- file.path(d_resources, 'maintainers_cluster_img')
 
-WIDTH <- 6.3
-HEIGHT <- 5
+WIDTH <- 7
+HEIGHT <- 3.5
 
 my.theme <- theme_bw(base_size = 8) +
             theme(legend.position = "top")
@@ -47,7 +47,11 @@ printplot <- function(p, filename, ...) {
   #plot(p, ...)
   #dev.off()
 
-  tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT, sanitize=TRUE, standAlone = TRUE)
+  tikz(paste0(filename, '_standalone.tex'), width = WIDTH, height = HEIGHT, sanitize=TRUE, standAlone = TRUE)
+  plot(p, ...)
+  dev.off()
+
+  tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT, sanitize=TRUE, standAlone = FALSE)
   plot(p, ...)
   dev.off()
 }

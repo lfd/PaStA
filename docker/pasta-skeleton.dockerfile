@@ -22,11 +22,15 @@ RUN apt install -y --no-install-recommends \
 	gfortran \
 	git \
 	libblas-dev \
+	libcurl4-openssl-dev \
 	libfontconfig1-dev \
 	liblapack-dev \
 	libpng-dev \
 	locales \
 	patchutils \
+	pbzip2 \
+	pdftk \
+	poppler-utils \
 	procmail \
 	python3-dev \
 	python3-fuzzywuzzy \
@@ -62,4 +66,4 @@ ENV R_LIBS_USER /home/pasta/R/
 RUN mkdir -p $HOME/.R $R_LIBS_USER
 RUN echo MAKEFLAGS = -j$(($(nproc)/4)) > ~/.R/Makevars
 
-RUN R -e "install.packages(c('assertthat', 'dplyr', 'ggplot2', 'ggraph', 'igraph', 'lubridate', 'reshape2', 'RColorBrewer', 'tikzDevice'), Ncpus = 4, clean = TRUE, lib = '${R_LIBS_USER}')"
+RUN R -e "install.packages(c('assertthat', 'cowplot', 'dplyr', 'ggplot2', 'ggraph', 'graphlayouts', 'igraph', 'ineq', 'lubridate', 'reshape2', 'RColorBrewer', 'tikzDevice', 'TSdist', 'zoo'), Ncpus = 4, clean = TRUE, lib = '${R_LIBS_USER}')"

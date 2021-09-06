@@ -1,0 +1,8 @@
+Ralf:
+  - Add git tag for linux/2011 resources package
+  - Pin PaStA Repository to latest working commit
+  - Address all FIXMEs
+
+Pia:
+  - Add automated generation of graphs <- tikz standalone + non-standalone
+  - Linux: nach tools/analyse_project verschieben + Sonderlocke für Linux
