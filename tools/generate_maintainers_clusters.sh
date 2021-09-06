@@ -17,10 +17,9 @@ if [[ $project == "linux" ]]; then
 elif [[ $project == "u-boot" ]]; then
 	tags=$(git -C $repo tag --list | grep "^v20[12]" | grep -v "^v201[0123]" | grep -v "^v2014\.0[147]" | grep -v "v2014\.10-rc1")
 elif [[ $project == "xen" ]]; then
-	tags=$(git -C $repo tag --list | grep -v "^3" | grep -v "^4\.0\." | grep -v "RELEASE-[23]" | grep -P "^\d|R")
+	tags=$(git -C $repo tag --list | grep -v "^3" | grep -v "^\(RELEASE-\)\?4\.0\." | grep -v "RELEASE-[23]" | grep -P "^\d|R")
 elif [[ $project == "qemu" ]]; then
-	tags=$(git -C $repo tag --list | grep -v "^release" | grep -v "^v0\.[123456789]\." | grep -v "^v0\.1[0123]\.")
-	echo $tags
+	tags=$(git -C $repo tag --list | grep -v "^release" | grep -v "^v0\.[123456789]\." | grep -v "^v0\.1[0123]\." | grep -v "initial")
 fi
 
 RES="resources/$project/resources"
