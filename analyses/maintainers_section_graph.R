@@ -22,8 +22,8 @@ EDGE_QUANTILE <- '0%'
 
 PALETTE <- c('#D83359','#979CFB','#f46d43','#fdae61','#fee090','#ffffbf','#e0f3f8','#abd9e9','#74add1','#4575b4','#d73027')
 
-PRINT_ENTIRE_GRAPH <- TRUE
-PRINT_CLUSTERS <- TRUE
+PRINT_ENTIRE_GRAPH <- FALSE
+PRINT_CLUSTERS <- FALSE
 
 VERTEX_SIZE <- 0.5
 LABEL_SIZE <- 0.6
@@ -43,6 +43,18 @@ if (length(args) == 0) {
   file_name <- file.path(d_resources, 'maintainers_section_graph', 'HEAD.csv')
 } else {
   file_name <- args[1]
+}
+
+if ("--print-entire-graph" %in% args) {
+	PRINT_ENTIRE_GRAPH <- TRUE
+}
+
+if ("--print-clusters" %in% args) {
+	PRINT_CLUSTERS <- TRUE
+}
+
+if ("--print-degree-info" %in% args) {
+	PRINT_DEGREE_INFO <- TRUE
 }
 
 d_maintainers_cluster <- file.path(d_resources, 'maintainers_cluster')
