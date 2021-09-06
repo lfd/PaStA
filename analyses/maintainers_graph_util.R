@@ -69,7 +69,7 @@ maintainers_section_graph_ggraph <- function(project, file_name, file_map_name, 
   if (project == 'qemu') {
     section_the_rest <- which(grepl("General Project Administration", V(g)$name))
   }
-  g <- igraph::delete.vertices(g, section_the_rest)
+  g <- igraph::delete_vertices(g, section_the_rest)
   file_map$sections <- file_map$sections %>% lapply(function(x) substr(x, 2, nchar(x)-1)) %>%
     lapply(function(x) x[x != section_the_rest])
 
@@ -78,7 +78,7 @@ maintainers_section_graph_ggraph <- function(project, file_name, file_map_name, 
     assertthat::are_equal(head_of(g, E(g)[e]), tail_of(g, E(g)[e]))
     my_vertex <- head_of(g, E(g)[e])
     edge_weight <- E(g)[e]$weight
-    g <- igraph::set.vertex.attribute(g, "size", my_vertex, edge_weight)
+    g <- igraph::set_vertex_attr(g, "size", my_vertex, edge_weight)
   }
 
   quantile_step <- "50%"
@@ -133,7 +133,7 @@ maintainers_section_graph <- function(project, file_name, file_map_name, cluster
   if (project == 'qemu') {
     section_the_rest <- which(grepl("General Project Administration", V(g)$name))
   }
-  g <- igraph::delete.vertices(g, section_the_rest)
+  g <- igraph::delete_vertices(g, section_the_rest)
   file_map$sections <- file_map$sections %>% lapply(function(x) substr(x, 2, nchar(x)-1)) %>%
     lapply(function(x) x[x != section_the_rest])
 
@@ -142,13 +142,13 @@ maintainers_section_graph <- function(project, file_name, file_map_name, cluster
     assertthat::are_equal(head_of(g, E(g)[e]), tail_of(g, E(g)[e]))
     my_vertex <- head_of(g, E(g)[e])
     edge_weight <- E(g)[e]$weight
-    g <- igraph::set.vertex.attribute(g, "size", my_vertex, edge_weight)
+    g <- igraph::set_vertex_attr(g, "size", my_vertex, edge_weight)
   }
 
   # delete all self loops
   g <- igraph::simplify(g, remove.multiple = TRUE, remove.loops = TRUE)
   #if (project == 'linux') {
-  #  g <- igraph::delete.vertices(g, V(g)[grepl("DRIVER", toupper(V(g)$name))])
+  #  g <- igraph::delete_vertices(g, V(g)[grepl("DRIVER", toupper(V(g)$name))])
   #}
 
   # get clustering
@@ -177,8 +177,8 @@ maintainers_section_graph <- function(project, file_name, file_map_name, cluster
     maximum_name <- V(cluster_graph)$name[which.max(V(cluster_graph)$size)]
     # after extracting the maximum name, delete the vertex from the
     # intermediate cluster graph to extract the next maximum
-    cluster_graph <- igraph::delete.vertices(cluster_graph, maximum_name)
-    meta_g <- igraph::add.vertices(meta_g, 1, name = maximum_name,
+    cluster_graph <- igraph::delete_vertices(cluster_graph, maximum_name)
+    meta_g <- igraph::add_vertices(meta_g, 1, name = maximum_name,
                       index=i, size = weight_matrix[i, i])
   }
   for (i in ret_bounds) {
@@ -187,7 +187,7 @@ maintainers_section_graph <- function(project, file_name, file_map_name, cluster
         next
       }
       if (weight_matrix[i, j] != 0) {
-        meta_g <- igraph::add.edges(meta_g, c(i, j), weight = weight_matrix[i, j])
+        meta_g <- igraph::add_edges(meta_g, c(i, j), weight = weight_matrix[i, j])
       }
     }
   }

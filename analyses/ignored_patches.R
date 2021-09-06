@@ -2,7 +2,7 @@
 
 # PaStA - Patch Stack Analysis
 #
-# Copyright (c) OTH Regensburg, 2019-2021
+# Copyright (c) OTH Regensburg, 2019-2026
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -13,7 +13,7 @@
 source("analyses/util.R")
 
 date.min <- '2011-07-21' # v3.0
-date.max <- '2020-12-13' # v5.10
+date.max <- '2026-06-14' # v7.1
 top_n.num_lists <- 4
 prj_releases <- paste(project, "Releases")
 
@@ -206,7 +206,7 @@ composition <- function(data, plot_name) {
 patch_conform_ratio <- function(data, plot_name) {
   relevant <- data %>% select(week, committer.correct, committer.xcorrect, list)
 
-  if (is.na(unique(relevant$committer.correct)) || is.na(unique(relevant$committer.xcorrect))) {
+  if (all(is.na(relevant$committer.correct)) || all(is.na(relevant$committer.xcorrect))) {
     cat('No data on conform integration available!\n')
     return()
   }

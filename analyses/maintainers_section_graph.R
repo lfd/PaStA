@@ -128,7 +128,7 @@ if (PRINT_ENTIRE_GRAPH) {
               )
 
   Isolated = which(degree(g)==0)
-  g = delete.vertices(g, Isolated)
+  g = delete_vertices(g, Isolated)
 
   V(g)$clu <- as.character(membership(cluster_walktrap(g)))
   quantile_step <- "75%"
