@@ -46,7 +46,11 @@ printplot <- function(p, filename, ...) {
   #plot(p, ...)
   #dev.off()
 
-  tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT, sanitize=TRUE, standAlone = TRUE)
+  tikz(paste0(filename, '_standalone.tex'), width = WIDTH, height = HEIGHT, sanitize=TRUE, standAlone = TRUE)
+  plot(p, ...)
+  dev.off()
+
+  tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT, sanitize=TRUE, standAlone = FALSE)
   plot(p, ...)
   dev.off()
 }

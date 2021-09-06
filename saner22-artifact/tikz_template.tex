@@ -1,0 +1,21 @@
+\documentclass{article}[a4paper,10pt]
+
+\usepackage{tikz}
+\usepackage{adjustbox}
+\usepackage{url}
+\usepackage{a4wide}
+
+\usetikzlibrary{graphs}
+\usetikzlibrary{graphdrawing}
+\usetikzlibrary{backgrounds}
+\usegdlibrary{circular,layered,force}
+
+\begin{document}
+	\pagestyle{empty}
+	\version
+	\begin{center}
+		\begin{adjustbox}{width=\textwidth,height=0.95\textheight,center}
+			\input{\filename}
+		\end{adjustbox}
+	\end{center}
+\end{document}

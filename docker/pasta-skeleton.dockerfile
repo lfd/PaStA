@@ -26,6 +26,9 @@ RUN apt install -y --no-install-recommends \
 	libpng-dev \
 	locales \
 	patchutils \
+	pbzip2 \
+	pdftk \
+	poppler-utils \
 	procmail \
 	python3-dev \
 	python3-flaskext.wtf \
