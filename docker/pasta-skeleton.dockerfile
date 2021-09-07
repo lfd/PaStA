@@ -42,6 +42,7 @@ RUN apt install -y --no-install-recommends \
 	python3-wheel \
 	r-base \
 	sudo \
+	texlive \
 	vim \
 	wget
 
