@@ -1,16 +1,17 @@
 # PaStA - Patch Stack Analysis
 #
-# Copyright (c) OTH Regensburg, 2020
+# Copyright (c) OTH Regensburg, 2020-2021
 #
 # Author:
 #   Pia Eichinger <pia.eichinger@st.oth-regensburg.de>
+#   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 #
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-library(dplyr)
+library(dplyr, warn.conflicts = FALSE)
 library(ggplot2)
-library(lubridate)
+library(lubridate, warn.conflicts = FALSE)
 library(reshape2)
 library(tikzDevice)
 

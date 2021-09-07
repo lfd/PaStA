@@ -2,7 +2,7 @@
 
 # PaStA - Patch Stack Analysis
 #
-# Copyright (c) OTH Regensburg, 2019-2020
+# Copyright (c) OTH Regensburg, 2019-2021
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -11,9 +11,10 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-library("igraph")
-library("RColorBrewer")
 source("analyses/util.R")
+
+library(igraph, warn.conflicts = FALSE)
+library(RColorBrewer)
 
 # delete all vertices below this quantile
 VERTEX_QUANTILE <- '0%'
