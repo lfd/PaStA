@@ -27,6 +27,7 @@ my.theme <- theme_bw(base_size = 8) +
             theme(legend.position = "top")
 
 create_dstdir <- function(path_vec){
+	dir.create(d_dst, showWarnings = FALSE)
 	for (i in path_vec) {
 	  dir.create(file.path(d_dst, i), showWarnings = FALSE)
 	}
