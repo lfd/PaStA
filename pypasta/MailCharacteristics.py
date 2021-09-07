@@ -258,7 +258,8 @@ class MailCharacteristics:
         return False
 
     def _cleanup(self, maintainers_version):
-        self._integrated_correct(maintainers_version)
+        if self.is_patch:
+            self._integrated_correct(maintainers_version)
 
         del self.message
         del self.patch
