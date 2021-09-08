@@ -1,4 +1,4 @@
-# Copyright (c) OTH Regensburg, 2017-2019
+# Copyright (c) OTH Regensburg, 2017-2021
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -10,4 +10,4 @@ FROM pasta:base
 
 MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 
-RUN git -C PaStA/resources/ submodule update linux/repo
+RUN git -C resources/ submodule update linux/repo

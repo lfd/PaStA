@@ -1,4 +1,4 @@
-# Copyright (c) OTH Regensburg, 2017-2018
+# Copyright (c) OTH Regensburg, 2017-2021
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -12,15 +12,9 @@ MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 
 # prepare PaStA
 RUN git clone https://github.com/lfd/PaStA.git
-RUN git -C PaStA submodule init
-RUN git -C PaStA submodule update
-RUN git -C PaStA/resources checkout master
+WORKDIR /home/pasta/PaStA
 
-# workaround to get the latest state of the repository
-ADD https://api.github.com/repos/lfd/PaStA/git/refs/heads/master /dev/null
-RUN git -C PaStA pull
-
-ADD https://api.github.com/repos/lfd/PaStA-resources/git/refs/heads/master /dev/null
-RUN git -C PaStA/resources pull
-
-RUN git -C PaStA/resources submodule init
+RUN git submodule init
+RUN git submodule update
+RUN git -C resources checkout master
+RUN git -C resources submodule init
