@@ -53,9 +53,12 @@ RUN pip3 --no-cache-dir install \
 	flask-nav anytree \
 	Levenshtein
 
-RUN R -e "install.packages(c('assertthat', 'dplyr', 'ggplot2', 'igraph', 'lubridate', 'reshape2', 'RColorBrewer', 'tikzDevice'), clean = TRUE)"
-
 RUN useradd -m -G sudo -s /bin/bash pasta && echo "pasta:pasta" | chpasswd
-
 USER pasta
 WORKDIR /home/pasta
+
+ENV R_LIBS_USER /home/pasta/R/
+RUN mkdir -p $HOME/.R $R_LIBS_USER
+RUN echo MAKEFLAGS = -j$(($(nproc)/4)) > ~/.R/Makevars
+
+RUN R -e "install.packages(c('assertthat', 'dplyr', 'ggplot2', 'igraph', 'lubridate', 'reshape2', 'RColorBrewer', 'tikzDevice'), Ncpus = 4, clean = TRUE, lib = '${R_LIBS_USER}')"
