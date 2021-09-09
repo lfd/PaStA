@@ -40,7 +40,8 @@ class PatchType(Enum):
     STABLE = 'stable-review'
     NOT_PROJECT = 'not-project'
     PROCESS = 'process'
-    NOT_FIRST = 'not-first' # Mail contains a patch, but it's not the first patch in the thread
+    # Mail contains a patch, but it's not the first patch in the thread
+    NOT_FIRST = 'not-first'
     OTHER = 'other'
 
 
@@ -154,9 +155,9 @@ class MailCharacteristics:
         if self.REGEX_GREG_ADDED.match(subject):
             return True
 
-        # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for
-        # all other mails. That's how we can easily separate automated mails
-        # from real mails. Secondly, akpm acts as bot if the subject contains [merged]
+        # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for all
+        # other mails. That's how we can easily separate automated mails from
+        # real mails. Further, akpm acts as bot if the subject contains [merged]
         if email == 'akpm@linux-foundation.org':
             if 's-nail' in uagent or '[merged]' in subject:
                 return True
@@ -268,10 +269,9 @@ class MailCharacteristics:
         if not self.is_patch:
             return
 
-        # Now we can say it's a regular patch, if we stilll have the type 'other'
+        # Now we can say it's a regular patch, if we still have the type 'other'
         if self.type == PatchType.OTHER:
             self.type = PatchType.PATCH
-
 
     def __init__(self, repo, clustering, message_id):
         self.message_id = message_id
@@ -293,7 +293,8 @@ class MailCharacteristics:
         self.maintainers = None
 
         # Patch characteristics
-        self.is_patch = message_id in repo and message_id not in repo.mbox.invalid
+        self.is_patch = message_id in repo and \
+                        message_id not in repo.mbox.invalid
         self.patch = None
 
         self.patches_project = False
@@ -330,7 +331,8 @@ class MailCharacteristics:
             elif self.type == PatchType.OTHER:
                 self.type = PatchType.NOT_FIRST
 
-            self.process_mail = True in [process in self.subject for process in self.PROCESSES]
+            self.process_mail = True in [process in self.subject for process
+                                         in self.PROCESSES]
             if self.process_mail:
                 self.type = PatchType.PROCESS
 
@@ -341,7 +343,8 @@ class MailCharacteristics:
             # appropriate version
             self.version = repo.patch_get_version(self.patch)
 
-            self.first_upstream = get_first_upstream(repo, clustering, message_id)
+            self.first_upstream = get_first_upstream(repo, clustering,
+                                                     message_id)
             if self.first_upstream:
                 # In case the patch was integrated, fill the field committer
                 self.upstream = repo[self.first_upstream]
@@ -378,7 +381,8 @@ def load_characteristics(config, clustering, message_ids = None):
     }
 
     if config.project_name not in _characteristics_classes:
-        raise NotImplementedError('Missing code for project %s' % config.project_name)
+        raise NotImplementedError('Missing code for project %s' %
+                                  config.project_name)
 
     # Characteristics need thread information. Ensure it's loaded.
     repo = config.repo
@@ -390,8 +394,8 @@ def load_characteristics(config, clustering, message_ids = None):
 
     maintainers_version = None
     if _characteristics_classes[config.project_name].HAS_MAINTAINERS:
-        # We can safely limit to patches only, as only patches will be used for the
-        # maintainers analysis.
+        # We can safely limit to patches only, as only patches will be used for
+        # the maintainers analysis.
         patches = message_ids - repo.mbox.invalid
         tags = {repo.patch_get_version(repo[x]) for x in patches}
         maintainers_version = load_maintainers(config, tags)
@@ -429,4 +433,3 @@ def load_characteristics(config, clustering, message_ids = None):
                                           _load_characteristics)
 
     return characteristics
-
