@@ -288,11 +288,17 @@ class PubInbox(MailContainer):
                  (listaddr, shard, len(self.index)))
 
     def get_blob(self, commit):
-        if 'm' not in self.repo[commit].tree:
-            return None
+        tree = self.repo[commit].tree
 
-        blob = self.repo[commit].tree['m'].hex
-        return self.repo[blob].data
+        if 'm' in tree:
+            return tree['m'].data
+
+        # Some spam mails use 'd'. Don't ignore them, for the sake of
+        # completeness.
+        if 'd' in tree:
+            return tree['d'].data
+
+        return None
 
     def get_mail_by_commit(self, commit):
         blob = self.get_blob(commit)
