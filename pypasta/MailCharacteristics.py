@@ -79,6 +79,9 @@ class MailCharacteristics:
     POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
     PROCESSES = ['linux-next', 'git pull', 'rfc', '[pull]']
 
+    # Additional lists that are not known by PaStA. Needs to be overloaded.
+    LISTS = set()
+
     # Assume that the project does not have a MAINTAINERS by default.
     HAS_MAINTAINERS = False
 

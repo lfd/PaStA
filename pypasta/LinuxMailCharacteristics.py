@@ -34,9 +34,6 @@ def ignore_tlds(addresses):
 
 
 class LinuxMailCharacteristics (MailCharacteristics):
-    # Additional lists that are not known by pasta
-    LISTS = set()
-
     REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
     ROOT_FILES = ['.clang-format',
                   '.cocciconfig',

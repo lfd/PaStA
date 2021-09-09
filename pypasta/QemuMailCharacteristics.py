@@ -511,9 +511,6 @@ class QemuMailCharacteristics(MailCharacteristics):
 
     HAS_MAINTAINERS = True
 
-    # Additional lists that are not known by pasta
-    LISTS = set()
-
     def __init__(self, repo, maintainers_version, clustering, message_id):
         super().__init__(repo, clustering, message_id)
         self.__init()
