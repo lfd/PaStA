@@ -23,6 +23,7 @@ class JailhouseMailCharacteristics(MailCharacteristics):
                  'inmates',
                  'pyjailhouse',
                  'scripts',
+                 'samples',
                  'tools',
     ]
     ROOT_FILES = ['CONTRIBUTING.md',
