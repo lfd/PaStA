@@ -110,7 +110,10 @@ class Repository:
             # that point to commits instead of tags. In those cases, we need to
             # treat the tag as a commit.
             if isinstance(target, pygit2.Tag):
-                tagger = target.tagger
+                target = self.repo[target.target]
+                if not isinstance(target, pygit2.Commit):
+                    continue
+                tagger = target.committer
             elif isinstance(target, pygit2.Commit):
                 tagger = target.committer
             else:
