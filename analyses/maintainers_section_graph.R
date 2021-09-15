@@ -16,10 +16,6 @@ source("analyses/util.R")
 library(igraph, warn.conflicts = FALSE)
 library(RColorBrewer)
 
-# delete all vertices below this quantile
-VERTEX_QUANTILE <- '0%'
-# delete all edges below this quantile, also used for linder edge density layout
-EDGE_QUANTILE <- '0%'
 
 PALETTE <- c('#D83359','#979CFB','#f46d43','#fdae61','#fee090','#ffffbf','#e0f3f8','#abd9e9','#74add1','#4575b4','#d73027')
 
@@ -35,10 +31,6 @@ MIN_CLUSTERSIZE <- 20
 MAX_CLUSTERSIZE <- 100
 FONT_FAMILY <- "Helvetica"
 
-PRINT_DEGREE_INFO <- FALSE
-PRINT_INFORMATION <- FALSE
-DISPLAY_LABELS <- FALSE
-
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   file_name <- file.path(d_resources, 'maintainers_section_graph', 'HEAD.csv')
@@ -52,10 +44,6 @@ if ("--print-entire-graph" %in% args) {
 
 if ("--print-clusters" %in% args) {
 	PRINT_CLUSTERS <- TRUE
-}
-
-if ("--print-degree-info" %in% args) {
-	PRINT_DEGREE_INFO <- TRUE
 }
 
 d_maintainers_cluster <- file.path(d_resources, 'maintainers_cluster')
@@ -90,60 +78,6 @@ for (e in which(which_loop(g))) {
 # delete all self loops
 g <- simplify(g, remove.multiple = TRUE, remove.loops = TRUE)
 
-probes <- seq(0, 1, 0.05)
-
-global_edge_quantiles <- quantile(E(g)$weight, probs=probes)
-global_vertex_quantiles <- quantile(V(g)$size, probs=probes)
-
-print_graph_information <- function(param) {
-  print("Number of vertices:")
-  print(length(V(g)))
-
-  print("Average vertex size")
-  print(mean(V(g)$size))
-
-  print("Number of edges")
-  print(length(E(g)))
-
-  print("Average edge weight")
-  print(mean(E(g)$weight))
-
-  deg <- igraph::degree(param)
-  deg <- sort(deg, decreasing = TRUE)
-
-  if (!PRINT_DEGREE_INFO) {
-    return()
-  }
-
-  print("Top 10 Sections with highest degree:")
-  for (j in seq(1, 10, 1)) {
-    print(deg[j])
-  }
-
-  deg <- sort(deg)
-
-  print("All isolated sections:")
-  i <- 1
-  while(unname(deg[i]) == 0) {
-    print(deg[i])
-    i <- i+1
-  }
-
-  deg <- sort(deg)
-
-  print("Average degree including isolates:")
-  print(mean(deg))
-
-  stats_graph <- igraph::delete.vertices(g, igraph::degree(param)==0)
-  print("Average degree exluding isolates:")
-  print(mean(igraph::degree(stats_graph)))
-}
-
-print_graph_information(g)
-
-# deleting all vertices and edges that are below the specified quantile
-g <- igraph::delete.vertices(g, which(V(g)$size < unname(global_vertex_quantiles[VERTEX_QUANTILE])))
-g <- igraph::delete.edges(g, which(E(g)$weight < unname(global_edge_quantiles[EDGE_QUANTILE])))
 
 # in case of Linux delete all entries with DRIVER
 #if (project == 'linux') {
@@ -214,14 +148,9 @@ if (PRINT_CLUSTERS) {
     }
     print(paste0("ITERATION: ", toString(i)))
 
-    #dplyr doesn't work that well in lambda-like functions such as which
     cluster_graph <- igraph::delete_vertices(g, which(!(V(g)$name %in% group_list)))
-    if (PRINT_INFORMATION) {
-      print_graph_information(cluster_graph)
-    }
 
     wt_clusters <- cluster_walktrap(cluster_graph)
-    print_graph_information(cluster_graph)
 
     printplot(cluster_graph, toString(i),
                 mark.groups=igraph::groups(wt_clusters),
