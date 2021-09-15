@@ -41,13 +41,13 @@ printplot <- function(p, filename, ...) {
   plot(p, ...)
 
   filename <- file.path(d_dst, filename)
-  png(paste0(filename, '.png'), width = 1920, height = 1080)
-  plot(p, ...)
-  dev.off()
-
-  #tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT)
+  #png(paste0(filename, '.png'), width = 1920, height = 1080)
   #plot(p, ...)
   #dev.off()
+
+  tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT, sanitize=TRUE, standAlone = TRUE)
+  plot(p, ...)
+  dev.off()
 }
 
 dir.create(d_dst, showWarnings = FALSE)
