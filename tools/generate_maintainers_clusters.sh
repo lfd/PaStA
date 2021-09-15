@@ -23,12 +23,13 @@ elif [[ $project == "qemu" ]]; then
 fi
 
 RES="resources/$project/resources"
-CLSTRS=$RES/maintainers_cluster
+CLSTRS="$RES/maintainers_cluster"
+SCTN="$RES/maintainers_section_graph"
 
 mkdir -p $CLSTRS
 
 for tag in $tags; do
-	if [ -f $CLSTRS/$tag.txt ]; then
+	if [ -f $CLSTRS/$tag.txt ] && [ -f $SCTN/$tag.csv ]; then
 		echo "Skipping $tag: already existing"
 		continue
 	fi
