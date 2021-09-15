@@ -25,11 +25,18 @@ PRINT_CLUSTERS <- FALSE
 VERTEX_SIZE <- 0.5
 LABEL_SIZE <- 0.6
 
-# minimum size of nodes in printed clusters
-MIN_CLUSTERSIZE <- 20
 # maximum size of nodes in printed clusters
 MAX_CLUSTERSIZE <- 100
 FONT_FAMILY <- "Helvetica"
+
+# minimum size of nodes in printed clusters
+if (project == 'linux') {
+  MIN_CLUSTERSIZE <- 8
+} else if (project == 'qemu') {
+  MIN_CLUSTERSIZE <- 5
+} else {
+  MIN_CLUSTERSIZE <- 4
+}
 
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
