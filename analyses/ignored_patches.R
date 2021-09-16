@@ -157,9 +157,9 @@ ignored_by_week <- function(data, plot_name) {
                  sec.axis = dup_axis(name = prj_releases,
                                      breaks = releases$date,
                                      labels = releases$release)) +
-    #scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%"),
+    #scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\\\%"),
     #                   breaks = seq(0.01, 0.06, by = 0.01)) +
-    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%")) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\\\%")) +
     xlab('Date') +
     ylab('Ratio of ignored patches') +
     facet_wrap(~list, scales = 'free') +
@@ -337,7 +337,7 @@ patch_conform_analysis <- function(data, plot_name, field) {
     geom_bar(stat = 'identity', width = 0.5) +
     scale_x_discrete(breaks = c(FALSE, TRUE, NA),
                      labels = c('No', 'Yes', 'N.I.')) +
-    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\%"),
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = "\\\\%"),
                        limits = c(0, 1)) +
     facet_wrap(~list, nrow=3) +
     my.theme +
