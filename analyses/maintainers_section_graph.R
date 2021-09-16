@@ -12,10 +12,7 @@
 # the COPYING file in the top-level directory.
 
 source("analyses/util.R")
-
-library(igraph, warn.conflicts = FALSE)
-library(RColorBrewer)
-
+source("analyses/maintainers_graph_util.R")
 
 PALETTE <- c('#D83359','#979CFB','#f46d43','#fdae61','#fee090','#ffffbf','#e0f3f8','#abd9e9','#74add1','#4575b4','#d73027')
 
@@ -45,7 +42,8 @@ if (length(args) == 0) {
   version <- args[1]
 }
 
-file_name <- file.path(d_maintainers_section, paste(version, 'csv', sep='.'))
+f_section_graph <- file.path(d_maintainers_section, paste(version, 'csv', sep='.'))
+f_file_map <- file.path(d_maintainers_section, paste0(version, '_filemap', '.csv'))
 
 if ("--print-entire-graph" %in% args) {
 	PRINT_ENTIRE_GRAPH <- TRUE
@@ -55,45 +53,18 @@ if ("--print-clusters" %in% args) {
 	PRINT_CLUSTERS <- TRUE
 }
 
-d_maintainers_cluster <- file.path(d_resources, 'maintainers_cluster')
+create_dstdir(c())
+
 dir.create(d_maintainers_cluster, showWarnings = FALSE)
-CLUSTER_DESTINATION <- file.path(d_maintainers_cluster,
-                                 gsub(".csv$", ".txt", basename(file_name)))
+CLUSTER_DESTINATION <- file.path(d_maintainers_cluster, paste(version, 'txt', sep='.'))
 
-data_frame <- read_csv(file_name)
-data_frame$weight <- data_frame$lines
+graph_list <- maintainers_section_graph(project, f_section_graph, f_file_map)
+g <- graph_list$graph
+wt_comm <- graph_list$wt_comm
+comm_groups <- graph_list$comm_groups
+bounds <- graph_list$bounds
 
-g  <- igraph::graph_from_data_frame(data_frame, directed = FALSE)
-
-# We need to remove THE REST because it's trivial that this section contains
-# everything. In case of QEMU, since this node is QEMU's equivalent of THE REST
-# whereas THE REST doesn't exist, we need to remove General Project
-# Administration instead
-if (project == 'qemu') {
-  g <- igraph::delete.vertices(g, which(grepl("General Project Administration",
-                                            V(g)$name)))
-} else {
-  g <- igraph::delete.vertices(g, "THE REST")
-}
-
-# retrieve vertex size by finding edge weight of self loop
-for (e in which(which_loop(g))) {
-  assertthat::are_equal(head_of(g, E(g)[e]), tail_of(g, E(g)[e]))
-  my_vertex <- head_of(g, E(g)[e])
-  edge_weight <- E(g)[e]$weight
-  g <- igraph::set.vertex.attribute(g, "size", my_vertex, edge_weight)
-}
-
-# delete all self loops
-g <- simplify(g, remove.multiple = TRUE, remove.loops = TRUE)
-
-
-# in case of Linux delete all entries with DRIVER
-#if (project == 'linux') {
-#  g <- igraph::delete.vertices(g, V(g)[grepl("DRIVER", toupper(V(g)$name))])
-#}
-
-wt_comm <- cluster_walktrap(g)
+# assign community attribute based on walktrap clustering
 V(g)$comm <- membership(wt_comm)
 
 # deleting all edges and adding new ones only within clusters
@@ -139,9 +110,6 @@ if (PRINT_ENTIRE_GRAPH) {
               )
 }
 
-comm_groups <- igraph::groups(wt_comm)
-bounds <- seq(1, length(comm_groups), 1)
-
 if (PRINT_CLUSTERS) {
   # save each cluster community as own plot clustered again from within
   for (i in bounds) {
@@ -161,7 +129,7 @@ if (PRINT_CLUSTERS) {
 
     wt_clusters <- cluster_walktrap(cluster_graph)
 
-    printplot(cluster_graph, toString(i),
+    printplot(cluster_graph, paste0("cluster_", toString(i)),
                 mark.groups=igraph::groups(wt_clusters),
                 mark.col = PALETTE,
                 vertex.size=VERTEX_SIZE,
