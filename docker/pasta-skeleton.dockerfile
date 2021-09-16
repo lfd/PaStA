@@ -43,6 +43,8 @@ RUN apt install -y --no-install-recommends \
 	r-base \
 	sudo \
 	texlive \
+	texlive-pictures \
+	texlive-latex-extra \
 	vim \
 	wget
 
