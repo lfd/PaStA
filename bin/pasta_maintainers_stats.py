@@ -98,10 +98,25 @@ def dump_csv(headers, relevant_headers, data, f_csv, verbose):
 # the graph represents a section in MAINTAINERS. A section node has an edge to
 # another section node if both sections share at least one file. An edge
 # weighted by the LoC/size in bytes of the shared content.
-def generate_graph(maintainers, file_map, file_filters, f_csv):
+def generate_graph(config, revision, maintainers, file_map, file_filters):
+    os.makedirs(config.d_maintainers_section_graph, exist_ok=True)
+    f_sections = os.path.join(config.d_maintainers_section_graph,
+                              '%s.csv' % revision)
+    f_filemap = os.path.join(config.d_maintainers_section_graph,
+                             '%s_filemap.csv' % revision)
+
     filenames = file_filters
     if not filenames:
         filenames = file_map.keys()
+
+    with open(f_filemap, 'w') as f:
+        csv_writer = writer(f)
+        line = ['filename', 'lines', 'sections']
+        csv_writer.writerow(line)
+
+        for filename, (lines, size, sections) in file_map.items():
+            line = [filename, lines, ','.join(sections)]
+            csv_writer.writerow(line)
 
     G = nx.Graph()
 
@@ -131,7 +146,7 @@ def generate_graph(maintainers, file_map, file_filters, f_csv):
         G.add_edge(miss, miss, weight=Counter())
         G[miss][miss]['weight'].update(lines=0, size=0)
 
-    with open(f_csv, 'w') as csv_file:
+    with open(f_sections, 'w') as csv_file:
         csv_writer = writer(csv_file)
         line = ["from", "to", "lines", "size"]
         csv_writer.writerow(line)
@@ -144,7 +159,7 @@ def generate_graph(maintainers, file_map, file_filters, f_csv):
             ctr_edge = G[a][b]['weight']
             line = [a, b, ctr_edge['lines'], ctr_edge['size']]
             csv_writer.writerow(line)
-    call(['./analyses/maintainers_section_graph.R', f_csv])
+    call(['./analyses/maintainers_section_graph.R', f_sections])
 
 
 def maintainers_stats(config, argv):
@@ -233,10 +248,8 @@ def maintainers_stats(config, argv):
     file_map = dict(file_map)
 
     if args.mode == 'graph':
-        os.makedirs(config.d_maintainers_section_graph, exist_ok=True)
-        filename = os.path.join(config.d_maintainers_section_graph,
-                                '%s.csv' % revision)
-        generate_graph(all_maintainers, file_map, filter_by_files, filename)
+        generate_graph(config, revision, all_maintainers, file_map,
+                       filter_by_files)
         return
 
     # An object is the kind of the analysis, and reflects the target. A target
