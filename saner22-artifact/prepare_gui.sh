@@ -28,6 +28,7 @@ SOLUTION="$REPRO/solution.csv"
 ./analyses/maintainers_section_graph.R \
 	$TEX_IMG_DST \
 	"$RESOURCES/maintainers_section_graph/$revision.csv" \
+	"$RESOURCES/maintainers_section_graph/${revision}_filemap.csv" \
 	--print-clusters
 
 # 2. Randomise clusters
