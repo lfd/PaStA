@@ -22,7 +22,7 @@ template="./saner22-artifact/tikz_template.tex"
 
 ./pasta set_config $project
 
-./analyses/tex_generator.R $RES/maintainers_section_graph/$version.csv
+./analyses/tex_generator.R $RES/maintainers_section_graph/$version.csv $RES/maintainers_section_graph/${version}_filemap.csv
 
 mkdir -p $D_OUTPUT $PDF_OUTPUT
 ./saner22-artifact/section_graph.py --output $TEX_OUTPUT --file $RES/R/$version.tex
