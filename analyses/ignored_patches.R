@@ -206,6 +206,11 @@ composition <- function(data, plot_name) {
 patch_conform_ratio <- function(data, plot_name) {
   relevant <- data %>% select(week, committer.correct, committer.xcorrect, list)
 
+  if (is.na(unique(relevant$committer.correct)) || is.na(unique(relevant$committer.xcorrect))) {
+    cat('No data on conform integration available!\n')
+    return()
+  }
+
   true <- relevant %>% filter(committer.correct == TRUE) %>% select(week, list) %>% group_by(week, list) %>% count(name = 'correct')
   false <- relevant %>% filter(committer.correct == FALSE) %>% select(week, list) %>% group_by(week, list) %>% count(name = 'incorrect')
 
@@ -299,6 +304,11 @@ patch_conform_analysis <- function(data, plot_name, field) {
   #commit_data <- commit_data %>% filter(!is.na(committer.correct))
   commit_data <- commit_data %>% filter(!is.na(!!field))
   #commit_data <- commit_data %>% filter(!interp(~is.na(v), v=as.name(field)))
+
+  if (nrow(commit_data) == 0) {
+    cat('No data on conform integration available!\n')
+    return()
+  }
 
   # Remove TLDs
   commit_data$list <- sapply(strsplit(commit_data$list, '@'), '[', 1)
