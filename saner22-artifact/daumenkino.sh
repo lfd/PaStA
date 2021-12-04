@@ -20,8 +20,8 @@ mkdir -p $daumenkino $build
 
 ./pasta set_config $project
 
-realpath ./resources/$project/resources/maintainers_section_graph/* | grep -v -- "-rc" | \
-        xargs -n 1 -I {} -P $(nproc) ./analyses/tex_generator.R {}
+realpath ./resources/$project/resources/maintainers_section_graph/* | grep -v -- "-rc" | grep -v "filemap" | \
+	xargs -n 1 -I {} -P $(nproc) bash -c "./analyses/tex_generator.R {} \$(echo {} | sed -e 's/\.csv/_filemap\.csv/')"
 
 for i in resources/$project/resources/R/graphdesc*.tex; do
 	./saner22-artifact/daumenkino/daumenkino.py -i $i -o $daumenkino/$(basename $i)
