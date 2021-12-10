@@ -114,15 +114,15 @@ def generate_graph(config, revision, maintainers, file_map, file_filters):
         line = ['filename', 'lines', 'sections']
         csv_writer.writerow(line)
 
-        for filename, (lines, size, sections) in file_map.items():
-            line = [filename, lines, ','.join(sections)]
+        for filename, (lines, size, sections) in sorted(file_map.items(), key= lambda x: x[0]):
+            line = [filename, lines, ','.join(['"%s"' % x for x in sorted(sections)])]
             csv_writer.writerow(line)
 
     G = nx.Graph()
 
     # Iterate over all filenames, determine their size/LoC and to what sections
     # they belong. Then, add the weight to connected sections
-    for filename in filenames:
+    for filename in sorted(filenames):
         lines, size, sections = file_map[filename]
 
         # Sum up the size of each section: Each section gets a self-loop that
