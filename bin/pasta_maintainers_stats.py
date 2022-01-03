@@ -160,6 +160,9 @@ def generate_graph(config, revision, maintainers, file_map, file_filters):
             line = [a, b, ctr_edge['lines'], ctr_edge['size']]
             csv_writer.writerow(line)
     call(['./analyses/maintainers_section_graph.R', revision])
+    call(['./analyses/maintainers_section_graph.R', revision, '--louvain'])
+    call(['./analyses/maintainers_section_graph.R', revision, '--infomap'])
+    call(['./analyses/maintainers_section_graph.R', revision, '--fast_greedy'])
 
 
 def maintainers_stats(config, argv):
