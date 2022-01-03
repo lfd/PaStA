@@ -168,3 +168,14 @@ write_cluster_csv <- function(g_data, dst) {
 
   write.table(df, dst, row.names=FALSE, sep = ",")
 }
+
+compare_cluster_csv <- function(df_a, df_b, c_a, c_b) {
+  df_a <- df_a[df_a$c_representative == c_a,]
+  df_b <- df_b[df_b$c_representative == c_b,]
+
+  intersection <- intersect(df_a$c_section, df_b$c_section)
+  min_set_size <- min(nrow(df_a), nrow(df_b))
+  intersect_coeff <- length(intersection)/min_set_size
+
+  return(intersect_coeff)
+}
