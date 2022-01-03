@@ -144,3 +144,27 @@ write_cluster_csv <- function(g_data, dst) {
 
   write.table(df, dst, row.names=FALSE, sep = ",", qmethod='double')
 }
+
+write_cluster_csv <- function(g_data, dst) {
+  meta_g <- g_data$meta
+  comm_groups <- g_data$comm_groups
+
+  c_representative <- c()
+  c_section <- c()
+  c_size <- c()
+
+  for (n in sort(V(meta_g)$name)) {
+    # get the index associated with the node in the meta graph
+    index <- V(meta_g)[n]$index
+    # the index will correlate to the list in comm_groups, which are
+    # its sections
+    sections <- unname(comm_groups[index])[[1]]
+
+    c_representative[(length(c_representative)+1):(length(c_representative)+length(sections))] <- n
+    c_section <- c(c_section, sections)
+    c_size <- c(c_size, V(g_data$g)$size)
+  }
+  df <- data.frame(c_representative, c_section, c_size)
+
+  write.table(df, dst, row.names=FALSE, sep = ",")
+}
