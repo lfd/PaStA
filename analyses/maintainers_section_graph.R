@@ -21,6 +21,8 @@ PRINT_CLUSTERS <- FALSE
 
 VERTEX_SIZE <- 0.5
 LABEL_SIZE <- 0.6
+NETWORK_SIZE <- 2
+#NETWORK_SIZE <- 1
 
 # maximum size of nodes in printed clusters
 MAX_CLUSTERSIZE <- 100
@@ -42,8 +44,11 @@ if (length(args) == 0) {
   version <- args[1]
 }
 
+d_dst <- file.path(d_maintainers_cluster_img, version)
 f_section_graph <- file.path(d_maintainers_section, paste(version, 'csv', sep='.'))
 f_file_map <- file.path(d_maintainers_section, paste0(version, '_filemap', '.csv'))
+
+clustering_method <- ""
 
 if ("--print-entire-graph" %in% args) {
 	PRINT_ENTIRE_GRAPH <- TRUE
@@ -53,12 +58,25 @@ if ("--print-clusters" %in% args) {
 	PRINT_CLUSTERS <- TRUE
 }
 
+if ("--louvain" %in% args) {
+	clustering_method <- "_louvain"
+}
+
+if ("--infomap" %in% args) {
+	clustering_method <- "_infomap"
+}
+
+if ("--fast_greedy" %in% args) {
+	clustering_method <- "_fast_greedy"
+}
+
 create_dstdir(c())
 
+d_maintainers_cluster <- paste0(d_maintainers_cluster, clustering_method)
 dir.create(d_maintainers_cluster, showWarnings = FALSE)
 CLUSTER_DESTINATION <- file.path(d_maintainers_cluster, paste(version, 'csv', sep='.'))
 
-graph_list <- maintainers_section_graph(project, f_section_graph, f_file_map)
+graph_list <- maintainers_section_graph(project, f_section_graph, f_file_map, clustering_method)
 g <- graph_list$graph
 wt_comm <- graph_list$wt_comm
 comm_groups <- graph_list$comm_groups
@@ -108,6 +126,23 @@ if (PRINT_ENTIRE_GRAPH) {
               vertex.label = NA,
               layout = LO
               )
+
+  Isolated = which(degree(g)==0)
+  g = delete.vertices(g, Isolated)
+
+  V(g)$clu <- as.character(membership(cluster_walktrap(g)))
+  quantile_step <- "75%"
+  quantiles <- quantile(V(g)$size, c(.75, .80, .85, .90, .95, .98, .99)) 
+  p <- ggraph(g, layout = "dh") +
+  geom_edge_link0(aes(edge_width = weight),edge_colour = "grey66")+
+  geom_node_point(aes(fill = clu, size = size),shape = 21)+
+  geom_node_text(aes(filter = size >= unname(quantiles[quantile_step]), label = name),family="serif", size=2)+
+  scale_edge_width(range = c(0.2,3))+
+  scale_size(range = c(1,6))+
+  theme_graph(base_family = "Helvetica")+
+  theme(legend.position = "none")
+  
+  printplot(p, "microview")
 }
 
 if (PRINT_CLUSTERS) {
@@ -126,19 +161,19 @@ if (PRINT_CLUSTERS) {
     print(paste0("ITERATION: ", toString(i)))
 
     cluster_graph <- igraph::delete_vertices(g, which(!(V(g)$name %in% group_list)))
+    V(cluster_graph)$category <- sample(LETTERS, length(V(cluster_graph)), T)
+    cluster_graph <- ggraph(cluster_graph, layout = "dh") +
+    geom_edge_link0(aes(edge_width = weight),edge_colour = "grey66")+
+    geom_node_point(aes(fill = category, size = size),shape = 21)+
+    geom_node_text(aes(label = name),family="serif", size=NETWORK_SIZE, repel=TRUE)+
+    scale_edge_width(range = c(0.2,3))+
+    scale_size(range = c(1,6))+
+    theme_graph(base_family = "Helvetica")+
+    theme(legend.position = "none")
 
-    wt_clusters <- cluster_walktrap(cluster_graph)
-
-    printplot(cluster_graph, paste0("cluster_", toString(i)),
-                mark.groups=igraph::groups(wt_clusters),
-                mark.col = PALETTE,
-                vertex.size=VERTEX_SIZE,
-                vertex.label.family = FONT_FAMILY,
-                vertex.label.dist=0.5,
-                vertex.label.cex=LABEL_SIZE,
-                layout = layout_with_cluster_edges(cluster_graph, 0.01)
-                )
+    printplot(cluster_graph, paste0("cluster_", toString(i)))
   }
 }
 
 write_cluster_csv(graph_list, CLUSTER_DESTINATION)
+
