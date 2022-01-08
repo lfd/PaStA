@@ -338,3 +338,70 @@ grid.newpage()
 grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
 dev.off()
 
+#df <- df[match(stringr::str_sort(df[["graph_name"]], numeric = TRUE), df[["graph_name"]]),]
+cluster_dir_name <- "resources/linux/resources/maintainers_cluster"
+cluster_files <- list.files(path = cluster_dir_name, pattern = "*.csv", full.names = TRUE, recursive = FALSE)
+cluster_files <- cluster_files[!grepl("-rc", cluster_files, fixed = TRUE)]
+cluster_files <- stringr::str_sort(cluster_files, numeric = TRUE)
+
+rep_list <- list()
+
+previous_df <- read.csv(cluster_files[1])
+rep_list[[basename(cluster_files[1])]] <- unique(previous_df$c_representative)
+
+for (i in 2:length(cluster_files)) {
+  file_name <- cluster_files[i]
+  previous_file_name <- cluster_files[i-1]
+  df <- read.csv(file_name)
+  # get current cluster representatives
+  cluster_reps <- unique(df$c_representative)
+  # get the previous cluster representatives from the previous version from
+  # the already stored rep_list by accessing them through the previous file_name
+  predecessors <- rep_list[[basename(previous_file_name)]]
+
+  new_reps <- c()
+  # for all predecessors, find the one next cluster_rep, that overlaps the most
+  for (c_p_index in 1:length(predecessors)) {
+    c_p <- predecessors[c_p_index]
+    #print("BEFORE")
+    #print(c_p_index)
+    # if a cluster_rep was deleted (which can happen if all next clusters had
+    # 0 overlap), we simply skip this entry. It will stay empty now
+    if (is.null(c_p)) {
+      next
+    }
+    max_c <- NA
+    max_overlap <- 0
+    # we iterate over all new cluster_reps to get the one with the highest
+    # overlap
+    for (c in cluster_reps) {
+      #print("MIDDLE")
+      #print(c)
+      overlap <- compare_cluster_csv(previous_df, df, c_p, c)
+      if (overlap > max_overlap) {
+        max_c <- c
+        max_overlap <- overlap
+      }
+    }
+    # we store the one with the highest overlap where the original predecessor
+    # was
+    # TODO Delme
+    #print("AFTER")
+    print(c_p_index)
+    new_reps[c_p_index] <- max_c
+
+    # with this approach, there could still be new clusters missing now, since
+    # we iterated over the predecessors. We need to now detect and keep track
+    # of all new clusters by letting them trail the new representatives
+    missed_reps <- setdiff(cluster_reps, new_reps)
+    new_reps <- c(new_reps, missed_reps)
+  }
+  rep_list[[basename(file_name)]] <- new_reps
+  previous_df <- df
+}
+
+max_cluster_length <- max(unlist(lapply(rep_list, length)))
+# add padding NA's at the end of each vector
+rep_list <- lapply(rep_list, function(x) x <- c(x, rep(NA, max_cluster_length-length(x))))
+final_df <- as.data.frame(rep_list, col.names = basename(cluster_files))
+write.table(final_df, "rep_list.csv", row.names = FALSE, sep = ",")
