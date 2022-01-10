@@ -165,6 +165,7 @@ write_cluster_csv <- function(g_data, dst) {
     c_size <- c(c_size, V(g_data$g)$size)
   }
   df <- data.frame(c_representative, c_section, c_size)
+  df <- df[order(c_representative, c_section),]
 
   write.table(df, dst, row.names=FALSE, sep = ",")
 }
