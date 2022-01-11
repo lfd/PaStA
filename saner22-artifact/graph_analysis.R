@@ -65,7 +65,7 @@ for (file_name in files) {
   file_map_name <- paste0(file_map_name, "_filemap.csv")
   file_map_name <- sub(basename(file_name), file_map_name, file_name)
   
-  g_data <- maintainers_section_graph(file_name, "linux", file_map_name, generate_meta_graph = TRUE)
+  g_data <- maintainers_section_graph(file_name, "linux", file_map_name)
   g <- g_data$graph
   cluster_g <- g_data$meta
 
