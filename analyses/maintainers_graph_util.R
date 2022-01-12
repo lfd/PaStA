@@ -162,7 +162,7 @@ write_cluster_csv <- function(g_data, dst) {
 
     c_representative[(length(c_representative)+1):(length(c_representative)+length(sections))] <- n
     c_section <- c(c_section, sections)
-    c_size <- c(c_size, V(g_data$g)$size)
+    c_size <- c(c_size, V(g_data$g)[sections]$size)
   }
   df <- data.frame(c_representative, c_section, c_size)
   df <- df[order(c_representative, c_section),]
