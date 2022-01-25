@@ -196,20 +196,23 @@ patch_conform_ratio <- function(data, plot_name) {
     select(project, week, ratio_correct, ratio_xcorrect)
 
   df <- melt(df, id.vars = c('project', 'week'))
+  # rename the levels for proper legend naming
+  levels(df$variable)[levels(df$variable)=="ratio_correct"] <- "section conform"
+  levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "cluster conform"
 
   p <- ggplot(df, aes(x = week, y = value, color = variable)) +
     geom_line() +
     geom_smooth() +
     #geom_vline(xintercept = releases$date, linetype="dotted") +
-    ylab('Ratio of correctly integrated patches') +
+    ylab('Ratio of conformingly integrated patches') +
     xlab('Date') +
-    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+    scale_x_date(date_breaks = '2 year', date_labels = '%Y',
                  #sec.axis = dup_axis(name = prj_releases,
                  #                    breaks = releases$date,
                  #                    labels = releases$release)
     ) +
-    facet_wrap(~project, scales = 'free_y') +
-    ggtitle(plot_name) +
+    facet_wrap(~project, scales = 'fixed') +
+    ggtitle("Ratio for all projects") +
     my.theme +
     theme(axis.text.x.top = element_text(angle = 90, hjust = 0),
           legend.title = element_blank())
@@ -238,6 +241,7 @@ patch_conform_ratio_list <- function(data, plot_name) {
   df[is.na(df)] <- 0
   
   rel <- releases %>% filter(project == 'linux') %>% select(-project)
+  rel <- rel %>% filter(grepl("v[3-5]\\.(0|5|10|15)", release))
 
   df <- df %>%
     mutate(ratio_correct = correct / (correct + incorrect)) %>%
@@ -245,21 +249,24 @@ patch_conform_ratio_list <- function(data, plot_name) {
     select(week, list, ratio_correct, ratio_xcorrect)
 
   df <- melt(df, id.vars = c('week', 'list'))
+  # rename the levels for proper legend naming
+  levels(df$variable)[levels(df$variable)=="ratio_correct"] <- "section conform"
+  levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "cluster conform"
 
   p <- ggplot(df, aes(x = week, y = value, color = variable)) +
     geom_line() +
     geom_smooth() +
     #geom_vline(xintercept = releases$date, linetype="dotted") +
-    ylab('Ratio of correctly integrated patches') +
+    ylab('Ratio of conformingly integrated patches') +
     xlab('Date') +
-    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+    scale_x_date(date_breaks = '2 year', date_labels = '%Y',
                  sec.axis = dup_axis(name = 'Linux',
                                      breaks = rel$date,
                                      labels = rel$release)
     ) +
-    facet_wrap(~list, scales = 'free') +
+    facet_wrap(~list, scales = 'fixed') +
     my.theme +
-    theme(axis.text.x.top = element_text(angle = 90, hjust = 0),
+    theme(axis.text.x.top = element_text(angle = 60, hjust = 0),
           legend.title = element_blank())
   printplot(p, plot_name)
 
