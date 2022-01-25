@@ -66,4 +66,4 @@ ENV R_LIBS_USER /home/pasta/R/
 RUN mkdir -p $HOME/.R $R_LIBS_USER
 RUN echo MAKEFLAGS = -j$(($(nproc)/4)) > ~/.R/Makevars
 
-RUN R -e "install.packages(c('assertthat', 'dplyr', 'ggplot2', 'igraph', 'lubridate', 'reshape2', 'RColorBrewer', 'tikzDevice'), Ncpus = 4, clean = TRUE, lib = '${R_LIBS_USER}')"
+RUN R -e "install.packages(c('assertthat', 'dplyr', 'ggplot2', 'ggraph', 'ggplot2', 'graphlayouts', 'igraph', 'ineq', 'lubridate', 'reshape2', 'RColorBrewer', 'tikzDevice'), Ncpus = 4, clean = TRUE, lib = '${R_LIBS_USER}')"
