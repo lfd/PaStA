@@ -22,8 +22,8 @@ source("analyses/mtr_sctn_graph_util.R")
 # TODO: delete and sort out old comments and work, sort work
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  data_dir_name <- "resources/linux/resources/maintainers_section_graph"
-  d_dst <- "resources/linux/resources/maintainers_daumenkino"
+  data_dir_name <- file.path("resources", project, "resources/maintainers_section_graph")
+  d_dst <- file.path("resources", project, "resources/maintainers_daumenkino")
 } else {
   data_dir_name <- args[1]
   d_dst <- args[2]
@@ -34,6 +34,10 @@ files <- list.files(path = data_dir_name, pattern = "*.csv", full.names = TRUE, 
 files <- files[!grepl("-rc", files, fixed = TRUE)]
 files <- files[!grepl("filemap", files, fixed = TRUE)]
 files <- stringr::str_sort(files, numeric = TRUE)
+# the first 17 versions of qemu do not contain any edges between clusters. We don't need to look at those
+if (project == "qemu") {
+  files <- files[18:79]
+}
 
 graphs <- list()
 
@@ -43,9 +47,9 @@ find_largest_predecessor <- function(g_v1, g_v2, node_name) {
   version2 <- g_v2$version
 
   version1_file_name <-
-    file.path("resources/linux/resources/maintainers_cluster", version1)
+    file.path("resources", project, "resources/maintainers_cluster", version1)
   version2_file_name <-
-    file.path("resources/linux/resources/maintainers_cluster", version2)
+    file.path("resources", project, "resources/maintainers_cluster", version2)
 
   df_1 <- read.csv(version1_file_name)
   df_2 <- read.csv(version2_file_name)
@@ -78,7 +82,7 @@ for (file_name in files) {
   file_map_name <- paste0(file_map_name, "_filemap.csv")
   file_map_name <- sub(basename(file_name), file_map_name, file_name)
   
-  g_data <- maintainers_section_graph(file_name, "linux", file_map_name)
+  g_data <- maintainers_section_graph(file_name, project, file_map_name)
   g <- g_data$meta
   g$version <- basename(file_name)
   graphs[[length(graphs)+1]] <- g
@@ -108,14 +112,14 @@ for (i in 1:length(graphs)) {
 
   graphs[[i]] <- g
 
-  # Every community of nodes is supposed to be coloured like its biggest node
-  # Step #1: find largest node per community
-  community_max <- c()
-  for (j in 1:length(communities)){
-    #max_comm_size <- max(V(g)[communities[[j]]]$size)
-    maximum_name <- V(g)[communities[[j]]][which.max(V(g)[communities[[j]]]$size)]$name
-    community_max[j] <- maximum_name
-  }
+  ## Every community of nodes is supposed to be coloured like its biggest node
+  ## Step #1: find largest node per community
+  #community_max <- c()
+  #for (j in 1:length(communities)){
+  #  #max_comm_size <- max(V(g)[communities[[j]]]$size)
+  #  maximum_name <- V(g)[communities[[j]]][which.max(V(g)[communities[[j]]]$size)]$name
+  #  community_max[j] <- maximum_name
+  #}
 
   # Step #2: assign unique colour for largest quantile nodes
   graphs_largest <- V(g)[which(V(g)$size >= quantiles[quantile_step])]$name
