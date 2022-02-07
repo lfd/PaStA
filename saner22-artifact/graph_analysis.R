@@ -169,7 +169,7 @@ cluster_df <- data.frame(graph_name, project_column, cluster_modularity_list, cl
 
 #largest_t <- c(largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[3])]$name)
 #second_largest_t <- c(second_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[2])]$name)
-#third_largest_t <- c(third_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[1])]$name)
+third_largest_t <- c(third_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[1])]$name)
 
 df <- df[match(stringr::str_sort(df[["graph_name"]], numeric = TRUE), df[["graph_name"]]),]
 cluster_df <- cluster_df[match(stringr::str_sort(cluster_df[["graph_name"]], numeric = TRUE), cluster_df[["graph_name"]]),]
@@ -180,172 +180,183 @@ write.csv(cluster_df, cluster_output_name)
 df$graph_name <- factor(df$graph_name, levels = df$graph_name)
 cluster_df$graph_name <- factor(cluster_df$graph_name, levels = cluster_df$graph_name)
 
-pdf("giniDegree.pdf", width = 15, height = 10)
-p1 <- ggplot(df, aes(graph_name, gini.degree_list)) + geom_point() +
+pdf("sectiongraph_giniDegree.pdf", width = 15, height = 10)
+#p1 <- ggplot(df, aes(graph_name, gini.degree_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Gini Degree") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#p2 <- ggplot(cluster_df, aes(graph_name, cluster_gini.degree_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#grid.newpage()
+ggplot(df, aes(graph_name, gini.degree_list)) + geom_point() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
         axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Gini Degree") +
+  ggtitle("Gini Degree for Section Graph") +
   geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-p2 <- ggplot(cluster_df, aes(graph_name, cluster_gini.degree_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
-grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
 dev.off()
 
-pdf("giniClusterQuantity.pdf", width = 15, height = 10)
+pdf("sectiongraph_giniClusterQuantity.pdf", width = 15, height = 10)
 ggplot(df, aes(graph_name, gini.cluster_quantity_list)) + geom_point() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
         axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Gini Cluster Quantity -- Important: ONLY section graph here") +
+  ggtitle("Gini Cluster Quantity for Section Graph") +
   geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
 dev.off()
 
-pdf("avgClusterQuantity.pdf", width = 15, height = 10)
+pdf("sectiongraph_avgClusterQuantity.pdf", width = 15, height = 10)
 ggplot(df, aes(graph_name, avg.cluster_quantity_list)) + geom_point() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
         axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Average Cluster Quantity -- Important: ONLY section graph here") +
+  ggtitle("Average Cluster Quantity for Section Graph") +
   geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
 dev.off()
 
-pdf("avgLoC.pdf", width = 15, height = 10)
+pdf("sectiongraph_avgDegree.pdf", width = 15, height = 10)
+ggplot(df, aes(graph_name, avg.degree_list)) + geom_point() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+  ggtitle("Average Degree for Section Graph") +
+  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+dev.off()
+
+pdf("clustergraph_avgLoC.pdf", width = 15, height = 10)
 ggplot(cluster_df, aes(graph_name, cluster_avg.loc_list)) + geom_point() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
         axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Cluster Average Lines of Code -- Important: ONLY cluster graph here") +
+  ggtitle("Cluster Average Lines of Code for Cluster Graph") +
   geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
 dev.off()
 
-pdf("giniLoC.pdf", width = 15, height = 10)
+pdf("clustergraph_giniDegree.pdf", width = 15, height = 10)
+ggplot(cluster_df, aes(graph_name, cluster_gini.degree_list)) + geom_point() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+  ggtitle("Gini Degree for Cluster Graph") +
+  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+dev.off()
+
+pdf("clustergraph_giniLoC.pdf", width = 15, height = 10)
 ggplot(cluster_df, aes(graph_name, cluster_gini.loc_list)) + geom_point() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
         axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Cluster Gini Lines of Code -- Important: ONLY cluster graph here") +
+  ggtitle("Cluster Gini Lines of Code for Cluster Graph") +
   geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
 dev.off()
 
-
-pdf("modularity.pdf", width = 15, height = 10)
-p1 <- ggplot(df, aes(graph_name, modularity_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Modularity") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-p2 <- ggplot(cluster_df, aes(graph_name, cluster_modularity_list)) + geom_point() +
+pdf("clustergraph_avgDegree.pdf", width = 15, height = 10)
+ggplot(cluster_df, aes(graph_name, cluster_avg.degree_list)) + geom_point() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
         axis.title.x = element_blank(), axis.title.y = element_blank()) +
   geom_line(group=1) + facet_wrap(~project_column, scales = "free")
-grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-
+  ggtitle("Average Degree for Cluster Graph")
 dev.off()
 
-pdf("avgPathLength.pdf", width = 15, height = 10)
-p1 <- ggplot(df, aes(graph_name, avg.path.length_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Modularity") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-p2 <- ggplot(cluster_df, aes(graph_name, cluster_modularity_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#pdf("avgPathLength.pdf", width = 15, height = 10)
+#p1 <- ggplot(df, aes(graph_name, avg.path.length_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Modularity") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#p2 <- ggplot(cluster_df, aes(graph_name, cluster_modularity_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#
+#grid.newpage()
+#grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+#dev.off()
 
-grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-dev.off()
+#pdf("density.pdf", width = 15, height = 10)
+#p1 <- ggplot(df, aes(graph_name, density_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Density") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#p2 <- ggplot(cluster_df, aes(graph_name, cluster_density_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#
+#grid.newpage()
+#grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+#dev.off()
 
-pdf("density.pdf", width = 15, height = 10)
-p1 <- ggplot(df, aes(graph_name, density_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Density") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-p2 <- ggplot(cluster_df, aes(graph_name, cluster_density_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#pdf("globalClusteringCoefficient.pdf", width = 15, height = 10)
+#p1 <- ggplot(df, aes(graph_name, global.clustering.coefficient_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Global Clustering Coefficient") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#p2 <- ggplot(cluster_df, aes(graph_name, cluster_global.clustering.coefficient_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#
+#grid.newpage()
+#grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+#dev.off()
+#
+#pdf("localAvgClusteringCoefficient.pdf", width = 15, height = 10)
+#p1 <- ggplot(df, aes(graph_name, local.avg.clustering.coefficient_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Local Clustering Coefficient") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#p2 <- ggplot(cluster_df, aes(graph_name, cluster_local.avg.clustering.coefficient_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#
+#grid.newpage()
+#grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+#dev.off()
 
-grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-dev.off()
+#pdf("modularity.pdf", width = 15, height = 10)
+#p1 <- ggplot(df, aes(graph_name, modularity_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Modularity") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#p2 <- ggplot(cluster_df, aes(graph_name, cluster_modularity_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#grid.newpage()
+#grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+#dev.off()
 
-pdf("globalClusteringCoefficient.pdf", width = 15, height = 10)
-p1 <- ggplot(df, aes(graph_name, global.clustering.coefficient_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Global Clustering Coefficient") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-p2 <- ggplot(cluster_df, aes(graph_name, cluster_global.clustering.coefficient_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
-
-grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-dev.off()
-
-pdf("localAvgClusteringCoefficient.pdf", width = 15, height = 10)
-p1 <- ggplot(df, aes(graph_name, local.avg.clustering.coefficient_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Local Clustering Coefficient") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-p2 <- ggplot(cluster_df, aes(graph_name, cluster_local.avg.clustering.coefficient_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
-
-grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-dev.off()
-
-pdf("avgDegree.pdf", width = 15, height = 10)
-p1 <- ggplot(df, aes(graph_name, avg.degree_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Average Degree") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-p2 <- ggplot(cluster_df, aes(graph_name, cluster_avg.degree_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
-
-grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-dev.off()
-
-pdf("hubDegree.pdf", width = 15, height = 10)
-p1 <- ggplot(df, aes(graph_name, hub.degree_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Hub Degree") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-p2 <- ggplot(cluster_df, aes(graph_name, cluster_hub.degree_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
-
-grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-dev.off()
-
-pdf("scalefreeness.pdf", width = 15, height = 10)
-p1 <- ggplot(df, aes(graph_name, scale.free.ness_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Scale Freeness") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-p2 <- ggplot(cluster_df, aes(graph_name, cluster_scale.free.ness_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
-
-grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-dev.off()
+#pdf("hubDegree.pdf", width = 15, height = 10)
+#p1 <- ggplot(df, aes(graph_name, hub.degree_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Hub Degree") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#p2 <- ggplot(cluster_df, aes(graph_name, cluster_hub.degree_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#
+#grid.newpage()
+#grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+#dev.off()
+#
+#pdf("scalefreeness.pdf", width = 15, height = 10)
+#p1 <- ggplot(df, aes(graph_name, scale.free.ness_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Scale Freeness") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#p2 <- ggplot(cluster_df, aes(graph_name, cluster_scale.free.ness_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#
+#grid.newpage()
+#grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+#dev.off()
 
 ##df <- df[match(stringr::str_sort(df[["graph_name"]], numeric = TRUE), df[["graph_name"]]),]
 #cluster_dir_name <- "resources/linux/resources/maintainers_cluster"
