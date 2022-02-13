@@ -16,10 +16,10 @@ library(lubridate, warn.conflicts = FALSE)
 library(reshape2)
 library(tikzDevice)
 
-f_characteristics <- '/home/pasta/PaStA/resources/characteristics.csv'
-f_releases <- '/home/pasta/PaStA/resources/releases.csv'
+f_characteristics <- 'resources/characteristics.csv'
+f_releases <- 'resources/releases.csv'
 
-d_dst = '/home/pasta/PaStA/resources/R'
+d_dst = 'resources/R'
 
 dir.create(d_dst)
 
