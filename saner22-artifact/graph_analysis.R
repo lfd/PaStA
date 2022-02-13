@@ -171,6 +171,7 @@ cluster_df <- data.frame(graph_name, project_column, cluster_modularity_list, cl
 #second_largest_t <- c(second_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[2])]$name)
 third_largest_t <- c(third_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[1])]$name)
 
+# semantic versioning package: compareVersion
 df <- df[match(stringr::str_sort(df[["graph_name"]], numeric = TRUE), df[["graph_name"]]),]
 cluster_df <- cluster_df[match(stringr::str_sort(cluster_df[["graph_name"]], numeric = TRUE), cluster_df[["graph_name"]]),]
 write.csv(df, output_name)
@@ -179,6 +180,8 @@ write.csv(cluster_df, cluster_output_name)
 # order data frames according to graph_name
 df$graph_name <- factor(df$graph_name, levels = df$graph_name)
 cluster_df$graph_name <- factor(cluster_df$graph_name, levels = cluster_df$graph_name)
+
+# TODO: gleiche y-Achse
 
 pdf("sectiongraph_giniDegree.pdf", width = 15, height = 10)
 #p1 <- ggplot(df, aes(graph_name, gini.degree_list)) + geom_point() +
@@ -250,7 +253,7 @@ pdf("clustergraph_avgDegree.pdf", width = 15, height = 10)
 ggplot(cluster_df, aes(graph_name, cluster_avg.degree_list)) + geom_point() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
         axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+  geom_line(group=1) + facet_wrap(~project_column, scales = "free") +
   ggtitle("Average Degree for Cluster Graph")
 dev.off()
 
