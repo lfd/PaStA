@@ -322,3 +322,23 @@ linux <- filtered_data %>%
                      ))
 
 patch_conform_ratio_list(linux, 'conform.linux')
+
+### Table Analyses per Project ###
+
+filtered_data$year <- format(filtered_data$date, format = "%Y")
+
+#agg_max <- setNames(aggregate(filtered_data$year, by = list(filtered_data$project), max), c("project", "MaxYear"))
+#agg_min <- setNames(aggregate(filtered_data$year, by = list(filtered_data$project), min), c("project", "MinYear"))
+
+patch_data <- filtered_data %>% select(project, id, date, year, committer, week) %>% filter(year != "2021")
+patch_data$count <- 1
+patch_traffic <- patch_data %>% group_by(project, year, week) %>% summarise(patch_traffic = sum(count)) %>%
+  as.data.frame %>% group_by(project, year) %>% summarise(mean_patch_traffic_per_week = round(mean(patch_traffic))) %>% as.data.frame
+patch_traffic
+
+commit_traffic <- patch_data %>% filter(!is.na(committer) & (committer != "")) %>% group_by(project, year, week) %>%
+  summarise(commit_traffic = sum(count)) %>% group_by(project, year) %>%
+  summarise(mean_commits_per_week = round(mean(commit_traffic))) %>% as.data.frame
+commit_traffic
+
+merge(commit_traffic, patch_traffic, by=c("project", "year"))
