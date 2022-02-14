@@ -11,36 +11,22 @@ source("analyses/mtr_sctn_graph_util.R")
 source("saner22-artifact/util-networks-metrics.R")
 
 projects <- c("linux", "xen", "u-boot", "qemu")
+my.theme <- theme_bw(base_size = 12) + theme(legend.position = "top")
 
 graph_name <- c()
 project_column <- c()
 
-cluster.number_list <- c()
-gini.degree_list <- c()
-gini.cluster_quantity_list <- c()
 avg.cluster_quantity_list <- c()
-modularity_list <- c()
-avg.path.length_list <- c()
-density_list <- c()
-global.clustering.coefficient_list <- c()
-local.avg.clustering.coefficient_list <- c()
-avg.degree_list <- c()
-hub.degree_list <- c()
-small.world.ness_list <- c()
-scale.free.ness_list <- c()
+clusterquantity_quantile_list_05 <- c()
+clusterquantity_quantile_list_95 <- c()
 
-cluster_gini.degree_list <- c()
-cluster_gini.loc_list<- c()
+avg.degree_list <- c()
+degree_quantile_list_05 <- c()
+degree_quantile_list_95 <- c()
+
 cluster_avg.loc_list<- c()
-cluster_modularity_list <- c()
-cluster_avg.path.length_list <- c()
-cluster_density_list <- c()
-cluster_global.clustering.coefficient_list <- c()
-cluster_local.avg.clustering.coefficient_list <- c()
-cluster_avg.degree_list <- c()
-cluster_hub.degree_list <- c()
-cluster_small.world.ness_list <- c()
-cluster_scale.free.ness_list <- c()
+loc_quantile_list_05 <- c()
+loc_quantile_list_95 <- c()
 
 #output_name <- file.path("resources", p, "/resources/graph_metrics.csv")
 #cluster_output_name <- file.path("resources", p, "/resources/cluster_metrics.csv")
@@ -50,24 +36,16 @@ for (p in projects) {
   #data_dir_name <- "resources/linux/resources/maintainers_section_graph"
   #output_name <- "resources/linux/resources/graph_metrics_new.csv"
   #cluster_output_name <- "resources/linux/resources/cluster_graph_metrics_new.csv"
-  data_dir_name <- file.path("resources", p, "/resources/maintainers_section_graph")
+  data_dir_name <- file.path("resources", p, "resources/maintainers_section_graph")
   
   files <- list.files(path = data_dir_name, pattern = "*.csv", full.names = TRUE, recursive = FALSE)
   files <- files[!grepl("-rc", files, fixed = TRUE)]
   files <- files[!grepl("filemap", files, fixed = TRUE)]
   
   for (file_name in files) {
-  #  g <- get(load(file_name))
-  #  # get walktrap clustering
-  #  wt_comm <- cluster_walktrap(g)
-  #
-  #  # get number of existing clusters within graph as bounds for processing
-  #  comm_groups <- igraph::groups(wt_comm)
-  #  bounds <- seq(1, length(comm_groups), 1)
-  #
-    # Gini coefficient for degree of sections
     print(file_name)
     
+    #TODO: hier erste Variable als echten Graphnamen abspeichern lassen
     file_map_name <- substr(basename(file_name), 1, nchar(basename(file_name))-4)
     file_map_name <- paste0(file_map_name, "_filemap.csv")
     file_map_name <- sub(basename(file_name), file_map_name, file_name)
@@ -79,183 +57,233 @@ for (p in projects) {
     graph_name <- c(graph_name, basename(file_name))
     project_column <- c(project_column, p)
   
-    gini.degree <- Gini(unname(degree(g)))
-    gini.degree_list <- c(gini.degree_list, gini.degree)
-  
     comm_sizes <- as.numeric(g_data$comm_groups %>% map(length))
+    
+    quantiles <- quantile(comm_sizes, c(.95))
     avg.cluster_quantity <- mean(comm_sizes)
     avg.cluster_quantity_list <- c(avg.cluster_quantity_list, avg.cluster_quantity)
+    clusterquantity_quantile_list_95 <- c(clusterquantity_quantile_list_95, quantiles['95%'])
   
-    gini.cluster_quantity <- Gini(unname(comm_sizes))
-    gini.cluster_quantity_list <- c(gini.cluster_quantity_list, gini.cluster_quantity)
-    
-    modularity <- metrics.modularity(g)
-    modularity_list <- c(modularity_list, modularity)
-  
-    avg.path.length <- metrics.avg.pathlength(g)
-    avg.path.length_list <- c(avg.path.length_list, avg.path.length)
-  
-    density <- metrics.density(g)
-    density_list <- c(density_list, density)
-  
-    global.clustering.coefficient <- metrics.clustering.coeff(g, cc.type="global")
-    global.clustering.coefficient_list <- c(global.clustering.coefficient_list, global.clustering.coefficient)
-  
-    local.avg.clustering.coefficient <- metrics.clustering.coeff(g, cc.type="localaverage")
-    local.avg.clustering.coefficient_list <- c(local.avg.clustering.coefficient_list, local.avg.clustering.coefficient)
-  
+    quantiles <- quantile(unname(degree(g)), c(.95))
     avg.degree = metrics.avg.degree(g)
     avg.degree_list <- c(avg.degree_list, avg.degree)
+    degree_quantile_list_95 <- c(degree_quantile_list_95, quantiles['95%'])
   
-    hub.degree = metrics.hub.degree(g)[["degree"]]
-    hub.degree_list <- c(hub.degree_list, hub.degree)
-    
-    scale.free.ness = metrics.is.scale.free(g)
-    scale.free.ness_list <- c(scale.free.ness_list, scale.free.ness)
-    
     ## cluster data
-    cluster_gini.degree <- Gini(unname(degree(cluster_g)))
-    cluster_gini.degree_list <- c(cluster_gini.degree_list, cluster_gini.degree)
-  
+    quantiles <- quantile(V(cluster_g)$size, c(.95))
     cluster_avg.loc <- mean(V(cluster_g)$size)
     cluster_avg.loc_list <- c(cluster_avg.loc_list, cluster_avg.loc)
-  
-    cluster_gini.loc <- Gini(V(cluster_g)$size)
-    cluster_gini.loc_list <- c(cluster_gini.loc_list, cluster_gini.loc)
-  
-    cluster_modularity <- metrics.modularity(cluster_g)
-    cluster_modularity_list <- c(cluster_modularity_list, cluster_modularity)
-    
-    cluster_avg.path.length <- metrics.avg.pathlength(cluster_g)
-    cluster_avg.path.length_list <- c(cluster_avg.path.length_list, cluster_avg.path.length)
-  
-    cluster_density <- metrics.density(cluster_g)
-    cluster_density_list <- c(cluster_density_list, cluster_density)
-  
-    cluster_global.clustering.coefficient <- metrics.clustering.coeff(cluster_g, cc.type="global")
-    cluster_global.clustering.coefficient_list <- c(cluster_global.clustering.coefficient_list, cluster_global.clustering.coefficient)
-  
-    cluster_local.avg.clustering.coefficient <- metrics.clustering.coeff(cluster_g, cc.type="localaverage")
-    cluster_local.avg.clustering.coefficient_list <- c(cluster_local.avg.clustering.coefficient_list, cluster_local.avg.clustering.coefficient)
-  
-    cluster_avg.degree = metrics.avg.degree(cluster_g)
-    cluster_avg.degree_list <- c(cluster_avg.degree_list, cluster_avg.degree)
-  
-    cluster_hub.degree = metrics.hub.degree(cluster_g)[["degree"]]
-    cluster_hub.degree_list <- c(cluster_hub.degree_list, cluster_hub.degree)
-  
-    cluster_scale.free.ness = metrics.is.scale.free(cluster_g)
-    cluster_scale.free.ness_list <- c(cluster_scale.free.ness_list, cluster_scale.free.ness)
-  
-    #small.world.ness = metrics.is.smallworld(g)
-    #small.world.ness_list <- c(small.world.ness_list, small.world.ness)
-  
-    
-    #largest <- c(largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[3])]$name)
-    #second_largest <- c(second_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[2])]$name)
-    #third_largest <- c(third_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[1])]$name)
-  
+    loc_quantile_list_95 <- c(loc_quantile_list_95, quantiles['95%'])
   }
 }
 
-df <- data.frame(graph_name, project_column, modularity_list, avg.path.length_list, density_list, 
-                 global.clustering.coefficient_list, local.avg.clustering.coefficient_list, 
-                 avg.degree_list, avg.cluster_quantity_list, hub.degree_list, scale.free.ness_list, gini.cluster_quantity_list, gini.degree_list)
+#df <- data.frame(graph_name, project_column, modularity_list, avg.path.length_list, density_list, 
+#                 global.clustering.coefficient_list, local.avg.clustering.coefficient_list, 
+#                 avg.degree_list, avg.cluster_quantity_list, hub.degree_list, scale.free.ness_list, gini.cluster_quantity_list, gini.degree_list)
+#
+#cluster_df <- data.frame(graph_name, project_column, cluster_modularity_list, cluster_avg.path.length_list, cluster_density_list,
+#                 cluster_global.clustering.coefficient_list, cluster_local.avg.clustering.coefficient_list, cluster_avg.loc_list,
+#                 cluster_avg.degree_list, cluster_hub.degree_list, cluster_scale.free.ness_list, cluster_gini.loc_list, cluster_gini.degree_list)
+df <- data.frame(graph_name, project_column, avg.degree_list,
+                 degree_quantile_list_95,
+                 avg.cluster_quantity_list, clusterquantity_quantile_list_95)
 
-cluster_df <- data.frame(graph_name, project_column, cluster_modularity_list, cluster_avg.path.length_list, cluster_density_list,
-                 cluster_global.clustering.coefficient_list, cluster_local.avg.clustering.coefficient_list, cluster_avg.loc_list,
-                 cluster_avg.degree_list, cluster_hub.degree_list, cluster_scale.free.ness_list, cluster_gini.loc_list, cluster_gini.degree_list)
+cluster_df <- data.frame(graph_name, project_column, cluster_avg.loc_list, loc_quantile_list_95)
 
 
 #largest_t <- c(largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[3])]$name)
 #second_largest_t <- c(second_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[2])]$name)
-third_largest_t <- c(third_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[1])]$name)
+#third_largest_t <- c(third_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[1])]$name)
+# TODO: merge this into paper-plots.R
 
-# semantic versioning package: compareVersion
+f_releases <- 'resources/releases.csv'
+load_releases <- function(filename) {
+  data <- read_csv(filename)
+  data <- data %>% mutate(date = as.Date(date))
+}
+if (!exists('releases')) {
+  releases <- load_releases(f_releases)
+}
+
+df <- read.csv(output_name)
+cluster_df <- read.csv(cluster_output_name)
 df <- df[match(stringr::str_sort(df[["graph_name"]], numeric = TRUE), df[["graph_name"]]),]
 cluster_df <- cluster_df[match(stringr::str_sort(cluster_df[["graph_name"]], numeric = TRUE), cluster_df[["graph_name"]]),]
-write.csv(df, output_name)
-write.csv(cluster_df, cluster_output_name)
+df$graph_name = substr(df$graph_name, 1, nchar(df$graph_name)-4)
+cluster_df$graph_name = substr(cluster_df$graph_name, 1, nchar(cluster_df$graph_name)-4)
+df <- df %>% merge(releases, by.x = c("graph_name", "project_column"), by.y = c("release", "project"))
+cluster_df <- cluster_df %>% merge(releases, by.x = c("graph_name", "project_column"), by.y = c("release", "project"))
+#write.csv(df, output_name)
+#write.csv(cluster_df, cluster_output_name)
 
 # order data frames according to graph_name
-df$graph_name <- factor(df$graph_name, levels = df$graph_name)
-cluster_df$graph_name <- factor(cluster_df$graph_name, levels = cluster_df$graph_name)
+#df$graph_name <- factor(df$graph_name, levels = df$graph_name)
+#cluster_df$graph_name <- factor(cluster_df$graph_name, levels = cluster_df$graph_name)
 
 # TODO: gleiche y-Achse
-
-pdf("sectiongraph_giniDegree.pdf", width = 15, height = 10)
-#p1 <- ggplot(df, aes(graph_name, gini.degree_list)) + geom_point() +
-#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-#  ggtitle("Gini Degree") +
-#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-#p2 <- ggplot(cluster_df, aes(graph_name, cluster_gini.degree_list)) + geom_point() +
-#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
-#grid.newpage()
-ggplot(df, aes(graph_name, gini.degree_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Gini Degree for Section Graph") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-dev.off()
-
-pdf("sectiongraph_giniClusterQuantity.pdf", width = 15, height = 10)
-ggplot(df, aes(graph_name, gini.cluster_quantity_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Gini Cluster Quantity for Section Graph") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-dev.off()
-
+tmp_df <- df %>%
+  select(avg.cluster_quantity_list, clusterquantity_quantile_list_95, date, project_column) %>%
+  melt(id.vars = c('date', 'project_column'))
+levels(tmp_df$variable)[levels(tmp_df$variable)=="avg.cluster_quantity_list"] <- "Average Cluster Quantity"
+levels(tmp_df$variable)[levels(tmp_df$variable)=="clusterquantity_quantile_list_95"] <- "95% Quantile of Cluster Quantity"
 pdf("sectiongraph_avgClusterQuantity.pdf", width = 15, height = 10)
-ggplot(df, aes(graph_name, avg.cluster_quantity_list)) + geom_point() +
+#ggplot(df, aes(x=graph_name, avg.cluster_quantity_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Average Cluster Quantity for Section Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+ggplot(tmp_df, aes(x = date, y = value, color = variable, group=variable)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Number of sections per Cluster') +
+  xlab('Version') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Average Cluster Quantity for Section Graph") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+        axis.title.x = element_blank(), legend.title = element_blank()) +
+  facet_wrap(~project_column, scales = "free_x")
 dev.off()
+
+tmp_df <- df %>%
+  select(avg.degree_list, degree_quantile_list_95, date, project_column) %>%
+  melt(id.vars = c('date', 'project_column'))
+levels(tmp_df$variable)[levels(tmp_df$variable)=="avg.degree_list"] <- "Average Degree"
+levels(tmp_df$variable)[levels(tmp_df$variable)=="degree_quantile_list_95"] <- "95% Quantile of Degree"
 
 pdf("sectiongraph_avgDegree.pdf", width = 15, height = 10)
-ggplot(df, aes(graph_name, avg.degree_list)) + geom_point() +
+ggplot(tmp_df, aes(x = date, y = value, color = variable, group=variable)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Degree in Section Graph') +
+  xlab('Version') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Average Degree for Section Graph") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+        axis.title.x = element_blank(), legend.title = element_blank()) +
+  facet_wrap(~project_column, scales = "free_x")
+#ggplot(df, aes(graph_name, avg.degree_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Average Degree for Section Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
 dev.off()
+
+tmp_df <- cluster_df %>%
+  select(cluster_avg.loc_list, loc_quantile_list_95, date, project_column) %>%
+  melt(id.vars = c('date', 'project_column'))
+levels(tmp_df$variable)[levels(tmp_df$variable)=="cluster_avg.loc_list"] <- "Average LoC of a Cluster"
+levels(tmp_df$variable)[levels(tmp_df$variable)=="loc_quantile_list_95"] <- "95% Quantile LoC in a Cluster"
 
 pdf("clustergraph_avgLoC.pdf", width = 15, height = 10)
-ggplot(cluster_df, aes(graph_name, cluster_avg.loc_list)) + geom_point() +
+ggplot(tmp_df, aes(x = date, y = value, color = variable, group=variable)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('LoC in Cluster') +
+  xlab('Version') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Cluster Average Lines of Code for Cluster Graph") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+        axis.title.x = element_blank(), legend.title = element_blank()) +
+  facet_wrap(~project_column, scales = "free_x")
+#ggplot(cluster_df, aes(graph_name, cluster_avg.loc_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Cluster Average Lines of Code for Cluster Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
 dev.off()
 
-pdf("clustergraph_giniDegree.pdf", width = 15, height = 10)
-ggplot(cluster_df, aes(graph_name, cluster_gini.degree_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Gini Degree for Cluster Graph") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-dev.off()
 
-pdf("clustergraph_giniLoC.pdf", width = 15, height = 10)
-ggplot(cluster_df, aes(graph_name, cluster_gini.loc_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  ggtitle("Cluster Gini Lines of Code for Cluster Graph") +
-  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
-dev.off()
-
-pdf("clustergraph_avgDegree.pdf", width = 15, height = 10)
-ggplot(cluster_df, aes(graph_name, cluster_avg.degree_list)) + geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
-        axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  geom_line(group=1) + facet_wrap(~project_column, scales = "free") +
-  ggtitle("Average Degree for Cluster Graph")
-dev.off()
+#pdf("sectiongraph_giniDegree.pdf", width = 15, height = 10)
+##p1 <- ggplot(df, aes(graph_name, gini.degree_list)) + geom_point() +
+##  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+##        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+##  ggtitle("Gini Degree") +
+##  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+##p2 <- ggplot(cluster_df, aes(graph_name, cluster_gini.degree_list)) + geom_point() +
+##  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+##        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+##  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+##grid.newpage()
+#ggplot(df, aes(graph_name, gini.degree_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Gini Degree for Section Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#dev.off()
+#
+#pdf("sectiongraph_giniClusterQuantity.pdf", width = 15, height = 10)
+#ggplot(df, aes(graph_name, gini.cluster_quantity_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Gini Cluster Quantity for Section Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#dev.off()
+#
+#pdf("sectiongraph_avgClusterQuantity.pdf", width = 15, height = 10)
+#ggplot(df, aes(graph_name, avg.cluster_quantity_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Average Cluster Quantity for Section Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#dev.off()
+#
+#pdf("sectiongraph_avgDegree.pdf", width = 15, height = 10)
+#ggplot(df, aes(graph_name, avg.degree_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Average Degree for Section Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#dev.off()
+#
+#pdf("clustergraph_avgLoC.pdf", width = 15, height = 10)
+#ggplot(cluster_df, aes(graph_name, cluster_avg.loc_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Cluster Average Lines of Code for Cluster Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#dev.off()
+#
+#pdf("clustergraph_giniDegree.pdf", width = 15, height = 10)
+#ggplot(cluster_df, aes(graph_name, cluster_gini.degree_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Gini Degree for Cluster Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#dev.off()
+#
+#pdf("clustergraph_giniLoC.pdf", width = 15, height = 10)
+#ggplot(cluster_df, aes(graph_name, cluster_gini.loc_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Cluster Gini Lines of Code for Cluster Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#dev.off()
+#
+#pdf("clustergraph_avgDegree.pdf", width = 15, height = 10)
+#ggplot(cluster_df, aes(graph_name, cluster_avg.degree_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free") +
+#  ggtitle("Average Degree for Cluster Graph")
+#dev.off()
+#
+#ggplot(df, aes(graph_name, avg.cluster_quantity_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Average Cluster Quantity for Section Graph") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
 
 #pdf("avgPathLength.pdf", width = 15, height = 10)
 #p1 <- ggplot(df, aes(graph_name, avg.path.length_list)) + geom_point() +
