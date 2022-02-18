@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 
+# TODO: KOMPLETT UEBERARBEITEN!
 library(igraph)
 library(ineq)
 library(purrr)
@@ -15,23 +16,25 @@ my.theme <- theme_bw(base_size = 12) + theme(legend.position = "top")
 
 graph_name <- c()
 project_column <- c()
+type <- c()
+value <- c()
 
-avg.cluster_quantity_list <- c()
-clusterquantity_quantile_list_05 <- c()
-clusterquantity_quantile_list_95 <- c()
-
-avg.degree_list <- c()
-degree_quantile_list_05 <- c()
-degree_quantile_list_95 <- c()
-
-cluster_avg.loc_list<- c()
-loc_quantile_list_05 <- c()
-loc_quantile_list_95 <- c()
+#avg.cluster_quantity_list <- c()
+#clusterquantity_quantile_list_05 <- c()
+#clusterquantity_quantile_list_95 <- c()
+#
+#avg.degree_list <- c()
+#degree_quantile_list_05 <- c()
+#degree_quantile_list_95 <- c()
+#
+#cluster_avg.loc_list<- c()
+#loc_quantile_list_05 <- c()
+#loc_quantile_list_95 <- c()
 
 #output_name <- file.path("resources", p, "/resources/graph_metrics.csv")
 #cluster_output_name <- file.path("resources", p, "/resources/cluster_metrics.csv")
-output_name <- "resources/graph_metrics.csv"
-cluster_output_name <- "resources/cluster_metrics.csv"
+output_name <- "resources/my_metrics.csv"
+#cluster_output_name <- "resources/cluster_metrics.csv"
 for (p in projects) {
   #data_dir_name <- "resources/linux/resources/maintainers_section_graph"
   #output_name <- "resources/linux/resources/graph_metrics_new.csv"
@@ -53,27 +56,40 @@ for (p in projects) {
     g_data <- maintainers_section_graph(file_name, p, file_map_name)
     g <- g_data$graph
     cluster_g <- g_data$meta
-  
-    graph_name <- c(graph_name, basename(file_name))
-    project_column <- c(project_column, p)
-  
+
+    # get sizes of communities
     comm_sizes <- as.numeric(g_data$comm_groups %>% map(length))
+    value <- c(value, comm_sizes)
+    type[(length(type)+1):(length(type)+length(comm_sizes))] <- "community size"
+    graph_name[(length(graph_name)+1):(length(graph_name)+length(comm_sizes))] <- basename(file_name)
+    project_column[(length(project_column)+1):(length(project_column)+length(comm_sizes))] <- p
+
+    degrees <- unname(degree(g))
+    value <- c(value, degrees)
+    type[(length(type)+1):(length(type)+length(degrees))] <- "degree"
+    graph_name[(length(graph_name)+1):(length(graph_name)+length(degrees))] <- basename(file_name)
+    project_column[(length(project_column)+1):(length(project_column)+length(degrees))] <- p
     
-    quantiles <- quantile(comm_sizes, c(.95))
-    avg.cluster_quantity <- mean(comm_sizes)
-    avg.cluster_quantity_list <- c(avg.cluster_quantity_list, avg.cluster_quantity)
-    clusterquantity_quantile_list_95 <- c(clusterquantity_quantile_list_95, quantiles['95%'])
-  
-    quantiles <- quantile(unname(degree(g)), c(.95))
-    avg.degree = metrics.avg.degree(g)
-    avg.degree_list <- c(avg.degree_list, avg.degree)
-    degree_quantile_list_95 <- c(degree_quantile_list_95, quantiles['95%'])
-  
-    ## cluster data
-    quantiles <- quantile(V(cluster_g)$size, c(.95))
-    cluster_avg.loc <- mean(V(cluster_g)$size)
-    cluster_avg.loc_list <- c(cluster_avg.loc_list, cluster_avg.loc)
-    loc_quantile_list_95 <- c(loc_quantile_list_95, quantiles['95%'])
+    sizes_loc <- V(cluster_g)$size
+    value <- c(value, sizes_loc)
+    type[(length(type)+1):(length(type)+length(sizes_loc))] <- "cluster loc"
+    graph_name[(length(graph_name)+1):(length(graph_name)+length(sizes_loc))] <- basename(file_name)
+    project_column[(length(project_column)+1):(length(project_column)+length(sizes_loc))] <- p
+    #quantiles <- quantile(comm_sizes, c(.95))
+    #avg.cluster_quantity <- mean(comm_sizes)
+    #avg.cluster_quantity_list <- c(avg.cluster_quantity_list, avg.cluster_quantity)
+    #clusterquantity_quantile_list_95 <- c(clusterquantity_quantile_list_95, quantiles['95%'])
+  #
+    #quantiles <- quantile(unname(degree(g)), c(.95))
+    #avg.degree = metrics.avg.degree(g)
+    #avg.degree_list <- c(avg.degree_list, avg.degree)
+    #degree_quantile_list_95 <- c(degree_quantile_list_95, quantiles['95%'])
+  #
+    ### cluster data
+    #quantiles <- quantile(V(cluster_g)$size, c(.95))
+    #cluster_avg.loc <- mean(V(cluster_g)$size)
+    #cluster_avg.loc_list <- c(cluster_avg.loc_list, cluster_avg.loc)
+    #loc_quantile_list_95 <- c(loc_quantile_list_95, quantiles['95%'])
   }
 }
 
@@ -84,17 +100,45 @@ for (p in projects) {
 #cluster_df <- data.frame(graph_name, project_column, cluster_modularity_list, cluster_avg.path.length_list, cluster_density_list,
 #                 cluster_global.clustering.coefficient_list, cluster_local.avg.clustering.coefficient_list, cluster_avg.loc_list,
 #                 cluster_avg.degree_list, cluster_hub.degree_list, cluster_scale.free.ness_list, cluster_gini.loc_list, cluster_gini.degree_list)
-df <- data.frame(graph_name, project_column, avg.degree_list,
-                 degree_quantile_list_95,
-                 avg.cluster_quantity_list, clusterquantity_quantile_list_95)
 
-cluster_df <- data.frame(graph_name, project_column, cluster_avg.loc_list, loc_quantile_list_95)
+#df <- data.frame(graph_name, project_column, avg.degree_list,
+#                 degree_quantile_list_95,
+#                 avg.cluster_quantity_list, clusterquantity_quantile_list_95)
+#
+#cluster_df <- data.frame(graph_name, project_column, cluster_avg.loc_list, loc_quantile_list_95)
+df <- data.frame(graph_name, project_column, type, value)
+write.csv(df, output_name)
+
+# error plots !!!
+df <- read.csv("resources/my_metrics.csv")
+df <- ddply(df, .(project_column, graph_name, type), summarize, median = median(value), sd = round(sd(value), 2))
+
+# todo: yadda yadda graph_name cutting, data merging by date yadda yadda
+tmp_df <- df %>% filter(type == "cluster loc")
+ggplot(tmp_df, aes(x=date, y=median, group=project_column, color=project_column)) + 
+  geom_line() +
+  geom_point()+
+  geom_errorbar(aes(ymin=median-sd, ymax=median+sd), width=.2,
+                position=position_dodge(0.05)) +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank()) +
+  facet_wrap(~project_column, scales = "free")
+
+
+#cluster_df <- data.frame(graph_name, project_column, cluster_avg.loc_list, loc_quantile_list_95)
 
 
 #largest_t <- c(largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[3])]$name)
 #second_largest_t <- c(second_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[2])]$name)
 #third_largest_t <- c(third_largest, V(g)[which(V(g)$size == tail(sort(V(g)$size),3)[1])]$name)
 # TODO: merge this into paper-plots.R
+
 
 f_releases <- 'resources/releases.csv'
 load_releases <- function(filename) {
@@ -203,6 +247,173 @@ ggplot(tmp_df, aes(x = date, y = value, color = variable, group=variable)) +
 #  ggtitle("Cluster Average Lines of Code for Cluster Graph") +
 #  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
 dev.off()
+
+tmp_df <- cluster_df %>%
+  select(cluster_avg.loc_list, date, project_column)
+ggplot(tmp_df, aes(x = date, y = cluster_avg.loc_list, color = project_column, group=project_column)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('LoC in Cluster') +
+  xlab('Date') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank())
+
+tmp_df <- df %>%
+  select(avg.cluster_quantity_list, date, project_column)
+ggplot(tmp_df, aes(x = date, y = avg.cluster_quantity_list, color = project_column, group=project_column)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Cluster Quantity') +
+  xlab('Date') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank())
+
+tmp_df <- df %>%
+  select(avg.degree_list, date, project_column)
+ggplot(tmp_df, aes(x = date, y = avg.degree_list, color = project_column, group=project_column)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Average Degree') +
+  xlab('Date') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank())
+
+#levels(tmp_df$project_column)[levels(tmp_df$project_column)=="xen"] <- "Average LoC of a Cluster"
+#levels(tmp_df$project_column)[levels(tmp_df$project_column)=="xen"] <- "Average LoC of a Cluster"
+#levels(tmp_df$project_column)[levels(tmp_df$project_column)=="xen"] <- "Average LoC of a Cluster"
+#levels(tmp_df$project_column)[levels(tmp_df$project_column)=="Linu"] <- "95% Quantile LoC in a Cluster"
+### OLD COMPLEXITY STUFF
+
+df <- read.csv("resources/old_graph_metrics.csv")
+cluster_df <- read.csv("resources/old_cluster_metrics.csv")
+
+df <- df %>% select(graph_name, project_column, modularity_list, density_list, hub.degree_list)
+cluster_df <- cluster_df %>% select(graph_name, project_column, cluster_modularity_list, cluster_density_list, cluster_hub.degree_list)
+df$graph_name = substr(df$graph_name, 1, nchar(df$graph_name)-4)
+cluster_df$graph_name = substr(cluster_df$graph_name, 1, nchar(cluster_df$graph_name)-4)
+df <- df %>% merge(releases, by.x = c("graph_name", "project_column"), by.y = c("release", "project"))
+cluster_df <- cluster_df %>% merge(releases, by.x = c("graph_name", "project_column"), by.y = c("release", "project"))
+
+# Modularity
+
+ggplot(df, aes(x = date, y = modularity_list, color = project_column, group=project_column)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Modularity Section Graph') +
+  xlab('Date') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank())
+
+ggplot(cluster_df, aes(x = date, y = cluster_modularity_list, color = project_column, group=project_column)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Modularity Cluster Graph') +
+  xlab('Date') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank())
+
+# Hub Degree
+
+ggplot(df, aes(x = date, y = hub.degree_list, color = project_column, group=project_column)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Hub Degree Section Graph') +
+  xlab('Date') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank())
+
+ggplot(cluster_df, aes(x = date, y = cluster_hub.degree_list, color = project_column, group=project_column)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Hub Degree Cluster Graph') +
+  xlab('Date') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank())
+# Density
+
+ggplot(df, aes(x = date, y = density_list, color = project_column, group=project_column)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Density Section Graph') +
+  xlab('Date') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank())
+
+ggplot(cluster_df, aes(x = date, y = cluster_density_list, color = project_column, group=project_column)) +
+  geom_line() +
+  stat_smooth() +
+  ylab('Density Cluster Graph') +
+  xlab('Date') +
+  my.theme +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y',
+                 #sec.axis = dup_axis(name = prj_releases,
+                #                     breaks = releases$date,
+                #                     labels = releases$release)
+    ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+        axis.title.x = element_blank(), legend.title = element_blank())
+#pdf("density.pdf", width = 15, height = 10)
+#p1 <- ggplot(df, aes(graph_name, density_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  ggtitle("Density") +
+#  geom_line(group=1) + stat_smooth() + facet_wrap(~project_column, scales = "free")
+#p2 <- ggplot(cluster_df, aes(graph_name, cluster_density_list)) + geom_point() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
+#        axis.title.x = element_blank(), axis.title.y = element_blank()) +
+#  geom_line(group=1) + facet_wrap(~project_column, scales = "free")
+#
+#grid.newpage()
+#grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+#dev.off()
 
 
 #pdf("sectiongraph_giniDegree.pdf", width = 15, height = 10)
