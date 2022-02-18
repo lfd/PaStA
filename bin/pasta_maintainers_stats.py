@@ -159,7 +159,7 @@ def generate_graph(config, revision, maintainers, file_map, file_filters):
             ctr_edge = G[a][b]['weight']
             line = [a, b, ctr_edge['lines'], ctr_edge['size']]
             csv_writer.writerow(line)
-    call(['./analyses/maintainers_section_graph.R', f_sections])
+    call(['./analyses/maintainers_section_graph.R', revision])
 
 
 def maintainers_stats(config, argv):

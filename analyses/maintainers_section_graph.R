@@ -40,10 +40,12 @@ if (project == 'linux') {
 
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  file_name <- file.path(d_resources, 'maintainers_section_graph', 'HEAD.csv')
+  version <- 'HEAD'
 } else {
-  file_name <- args[1]
+  version <- args[1]
 }
+
+file_name <- file.path(d_maintainers_section, paste(version, 'csv', sep='.'))
 
 if ("--print-entire-graph" %in% args) {
 	PRINT_ENTIRE_GRAPH <- TRUE
