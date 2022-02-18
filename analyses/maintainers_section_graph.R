@@ -56,7 +56,7 @@ if ("--print-clusters" %in% args) {
 create_dstdir(c())
 
 dir.create(d_maintainers_cluster, showWarnings = FALSE)
-CLUSTER_DESTINATION <- file.path(d_maintainers_cluster, paste(version, 'txt', sep='.'))
+CLUSTER_DESTINATION <- file.path(d_maintainers_cluster, paste(version, 'csv', sep='.'))
 
 graph_list <- maintainers_section_graph(project, f_section_graph, f_file_map)
 g <- graph_list$graph
@@ -141,24 +141,4 @@ if (PRINT_CLUSTERS) {
   }
 }
 
-write_cluster_file <- function(g, dst) {
-  for (name in names(comm_groups)) {
-    comm_groups[[name]] <- sort(comm_groups[[name]])
-  }
-  sorted_comm_groups <- comm_groups[order(sapply(comm_groups,function(x) x[[1]]))]
-  sink(dst)
-
-  for (i in bounds) {
-    group <- sorted_comm_groups[i]
-    group_list <- unname(group)[[1]]
-
-    for (section in group_list) {
-      cat(section)
-      cat('\n')
-    }
-    cat('\n')
-  }
-  sink()
-}
-
-write_cluster_file(g, CLUSTER_DESTINATION)
+write_cluster_csv(graph_list, CLUSTER_DESTINATION)

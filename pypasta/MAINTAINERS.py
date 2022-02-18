@@ -10,10 +10,12 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
+import csv
 import os
 import pygit2
 import re
 
+from collections import defaultdict
 from enum import Enum
 from functools import partial
 from logging import getLogger
@@ -419,13 +421,17 @@ class MAINTAINERS:
                 tmp.append(line)
         add_section(tmp)
 
-        f_maintainers_cluster = os.path.join(d_cluster, '%s.txt' % revision)
+        f_maintainers_cluster = os.path.join(d_cluster, '%s.csv' % revision)
         self.cluster = None
+        tmp = defaultdict(set)
         if os.path.exists(f_maintainers_cluster):
             with open(f_maintainers_cluster, 'r') as f:
-                cluster = f.read()
-            cluster = list(filter(None, cluster.split('\n\n')))
-            self.cluster = [set(x.split('\n')) for x in cluster]
+                cluster = csv.DictReader(f)
+                for row in cluster:
+                    tmp[row['c_representative']].add(row['c_section'])
+            self.cluster = list()
+            for value in tmp.values():
+                self.cluster.append(value)
         else:
             log.warning('No MAINTAINERS cluster for %s' % revision)
 
