@@ -182,6 +182,10 @@ def fix_encoding(bstring):
     return bstring
 
 
+def replace_umlauts(string):
+	return string.replace('ä', 'a').replace('ü', 'u').replace('ö', 'o').replace('ß', 'ss')
+
+
 def pager(text, enable_pager=True):
     _, lines = shutil.get_terminal_size()
     if text.count('\n') > lines and enable_pager:

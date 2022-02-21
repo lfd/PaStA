@@ -13,11 +13,12 @@ import re
 from collections import defaultdict
 
 from .Patch import Diff
+from ..Util import replace_umlauts
 
 
 class Signature:
     def __init__(self, name, email, date):
-        self.name = name
+        self.name = replace_umlauts(name)
         self.email = email
         self.date = date
 
