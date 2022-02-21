@@ -226,6 +226,24 @@ class MailCharacteristics:
                 self.integrated_xcorrect = True
                 break
 
+        sections = remove_general_sections(sections)
+        if self.integrated_correct:
+            self.integration_distance = 0
+        else:
+            mtrs_sections = maintainers.get_sections_by_maintainer(self.committer, self.upstream.committer.email)
+            mtrs_sections = remove_general_sections(mtrs_sections)
+            if len(sections) and len(mtrs_sections):
+                # FIXME: THE REST anpassen
+                email = self.upstream.committer.email.lower()
+                self.integration_distance = maintainers.section_distance_list(sections, mtrs_sections)
+            else:
+                if len(sections) == 0 and len(mtrs_sections) == 0:
+                    self.integration_distance = 9998
+                elif len(sections) == 0:
+                    self.integration_distance = 9997
+                elif len(mtrs_sections) == 0:
+                    self.integration_distance = 9996
+
         if self.integrated_xcorrect or not maintainers.cluster:
             return
 
@@ -235,7 +253,7 @@ class MailCharacteristics:
                     return cluster
             raise ValueError('Unable to find a cluster for section %s (Version: %s)' % (section, self.version))
 
-        for section in remove_general_sections(sections):
+        for section in sections:
             cluster = get_cluster(section)
             for c in cluster:
                 self.integrated_xcorrect = check_maintainer(c, self.committer)
@@ -300,6 +318,7 @@ class MailCharacteristics:
         self.committer = None
         self.integrated_correct = None
         self.integrated_xcorrect = None
+        self.integration_distance = None
 
         self.version = None
 

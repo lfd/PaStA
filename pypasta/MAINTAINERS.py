@@ -11,18 +11,19 @@ the COPYING file in the top-level directory.
 """
 
 import csv
+import networkx as nx
 import os
 import pygit2
 import re
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from enum import Enum
 from functools import partial
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
-from .Util import load_pkl_and_update
+from .Util import load_pkl_and_update, replace_umlauts
 
 log = getLogger(__name__[-15:])
 
@@ -383,8 +384,27 @@ class MAINTAINERS:
                 sections.add(section.description)
         return sections
 
+    def section_distance(self, lhs, rhs):
+        try:
+            return len(nx.dijkstra_path(self.section_graph, lhs, rhs, weight=None)) - 1
+        # FIXME: narrow exception
+        except:
+            # FIXME: return INT MAX
+            return 99999
+
+    def section_distance_list(self, lhs, rhs):
+        distances = list()
+        for l in lhs:
+            for r in rhs:
+                distances.append(self.section_distance(l, r))
+        return min(distances)
+
     def get_maintainers(self, section):
         return self.sections[section].get_maintainers()
+
+    def get_sections_by_maintainer(self, name, email):
+        return self.mtrs_to_sections[name.lower()] | \
+               self.mtrs_mail_to_sections[email.lower()]
 
     def __getitem__(self, item):
         return self.sections[item]
@@ -406,10 +426,20 @@ class MAINTAINERS:
                 'No MAINTAINERS implementation for project' % project_name)
 
         self.sections = dict()
+        self.mtrs_to_sections = defaultdict(set)
+        self.mtrs_mail_to_sections = defaultdict(set)
 
         def add_section(content):
             section = Section(repo, revision, content)
             self.sections[section.description] = section
+
+            _, mtrs, _ = section.get_maintainers()
+            for mtr in mtrs:
+                name = replace_umlauts(mtr[0])
+                mail = mtr[1]
+                self.mtrs_to_sections[name].add(section.description)
+                self.mtrs_mail_to_sections[mail].add(section.description)
+
 
         tmp = list()
         for line in maintainers:
@@ -434,6 +464,23 @@ class MAINTAINERS:
                 self.cluster.append(value)
         else:
             log.warning('No MAINTAINERS cluster for %s' % revision)
+
+        f_maintainers_graph = os.path.join(d_cluster, '..', 'maintainers_section_graph', '%s.csv' % revision)
+        self.section_graph = None
+        if os.path.exists(f_maintainers_graph):
+            with open(f_maintainers_graph, 'r') as f:
+                sec_graph = csv.DictReader(f)
+                self.section_graph = nx.Graph()
+                for row in sec_graph:
+                    # Skip THE REST
+                    # FIXME: Adjust for other projects
+                    if 'THE REST' in [row['from'], row['to']]:
+                        continue
+                    self.section_graph.add_edge(
+                        row['from'], row['to'],
+                        weight=Counter(lines = row['lines'], size=row['size']))
+        else:
+            log.warning('No MAINTAINERS section graph for %s' % revision)
 
 
 def _load_maintainer(revision, d_cluster, project_name):

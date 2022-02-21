@@ -84,6 +84,7 @@ def prepare_process_characteristics(config, clustering):
                   'committer', # Who committed the patch? (Can be None. If committer != None -> ignored = False)
                   'committer.correct', # Is the committer a valid committer according to MAINTAINERS?
                   'committer.xcorrect', # Is the committer a valid committer in the cluster of the maintainer?
+                  'committer.distance', # Shortest distance in section graph between committer's sections and sections of the upstream commit
     ]
 
     with open(config.f_characteristics, 'w') as csv_file:
@@ -114,6 +115,7 @@ def prepare_process_characteristics(config, clustering):
                        'committer': c.committer,
                        'committer.correct': c.integrated_correct,
                        'committer.xcorrect': c.integrated_xcorrect,
+                       'committer.distance': c.integration_distance,
                        }
 
                 writer.writerow(row)
