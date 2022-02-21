@@ -20,7 +20,8 @@ from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
 from .MAINTAINERS import load_maintainers
-from .Util import get_first_upstream, load_pkl_and_update, mail_parse_date
+from .Util import get_first_upstream, load_pkl_and_update, mail_parse_date, \
+    remove_general_sections
 
 log = getLogger(__name__[-15:])
 
@@ -234,15 +235,7 @@ class MailCharacteristics:
                     return cluster
             raise ValueError('Unable to find a cluster for section %s (Version: %s)' % (section, self.version))
 
-        # THE REST - Quirk: Ignore the cluster THE REST. The clusterfile won't
-        # contain THE REST, as it would match for any cluster. Simply remove it.
-        sections = sections - {'THE REST'}
-        # At QEMU, we basically have the same situation. Here, THE REST is
-        # called "General Project Administration ……". Simply ignore anything
-        # that starts with that string.
-        sections = {x for x in sections if
-                    not x.startswith('General Project Administration')}
-        for section in sections:
+        for section in remove_general_sections(sections):
             cluster = get_cluster(section)
             for c in cluster:
                 self.integrated_xcorrect = check_maintainer(c, self.committer)

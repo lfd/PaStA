@@ -38,6 +38,19 @@ def pygit2_signature_to_datetime(signature):
     return dt
 
 
+def remove_general_sections(section_list):
+    # THE REST - Quirk: Ignore the cluster THE REST. The clusterfile won't
+    # contain THE REST, as it would match for any cluster. Simply remove it.
+    ret = section_list - {'THE REST'}
+
+    # At QEMU, we basically have the same situation. Here, THE REST is
+    # called "General Project Administration ……". Simply ignore anything
+    # that starts with that string.
+    ret = {x for x in ret if
+           not x.startswith('General Project Administration')}
+    return ret
+
+
 def path_convert_relative(prefix, path):
     if not os.path.isabs(path) and path[0] != '~':
         return os.path.join(prefix, path)
