@@ -142,5 +142,5 @@ write_cluster_csv <- function(g_data, dst) {
   df <- data.frame(c_representative, c_section, c_size)
   df <- df[order(c_representative, c_section),]
 
-  write.table(df, dst, row.names=FALSE, sep = ",")
+  write.table(df, dst, row.names=FALSE, sep = ",", qmethod='double')
 }
