@@ -99,6 +99,10 @@ def prepare_process_characteristics(config, clustering):
             if message_id in relevant_ignored:
                 ignored = message_id in ignored_target
 
+            committer = None
+            if c.committer:
+                committer = c.committer.name
+
             # Dump an entry for each list the patch was sent to. This allows
             # for grouping by mailing lists.
             for ml in sorted(c.lists):
@@ -112,7 +116,7 @@ def prepare_process_characteristics(config, clustering):
                        'list.matches_patch': list_matches_patch,
                        'ignored': ignored,
                        'commithash': c.first_upstream,
-                       'committer': c.committer,
+                       'committer': committer,
                        'committer.correct': c.integrated_correct,
                        'committer.xcorrect': c.integrated_xcorrect,
                        'committer.distance': c.integration_distance,

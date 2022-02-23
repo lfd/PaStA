@@ -18,8 +18,8 @@ from ..Util import replace_umlauts
 
 class Signature:
     def __init__(self, name, email, date):
-        self.name = replace_umlauts(name)
-        self.email = email
+        self.name = replace_umlauts(name).lower()
+        self.email = email.lower()
         self.date = date
 
 

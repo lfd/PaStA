@@ -210,7 +210,10 @@ class MailCharacteristics:
 
         def check_maintainer(section, committer):
             _, s_maintainers, _ = maintainers.get_maintainers(section)
-            return committer in [name for name, mail in s_maintainers]
+            for name, mail in s_maintainers:
+                if name == committer.name or mail == committer.email:
+                    return True
+            return False
 
         # If the patch was integrated, fill the field integrated_(x)correct.
         # integrated_(x)correct indicates if the patch was integrated by a
@@ -230,11 +233,9 @@ class MailCharacteristics:
         if self.integrated_correct:
             self.integration_distance = 0
         else:
-            mtrs_sections = maintainers.get_sections_by_maintainer(self.committer, self.upstream.committer.email)
+            mtrs_sections = maintainers.get_sections_by_maintainer(self.committer)
             mtrs_sections = remove_general_sections(mtrs_sections)
             if len(sections) and len(mtrs_sections):
-                # FIXME: THE REST anpassen
-                email = self.upstream.committer.email.lower()
                 self.integration_distance = maintainers.section_distance_list(sections, mtrs_sections)
             else:
                 if len(sections) == 0 and len(mtrs_sections) == 0:
@@ -363,7 +364,7 @@ class MailCharacteristics:
             if self.first_upstream:
                 # In case the patch was integrated, fill the field committer
                 self.upstream = repo[self.first_upstream]
-                self.committer = self.upstream.committer.name.lower()
+                self.committer = self.upstream.committer
 
         # Messages can be received by bots, or linux-next, even if they
         # don't contain patches

@@ -402,9 +402,9 @@ class MAINTAINERS:
     def get_maintainers(self, section):
         return self.sections[section].get_maintainers()
 
-    def get_sections_by_maintainer(self, name, email):
-        return self.mtrs_to_sections[name.lower()] | \
-               self.mtrs_mail_to_sections[email.lower()]
+    def get_sections_by_maintainer(self, maintainer):
+        return self.mtrs_to_sections[maintainer.name] | \
+               self.mtrs_mail_to_sections[maintainer.email]
 
     def __getitem__(self, item):
         return self.sections[item]
