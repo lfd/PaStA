@@ -80,6 +80,7 @@ def prepare_process_characteristics(config, clustering):
                   'list', # On which list was it sent to? (Multiple csv-entries for multiple lists!)
                   'list.matches_patch', # Does that list match to what MAINTAINERS tells us?
                   'ignored', # Was the patch ignored? See definition above.
+                  'commithash', # The upstream commit hash
                   'committer', # Who committed the patch? (Can be None. If committer != None -> ignored = False)
                   'committer.correct', # Is the committer a valid committer according to MAINTAINERS?
                   'committer.xcorrect', # Is the committer a valid committer in the cluster of the maintainer?
@@ -109,6 +110,7 @@ def prepare_process_characteristics(config, clustering):
                        'list': ml,
                        'list.matches_patch': list_matches_patch,
                        'ignored': ignored,
+                       'commithash': c.first_upstream,
                        'committer': c.committer,
                        'committer.correct': c.integrated_correct,
                        'committer.xcorrect': c.integrated_xcorrect,
