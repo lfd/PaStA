@@ -8,7 +8,7 @@ library(logging)
 library(ggplot2)
 library(grid)
 
-source("analyses/mtr_sctn_graph_util.R")
+source("analyses/maintainers_graph_util.R")
 source("saner22-artifact/util-networks-metrics.R")
 
 projects <- c("linux", "xen", "u-boot", "qemu")
@@ -16,8 +16,10 @@ my.theme <- theme_bw(base_size = 12) + theme(legend.position = "top")
 
 graph_name <- c()
 project_column <- c()
-type <- c()
-value <- c()
+#type <- c()
+#value <- c()
+section_number <- c()
+cluster_number <- c()
 
 #avg.cluster_quantity_list <- c()
 #clusterquantity_quantile_list_05 <- c()
@@ -33,7 +35,7 @@ value <- c()
 
 #output_name <- file.path("resources", p, "/resources/graph_metrics.csv")
 #cluster_output_name <- file.path("resources", p, "/resources/cluster_metrics.csv")
-output_name <- "resources/my_metrics.csv"
+output_name <- "resources/number_metrics.csv"
 #cluster_output_name <- "resources/cluster_metrics.csv"
 for (p in projects) {
   #data_dir_name <- "resources/linux/resources/maintainers_section_graph"
@@ -55,26 +57,33 @@ for (p in projects) {
     
     g_data <- maintainers_section_graph(file_name, p, file_map_name)
     g <- g_data$graph
-    cluster_g <- g_data$meta
+    #cluster_g <- g_data$meta
+    graph_name <- c(graph_name, file_name)
+    project_column <- c(project_column, p)
+    section_number <- c(section_number, length(V(g)))
+    cluster_number <- c(cluster_number, length(g_data$bounds))
 
     # get sizes of communities
-    comm_sizes <- as.numeric(g_data$comm_groups %>% map(length))
-    value <- c(value, comm_sizes)
-    type[(length(type)+1):(length(type)+length(comm_sizes))] <- "community size"
-    graph_name[(length(graph_name)+1):(length(graph_name)+length(comm_sizes))] <- basename(file_name)
-    project_column[(length(project_column)+1):(length(project_column)+length(comm_sizes))] <- p
-
-    degrees <- unname(degree(g))
-    value <- c(value, degrees)
-    type[(length(type)+1):(length(type)+length(degrees))] <- "degree"
-    graph_name[(length(graph_name)+1):(length(graph_name)+length(degrees))] <- basename(file_name)
-    project_column[(length(project_column)+1):(length(project_column)+length(degrees))] <- p
+    #comm_sizes <- as.numeric(g_data$comm_groups %>% map(length))
+    #value <- c(value, comm_sizes)
+    #type[(length(type)+1):(length(type)+length(comm_sizes))] <- "community size"
+    #graph_name[(length(graph_name)+1):(length(graph_name)+length(comm_sizes))] <- basename(file_name)
+    #project_column[(length(project_column)+1):(length(project_column)+length(comm_sizes))] <- p
+#
+    #degrees <- unname(degree(g))
+    #value <- c(value, degrees)
+    #type[(length(type)+1):(length(type)+length(degrees))] <- "degree"
+    #graph_name[(length(graph_name)+1):(length(graph_name)+length(degrees))] <- basename(file_name)
+    #project_column[(length(project_column)+1):(length(project_column)+length(degrees))] <- p
+    #
+    #sizes_loc <- V(cluster_g)$size
+    #value <- c(value, sizes_loc)
+    #type[(length(type)+1):(length(type)+length(sizes_loc))] <- "cluster loc"
+    #graph_name[(length(graph_name)+1):(length(graph_name)+length(sizes_loc))] <- basename(file_name)
+    #project_column[(length(project_column)+1):(length(project_column)+length(sizes_loc))] <- p
     
-    sizes_loc <- V(cluster_g)$size
-    value <- c(value, sizes_loc)
-    type[(length(type)+1):(length(type)+length(sizes_loc))] <- "cluster loc"
-    graph_name[(length(graph_name)+1):(length(graph_name)+length(sizes_loc))] <- basename(file_name)
-    project_column[(length(project_column)+1):(length(project_column)+length(sizes_loc))] <- p
+    
+    
     #quantiles <- quantile(comm_sizes, c(.95))
     #avg.cluster_quantity <- mean(comm_sizes)
     #avg.cluster_quantity_list <- c(avg.cluster_quantity_list, avg.cluster_quantity)
@@ -106,19 +115,22 @@ for (p in projects) {
 #                 avg.cluster_quantity_list, clusterquantity_quantile_list_95)
 #
 #cluster_df <- data.frame(graph_name, project_column, cluster_avg.loc_list, loc_quantile_list_95)
-df <- data.frame(graph_name, project_column, type, value)
+#df <- data.frame(graph_name, project_column, type, value)
+df <- data.frame(graph_name, project_column, section_number, cluster_number)
 write.csv(df, output_name)
 
+quit()
+
 # error plots !!!
-df <- read.csv("resources/my_metrics.csv")
-df <- ddply(df, .(project_column, graph_name, type), summarize, median = median(value), sd = round(sd(value), 2))
+df <- read.csv("resources/number_metrics.csv")
+df <- ddply(df, .(project_column, graph_name, type), summarize, mean = mean(value), sd = round(sd(value), 2))
 
 # todo: yadda yadda graph_name cutting, data merging by date yadda yadda
-tmp_df <- df %>% filter(type == "cluster loc")
-ggplot(tmp_df, aes(x=date, y=median, group=project_column, color=project_column)) + 
+tmp_df <- df %>% filter(type == "community size")
+ggplot(tmp_df, aes(x=date, y=mean, group=project_column, color=project_column)) + 
   geom_line() +
   geom_point()+
-  geom_errorbar(aes(ymin=median-sd, ymax=median+sd), width=.2,
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
                 position=position_dodge(0.05)) +
   my.theme +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y',
@@ -129,6 +141,9 @@ ggplot(tmp_df, aes(x=date, y=median, group=project_column, color=project_column)
   theme(axis.text.x = element_text(angle = 45, hjust = 1.25),
         axis.title.x = element_blank(), legend.title = element_blank()) +
   facet_wrap(~project_column, scales = "free")
+
+ggplot(tmp_df, aes(x=graph_name, y=value, fill=project_column)) + 
+  geom_boxplot()
 
 
 #cluster_df <- data.frame(graph_name, project_column, cluster_avg.loc_list, loc_quantile_list_95)
