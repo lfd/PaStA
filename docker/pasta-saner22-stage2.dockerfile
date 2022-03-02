@@ -47,10 +47,3 @@ RUN ./saner22-artifact/prepare_gui.sh linux $V_LINUX
 WORKDIR /home/pasta/PaStA/saner22-artifact
 RUN mkdir -p /home/pasta/results && tar -czf /home/pasta/results/cluster_gui.tar.gz ./cluster_gui
 WORKDIR /home/pasta/PaStA
-
-# Create cluster graphs for the paper
-RUN ./saner22-artifact/create_paper_graphs.sh xen $V_XEN
-RUN ./saner22-artifact/create_paper_graphs.sh u-boot $V_U_BOOT
-
-# Create Daumenkino
-RUN ./saner22-artifact/daumenkino.sh linux
