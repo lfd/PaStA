@@ -18,7 +18,7 @@ library(graphlayouts)
 #library(patchwork)
 library(RColorBrewer)
 
-source("analyses/mtr_sctn_graph_util.R")
+source("analyses/maintainers_graph_util.R")
 # TODO: delete and sort out old comments and work, sort work
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
@@ -82,7 +82,7 @@ for (file_name in files) {
   file_map_name <- paste0(file_map_name, "_filemap.csv")
   file_map_name <- sub(basename(file_name), file_map_name, file_name)
   
-  g_data <- maintainers_section_graph(file_name, project, file_map_name)
+  g_data <- maintainers_section_graph(project, file_name, file_map_name)
   g <- g_data$meta
   g$version <- basename(file_name)
   graphs[[length(graphs)+1]] <- g
