@@ -42,6 +42,7 @@ if (length(args) == 0) {
   version <- args[1]
 }
 
+d_dst <- file.path(d_maintainers_cluster_img, version)
 f_section_graph <- file.path(d_maintainers_section, paste(version, 'csv', sep='.'))
 f_file_map <- file.path(d_maintainers_section, paste0(version, '_filemap', '.csv'))
 

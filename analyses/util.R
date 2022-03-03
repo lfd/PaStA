@@ -20,6 +20,7 @@ project <- read.csv('config', header=FALSE)$V1
 d_resources <- file.path('resources', project, 'resources')
 d_maintainers_section <- file.path(d_resources, 'maintainers_section_graph')
 d_maintainers_cluster <- file.path(d_resources, 'maintainers_cluster')
+d_maintainers_cluster_img <- file.path(d_resources, 'maintainers_cluster_img')
 
 WIDTH <- 6.3
 HEIGHT <- 5

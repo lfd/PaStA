@@ -17,7 +17,7 @@ revision=$2
 
 RESOURCES="./resources/$project/resources"
 TEX_IMG_DST="$RESOURCES/maintainers_cluster_img/$revision/"
-VERTEX_NAMES="$RESOURCES/maintainers_cluster/$revision.txt"
+VERTEX_NAMES="$RESOURCES/maintainers_cluster/$revision.csv"
 PDF_DST="$TEX_IMG_DST/build"
 REPRO="./fse22-artifact/cluster_gui/$project-$revision/"
 SOLUTION="$REPRO/solution.csv"
@@ -26,9 +26,7 @@ SOLUTION="$REPRO/solution.csv"
 
 # 1. Create the tex files
 ./analyses/maintainers_section_graph.R \
-	$TEX_IMG_DST \
-	"$RESOURCES/maintainers_section_graph/$revision.csv" \
-	"$RESOURCES/maintainers_section_graph/${revision}_filemap.csv" \
+	$revision \
 	--print-clusters
 
 # 2. Randomise clusters
