@@ -19,7 +19,7 @@ RESOURCES="./resources/$project/resources"
 TEX_IMG_DST="$RESOURCES/maintainers_cluster_img/$revision/"
 VERTEX_NAMES="$RESOURCES/maintainers_cluster/$revision.txt"
 PDF_DST="$TEX_IMG_DST/build"
-REPRO="./saner22-artifact/cluster_gui/$project-$revision/"
+REPRO="./fse22-artifact/cluster_gui/$project-$revision/"
 SOLUTION="$REPRO/solution.csv"
 
 ./pasta set_config $project
@@ -32,7 +32,7 @@ SOLUTION="$REPRO/solution.csv"
 	--print-clusters
 
 # 2. Randomise clusters
-./saner22-artifact/randomise_cluster.py \
+./fse22-artifact/randomise_cluster.py \
 	$VERTEX_NAMES \
 	$TEX_IMG_DST
 

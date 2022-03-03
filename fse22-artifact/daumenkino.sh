@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) OTH Regensburg, 2021
+# Copyright (c) OTH Regensburg, 2021-2022
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -16,7 +16,7 @@ project=$1
 ./analyses/animate_test.R
 
 #daumenkino="$HOME/results/daumenkino/$project"
-#template="./saner22-artifact/tikz_template.tex"
+#template="./fse22-artifact/tikz_template.tex"
 #build="$daumenkino/build"
 
 #mkdir -p $daumenkino $build
@@ -25,7 +25,7 @@ project=$1
 #	xargs -n 1 -I {} -P $(nproc) bash -c "./analyses/tex_generator.R {} \$(echo {} | sed -e 's/\.csv/_filemap\.csv/')"
 #
 #for i in resources/$project/resources/R/graphdesc*.tex; do
-#	./saner22-artifact/daumenkino/daumenkino.py -i $i -o $daumenkino/$(basename $i)
+#	./fse22-artifact/daumenkino/daumenkino.py -i $i -o $daumenkino/$(basename $i)
 #done
 #
 #ls $daumenkino/*.tex | \

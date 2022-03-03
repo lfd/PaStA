@@ -10,7 +10,7 @@
 
 set -e
 
-./saner22-artifact/paper-plots.R
+./fse22-artifact/paper-plots.R
 
 DST=/home/pasta/results/overall
 

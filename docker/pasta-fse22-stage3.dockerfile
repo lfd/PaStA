@@ -1,4 +1,4 @@
-# Copyright (c) OTH Regensburg, 2021
+# Copyright (c) OTH Regensburg, 2021-2022
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -6,7 +6,7 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-FROM pasta:saner22-stage2
+FROM pasta:fse22-stage2
 
 MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 
