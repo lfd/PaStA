@@ -28,10 +28,14 @@ SCTN="$RES/maintainers_section_graph"
 
 mkdir -p $CLSTRS
 
+relevant=
 for tag in $tags; do
 	if [ -f $CLSTRS/$tag.csv ] && [ -f $SCTN/$tag.csv ] && [ -f $SCTN/${tag}_filemap.csv ]; then
 		echo "Skipping $tag: already existing"
 		continue
 	fi
-	./pasta maintainers_stats --mode graph --revision $tag
+	echo "Enqueuing $tag"
+	relevant="$tags $tag"
 done
+
+echo $relevant | xargs -P $(nproc) -n 1 ./pasta maintainers_stats --mode graph --revision
