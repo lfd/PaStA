@@ -17,7 +17,7 @@ RUN git checkout fse22-artifact
 
 # Linux analysis - the short way
 WORKDIR /home/pasta/PaStA/resources/linux/resources
-RUN pbzip2 -dv patch-groups.bz2 characteristics.csv.bz2
+RUN lzma -dv patch-groups.lzma characteristics.csv.lzma
 WORKDIR /home/pasta/PaStA
 
 RUN ./tools/analyse_project.sh linux
