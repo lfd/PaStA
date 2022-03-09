@@ -89,6 +89,9 @@ maintainers_section_graph <- function(project, file_name, file_map_name, cluster
 
   # get clustering
   ret_wt_comm <- cluster_walktrap(g)
+  #ret_wt_comm <- cluster_louvain(g)
+  #ret_wt_comm <- cluster_fast_greedy(g)
+  #ret_wt_comm <- cluster_infomap(g)
 
   if (clustering_method == "_louvain") {
     ret_wt_comm <- cluster_louvain(g)
