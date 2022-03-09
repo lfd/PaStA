@@ -46,6 +46,8 @@ d_dst <- file.path(d_maintainers_cluster_img, version)
 f_section_graph <- file.path(d_maintainers_section, paste(version, 'csv', sep='.'))
 f_file_map <- file.path(d_maintainers_section, paste0(version, '_filemap', '.csv'))
 
+clustering_method <- ""
+
 if ("--print-entire-graph" %in% args) {
 	PRINT_ENTIRE_GRAPH <- TRUE
 }
@@ -54,12 +56,25 @@ if ("--print-clusters" %in% args) {
 	PRINT_CLUSTERS <- TRUE
 }
 
+if ("--louvain" %in% args) {
+	clustering_method <- "_louvain"
+}
+
+if ("--infomap" %in% args) {
+	clustering_method <- "_infomap"
+}
+
+if ("--fast_greedy" %in% args) {
+	clustering_method <- "_fast_greedy"
+}
+
 create_dstdir(c())
 
+d_maintainers_cluster <- paste0(d_maintainers_cluster, clustering_method)
 dir.create(d_maintainers_cluster, showWarnings = FALSE)
 CLUSTER_DESTINATION <- file.path(d_maintainers_cluster, paste(version, 'csv', sep='.'))
 
-graph_list <- maintainers_section_graph(project, f_section_graph, f_file_map)
+graph_list <- maintainers_section_graph(project, f_section_graph, f_file_map, clustering_method)
 g <- graph_list$graph
 wt_comm <- graph_list$wt_comm
 comm_groups <- graph_list$comm_groups

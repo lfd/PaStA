@@ -38,7 +38,7 @@ generate_cluster_matrix <- function(file_map, wt_comm, dimension) {
 }
 # function to generate the maintainers_section_graph, its communities,
 # its groups and bounds in a list in said order
-maintainers_section_graph <- function(project, file_name, file_map_name, sanitize = FALSE) {
+maintainers_section_graph <- function(project, file_name, file_map_name, clustering_method = NA, sanitize = FALSE) {
   data_frame <- read_csv(file_name)
   file_map <- read.csv(file_map_name, header = TRUE)
   # solution taken from https://stackoverflow.com/questions/18893390/splitting-on-comma-outside-quotes
@@ -87,8 +87,16 @@ maintainers_section_graph <- function(project, file_name, file_map_name, sanitiz
   #  g <- igraph::delete.vertices(g, V(g)[grepl("DRIVER", toupper(V(g)$name))])
   #}
 
-  # get walktrap clustering
+  # get clustering
   ret_wt_comm <- cluster_walktrap(g)
+
+  if (clustering_method == "_louvain") {
+    ret_wt_comm <- cluster_louvain(g)
+  } else if (clustering_method == "_infomap") {
+    ret_wt_comm <- cluster_infomap(g)
+  } else if (clustering_method == "_fast_greedy") {
+    ret_wt_comm <- cluster_fast_greedy(g)
+  }
 
   # get number of existing clusters within graph as bounds for processing
   ret_comm_groups <- igraph::groups(ret_wt_comm)
