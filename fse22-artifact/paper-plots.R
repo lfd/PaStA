@@ -17,6 +17,7 @@ library(reshape2)
 library(tikzDevice)
 
 f_characteristics <- 'resources/characteristics.csv'
+f_characteristics_rand <- 'resources/characteristics_rand.csv'
 f_releases <- 'resources/releases.csv'
 
 d_dst = 'resources/R'
@@ -200,24 +201,41 @@ patch_conform_ratio <- function(data, plot_name) {
   levels(df$variable)[levels(df$variable)=="ratio_correct"] <- "section conform"
   levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "cluster conform"
 
+  project_names <- c(
+    'linux'="Linux",
+    'u-boot'="U-Boot",
+    'qemu'="QEMU",
+    'xen'="Xen-Project"
+  )
+
+  # adding line for randomised values
+  #random <- df %>% filter((grepl("random", project)) & (variable == "cluster conform"))
+  #random$variable <- "random conform"
+  #random$variable <- "random conform"
+  #df <- df %>% filter(!grepl("random", project))
+  #df <- rbind(df, random)
+  #df$project <- stringr::str_remove(df$project, "random_")
+
   p <- ggplot(df, aes(x = week, y = value, color = variable)) +
     geom_line() +
     geom_smooth() +
     #geom_vline(xintercept = releases$date, linetype="dotted") +
-    ylab('Ratio of conformingly integrated patches') +
-    xlab('Date') +
+    #ylab('Ratio of conformingly integrated patches') +
+    #xlab('Date') +
     scale_x_date(date_breaks = '2 year', date_labels = '%Y',
                  #sec.axis = dup_axis(name = prj_releases,
                  #                    breaks = releases$date,
                  #                    labels = releases$release)
     ) +
-    facet_wrap(~project, scales = 'fixed') +
-    ggtitle("Ratio for all projects") +
+    facet_wrap(~project, scales = 'fixed', labeller = as_labeller(project_names)) +
+    #ggtitle("Ratio for all projects") +
     my.theme +
+    scale_y_continuous(labels = scales::percent) +
     theme(axis.text.x.top = element_text(angle = 90, hjust = 0),
-          legend.title = element_blank())
-  printplot(p, plot_name)
+          legend.title = element_blank(), axis.title.x = element_blank(),
+          axis.title.y = element_blank())
 
+  printplot(p, plot_name)
 }
 
 patch_conform_ratio_list <- function(data, plot_name) {
@@ -257,8 +275,8 @@ patch_conform_ratio_list <- function(data, plot_name) {
     geom_line() +
     geom_smooth() +
     #geom_vline(xintercept = releases$date, linetype="dotted") +
-    ylab('Ratio of conformingly integrated patches') +
-    xlab('Date') +
+    #ylab('Ratio of conformingly integrated patches') +
+    #xlab('Date') +
     scale_x_date(date_breaks = '2 year', date_labels = '%Y',
                  sec.axis = dup_axis(name = 'Linux',
                                      breaks = rel$date,
@@ -266,8 +284,10 @@ patch_conform_ratio_list <- function(data, plot_name) {
     ) +
     facet_wrap(~list, scales = 'fixed') +
     my.theme +
-    theme(axis.text.x.top = element_text(angle = 60, hjust = 0),
-          legend.title = element_blank())
+    scale_y_continuous(labels = scales::percent) +
+    theme(axis.text.x.top = element_text(angle = 45, hjust = 0),
+          legend.title = element_blank(), axis.title.x = element_blank(),
+          axis.title.y = element_blank())
   printplot(p, plot_name)
 
 }
@@ -276,6 +296,7 @@ patch_conform_ratio_list <- function(data, plot_name) {
 
 if (!exists('raw_data')) {
   raw_data <- load_characteristics(f_characteristics)
+  #raw_data <- rbind(raw_data, load_characteristics(f_characteristics_rand))
 }
 
 if (!exists('releases')) {
