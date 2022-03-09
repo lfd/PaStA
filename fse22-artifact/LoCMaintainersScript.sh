@@ -2,28 +2,33 @@
 
 set -e
 
-for project in linux u-boot qemu xen
+echo "Project,Version,No-Mtrs,LoC,No-Sections,No-Clusters,No-CommitsLastVersion"
+for project in linux qemu u-boot xen
 do
 	cd "resources/$project/repo"
-	git fetch --all
-	if [[ $project == "linux" ]]; then
-		versions=$(git tag --list | grep -E "(^v2\.6\.39$|^v[0-9]{1,2}\.[0-9]{1,3}$)" | sort -V)
-	elif [[ $project == "u-boot" ]]; then
-		versions=$(git tag --list | grep -E "^v20[12]" | grep "^v20[12]" | grep -v "^v201[0123]" | grep -v "^v2014\.0[147]" | grep -v "v2014\.10-rc1" | sort -V)
-	elif [[ $project == "xen" ]]; then
-		versions=$(git tag --list | grep -v "^3" | grep -v "^\(RELEASE-\)\?4\.0\." | grep -v "RELEASE-[23]" | grep -P "^\d|R" | sort -V)
-	elif [[ $project == "qemu" ]]; then
-		versions=$(git tag --list | grep -v "^release" | grep -v "^v0\.[123456789]\." | grep -v "^v0\.1[0123]\." | grep -v "initial")
-	fi
 	
-	echo "Project; Version; No-Mtrs; LoC; No-Sections; No-Clusters"
+	versions=$(git tag --merged origin/master | grep -v -- -rc)
+
+	if [[ $project == "xen" ]]; then
+		versions=$(git tag --merged origin/master)
+	fi
+
 	for version in $versions; do
-	        git checkout $version > /dev/null 2>&1
-	        mtrs=$(cat MAINTAINERS | grep -a "^M:" | sort | uniq | wc -l)
-	        loc=$(find . -type f -not -regex '\./\.git.*'|xargs cat|wc -l)
-		sections=$(cat ../resources/maintainers_section_graph/$version.csv | cut -d, -f1 | uniq | wc -l)
-		clusters=$(cat ../resources/maintainers_cluster/$version.csv | cut -d, -f1 | uniq | wc -l)
-		echo "$project; $version; $mtrs; $loc; $(($sections-1)); $(($clusters-1))"
+		cluster="../resources/maintainers_cluster/$version.csv"
+		if [ ! -f $cluster ]; then
+			continue
+		fi
+
+		last_version=$(git tag --merged origin/master | grep -v -- -rc | grep $version -B 1 | head -n 1)
+
+	        mtrs=$(git show $version:./MAINTAINERS | grep -a "^M:" | sort | uniq | wc -l)
+		loc=$(git ls-tree -r $version | grep blob | awk '{print $3}' | xargs -P $(nproc) -n 1 git --no-pager show  | wc -l)
+		sections=$(cat $cluster | tail -n +2 | wc -l)
+		clusters=$(cat $cluster | cut -d, -f1 | tail -n +2 | sort | uniq | wc -l)
+		#maintainers_changes_total=$(git log --no-merges --pretty=format:%an --follow -- MAINTAINERS | wc -l)
+		#maintainers_changes_last_version=$(git log $last_version..$version --no-merges --pretty=format:%an --follow -- MAINTAINERS | wc -l)
+		commits_last_version=$(git log $last_version..$version --no-merges --pretty=format:%h | wc -l)
+		echo "$project,$version,$mtrs,$loc,$sections,$clusters,$commits_last_version"
 	done
 	cd -
 done
