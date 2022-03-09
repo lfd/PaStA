@@ -55,7 +55,7 @@ for (p in projects) {
     file_map_name <- paste0(file_map_name, "_filemap.csv")
     file_map_name <- sub(basename(file_name), file_map_name, file_name)
     
-    g_data <- maintainers_section_graph(file_name, p, file_map_name)
+    g_data <- maintainers_section_graph(p, file_name, file_map_name)
     g <- g_data$graph
     #cluster_g <- g_data$meta
     graph_name <- c(graph_name, file_name)
