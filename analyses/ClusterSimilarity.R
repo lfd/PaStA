@@ -31,10 +31,16 @@ c_maxoverlap <- c()
 c_max_representative <- c()
 
 for (file_name in files) {
+  print(paste0("Parsing file ", file_name, "..."))
   cluster_df <- read.csv(file_name)
   for (m in methods){
     other_dir_name <- paste(data_dir_name, m, sep = '_')
-    other_df <- read.csv(file.path(other_dir_name, basename(file_name)))
+    other_file_name <- file.path(other_dir_name, basename(file_name))
+    if (!file.exists(other_file_name)) {
+       print(paste0(other_file_name, " does not exist for clustering method ", m))
+       next
+    }
+    other_df <- read.csv(other_file_name)
     
     for (a in unique(cluster_df$c_representative)) {
       max <- 0
@@ -56,7 +62,7 @@ for (file_name in files) {
 }
 
 df <- data.frame(c_version, c_clustering, c_representative, c_maxoverlap, c_max_representative)
-write.csv(csv_dst)
+write.csv(df, csv_dst)
 
 #for (file_name in files) {
 #  file_map_name <- substr(basename(file_name), 1, nchar(basename(file_name))-4)
