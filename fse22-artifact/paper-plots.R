@@ -27,8 +27,8 @@ dir.create(d_dst)
 date.min <- '2011-01-01'
 date.max <- '2030-12-31'
 
-WIDTH <- 6.3
-HEIGHT <- 5
+WIDTH <- 7
+HEIGHT <- 3.3
 
 my.theme <- theme_bw(base_size = 12) + theme(legend.position = "top")
 
@@ -233,7 +233,9 @@ patch_conform_ratio <- function(data, plot_name) {
     scale_y_continuous(labels = scales::percent) +
     theme(axis.text.x.top = element_text(angle = 90, hjust = 0),
           legend.title = element_blank(), axis.title.x = element_blank(),
-          axis.title.y = element_blank())
+          axis.title.y = element_blank(),
+          legend.margin=margin(0,0,0,0),
+          legend.box.margin=margin(0,0,-10,0))
 
   printplot(p, plot_name)
 }
@@ -287,9 +289,18 @@ patch_conform_ratio_list <- function(data, plot_name) {
     scale_y_continuous(labels = scales::percent) +
     theme(axis.text.x.top = element_text(angle = 45, hjust = 0),
           legend.title = element_blank(), axis.title.x = element_blank(),
-          axis.title.y = element_blank())
-  printplot(p, plot_name)
+          axis.title.y = element_blank(),
+          legend.margin=margin(0,0,0,0),
+          legend.box.margin=margin(0,0,-12,0))
 
+  prev_height <- HEIGHT
+  HEIGHT <- 4
+  prev_width <- WIDTH
+  WIDTH <- 9
+
+  printplot(p, plot_name)
+  HEIGHT <- prev_height
+  WIDTH <- prev_width
 }
 
 
