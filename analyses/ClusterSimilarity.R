@@ -10,6 +10,30 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 source("analyses/maintainers_graph_util.R")
+library(dplyr)
+
+# taken from website https://www.r-bloggers.com/2021/11/how-to-calculate-jaccard-similarity-in-r/
+jaccard <- function(df_a, df_b, c_a, c_b) {
+  df_a <- df_a[df_a$c_representative == c_a,]
+  df_b <- df_b[df_b$c_representative == c_b,]
+
+  intersection = length(intersect(df_a$c_section, df_b$c_section))
+  union = length(df_a$c_section) + length(df_b$c_section) - intersection
+  return (intersection/union)
+}
+
+#compare_clusters_adj_rand <- function(df_a, df_b, c_a, c_b) {
+#  df_a <- df_a[df_a$c_representative == c_a,]
+#  df_b <- df_b[df_b$c_representative == c_b,]
+#
+#  #intersection <- intersect(df_a$c_section, df_b$c_section)
+#  #min_set_size <- min(nrow(df_a), nrow(df_b))
+#  #intersect_coeff <- length(intersection)/min_set_size
+#  # the higher, the better
+#  rand_index <- adj.rand.index(df_a$c_section, df_b$c_section)
+#
+#  return(rand_index)
+#}
 
 data_dir_name <- file.path("resources", project, "resources/maintainers_cluster")
 csv_dst <- file.path("resources", project, "resources/maintainers_cluster_similarity.csv")
@@ -29,10 +53,12 @@ c_clustering <- c()
 c_representative <- c()
 c_maxoverlap <- c()
 c_max_representative <- c()
+c_cluster_size <- c()
 
 for (file_name in files) {
   print(paste0("Parsing file ", file_name, "..."))
   cluster_df <- read.csv(file_name)
+  cluster_table <- table(cluster_df$c_representative)
   for (m in methods){
     other_dir_name <- paste(data_dir_name, m, sep = '_')
     other_file_name <- file.path(other_dir_name, basename(file_name))
@@ -46,7 +72,7 @@ for (file_name in files) {
       max <- 0
       max_rep <- NA
       for (b in unique(other_df$c_representative)) {
-        overlap <- compare_cluster_csv(cluster_df, other_df, a, b)
+        overlap <- jaccard(cluster_df, other_df, a, b)
         if (overlap > max) {
           max <- overlap
           max_rep <- b
@@ -57,12 +83,18 @@ for (file_name in files) {
       c_representative <- c(c_representative, a)
       c_maxoverlap <- c(c_maxoverlap, max)
       c_max_representative <- c(c_max_representative, max_rep)
+      c_cluster_size <- c(c_cluster_size, unname(cluster_table[a]))
     }
   }
 }
 
-df <- data.frame(c_version, c_clustering, c_representative, c_maxoverlap, c_max_representative)
+df <- data.frame(c_version, c_clustering, c_representative, c_maxoverlap, c_max_representative, c_cluster_size)
 write.csv(df, csv_dst)
+
+ggplot(df, aes(x = c_cluster_size, y = c_maxoverlap)) +
+  facet_wrap(~ c_clustering) +
+  geom_point(size = 2, alpha = 0.01, color="black") +
+  geom_point(data = df %>% filter(c_representative == c_max_representative), color="#69b3a2", size=1, alpha = 0.1)
 
 #for (file_name in files) {
 #  file_map_name <- substr(basename(file_name), 1, nchar(basename(file_name))-4)
