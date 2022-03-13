@@ -158,3 +158,60 @@ if (PRINT_CLUSTERS) {
 }
 
 write_cluster_csv(graph_list, CLUSTER_DESTINATION)
+
+indexes <- c(25, 58)
+g <- graph_list$g
+comm_groups <- graph_list$comm_groups
+
+group_1 <- comm_groups[indexes[1]]
+group_list_1 <- unname(group_1)[[1]]
+cluster_graph_1 <- igraph::delete_vertices(g, which(!(V(g)$name %in% group_list_1)))
+V(cluster_graph_1)$category <- sample(LETTERS, length(V(cluster_graph_1)), T)
+
+group_2 <- comm_groups[indexes[2]]
+group_list_2 <- unname(group_2)[[1]]
+cluster_graph_2 <- igraph::delete_vertices(g, which(!(V(g)$name %in% group_list_2)))
+V(cluster_graph_2)$category <- sample(LETTERS, length(V(cluster_graph_2)), T)
+V(cluster_graph_2)$clu <- "black"
+
+
+ggraph(cluster_graph_1, layout = "dh") +
+geom_edge_link0(aes(edge_width = weight),edge_colour = "grey66")+
+#geom_node_point(aes(fill = clu,size = size),shape = 21)+
+geom_node_point(aes(fill = category, size = size),shape = 21)+
+#geom_node_text(aes(filter = size >= unname(quantiles[quantile_step]), label = name),family="serif", size=4)+
+geom_node_text(aes(label = name),family="serif", size=4, repel=TRUE)+
+#scale_fill_manual(values = got_palette)+
+scale_edge_width(range = c(0.2,3))+
+scale_size(range = c(1,6))+
+theme_graph(base_family = "Helvetica")+
+theme(legend.position = "none")
+#ggtitle(graph_name)
+
+# TODO: make it reproducible to extract security subsystem
+filename <- file.path("resources/R", "security_subsystem")
+WIDTH <- 4
+HEIGHT <- 3
+tikz(paste0(filename, '.tex'), width = WIDTH, height = HEIGHT, sanitize=TRUE, standAlone = FALSE)
+
+ggraph(cluster_graph_2, layout = "stress") +
+#geom_edge_link0(aes(edge_width = 0.25),edge_colour = "grey66")+
+geom_edge_link0(aes(edge_width = weight),edge_colour = "grey66")+
+#geom_node_point(aes(fill = "black",size = size, colour="black"),shape = 21, color="black")+
+#geom_node_point(aes(size=0.5, fill="white"))+
+#geom_node_point(aes(fill = "black", size = size),shape = 21)+
+#geom_node_text(aes(filter = size >= unname(quantiles[quantile_step]), label = name),family="serif", size=4)+
+#geom_node_text(aes(label = name),family="serif", size=2.75, repel=FALSE)+
+geom_label(aes(x = x, y = y, label = name), nudge_y = 0, label.size = NA) +
+#scale_fill_manual(values = got_palette)+
+#scale_edge_width(range = c(0.2,3))+
+scale_edge_width(range = c(1.2,3))+
+scale_size(range = c(1,3))+
+theme_graph(base_family = "Helvetica")+
+  ylim(-1.5, 1.5) +
+  xlim(-1.5, 1.5) +
+theme(legend.position = "none")
+#ggtitle(graph_name)
+dev.off()
+  
+  
