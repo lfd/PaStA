@@ -61,3 +61,6 @@ done
 
 mkdir -p $RESULT
 cp -av * $RESULT
+
+cd $HOME/PaStA
+./fse22-artifact/meiomei.sh
