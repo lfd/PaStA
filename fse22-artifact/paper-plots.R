@@ -15,6 +15,11 @@ library(ggplot2)
 library(lubridate, warn.conflicts = FALSE)
 library(reshape2)
 library(tikzDevice)
+library(cowplot)
+library(mgcv)
+library(zoo)
+library(TSdist)
+library(cowplot)
 
 f_characteristics <- 'resources/characteristics.csv'
 f_characteristics_rand <- 'resources/characteristics_rand.csv'
@@ -31,6 +36,7 @@ WIDTH <- 7
 HEIGHT <- 3.3
 
 my.theme <- theme_bw(base_size = 12) + theme(legend.position = "top")
+colour.palette <- c("#999999", "#E69F00", "#009371")
 
 printplot <- function(p, filename, ...) {
   plot(p, ...)
@@ -198,8 +204,8 @@ patch_conform_ratio <- function(data, plot_name) {
 
   df <- melt(df, id.vars = c('project', 'week'))
   # rename the levels for proper legend naming
-  levels(df$variable)[levels(df$variable)=="ratio_correct"] <- "section conform"
-  levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "cluster conform"
+  levels(df$variable)[levels(df$variable)=="ratio_correct"] <- "Micro-Level Conform"
+  levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "Macro-Level Conform"
 
   project_names <- c(
     'linux'="Linux",
@@ -209,7 +215,7 @@ patch_conform_ratio <- function(data, plot_name) {
   )
 
   # adding line for randomised values
-  #random <- df %>% filter((grepl("random", project)) & (variable == "cluster conform"))
+  #random <- df %>% filter((grepl("random", project)) & (variable == "Macro-Level Conform"))
   #random$variable <- "random conform"
   #random$variable <- "random conform"
   #df <- df %>% filter(!grepl("random", project))
@@ -217,7 +223,8 @@ patch_conform_ratio <- function(data, plot_name) {
   #df$project <- stringr::str_remove(df$project, "random_")
 
   p <- ggplot(df, aes(x = week, y = value, color = variable)) +
-    geom_line() +
+    #geom_line() +
+    geom_point(size=0.5) +
     geom_smooth() +
     #geom_vline(xintercept = releases$date, linetype="dotted") +
     #ylab('Ratio of conformingly integrated patches') +
@@ -270,9 +277,13 @@ patch_conform_ratio_list <- function(data, plot_name) {
 
   df <- melt(df, id.vars = c('week', 'list'))
   # rename the levels for proper legend naming
-  levels(df$variable)[levels(df$variable)=="ratio_correct"] <- "section conform"
-  levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "cluster conform"
-
+  levels(df$variable)[levels(df$variable)=="ratio_correct"] <- "Micro-Level Conform"
+  levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "Macro-Level Conform"
+  
+  df <- transform(df, list=factor(list,
+                                     levels=c('linux-arm-kernel@lists.infradead.org',
+                                              'netdev@vger.kernel.org',
+                                              'dri-devel@lists.freedesktop.org')))
   p <- ggplot(df, aes(x = week, y = value, color = variable)) +
     geom_line() +
     geom_smooth() +
@@ -284,7 +295,7 @@ patch_conform_ratio_list <- function(data, plot_name) {
                                      breaks = rel$date,
                                      labels = rel$release)
     ) +
-    facet_wrap(~list, scales = 'fixed') +
+    facet_wrap(~list, scales = 'fixed', nrow=3) +
     my.theme +
     scale_y_continuous(labels = scales::percent) +
     theme(axis.text.x.top = element_text(angle = 45, hjust = 0),
@@ -294,13 +305,151 @@ patch_conform_ratio_list <- function(data, plot_name) {
           legend.box.margin=margin(0,0,-12,0))
 
   prev_height <- HEIGHT
-  HEIGHT <- 4
+  HEIGHT <<- 4.5
   prev_width <- WIDTH
-  WIDTH <- 9
+  WIDTH <<- 3.35
 
   printplot(p, plot_name)
-  HEIGHT <- prev_height
-  WIDTH <- prev_width
+  HEIGHT <<- prev_height
+  WIDTH <<- prev_width
+}
+
+patch_conform_linux <- function(data, plot_name) {
+  relevant <- data %>% select(list, week, committer.correct, committer.xcorrect)
+
+  true <- relevant %>% filter(committer.correct == TRUE) %>% select(list, week) %>% group_by(list, week) %>% count(name = 'correct')
+  false <- relevant %>% filter(committer.correct == FALSE) %>% select(list, week) %>% group_by(list, week) %>% count(name = 'incorrect')
+
+  xtrue <- relevant %>% filter(committer.xcorrect == TRUE) %>% select(list, week) %>% group_by(list, week) %>% count(name = 'xcorrect')
+  xfalse <- relevant %>% filter(committer.xcorrect == FALSE) %>% select(list, week) %>% group_by(list, week) %>% count(name = 'xincorrect')
+
+
+  # Fill up weeks with no values with zeroes
+  true <- true %>% group_by(list) %>% group_modify(fillup_missing_weeks)
+
+  # We must also merge weeks with no ignored patches, so all.x/y = TRUE
+  df <- merge(x = true, y = false, by = c('list', 'week'), all.x = TRUE, all.y = TRUE)
+  df <- merge(x = df, y = xtrue, by = c('list', 'week'), all.x = TRUE, all.y = TRUE)
+  df <- merge(x = df, y = xfalse, by = c('list', 'week'), all.x = TRUE, all.y = TRUE)
+  # Then, replace NA by 0
+  df[is.na(df)] <- 0
+
+  df <- df %>%
+    mutate(ratio_correct = correct / (correct + incorrect)) %>%
+    mutate(ratio_xcorrect = xcorrect / (xcorrect + xincorrect)) %>%
+    select(list, week, ratio_correct, ratio_xcorrect)
+
+  df <- melt(df, id.vars = c('list', 'week'))
+  # rename the levels for proper legend naming
+  levels(df$variable)[levels(df$variable)=="ratio_correct"] <- "Micro-Level Conform"
+  levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "Macro-Level Conform"
+
+  list_names <- c(
+    'Overall'="Linux",
+    "dri-devel@lists.freedesktop.org"="Direct Rendering Infrastructure",
+    'linux-arm-kernel@lists.infradead.org'="ARM Architecture Support",
+    'netdev@vger.kernel.org'="Network Device Support"
+  )
+  df <- transform(df, list=factor(list,
+                                     levels=c('Overall','linux-arm-kernel@lists.infradead.org',
+                                              'netdev@vger.kernel.org',
+                                              'dri-devel@lists.freedesktop.org')))
+
+  p <- ggplot(df, aes(x = week, y = value, color = variable)) +
+    #geom_line() +
+    geom_point(size=0.1) +
+    geom_smooth() +
+    #geom_vline(xintercept = releases$date, linetype="dotted") +
+    #ylab('Ratio of conformingly integrated patches') +
+    #xlab('Date') +
+    scale_x_date(date_breaks = '2 year', date_labels = '%Y') +
+    facet_wrap(~list, scales = 'fixed', labeller = as_labeller(list_names)) +
+    #ggtitle("Ratio for Linux and Linust ") +
+    my.theme +
+    scale_colour_manual(values=colour.palette) +
+    scale_y_continuous(labels = scales::percent) +
+    theme(axis.text.x.top = element_text(angle = 90, hjust = 0),
+          legend.title = element_blank(), axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          legend.margin=margin(0,0,0,0),
+          legend.box.margin=margin(0,0,-10,0))
+
+  
+  ## inset stuff
+  
+  gam_fitted_values <- function(value, week) {
+    data_frame <- data.frame(value=value, week=as.integer(week))
+    rit <- gam(value~s(week, bs = "cs"), method = "REML", data=data_frame)
+    return(rit$fitted.values)
+  }
+  my_gen.ts.interp <- function(dat, ts.base, conformity) {
+      dat.sub <- dat[dat$variable==conformity,]
+      ts.merged <- merge(zoo(x=dat.sub$value, order.by=unique(dat.sub$week)), ts.base)
+      ts.interp <- na.approx(ts.merged)
+  
+      return(ts.interp)
+  }
+  my_compute.ts.similarity <- function(dat, year, p) {
+      dat.sub <- dat[dat$year==year,]
+      dat.sub <- dat.sub[dat.sub$project==p,]
+      
+      ts.base <- zoo(order.by=unique(dat.sub[dat.sub$project == p,]$week))
+      # hier macro- und micro-level conform raushauen
+      ts.1 <- my_gen.ts.interp(dat.sub, ts.base, "Micro-Level Conform")
+      ts.2 <- my_gen.ts.interp(dat.sub, ts.base, "Macro-Level Conform")
+  
+      return(NCDDistance(as.vector(ts.1), as.vector(ts.2)))
+  }
+  df$year <- format(df$week, format = "%Y")
+  combos <- list('Overall','linux-arm-kernel@lists.infradead.org',
+                                              'netdev@vger.kernel.org',
+                                              'dri-devel@lists.freedesktop.org')
+  df$project <- df$list
+  fitted_df <- df %>% filter(!is.na(value)) %>% group_by(project, variable) %>%
+  mutate(fitted = gam_fitted_values(value, week))
+
+  res_fitted <- do.call(rbind, lapply(min(fitted_df$year):max(fitted_df$year), function(year) {
+      do.call(rbind, lapply(combos, function(combo) {
+          return(data.frame(year=year, combo=combo,
+                            sim=my_compute.ts.similarity(fitted_df, year, combo)))
+      }))
+  }))
+    inset_theme <- theme(legend.title = element_blank(),
+          axis.title.x = element_blank(),
+          axis.line.x.bottom =  element_line(),
+          axis.line.y.left  =  element_line(),
+          axis.title.y = element_blank(),
+          #axis.text = element_blank(),
+          panel.background = element_rect(fill='transparent'), #transparent panel bg
+          plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+          panel.grid.major= element_blank(), #remove minor gridlines
+          panel.grid.minor = element_blank(), #remove minor gridlines
+          legend.background = element_rect(fill='transparent'), #transparent legend bg
+          #axis.ticks = element_blank(), #transparent legend bg
+          legend.box.background = element_rect(fill='transparent'))
+  
+  res_fitted_filtered <- res_fitted %>% filter(year != 2022)
+  inset.plot.overall <- ggplot((res_fitted_filtered %>% filter(combo == "Overall")), aes(x = year, y = sim)) + geom_line() +
+    scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
+    inset_theme
+  inset.plot.arm <- ggplot((res_fitted_filtered %>% filter(combo == 'linux-arm-kernel@lists.infradead.org')), aes(x = year, y = sim)) + geom_line() +
+    scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
+    inset_theme
+  inset.plot.dri <- ggplot((res_fitted_filtered %>% filter(combo == 'dri-devel@lists.freedesktop.org')), aes(x = year, y = sim)) + geom_line() +
+    scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
+    inset_theme
+  inset.plot.net <- ggplot((res_fitted_filtered %>% filter(combo == 'netdev@vger.kernel.org')), aes(x = year, y = sim)) + geom_line() +
+    scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
+    inset_theme
+
+  ggdraw() +
+    draw_plot(p) +
+    draw_plot(inset.plot.overall, x = 0.31, y = .5, width = .2, height = .2) +
+    draw_plot(inset.plot.net, x = 0.31, y = .05, width = .2, height = .2) +
+    draw_plot(inset.plot.arm, x = 0.77, y = .5, width = .2, height = .2) +
+    draw_plot(inset.plot.dri, x = 0.77, y = .05, width = .2, height = .2)
+  
+  printplot(p, plot_name)
 }
 
 
@@ -347,30 +496,18 @@ patch_conform_ratio(filtered_data_all, 'conform_ratio.all')
 linux <- filtered_data %>%
   filter(project == 'linux') %>%
   select(-project) %>%
-  filter(list %in% c('linux-kernel@vger.kernel.org',
-                     'linux-arm-kernel@lists.infradead.org',
+  #filter(list %in% c('linux-kernel@vger.kernel.org',
+  #                   'linux-arm-kernel@lists.infradead.org',
+  #                   'netdev@vger.kernel.org',
+  #                   'netfilter-devel@vger.kernel.org'
+  filter(list %in% c('linux-arm-kernel@lists.infradead.org',
                      'netdev@vger.kernel.org',
-                     'netfilter-devel@vger.kernel.org'
+                     'dri-devel@lists.freedesktop.org'
                      ))
 
 patch_conform_ratio_list(linux, 'conform.linux')
 
-### Table Analyses per Project ###
+linux_all <- filtered_data_all %>% filter(project == 'linux') %>% select(-project)
+linux_all <- rbind(linux_all, (linux %>% filter(type == 'patch') %>% select(-c(list.matches_patch, type))))
 
-filtered_data$year <- format(filtered_data$date, format = "%Y")
-
-#agg_max <- setNames(aggregate(filtered_data$year, by = list(filtered_data$project), max), c("project", "MaxYear"))
-#agg_min <- setNames(aggregate(filtered_data$year, by = list(filtered_data$project), min), c("project", "MinYear"))
-
-patch_data <- filtered_data %>% select(project, id, date, year, committer, week) %>% filter(year != "2021")
-patch_data$count <- 1
-patch_traffic <- patch_data %>% group_by(project, year, week) %>% summarise(patch_traffic = sum(count)) %>%
-  as.data.frame %>% group_by(project, year) %>% summarise(mean_patch_traffic_per_week = round(mean(patch_traffic))) %>% as.data.frame
-patch_traffic
-
-commit_traffic <- patch_data %>% filter(!is.na(committer) & (committer != "")) %>% group_by(project, year, week) %>%
-  summarise(commit_traffic = sum(count)) %>% group_by(project, year) %>%
-  summarise(mean_commits_per_week = round(mean(commit_traffic))) %>% as.data.frame
-commit_traffic
-
-merge(commit_traffic, patch_traffic, by=c("project", "year"))
+patch_conform_linux(linux_all, 'conform.linux.all')
