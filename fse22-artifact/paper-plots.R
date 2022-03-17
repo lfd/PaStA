@@ -345,10 +345,10 @@ patch_conform_linux <- function(data, plot_name) {
   levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "Macro-Level Conform"
 
   list_names <- c(
-    'Overall'="Linux",
+    'Overall'="Linux Kernel Mailing List",
     "dri-devel@lists.freedesktop.org"="Direct Rendering Infrastructure",
     'linux-arm-kernel@lists.infradead.org'="ARM Architecture Support",
-    'netdev@vger.kernel.org'="Network Device Support"
+    'netdev@vger.kernel.org'="Networking-Related Mailing List"
   )
   df <- transform(df, list=factor(list,
                                      levels=c('Overall','linux-arm-kernel@lists.infradead.org',
@@ -372,7 +372,7 @@ patch_conform_linux <- function(data, plot_name) {
           legend.title = element_blank(), axis.title.x = element_blank(),
           axis.title.y = element_blank(),
           legend.margin=margin(0,0,0,0),
-          legend.box.margin=margin(0,0,-10,0))
+          legend.box.margin=margin(0,0,-7,0))
 
   
   ## inset stuff
@@ -420,6 +420,7 @@ patch_conform_linux <- function(data, plot_name) {
           axis.line.y.left  =  element_line(),
           axis.title.y = element_blank(),
           #axis.text = element_blank(),
+          axis.text = element_text(size=6),
           panel.background = element_rect(fill='transparent'), #transparent panel bg
           plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
           panel.grid.major= element_blank(), #remove minor gridlines
@@ -442,12 +443,12 @@ patch_conform_linux <- function(data, plot_name) {
     scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
     inset_theme
 
-  ggdraw() +
+  p <- ggdraw() +
     draw_plot(p) +
-    draw_plot(inset.plot.overall, x = 0.31, y = .5, width = .2, height = .2) +
-    draw_plot(inset.plot.net, x = 0.31, y = .05, width = .2, height = .2) +
-    draw_plot(inset.plot.arm, x = 0.77, y = .5, width = .2, height = .2) +
-    draw_plot(inset.plot.dri, x = 0.77, y = .05, width = .2, height = .2)
+    draw_plot(inset.plot.overall, x = 0.32, y = .475, width = .2, height = .2) +
+    draw_plot(inset.plot.net, x = 0.32, y = .034, width = .2, height = .2) +
+    draw_plot(inset.plot.arm, x = 0.795, y = .475, width = .2, height = .2) +
+    draw_plot(inset.plot.dri, x = 0.795, y = .033, width = .2, height = .2)
   
   printplot(p, plot_name)
 }
