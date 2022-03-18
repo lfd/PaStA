@@ -345,10 +345,10 @@ patch_conform_linux <- function(data, plot_name) {
   levels(df$variable)[levels(df$variable)=="ratio_xcorrect"] <- "Macro-Level Conform"
 
   list_names <- c(
-    'Overall'="Linux Kernel Mailing List",
+    'Overall'="Linux (Overall System)",
     "dri-devel@lists.freedesktop.org"="Direct Rendering Infrastructure",
     'linux-arm-kernel@lists.infradead.org'="ARM Architecture Support",
-    'netdev@vger.kernel.org'="Networking-Related Mailing List"
+    'netdev@vger.kernel.org'="Networking Support"
   )
   df <- transform(df, list=factor(list,
                                      levels=c('Overall','linux-arm-kernel@lists.infradead.org',
@@ -373,6 +373,7 @@ patch_conform_linux <- function(data, plot_name) {
           axis.title.y = element_blank(),
           legend.margin=margin(0,0,0,0),
           legend.box.margin=margin(0,0,-7,0))
+    
 
   
   ## inset stuff
