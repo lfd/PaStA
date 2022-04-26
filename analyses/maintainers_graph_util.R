@@ -38,7 +38,7 @@ generate_cluster_matrix <- function(file_map, wt_comm, dimension) {
 }
 # function to generate the maintainers_section_graph, its communities,
 # its groups and bounds in a list in said order
-maintainers_section_graph <- function(project, file_name, file_map_name, clustering_method = NA, sanitize = FALSE) {
+maintainers_section_graph <- function(project, file_name, file_map_name, clustering_method = "", sanitize = FALSE) {
   data_frame <- read_csv(file_name)
   file_map <- read.csv(file_map_name, header = TRUE)
   # solution taken from https://stackoverflow.com/questions/18893390/splitting-on-comma-outside-quotes
