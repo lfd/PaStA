@@ -13,7 +13,9 @@ MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 # Generate clusters and analysis results
 WORKDIR /home/pasta/PaStA
 ### FIXME REMOVE THIS WHEN FINISHED WITH PREPARATION
-RUN git checkout fse22-artifact
+#RUN git checkout fse22-artifact
+# just call it wip for the moment
+RUN git checkout wip
 
 # Linux analysis - the short way
 WORKDIR /home/pasta/PaStA/resources/linux/resources
