@@ -21,13 +21,16 @@ VERTEX_NAMES="$RESOURCES/maintainers_cluster/$revision.csv"
 PDF_DST="$TEX_IMG_DST/build"
 REPRO="./fse22-artifact/cluster_gui/$project-$revision/"
 SOLUTION="$REPRO/solution.csv"
+DST="/home/pasta/results/$project"
 
 ./pasta set_config $project
 
 # 1. Create the tex files
 ./analyses/maintainers_section_graph.R \
 	$revision \
-	--print-clusters
+	--print-clusters --print-entire-graph
+
+cp -v $TEX_IMG_DST/*.tex $DST
 
 # 2. Randomise clusters
 ./fse22-artifact/randomise_cluster.py \
@@ -41,6 +44,7 @@ for i in $TEX_IMG_DST/*_standalone.tex; do
 done
 
 # 4. Move PDFs
+cp -v $PDF_DST/*.pdf $DST
 mv -v $PDF_DST/*.pdf $TEX_IMG_DST
 rm -rf $PDF_DST
 
