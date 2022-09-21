@@ -224,7 +224,7 @@ patch_conform_ratio <- function(data, plot_name) {
 
   p <- ggplot(df, aes(x = week, y = value, color = variable)) +
     #geom_line() +
-    geom_point(size=0.5) +
+    geom_point(size=0.1) +
     geom_smooth() +
     #geom_vline(xintercept = releases$date, linetype="dotted") +
     #ylab('Ratio of conformingly integrated patches') +
@@ -237,13 +237,89 @@ patch_conform_ratio <- function(data, plot_name) {
     facet_wrap(~project, scales = 'fixed', labeller = as_labeller(project_names)) +
     #ggtitle("Ratio for all projects") +
     my.theme +
+    scale_colour_manual(values=colour.palette) +
     scale_y_continuous(labels = scales::percent) +
     theme(axis.text.x.top = element_text(angle = 90, hjust = 0),
           legend.title = element_blank(), axis.title.x = element_blank(),
           axis.title.y = element_blank(),
           legend.margin=margin(0,0,0,0),
-          legend.box.margin=margin(0,0,-10,0))
+          legend.box.margin=margin(0,0,-7,0))
+  
+  ## inset stuff
+  
+  gam_fitted_values <- function(value, week) {
+    data_frame <- data.frame(value=value, week=as.integer(week))
+    rit <- gam(value~s(week, bs = "cs"), method = "REML", data=data_frame)
+    return(rit$fitted.values)
+  }
+  my_gen.ts.interp <- function(dat, ts.base, conformity) {
+      dat.sub <- dat[dat$variable==conformity,]
+      ts.merged <- merge(zoo(x=dat.sub$value, order.by=unique(dat.sub$week)), ts.base)
+      ts.interp <- na.approx(ts.merged)
+  
+      return(ts.interp)
+  }
+  my_compute.ts.similarity <- function(dat, year, p) {
+      dat.sub <- dat[dat$year==year,]
+      dat.sub <- dat.sub[dat.sub$project==p,]
+      
+      ts.base <- zoo(order.by=unique(dat.sub[dat.sub$project == p,]$week))
+      # hier macro- und micro-level conform raushauen
+      ts.1 <- my_gen.ts.interp(dat.sub, ts.base, "Micro-Level Conform")
+      ts.2 <- my_gen.ts.interp(dat.sub, ts.base, "Macro-Level Conform")
+  
+      return(NCDDistance(as.vector(ts.1), as.vector(ts.2)))
+  }
+  df$year <- format(df$week, format = "%Y")
+  combos <- list('linux','qemu','u-boot','xen')
+  
+  fitted_df <- df %>% filter(!is.na(value)) %>% group_by(project, variable) %>%
+  mutate(fitted = gam_fitted_values(value, week))
 
+  res_fitted <- do.call(rbind, lapply(combos, function(combo) {
+    tmp <- fitted_df %>% filter(project == combo)
+    do.call(rbind, lapply(min(tmp$year):max(tmp$year), function(year) {
+          return(data.frame(year=year, combo=combo,
+                            sim=my_compute.ts.similarity(fitted_df, year, combo)))
+      
+    }))
+  }))
+    inset_theme <- theme(legend.title = element_blank(),
+          axis.title.x = element_blank(),
+          axis.line.x.bottom =  element_line(),
+          axis.line.y.left  =  element_line(),
+          axis.title.y = element_blank(),
+          #axis.text = element_blank(),
+          axis.text = element_text(size=6),
+          panel.background = element_rect(fill='transparent'), #transparent panel bg
+          plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+          panel.grid.major= element_blank(), #remove minor gridlines
+          panel.grid.minor = element_blank(), #remove minor gridlines
+          legend.background = element_rect(fill='transparent'), #transparent legend bg
+          #axis.ticks = element_blank(), #transparent legend bg
+          legend.box.background = element_rect(fill='transparent'))
+  
+  res_fitted_filtered <- res_fitted %>% filter(year != 2022)
+  inset.plot.linux <- ggplot((res_fitted_filtered %>% filter(combo == "linux")), aes(x = year, y = sim)) + geom_line() +
+    scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
+    inset_theme
+  inset.plot.qemu <- ggplot((res_fitted_filtered %>% filter(combo == 'qemu')), aes(x = year, y = sim)) + geom_line() +
+    scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
+    inset_theme
+  inset.plot.uboot <- ggplot((res_fitted_filtered %>% filter(combo == 'u-boot')), aes(x = year, y = sim)) + geom_line() +
+    scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
+    inset_theme
+  inset.plot.xen <- ggplot((res_fitted_filtered %>% filter(combo == 'xen')), aes(x = year, y = sim)) + geom_line() +
+    scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
+    inset_theme
+
+  p <- ggdraw() +
+    draw_plot(p) +
+    draw_plot(inset.plot.linux, x = 0.077, y = .475, width = .2, height = .2) +
+    draw_plot(inset.plot.uboot, x = 0.077, y = .065, width = .2, height = .2) +
+    draw_plot(inset.plot.qemu, x = 0.795, y = .475, width = .2, height = .2) +
+    draw_plot(inset.plot.xen, x = 0.795, y = .065, width = .2, height = .2)
+  
   printplot(p, plot_name)
 }
 
