@@ -36,8 +36,73 @@ generate_cluster_matrix <- function(file_map, wt_comm, dimension) {
 
   return(weight_matrix)
 }
+
+# Test some stuff
+
+library(ggraph)
+maintainers_section_graph_ggraph <- function(project, file_name, file_map_name, clustering_method = "", sanitize = FALSE) {
+  data_frame <- read_csv(file_name)
+  file_map <- read.csv(file_map_name, header = TRUE)
+  # solution taken from https://stackoverflow.com/questions/18893390/splitting-on-comma-outside-quotes
+  file_map <- file_map %>% mutate(sections = stringr::str_split(sections, ',(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)'))
+  data_frame$weight <- data_frame$lines
+
+  sanitize_routine <- function(p, r, row) {
+     return(gsub(pattern=p, replace=r, row))
+  }
+
+  if(sanitize) {
+    data_frame$from <- sanitize_routine("_", "-", data_frame$from)
+    data_frame$to <- sanitize_routine("_", "-", data_frame$to)
+    data_frame$from <- sanitize_routine("&", "AND", data_frame$from)
+    data_frame$to <- sanitize_routine("&", "AND", data_frame$to)
+
+    file_map$sections <- sanitize_routine("_", "-", file_map$sections)
+    file_map$sections <- sanitize_routine("&", "AND", file_map$sections)
+  }
+  g  <- igraph::graph_from_data_frame(data_frame, directed = FALSE)
+  
+  # We need to remove THE REST because it's trivial that this section contains
+  # everything. In case of QEMU, since this node is QEMU's equivalent of THE REST
+  # whereas THE REST doesn't exist, we need to remove General Project
+  # Administration instead
+  section_the_rest <- "THE REST"
+  if (project == 'qemu') {
+    section_the_rest <- which(grepl("General Project Administration", V(g)$name))
+  }
+  g <- igraph::delete.vertices(g, section_the_rest)
+  file_map$sections <- file_map$sections %>% lapply(function(x) substr(x, 2, nchar(x)-1)) %>%
+    lapply(function(x) x[x != section_the_rest])
+
+  # retrieve vertex size by finding edge weight of self loop
+  for (e in which(which_loop(g))) {
+    assertthat::are_equal(head_of(g, E(g)[e]), tail_of(g, E(g)[e]))
+    my_vertex <- head_of(g, E(g)[e])
+    edge_weight <- E(g)[e]$weight
+    g <- igraph::set.vertex.attribute(g, "size", my_vertex, edge_weight)
+  }
+  
+  quantile_step <- "50%"
+  quantiles <- quantile(V(g)$size, c(.50, .80, .90, .95, .98, .99)) 
+  communities <- cluster_infomap(g)
+  V(g)$clu <- as.character(membership(communities))
+  
+  g_layout <- create_layout(g, layout = "dh")
+
+  g_graph <- ggraph(g_layout) +
+  geom_edge_link0(aes(edge_width = weight),edge_colour = "grey66")+
+  geom_node_point(aes(fill = clu, size = size),shape = 21)+
+  geom_node_text(aes(filter = size >= unname(quantiles[quantile_step]), label = name),family="serif", size=3)+
+  #scale_edge_width(range = c(0.2,3))+
+  #scale_size(range = c(1,6))+
+  theme_graph(base_family = "Helvetica")+
+  theme(legend.position = "none") +
+  ggtitle("U-Boot Test")
+  g_graph
+}
 # function to generate the maintainers_section_graph, its communities,
 # its groups and bounds in a list in said order
+
 maintainers_section_graph <- function(project, file_name, file_map_name, clustering_method = "", sanitize = FALSE) {
   data_frame <- read_csv(file_name)
   file_map <- read.csv(file_map_name, header = TRUE)
