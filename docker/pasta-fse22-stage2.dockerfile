@@ -23,9 +23,13 @@ RUN lzma -dv patch-groups.lzma characteristics.csv.lzma
 WORKDIR /home/pasta/PaStA
 
 RUN ./tools/analyse_project.sh linux
+RUN ./fse22-artifact/meiomei.sh
 RUN ./tools/analyse_project.sh u-boot
+RUN ./fse22-artifact/meiomei.sh
 RUN ./tools/analyse_project.sh xen
+RUN ./fse22-artifact/meiomei.sh
 RUN ./tools/analyse_project.sh qemu
+RUN ./fse22-artifact/meiomei.sh
 
 # Concatenate Results - Create plots from paper
 WORKDIR /home/pasta/PaStA/resources
