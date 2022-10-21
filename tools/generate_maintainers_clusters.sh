@@ -35,7 +35,7 @@ for tag in $tags; do
 		continue
 	fi
 	echo "Enqueuing $tag"
-	relevant="$tags $tag"
+	relevant="$relevant $tag"
 done
 
 echo $relevant | xargs -P $(nproc) -n 1 ./pasta maintainers_stats --mode graph --revision
