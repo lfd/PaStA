@@ -295,6 +295,8 @@ class Section:
         while not self.DESCRIPTOR_REGEX.match(entry[0]):
             self.description.append(entry.pop(0))
         self.description = ' / '.join(self.description)
+        # Remove "'s, as they cause problems in CSVs
+        self.description = self.description.replace('"', '')
 
         for line in entry:
             # some nasty cases
