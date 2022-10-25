@@ -28,7 +28,6 @@ RUN apt install -y --no-install-recommends \
 	patchutils \
 	procmail \
 	python3-dev \
-	python3-flaskext.wtf \
 	python3-fuzzywuzzy \
 	python3-git \
 	python3-networkx \
@@ -50,9 +49,8 @@ RUN apt install -y --no-install-recommends \
 
 # install some more python dependencies that are not provided by Ubuntu's repo
 RUN pip3 --no-cache-dir install \
+	anytree \
 	dateparser \
-	flask-bootstrap \
-	flask-nav anytree \
 	Levenshtein
 
 RUN useradd -m -G sudo -s /bin/bash pasta && echo "pasta:pasta" | chpasswd

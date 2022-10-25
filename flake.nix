@@ -8,25 +8,6 @@
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
 
-      # flask-nav is not in nixpkgs; patch away Python 3.10+ incompatibility
-      # (collections.MutableMapping moved to collections.abc)
-      flask-nav = pkgs.python3Packages.buildPythonPackage rec {
-        pname = "flask-nav";
-        version = "0.6";
-        pyproject = true;
-        src = pkgs.fetchurl {
-          url = "https://files.pythonhosted.org/packages/source/f/flask-nav/flask-nav-${version}.tar.gz";
-          sha256 = "1x1k188jxjisdgrspnnw9p4s4ng29lbzk8i1nn5fd8c0adshpr24";
-        };
-        build-system = [ pkgs.python3Packages.setuptools ];
-        postPatch = ''
-          substituteInPlace flask_nav/__init__.py \
-            --replace-fail "collections.MutableMapping" "collections.abc.MutableMapping"
-        '';
-        propagatedBuildInputs = with pkgs.python3Packages; [ flask visitor dominate ];
-        doCheck = false;
-      };
-
       pythonEnv = pkgs.python3.withPackages (ps: with ps; [
         # mail thread representation (MailCharacteristics, pasta_prepare_evaluation)
         anytree
@@ -52,12 +33,6 @@
 
         # HTTP requests for patchwork/mbox fetching (Mbox.py)
         requests
-
-        # web interface (pasta_web)
-        flask
-        flask-bootstrap
-        flask-wtf
-        flask-nav
 
         # interactive development
         ipython

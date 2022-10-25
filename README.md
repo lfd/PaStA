@@ -62,10 +62,6 @@ Requirements
 - python-toml
 - python-tqdm
 - python-requests
-- flask
-  - flask-wtf
-  - flask-bootstrap
-  - flask-nav
 
 Please refer to this [Dockerfile](/docker/pasta-skeleton.dockerfile) to
 download the required dependencies.
