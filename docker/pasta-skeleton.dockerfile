@@ -6,7 +6,7 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-FROM ubuntu:21.04
+FROM ubuntu:22.04
 
 MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 
@@ -22,6 +22,7 @@ RUN apt install -y --no-install-recommends \
 	gfortran \
 	git \
 	libblas-dev \
+	libfontconfig1-dev \
 	liblapack-dev \
 	libpng-dev \
 	locales \
