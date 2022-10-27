@@ -11,15 +11,14 @@
 # the COPYING file in the top-level directory.
 
 library(dplyr, warn.conflicts = FALSE)
+library(cowplot)
 library(ggplot2)
 library(lubridate, warn.conflicts = FALSE)
 library(reshape2)
 library(tikzDevice)
-library(cowplot)
 library(mgcv)
 library(zoo)
 library(TSdist)
-library(cowplot)
 
 f_characteristics <- 'resources/characteristics.csv'
 f_characteristics_rand <- 'resources/characteristics_rand.csv'
