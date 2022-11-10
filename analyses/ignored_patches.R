@@ -13,7 +13,7 @@
 source("analyses/util.R")
 
 date.min <- '2011-07-21' # v3.0
-date.max <- '2020-12-13' # v5.10
+date.max <- '2022-09-25' # v6.0-rc7
 top_n.num_lists <- 4
 prj_releases <- paste(project, "Releases")
 
