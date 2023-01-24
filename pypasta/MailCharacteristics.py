@@ -159,6 +159,9 @@ class MailCharacteristics:
         if self.REGEX_GREG_ADDED.match(subject):
             return True
 
+        if '[git commit]' in subject:
+            return True
+
         # AKPM's bot. AKPM uses s-nail for automated mails, and sylpheed for all
         # other mails. That's how we can easily separate automated mails from
         # real mails. Further, akpm acts as bot if the subject contains [merged]
