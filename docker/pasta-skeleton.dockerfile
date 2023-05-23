@@ -1,4 +1,4 @@
-# Copyright (c) OTH Regensburg, 2017-2021
+# Copyright (c) OTH Regensburg, 2017-2023
 #
 # Author:
 #   Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -6,7 +6,7 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-FROM ubuntu:22.04
+FROM ubuntu:23.04
 
 MAINTAINER Ralf Ramsauer "ralf.ramsauer@oth-regensburg.de"
 
@@ -28,9 +28,11 @@ RUN apt install -y --no-install-recommends \
 	locales \
 	patchutils \
 	procmail \
+	python3-dateparser \
 	python3-dev \
 	python3-fuzzywuzzy \
 	python3-git \
+	python3-levenshtein \
 	python3-networkx \
 	python3-pip \
 	python3-pygit2 \
@@ -39,6 +41,7 @@ RUN apt install -y --no-install-recommends \
 	python3-sklearn \
 	python3-toml \
 	python3-tqdm \
+	python3-venv \
 	python3-wheel \
 	r-base \
 	sudo \
@@ -48,15 +51,12 @@ RUN apt install -y --no-install-recommends \
 	vim \
 	wget
 
-# install some more python dependencies that are not provided by Ubuntu's repo
-RUN pip3 --no-cache-dir install \
-	anytree \
-	dateparser \
-	Levenshtein
-
 RUN useradd -m -G sudo -s /bin/bash pasta && echo "pasta:pasta" | chpasswd
 USER pasta
 WORKDIR /home/pasta
+
+RUN python3 -m venv --system-site-packages .
+RUN ./bin/pip3 install anytree
 
 ENV R_LIBS_USER /home/pasta/R/
 RUN mkdir -p $HOME/.R $R_LIBS_USER
