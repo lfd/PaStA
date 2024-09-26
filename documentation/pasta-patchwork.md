@@ -132,6 +132,14 @@ The commands executed by the script at each stage can be outlined as follows:
   $ ./manage.py replacerelations <path-to-patch-groups-file-from-previous-step>
   ```
 
+<div class="center-image">
+![pasta-patchwork](./img/patchwork.png)
+</div>
+
+### Code implementing this functionality
+- [script demonstrating end to end
+  flow](https://github.com/lfd/PaStA/commit/5d0ea62609dcf2a0d89000655ae49ec2a49b330b)
+
 ## Future Work
 - Along with forming relations between patches PaStA can also associate a
   relation with the upstream commits in the repo for that relation. We can
