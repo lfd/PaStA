@@ -344,6 +344,7 @@ class PubInbox(MailContainer):
                 log.warning('No Message-Id in commit %s' % hash)
                 continue
 
+            ids = [str(i) for i in ids]
             id = max(ids, key=len)
             id = ''.join(id.split())
             # Try to do repair some broken message IDs. This only makes
