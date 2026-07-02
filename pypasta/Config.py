@@ -10,7 +10,7 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-import toml
+import tomllib
 
 from enum import Enum
 from os.path import join, realpath, isfile, isdir, isabs
@@ -103,8 +103,10 @@ class Config:
         else:
             log.info('Loading configuration: %s' % project)
 
-        default_cfg = toml.load(Config.DEFAULT_CONFIG)
-        cfg = toml.load(self._config_file)
+        with open(Config.DEFAULT_CONFIG, 'rb') as f:
+            default_cfg = tomllib.load(f)
+        with open(self._config_file, 'rb') as f:
+            cfg = tomllib.load(f)
 
         # Merge configs
         merge_dicts(default_cfg, cfg)

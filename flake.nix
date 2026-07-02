@@ -48,9 +48,6 @@
         # cluster quality metrics (pasta_compare_clusters)
         scikit-learn
 
-        # project configuration parsing (Config.py)
-        toml
-
         # progress bars (MAINTAINERS.py, pasta_upstream_duration)
         tqdm
 
