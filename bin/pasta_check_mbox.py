@@ -13,7 +13,7 @@ the COPYING file in the top-level directory.
 import os
 import sys
 
-from fuzzywuzzy import fuzz
+from thefuzz import fuzz
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm

@@ -13,7 +13,7 @@ import functools
 
 from collections import defaultdict
 from enum import Enum
-from fuzzywuzzy import fuzz
+from thefuzz import fuzz
 from multiprocessing import Pool, cpu_count
 from statistics import mean
 
@@ -359,13 +359,7 @@ def best_string_mapping(threshold, left_list, right_list):
         ret = dict()
         for l_entry in ll:
             for r_entry in rl:
-                # This check is _required_ as fuzzywuzzy currently contains a
-                # bug that does misevaluations in case of equivalence. See
-                # https://github.com/seatgeek/fuzzywuzzy/issues/196
-                if l_entry == r_entry:
-                    sim = 1
-                else:
-                    sim = fuzz.token_sort_ratio(l_entry, r_entry) / 100
+                sim = fuzz.token_sort_ratio(l_entry, r_entry) / 100
 
                 if sim < threshold:
                     continue
@@ -386,12 +380,6 @@ def rate_diffs(thresholds, l_diff, r_diff):
     levenshteins = []
 
     def compare_hunks(left, right):
-        # This case happens for example, if both hunks remove empty newlines
-        # This check is _required_ as fuzzywuzzy currently contains a bug that
-        # does misevaluations in case of equivalence. See
-        # https://github.com/seatgeek/fuzzywuzzy/issues/196
-        if left == right:
-            return 100
         return fuzz.token_sort_ratio(left, right)
 
     def get_patch(diff, filename):

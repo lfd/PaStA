@@ -35,8 +35,7 @@
         dateparser
 
         # fuzzy patch similarity scoring (PatchEvaluation.py, pasta_check_mbox)
-        fuzzywuzzy
-        levenshtein
+        thefuzz
 
         # git repository access: pygit2 for low-level, gitpython for pasta_patch_descriptions
         pygit2
