@@ -209,7 +209,7 @@ def compare_getmaintainers(config, argv):
                 pl = subprocess.Popen(
                     ['perl ' + join(d_tmp, join('scripts', 'get_maintainer.pl')) + ' '
                      + f_message
-                     + ' --subsystem --status --separator \; --nogit --nogit-fallback --roles --norolestats '
+                     + ' --subsystem --status --separator \\; --nogit --nogit-fallback --roles --norolestats '
                        '--no-remove-duplicates --no-keywords %s' % chief_penguins]
                     , shell=True, stdout=subprocess.PIPE, stderr = subprocess.PIPE)
 
@@ -306,8 +306,8 @@ def compare_getmaintainers(config, argv):
 
                 # Third, check if maintainers / reviewers / supports match. We now don't care
                 # about the section any longer, but we do care about the state of the person
-                pl_person_regex = re.compile('.*<(.*)> \(([^:]*)(?::(.*))?\)')
-                pl_system_regex = re.compile('(.*) \((.*):(.*)\)')
+                pl_person_regex = re.compile(r'.*<(.*)> \(([^:]*)(?::(.*))?\)')
+                pl_system_regex = re.compile(r'(.*) \((.*):(.*)\)')
                 match = True
                 for pl_person in pl_people:
                     match = pl_person_regex.match(pl_person)

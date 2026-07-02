@@ -409,7 +409,7 @@ class MboxRaw(MailContainer):
 
 
 class PatchworkProject(MailContainer):
-    NEXT_PAGE_REGEX = re.compile('.*[&?]page=(\d+).*')
+    NEXT_PAGE_REGEX = re.compile(r'.*[&?]page=(\d+).*')
 
     def __init__(self, listaddr, url, project_id, page_size, d_mbox, f_index, f_mbox_raw):
         self.listaddr = listaddr

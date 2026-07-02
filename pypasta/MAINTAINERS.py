@@ -110,7 +110,7 @@ def _prepare_uboot(maintainers):
     maintainers = [x for x in maintainers if not x.strip().startswith('#M:')]
 
     # In some versions of u-boot, we find a ^F. instead of ^F: . Replace it.
-    maintainers = [re.sub('^F\.', 'F:', x) for x in maintainers]
+    maintainers = [re.sub(r'^F\.', 'F:', x) for x in maintainers]
 
     return maintainers
 

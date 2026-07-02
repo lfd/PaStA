@@ -72,7 +72,7 @@ def email_get_from(message):
 
 
 class MailCharacteristics:
-    REGEX_COVER = re.compile('\[.*patch.*\s0+/.*\].*', re.IGNORECASE)
+    REGEX_COVER = re.compile(r'\[.*patch.*\s0+/.*\].*', re.IGNORECASE)
     REGEX_GREG_ADDED = re.compile('patch \".*\" added to .*')
 
     BOTS = {'tip-bot2@linutronix.de', 'tipbot@zytor.com',
