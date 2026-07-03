@@ -81,7 +81,7 @@ class Commit(MessageDiff):
 
         content = message, None, diff
 
-        super(Commit, self).__init__(commit.hex, content, author)
+        super(Commit, self).__init__(str(commit.id), content, author)
 
     def format_message(self):
         custom = ['Committer:  %s <%s>' %
