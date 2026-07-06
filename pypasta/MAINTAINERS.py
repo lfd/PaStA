@@ -304,13 +304,15 @@ class Section:
         self.description = self.description.replace('"', '')
 
         for line in entry:
-            # some nasty cases
-            if line.startswith('F\tinclude') or line.startswith('F\tDocument'):
-                line = 'F:\t' + line[2:]
+            # Normalize entries using tab instead of colon as separator (MAINTAINERS typos)
+            if len(line) >= 2 and line[1] == '\t' and line[0].isupper():
+                line = line[0] + ':\t' + line[2:]
 
             match = self.DESCRIPTOR_REGEX.match(line)
             if not match:
-                print('Oo: %s' % line)
+                # Silently skip bare-tab continuation lines (missing type prefix)
+                if not line.startswith(('\t', ' ')):
+                    print('Oo: %s' % line)
                 continue
             type, value = match.group(1), match.group(2)
 
