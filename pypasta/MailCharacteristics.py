@@ -76,7 +76,9 @@ class MailCharacteristics:
     REGEX_GREG_ADDED = re.compile('patch \".*\" added to .*')
 
     BOTS = {'tip-bot2@linutronix.de', 'tipbot@zytor.com',
-            'noreply@ciplatform.org', 'patchwork@emeril.freedesktop.org'}
+            'noreply@ciplatform.org', 'patchwork@emeril.freedesktop.org',
+            'pr-tracker-bot@kernel.org', 'bot+bpf-ci@kernel.org',
+            'sashiko-bot@kernel.org', 'bot@kernelci.org'}
     POTENTIAL_BOTS = {'broonie@kernel.org', 'lkp@intel.com'}
     PROCESSES = ['linux-next', 'git pull', 'rfc', '[pull]']
 
@@ -181,6 +183,10 @@ class MailCharacteristics:
 
         # Github Bot
         if 'noreply@github.com' in email:
+            return True
+
+        # kernel.org patchwork bots (patchwork-bot+<subsystem>@kernel.org)
+        if email.startswith('patchwork-bot+'):
             return True
 
         # Buildroot's daily results bot
