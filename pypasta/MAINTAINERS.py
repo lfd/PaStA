@@ -224,6 +224,7 @@ class Section:
         Obsolete = 'obsolete'
         Orphan = 'orphan'
         Buried = 'buried'
+        ExternallyMaintained = 'externally maintained'
 
     @staticmethod
     def parse_person(value):
@@ -331,6 +332,10 @@ class Section:
                     value = 'orphan'
                 elif value.lower() == 'buried alive in reporters':
                     value = 'buried'
+                elif value.lower() == 'orphaned':
+                    value = 'orphan'
+                # Strip trailing parenthetical qualifiers, e.g. "(Book3S 64-bit HV)"
+                value = re.sub(r'\s*\([^)]*\)\s*$', '', value)
 
                 stati = [x.strip().lower() for x in value.split('/')]
                 self.status += [Section.Status(x) for x in stati]
