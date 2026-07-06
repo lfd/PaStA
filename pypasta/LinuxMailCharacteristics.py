@@ -34,7 +34,7 @@ def ignore_tlds(addresses):
 
 
 class LinuxMailCharacteristics (MailCharacteristics):
-    REGEX_COMMIT_UPSTREAM = re.compile('.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
+    REGEX_COMMIT_UPSTREAM = re.compile(r'.*commit\s+.+\s+upstream.*', re.DOTALL | re.IGNORECASE)
     ROOT_FILES = ['.clang-format',
                   '.clippy.toml',
                   '.cocciconfig',
