@@ -126,10 +126,10 @@ _prepare_maintainers = {
 class Matcher:
     @staticmethod
     def regex_rewrite(regex):
-        # A wildcard means that it can be anything but '/'
-        regex = regex.replace('*', '([^/]*)')
-        # A ? means it can be any character besides '/'
-        regex = regex.replace('?', '([^/])')
+        # Backslash before a wildcard is not valid MAINTAINERS glob syntax — treat as typo
+        regex = regex.replace(r'\*', '*').replace(r'\?', '?')
+        # A wildcard means it can be anything but '/'
+        regex = regex.replace('*', '([^/]*)').replace('?', '([^/])')
         # Regexes like abc.[ch] don't need any rewrite rules.
 
         return regex
