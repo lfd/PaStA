@@ -255,6 +255,10 @@ class Section:
         if value == 'vince bridgers <vbridgers2013@gmail.com':
             return [('vince bridgers', 'vbridgers2013@gmail.com')]
 
+        # Typo in MAINTAINERS at v6.5, fixed in v6.6-rc4 (commit b0b88a585c27)
+        if value == 'florian fainelli <florian.fainelli@broadcom>':
+            return [('florian fainelli', 'florian.fainelli@broadcom.com')]
+
         raise RuntimeError('Unable to parse %s' % value)
 
     def match(self, filename):
