@@ -16,6 +16,7 @@ from enum import Enum
 from thefuzz import fuzz
 from multiprocessing import Pool, cpu_count
 from statistics import mean
+from tqdm import tqdm
 
 from .Util import *
 
@@ -467,11 +468,8 @@ def _evaluate_commit_pair_helper(thresholds, lhs_commit_hash, rhs_commit_hash):
     return evaluate_commit_pair(_tmp_repo, thresholds, lhs_commit_hash, rhs_commit_hash)
 
 
-def _evaluation_helper(thresholds, l_r, verbose=False):
+def _evaluation_helper(thresholds, l_r):
     left, right = l_r
-    if verbose:
-        print('Comparing 1 patch against %d patches' % len(right))
-
     f = functools.partial(_evaluate_commit_pair_helper, thresholds, left)
     results = list(map(f, right))
     results = list(zip(right, results))
@@ -517,7 +515,7 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
     # Use the quick path if tf >= 1.0
     if thresholds.filename >= 1.0:
         log.info('Creating preevaluation result...')
-        for left_hash in left_hashes:
+        for left_hash in tqdm(left_hashes, desc='Preevaluation', unit='patch'):
             this_right_hashes = set()
             affects = repo[left_hash].diff.affected
             for affect in affects:
@@ -537,14 +535,18 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
         if parallelise:
             processes = int(cpu_count() * cpu_factor)
             p = Pool(processes=processes, maxtasksperchild=1)
-            filename_mapping = p.map(f, left_filenames, chunksize=5)
+            filename_mapping = list(tqdm(p.imap(f, left_filenames, chunksize=5),
+                                         total=len(left_filenames),
+                                         desc='Mapping filenames', unit='file'))
             p.close()
             p.join()
         else:
-            filename_mapping = list(map(f, left_filenames))
+            filename_mapping = list(tqdm(map(f, left_filenames),
+                                         total=len(left_filenames),
+                                         desc='Mapping filenames', unit='file'))
 
         log.info('Creating preevaluation result...')
-        for left_file, dsts in filename_mapping:
+        for left_file, dsts in tqdm(filename_mapping, desc='Building result', unit='file'):
             left_hashes = left_files[left_file]
             right_hashes = set()
             for right_file in dsts:
@@ -611,11 +613,8 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
     else:
         processes = int(cpu_count() * cpu_factor)
 
-    log.info('Comparing %d patches against %d patches'
-          % (len(original_hashes), len(candidate_hashes)))
-
     # Bind thresholds to evaluation
-    f_eval = functools.partial(_evaluation_helper, thresholds, verbose=verbose)
+    f_eval = functools.partial(_evaluation_helper, thresholds)
 
     if verbose:
         log.info('Running preevaluation...')
@@ -635,11 +634,13 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
     retval = EvaluationResult(is_mbox, eval_type)
     if parallelise:
         p = Pool(processes=processes, maxtasksperchild=1)
-        result = p.map(f_eval, preeval_result.items(), chunksize=50)
+        result = list(tqdm(p.imap(f_eval, preeval_result.items(), chunksize=50),
+                           total=len(preeval_result), desc='Evaluation', unit='patch'))
         p.close()
         p.join()
     else:
-        result = list(map(f_eval, preeval_result.items()))
+        result = list(tqdm(map(f_eval, preeval_result.items()),
+                           total=len(preeval_result), desc='Evaluation', unit='patch'))
 
     _tmp_repo = None
 
