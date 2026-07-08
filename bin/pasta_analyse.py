@@ -163,30 +163,31 @@ def analyse(config, argv):
         # exists.
         config.load_ccache_mbox()
 
+        victims = repo.mbox.get_ids(config.mbox_time_window)
+
+        # we have to temporarily cache those commits to filter out invalid
+        # emails. Commit cache is already loaded, so evict everything except
+        # victims and then cache all victims.
+        repo.cache_evict_except(victims)
+        repo.cache_commits(victims)
+
+        # we might have loaded invalid emails, so reload the victim list once
+        # more. This time, include all patches from the pre-existing (partial)
+        # result, and check if all patches are reachable
+        victims |= cluster.get_downstream()
+
+        # in case of an mbox analysis, we will definitely need all untagged
+        # commit hashes as we need to determine the representative system for
+        # both modes, rep and upstream.
+        available = repo.cache_commits(victims)
+        unreachable = victims - available
+        if unreachable:
+            remove_from_cluster('MESSAGES', cluster, unreachable)
+            victims = available
+
+        log.info('Cached %d relevant mails' % len(available))
+
         if mode == 'rep':
-            victims = repo.mbox.get_ids(config.mbox_time_window)
-
-            # we have to temporarily cache those commits to filter out invalid
-            # emails. Commit cache is already loaded, so evict everything except
-            # victims and then cache all victims.
-            repo.cache_evict_except(victims)
-            repo.cache_commits(victims)
-
-            # we might have loaded invalid emails, so reload the victim list once
-            # more. This time, include all patches from the pre-existing (partial)
-            # result, and check if all patches are reachable
-            victims |= cluster.get_downstream()
-
-            # in case of an mbox analysis, we will definitely need all untagged
-            # commit hashes as we need to determine the representative system for
-            # both modes, rep and upstream.
-            available = repo.cache_commits(victims)
-            unreachable = victims - available
-            if unreachable:
-                remove_from_cluster('MESSAGES', cluster, unreachable)
-                victims = available
-
-            log.info('Cached %d relevant mails' % len(available))
             fill_result(victims, False)
 
     cherries = EvaluationResult()

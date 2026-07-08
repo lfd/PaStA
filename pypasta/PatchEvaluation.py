@@ -90,6 +90,9 @@ class FalsePositives:
         self._false_positives[origin].add(destination)
 
     def is_false_positive(self, equivalence_class, origin, destination):
+        if origin not in equivalence_class:
+            return False
+
         alt_origin = list(equivalence_class.get_downstream(origin) & \
                           self._false_positives.keys())
 
@@ -221,6 +224,10 @@ class EvaluationResult(dict):
         filtered_er = dict()
 
         for orig_commit_hash, candidates in sorted_er:
+            if orig_commit_hash not in clustering:
+                log.warning('Reinserting %s into patch groups' % orig_commit_hash)
+                clustering.insert_element(orig_commit_hash)
+
             for cand_commit_hash, sim_rating in candidates:
                 # this comparison is the first one, as it holds in most cases
                 if sim_rating.diff_lines_ratio < thresholds.diff_lines_ratio:
@@ -633,8 +640,8 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
 
     retval = EvaluationResult(is_mbox, eval_type)
     if parallelise:
-        p = Pool(processes=processes, maxtasksperchild=1)
-        result = list(tqdm(p.imap(f_eval, preeval_result.items(), chunksize=50),
+        p = Pool(processes=processes, maxtasksperchild=10)
+        result = list(tqdm(p.imap(f_eval, preeval_result.items(), chunksize=250),
                            total=len(preeval_result), desc='Evaluation', unit='patch'))
         p.close()
         p.join()
