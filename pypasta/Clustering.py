@@ -151,6 +151,8 @@ class Clustering:
         specified, this function returns all upstream patches.
         """
         if elem:
+            if elem not in self.lookup:
+                return set()
             return self.upstream.intersection(self.clusters[self.lookup[elem]])
         return self.upstream
 
@@ -160,6 +162,8 @@ class Clustering:
         specified, this function returns all downstream patches.
         """
         if elem:
+            if elem not in self.lookup:
+                return set()
             return self.clusters[self.lookup[elem]] - self.upstream
         return set(self.lookup.keys()) - self.upstream
 
