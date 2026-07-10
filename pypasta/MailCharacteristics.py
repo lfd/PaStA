@@ -18,6 +18,7 @@ from anytree import LevelOrderIter
 from enum import Enum
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
 
 from .MAINTAINERS import load_maintainers
 from .Util import get_first_upstream, load_pkl_and_update, mail_parse_date, \
@@ -446,9 +447,8 @@ def load_characteristics(config, clustering, message_ids = None):
 
         p = Pool(processes=int(0.25*cpu_count()), maxtasksperchild=4)
 
-        missing = p.map(_load_mail_characteristic, missing, chunksize=1000)
-        missing = dict(missing)
-        print('Done')
+        missing = dict(tqdm(p.imap(_load_mail_characteristic, missing, chunksize=1000),
+                            total=len(missing), desc='Characteristics', unit='mail'))
         p.close()
         p.join()
         _repo = None
