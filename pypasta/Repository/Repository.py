@@ -16,6 +16,7 @@ import pickle
 import pygit2
 import re
 
+from bisect import bisect_right
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
@@ -127,26 +128,21 @@ class Repository:
         if project_name not in mainline_regex:
             log.warning('No Version support for %s' % project_name)
             self.mainline_tags = []
+            self._mainline_tag_dates = []
             return
 
         self.mainline_tags = list(filter(
             lambda x : mainline_regex[project_name].match(x[0]), self.tags))
+        self._mainline_tag_dates = [dt for _, dt in self.mainline_tags]
 
     def patch_get_version(self, patch):
-        tag = None
         date = patch.author.date
 
-        # We won't be able to find a valid tag if the author date is older
-        # than the first date in self.tags.
         if date < self.mainline_tags[0][1]:
             raise ValueError('Too old: no valid tag found for patch %s' % patch.identifier)
 
-        for cand_tag, cand_tag_date in self.mainline_tags:
-            if cand_tag_date > patch.author.date:
-                break
-            tag = cand_tag
-
-        return tag
+        idx = bisect_right(self._mainline_tag_dates, date) - 1
+        return self.mainline_tags[idx][0]
 
     def _inject_commits(self, commit_dict):
         for key, val in commit_dict.items():
