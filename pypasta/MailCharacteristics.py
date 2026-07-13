@@ -428,7 +428,9 @@ def load_characteristics(config, clustering, message_ids = None):
         # We can safely limit to patches only, as only patches will be used for
         # the maintainers analysis.
         patches = message_ids - repo.mbox.invalid
-        tags = {repo.patch_get_version(repo[x]) for x in patches}
+        log.info('Determining kernel versions for %d patches...' % len(patches))
+        tags = {repo.patch_get_version(repo[x])
+                for x in tqdm(patches, desc='Patch versions', unit='patch')}
         maintainers_version = load_maintainers(config, tags)
 
     def _load_characteristics(ret):
