@@ -449,7 +449,7 @@ def load_characteristics(config, clustering, message_ids = None):
 
         p = Pool(processes=int(0.25*cpu_count()), maxtasksperchild=4)
 
-        missing = dict(tqdm(p.imap(_load_mail_characteristic, missing, chunksize=1000),
+        missing = dict(tqdm(p.imap(_load_mail_characteristic, missing, chunksize=8000),
                             total=len(missing), desc='Characteristics', unit='mail'))
         p.close()
         p.join()
