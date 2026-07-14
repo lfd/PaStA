@@ -6,7 +6,10 @@
   outputs = { self, nixpkgs }:
     let
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowBroken = true;
+      };
 
       pythonEnv = pkgs.python3.withPackages (ps: with ps; [
         # mail thread representation (MailCharacteristics, pasta_prepare_evaluation)
@@ -42,6 +45,7 @@
         packages = with pkgs.rPackages; [
           # analyses/*.R scripts for patch statistics and visualisation
           assertthat
+          cowplot
           dplyr
           ggplot2
           ggraph
@@ -50,6 +54,8 @@
           RColorBrewer
           reshape2
           tikzDevice
+          TSdist
+          zoo
         ];
       };
 
