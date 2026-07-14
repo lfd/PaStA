@@ -14,7 +14,8 @@ import functools
 from collections import defaultdict
 from enum import Enum
 from thefuzz import fuzz
-from multiprocessing import Pool, cpu_count
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import cpu_count
 from statistics import mean
 from tqdm import tqdm
 
@@ -541,12 +542,10 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
         f = functools.partial(preevaluate_filenames, thresholds, right_filenames)
         if parallelise:
             processes = int(cpu_count() * cpu_factor)
-            p = Pool(processes=processes, maxtasksperchild=1)
-            filename_mapping = list(tqdm(p.imap(f, left_filenames, chunksize=5),
-                                         total=len(left_filenames),
-                                         desc='Mapping filenames', unit='file'))
-            p.close()
-            p.join()
+            with ProcessPoolExecutor(max_workers=processes) as executor:
+                filename_mapping = list(tqdm(executor.map(f, left_filenames, chunksize=5),
+                                             total=len(left_filenames),
+                                             desc='Mapping filenames', unit='file'))
         else:
             filename_mapping = list(tqdm(map(f, left_filenames),
                                          total=len(left_filenames),
@@ -640,11 +639,9 @@ def evaluate_commit_list(repo, thresholds, is_mbox, eval_type,
 
     retval = EvaluationResult(is_mbox, eval_type)
     if parallelise:
-        p = Pool(processes=processes, maxtasksperchild=10)
-        result = list(tqdm(p.imap(f_eval, preeval_result.items(), chunksize=250),
-                           total=len(preeval_result), desc='Evaluation', unit='patch'))
-        p.close()
-        p.join()
+        with ProcessPoolExecutor(max_workers=processes) as executor:
+            result = list(tqdm(executor.map(f_eval, preeval_result.items(), chunksize=250),
+                               total=len(preeval_result), desc='Evaluation', unit='patch'))
     else:
         result = list(tqdm(map(f_eval, preeval_result.items()),
                            total=len(preeval_result), desc='Evaluation', unit='patch'))

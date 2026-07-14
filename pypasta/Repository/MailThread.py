@@ -20,7 +20,8 @@ from anytree import Node, RenderTree
 from itertools import chain
 from logging import getLogger
 from tqdm import tqdm
-from multiprocessing import Pool, cpu_count
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import cpu_count
 
 log = getLogger(__name__[-15:])
 
@@ -83,8 +84,8 @@ class MailThread:
         _mbox = self.mbox
 
         if parallelise:
-            with Pool(cpu_count()) as p:
-                irt_list = list(tqdm(p.imap(get_irts, victims), total=length))
+            with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
+                irt_list = list(tqdm(executor.map(get_irts, victims), total=length))
         else:
             irt_list = list(tqdm(map(get_irts, victims), total=length))
 

@@ -17,7 +17,8 @@ import re
 from anytree import LevelOrderIter
 from enum import Enum
 from logging import getLogger
-from multiprocessing import Pool, cpu_count
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import cpu_count
 from tqdm import tqdm
 
 from .MAINTAINERS import load_maintainers
@@ -450,12 +451,9 @@ def load_characteristics(config, clustering, message_ids = None):
         _repo = repo
         _characteristics_class = _characteristics_classes[config.project_name]
 
-        p = Pool(processes=int(0.25*cpu_count()), maxtasksperchild=4)
-
-        missing = dict(tqdm(p.imap(_load_mail_characteristic, missing, chunksize=8000),
-                            total=len(missing), desc='Characteristics', unit='mail'))
-        p.close()
-        p.join()
+        with ProcessPoolExecutor(max_workers=int(0.25*cpu_count())) as executor:
+            missing = dict(tqdm(executor.map(_load_mail_characteristic, missing, chunksize=8000),
+                                total=len(missing), desc='Characteristics', unit='mail'))
         _repo = None
         _maintainers_version = None
         _clustering = None

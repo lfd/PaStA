@@ -18,7 +18,8 @@ import re
 
 from bisect import bisect_right
 from logging import getLogger
-from multiprocessing import Pool, cpu_count
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import cpu_count
 from tqdm import tqdm
 
 from .MessageDiff import MessageDiff, Signature
@@ -248,9 +249,9 @@ class Repository:
             global _tmp_repo
             _tmp_repo = self
 
-            with Pool(num_cpus, maxtasksperchild=100) as p:
-                result = list(tqdm(p.imap(_load_commit_subst, worklist,
-                                          chunksize=1000),
+            with ProcessPoolExecutor(max_workers=num_cpus) as executor:
+                result = list(tqdm(executor.map(_load_commit_subst, worklist,
+                                                chunksize=1000),
                                    total=len(worklist)))
 
             _tmp_repo = None

@@ -20,7 +20,8 @@ from collections import Counter, defaultdict
 from enum import Enum
 from functools import partial
 from logging import getLogger
-from multiprocessing import Pool, cpu_count
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import cpu_count
 from tqdm import tqdm
 
 from .Util import load_pkl_and_update, replace_umlauts
@@ -513,17 +514,15 @@ def load_maintainers(config, versions):
 
         global _repo
         _repo = config.repo
-        p = Pool(processes=cpu_count())
         function = partial(_load_maintainer,
                            d_cluster = config.d_maintainers_cluster,
                            project_name = config.project_name)
 
-        for tag, maintainers in tqdm(p.imap_unordered(function, versions),
-                                     total=len(versions), desc='MAINTAINERS'):
-            ret[tag] = maintainers
+        with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
+            for tag, maintainers in tqdm(executor.map(function, versions),
+                                         total=len(versions), desc='MAINTAINERS'):
+                ret[tag] = maintainers
 
-        p.close()
-        p.join()
         _repo = None
 
         return ret, True

@@ -10,7 +10,8 @@ This work is licensed under the terms of the GNU GPL, version 2.  See
 the COPYING file in the top-level directory.
 """
 
-from multiprocessing import Pool, cpu_count
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import cpu_count
 
 from .Util import format_date_ymd, get_first_upstream
 
@@ -52,10 +53,8 @@ class Export:
 
                 worklist.append((stack.stack_version, base_commit, stack_commit))
 
-        p = Pool(cpu_count())
-        results = p.map(_diffstat_helper, worklist)
-        p.close()
-        p.join()
+        with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
+            results = list(executor.map(_diffstat_helper, worklist))
         _tmp_repo = None
 
         with open(f_diffstat, 'w') as f:
