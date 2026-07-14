@@ -21,7 +21,9 @@ class DPDKMailCharacteristics(MailCharacteristics):
                  'devtools',
                  'doc',
                  'drivers',
+                 'dts',
                  'examples',
+                 '.github',
                  'kernel',
                  'lib',
                  'license',
@@ -33,6 +35,8 @@ class DPDKMailCharacteristics(MailCharacteristics):
                  'usertools',
     ]
     ROOT_FILES = ['ABI_VERSION',
+                  'AGENTS.md',
+                  '.editorconfig',
                   '.git',
                   '.gitattributes',
                   '.gitignore',
@@ -40,6 +44,7 @@ class DPDKMailCharacteristics(MailCharacteristics):
                   'LICENSE.GPL',
                   'LICENSE.LGPL',
                   'MAINTAINERS',
+                  '.mailmap',
                   'Makefile',
                   'meson.build',
                   'meson_options.txt',
@@ -47,6 +52,11 @@ class DPDKMailCharacteristics(MailCharacteristics):
                   '.travis.yml',
                   'VERSION',
     ]
+
+    # Additional lists that are not known by pasta
+    LISTS = {'dev-vfr2kklfssw@public.gmane.org',
+             'stable@dpdk.org',
+    }
 
     def __init__(self, repo, maintainers_version, clustering, message_id):
         super().__init__(repo, clustering, message_id)

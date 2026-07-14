@@ -15,11 +15,14 @@ from .MailCharacteristics import MailCharacteristics
 
 class JailhouseMailCharacteristics(MailCharacteristics):
     ROOT_DIRS = ['ci',
+                 'config',
                  'configs',
                  'Documentation',
                  'driver',
+                 '.github',
                  'hypervisor',
                  'include',
+                 'inmate',
                  'inmates',
                  'pyjailhouse',
                  'scripts',
@@ -35,6 +38,7 @@ class JailhouseMailCharacteristics(MailCharacteristics):
                   'jailhouse.h',
                   'Kbuild',
                   'LICENSING.md',
+                  'main.c',
                   'Makefile',
                   'README',
                   'README.md',

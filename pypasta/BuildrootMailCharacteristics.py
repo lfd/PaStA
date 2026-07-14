@@ -20,7 +20,10 @@ class BuildrootMailCharacteristics(MailCharacteristics):
                  'configs',
                  'docs',
                  'fs',
+                 '.github',
+                 '.gitlab',
                  'linux',
+                 'make',
                  'package',
                  'project',
                  'scripts',
@@ -29,17 +32,26 @@ class BuildrootMailCharacteristics(MailCharacteristics):
                  'system',
                  'target',
                  'toolchain',
+                 'tools',
                  'utils',
     ]
-    ROOT_FILES = ['boa.mk',
+    ROOT_FILES = ['.b4-config',
+                  'boa.mk',
+                  'buildroot-documentation.html',
                   'busybox.mk',
                   'CHANGES',
+                  '.checkpackageignore',
+                  '.clang-format',
                   'Config.in',
                   'Config.in.legacy',
                   'COPYING',
+                  '.cvsignore',
                   '.defconfig',
+                  'defconfig',
                   'DEVELOPERS',
+                  '.editorconfig',
                   '.flake8',
+                  'foo',
                   '.git',
                   '.gitignore',
                   '.gitlab-ci.yml',
@@ -47,8 +59,18 @@ class BuildrootMailCharacteristics(MailCharacteristics):
                   'Makefile',
                   'Makefile.legacy',
                   'README',
+                  'README.patches',
+                  'SECURITY.md',
+                  '.shellcheckrc',
+                  'stylesheet.css',
+                  'tiny.c',
                   'TODO',
     ]
+
+    # Additional lists that are not known by pasta
+    LISTS = {'buildroot@busybox.net',
+             'buildroot@uclibc.org',
+    }
 
     def __init__(self, repo, maintainers_version, clustering, message_id):
         super().__init__(repo, clustering, message_id)
