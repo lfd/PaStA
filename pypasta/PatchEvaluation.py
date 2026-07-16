@@ -499,6 +499,24 @@ def preevaluate_filenames(thresholds, right_files, left_file):
     return left_file, candidates
 
 
+_preevaluate_right_filenames = None
+_preevaluate_filename_threshold = None
+
+
+def _init_preevaluate_worker(right_filenames, filename_threshold):
+    global _preevaluate_right_filenames, _preevaluate_filename_threshold
+    _preevaluate_right_filenames = right_filenames
+    _preevaluate_filename_threshold = filename_threshold
+
+
+def _preevaluate_filename_worker(left_file):
+    candidates = set()
+    for right_file in _preevaluate_right_filenames:
+        if fuzz.token_sort_ratio(left_file, right_file) / 100 >= _preevaluate_filename_threshold:
+            candidates.add(right_file)
+    return left_file, candidates
+
+
 def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, parallelise=True):
     cpu_factor = 0.5
 
@@ -539,15 +557,20 @@ def preevaluate_commit_list(repo, thresholds, left_hashes, right_hashes, paralle
     else:
         # Otherwise, take the long path...
         log.info('Mapping filenames...')
-        f = functools.partial(preevaluate_filenames, thresholds, right_filenames)
         if parallelise:
             processes = int(cpu_count() * cpu_factor)
-            with ProcessPoolExecutor(max_workers=processes) as executor:
-                filename_mapping = list(tqdm(executor.map(f, left_filenames, chunksize=5),
-                                             total=len(left_filenames),
-                                             desc='Mapping filenames', unit='file'))
+            with ProcessPoolExecutor(
+                max_workers=processes,
+                initializer=_init_preevaluate_worker,
+                initargs=(right_filenames, thresholds.filename),
+            ) as executor:
+                filename_mapping = list(tqdm(
+                    executor.map(_preevaluate_filename_worker, left_filenames, chunksize=500),
+                    total=len(left_filenames),
+                    desc='Mapping filenames', unit='file'))
         else:
-            filename_mapping = list(tqdm(map(f, left_filenames),
+            _init_preevaluate_worker(right_filenames, thresholds.filename)
+            filename_mapping = list(tqdm(map(_preevaluate_filename_worker, left_filenames),
                                          total=len(left_filenames),
                                          desc='Mapping filenames', unit='file'))
 
