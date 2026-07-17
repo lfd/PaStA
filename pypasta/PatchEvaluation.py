@@ -505,15 +505,18 @@ _preevaluate_filename_threshold = None
 
 def _init_preevaluate_worker(right_filenames, filename_threshold):
     global _preevaluate_right_filenames, _preevaluate_filename_threshold
-    _preevaluate_right_filenames = right_filenames
+    from thefuzz import utils as fuzz_utils
+    _preevaluate_right_filenames = [(fuzz_utils.full_process(f), f) for f in right_filenames]
     _preevaluate_filename_threshold = filename_threshold
 
 
 def _preevaluate_filename_worker(left_file):
+    from thefuzz import utils as fuzz_utils
+    processed_left = fuzz_utils.full_process(left_file)
     candidates = set()
-    for right_file in _preevaluate_right_filenames:
-        if fuzz.token_sort_ratio(left_file, right_file) / 100 >= _preevaluate_filename_threshold:
-            candidates.add(right_file)
+    for processed_right, original_right in _preevaluate_right_filenames:
+        if fuzz.token_sort_ratio(processed_left, processed_right, full_process=False) / 100 >= _preevaluate_filename_threshold:
+            candidates.add(original_right)
     return left_file, candidates
 
 
