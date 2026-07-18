@@ -683,9 +683,8 @@ class Mbox:
         self.invalid |= set(invalid)
 
         # For data persistence, note that we have to split invalid list to
-        # chunks of 1.000.000 entries (~50MiB) to overcome GitHub's maximum
-        # file size.
-        chunksize = 1000000
+        # chunks to overcome GitHub's maximum file size (50 MiB warning).
+        chunksize = 700000
 
         invalid = list(self.invalid)
         invalid.sort()
