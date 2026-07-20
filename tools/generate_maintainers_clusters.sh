@@ -38,4 +38,4 @@ for tag in $tags; do
 	relevant="$relevant $tag"
 done
 
-echo $relevant | xargs -P $(nproc) -n 1 ./pasta maintainers_stats --mode graph --revision
+echo $relevant | xargs -r -P $(nproc) -n 1 ./pasta maintainers_stats --mode graph --revision
