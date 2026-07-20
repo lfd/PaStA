@@ -81,7 +81,7 @@ layout_with_cluster_edges <- function(param, attraction) {
         next
       }
       if (V(g_grouped)[i]$comm == V(g_grouped)[j]$comm) {
-        g_grouped <- igraph::add.edges(g_grouped, c(i, j), weight=attraction)
+        g_grouped <- igraph::add_edges(g_grouped, c(i, j), weight=attraction)
       }
     }
   }
