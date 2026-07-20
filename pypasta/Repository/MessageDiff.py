@@ -44,7 +44,6 @@ class MessageDiff:
                   'Merge|'
                   'Fixes|'
                   'Commit|'
-                  'Patchwork|'
                   'From|'
                   'Commit-ID|'
                   'Author|'

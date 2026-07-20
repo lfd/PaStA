@@ -31,7 +31,7 @@
         # progress bars (MAINTAINERS.py, pasta_upstream_duration)
         tqdm
 
-        # HTTP requests for patchwork/mbox fetching (Mbox.py)
+        # HTTP requests for mbox fetching (Mbox.py)
         requests
 
         # interactive development

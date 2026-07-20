@@ -80,7 +80,6 @@ commits.
 PaStA understands several mailbox exchange formats:
 - Raw mboxes
 - Public inboxes (Given a link to the mailbox)
-- Messages from [Patchwork](https://github.com/getpatchwork/patchwork)
 
 #### Patch stack mode
 This mode uses patch stack definition files to compare succesive versions of
@@ -238,13 +237,4 @@ To compare all mails on the list against upstream:
 [2]: https://github.com/xai/nntp2mbox
 [3]: https://git.kernel.org/pub/scm/public-inbox/
 
-PaStA and Patchwork
---------------------
-The results of PaStA's analyses can be used by [Patchwork](http://jk.ozlabs.org/projects/patchwork/).
-
-Work on PaStA and Patchwork integration was also undertaken as a [Google Summer
-of Code](./documentation/pasta-patchwork.md) project in 2020. The work done is
-described in detail in this [blog post](./documentation/pasta-patchwork.md)
-
-<!-- Docker-based setup instructions for PaStA+Patchwork were removed.
-     The old reproduction environment is preserved in git history. -->
+<!-- Patchwork integration was removed. History is preserved in git. -->

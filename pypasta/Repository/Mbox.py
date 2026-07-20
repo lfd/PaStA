@@ -12,11 +12,9 @@ the COPYING file in the top-level directory.
 
 import email
 import glob
-import hashlib
 import os
 import pygit2
 import re
-import requests
 
 from collections import defaultdict
 from datetime import datetime
@@ -24,7 +22,6 @@ from email.charset import CHARSETS
 from logging import getLogger
 from os.path import basename, dirname, exists, isdir, isfile, join
 from subprocess import Popen
-from urllib.parse import urljoin
 
 from .MailThread import MailThread
 from .MessageDiff import MessageDiff, Signature
@@ -208,7 +205,7 @@ def process_mailbox_maildir(f_mbox_raw, name, d_mbox, mode):
     :param f_mbox_raw: filename of the mbox/maildir
     :param name: index name
     :param d_mbox: destination directory
-    :param mode: can either be 'raw', or 'patchwork'
+    :param mode: can either be 'raw'
     """
     if not exists(f_mbox_raw):
         log.error('no such file or directory: %s' % f_mbox_raw)
@@ -230,19 +227,14 @@ class MailContainer:
 
         for entry in entries:
             date, message_id, location = entry[0:3]
-            patchwork_id = tuple(int(x) for x in entry[3:])
             dtime = datetime.strptime(date, '%Y/%m/%d')
 
             if message_id not in index:
                 index[message_id] = list()
 
-            index[message_id].append((dtime, date, location) + patchwork_id)
+            index[message_id].append((dtime, date, location))
 
         return index
-
-    # Default handler for get_patchwork_ids: Assume that they are not present.
-    def get_patchwork_ids(self, message_id):
-        return set()
 
     def write_index(self, f_index):
         index = list()
@@ -250,8 +242,7 @@ class MailContainer:
             for entry in candidates:
                 format_date = entry[1]
                 line = '%s %s ' % (format_date, message_id)
-                # Append the location, and the optional patchwork-id
-                line += ' '.join([str(x) for x in entry[2:]])
+                line += entry[2]
                 index.append(line)
         index.sort()
 
@@ -409,124 +400,6 @@ class MboxRaw(MailContainer):
         return ret
 
 
-class PatchworkProject(MailContainer):
-    NEXT_PAGE_REGEX = re.compile(r'.*[&?]page=(\d+).*')
-
-    def __init__(self, listaddr, url, project_id, page_size, d_mbox, f_index, f_mbox_raw):
-        self.listaddr = listaddr
-        self.url = url
-        self.page_size = page_size
-        self.project_id = project_id
-        self.f_index = f_index
-        self.f_mbox_raw = f_mbox_raw
-        self.d_mbox = d_mbox
-        self.d_mbox_patchwork = join(self.d_mbox, 'patchwork')
-        self.index = self.load_index(self.f_index)
-        log.info('  ↪ loaded mail index for Patchwork project id %u: found %d mails' %
-                 (project_id, len(self.index)))
-
-
-    def _get_page(self, page):
-        params = dict()
-        params['order'] = 'id'
-        params['project'] = self.project_id
-        params['per_page'] = self.page_size
-        params['page'] = page
-
-        resp = requests.get(urljoin(self.url, 'patches'), params)
-        resp.raise_for_status()
-        json = resp.json()
-
-        page = {int(entry['id']):
-                    (datetime.fromisoformat(entry['date']),
-                     entry['msgid'],
-                     entry['mbox'])
-                for entry in json}
-
-        next_page = None
-        if 'next' in resp.links and 'url' in resp.links['next']:
-            next_url = resp.links['next']['url']
-            match = self.NEXT_PAGE_REGEX.match(next_url)
-            if match:
-                next_page = int(match.group(1))
-
-        return next_page, page
-
-    @staticmethod
-    def _pull_patch(url):
-        resp = requests.get(url)
-        resp.raise_for_status()
-        # Add a trailing newline. This is required that the hash that is
-        # received via API has the same MD5 sum as the ones that were
-        # imported via the initial_mbox
-        content = resp.content + b'\n'
-        md5sum = hashlib.md5(content).hexdigest()
-        return md5sum, content
-
-    def update(self):
-        if self.f_mbox_raw:
-            log.info('Processing raw mailbox for Patchwork project id %u' %
-                     self.project_id)
-            process_mailbox_maildir(self.f_mbox_raw, str(self.project_id),
-                           self.d_mbox, mode='patchwork')
-            log.info('  ↪ Initial import successful. You can now remove the initial_archive in the configuration')
-            return
-
-        # Get a set of all present patchwork-ids
-        patchwork_ids = set() \
-            .union(*[{entry[3] for entry in idx_entry}
-                     for idx_entry in self.index.values()])
-        next_page = len(patchwork_ids)//self.page_size + 1
-        pulled = 0
-
-        try:
-            while next_page:
-                log.info('Querying page %u' % next_page)
-                next_page, page = self._get_page(next_page)
-
-                missing_ids = page.keys() - patchwork_ids
-                for missing_id in sorted(missing_ids):
-                    log.info(' Receiving patch %u' % missing_id)
-                    date, message_id, url = page[missing_id]
-                    format_date = date.strftime('%04Y/%m/%d')
-
-                    # Download the raw, unencoded patch
-                    md5sum, patch = self._pull_patch(url)
-
-                    # Persist it
-                    d_patch = join(self.d_mbox_patchwork, format_date)
-                    f_patch = join(d_patch, md5sum)
-                    os.makedirs(d_patch, exist_ok=True)
-                    if not exists(f_patch):
-                        with open(f_patch, 'wb') as f:
-                            f.write(patch)
-
-                    # Index it
-                    if message_id not in self.index:
-                        self.index[message_id] = list()
-                    self.index[message_id].append((date, format_date, md5sum, missing_id))
-                    pulled += 1
-        except Exception as e:
-            log.error(' An error occurred while fetching patches from Patchwork: %s' % str(e))
-
-        log.info('  ↪ Pulled %u patches in total' % pulled)
-        if pulled:
-            self.write_index(self.f_index)
-
-    def __getitem__(self, message_id):
-        ret = list()
-
-        for _, date_str, md5, _ in self.index[message_id]:
-            filename = join(self.d_mbox_patchwork, date_str, md5)
-            with open(filename, 'rb') as f:
-                ret.append(f.read())
-
-        return ret
-
-    def get_patchwork_ids(self, message_id):
-        return {x[3] for x in self.index[message_id]}
-
-
 class Mbox:
     def __init__(self, config):
         self.threads = None
@@ -548,25 +421,6 @@ class Mbox:
             self.invalid |= {x[0] for x in load_file(f_inval)}
         log.info('  ↪ loaded invalid mail index: found %d invalid mails'
                  % len(self.invalid))
-
-        # If Patchwork projects are defined in the config, no need to load raw mboxes and pubins.
-        if len(config.mbox_patchwork['projects']):
-            log.info('Loading Patchwork projects...')
-            patchwork_url = config.mbox_patchwork['url']
-            patchwork_page_size = config.mbox_patchwork['page_size']
-            log.info('URL: %s - page size: %u' % (patchwork_url, patchwork_page_size))
-        for project in config.mbox_patchwork['projects']:
-            project_id = project['id']
-            listaddr = project['list_email']
-            self.lists.add(listaddr)
-            initial_archive = project.get('initial_archive')
-            if initial_archive:
-                initial_archive = path_convert_relative(join(self.d_mbox, 'patchwork'),
-                                                        initial_archive)
-            f_index = join(config.d_mbox, 'index', 'patchwork.%u' % project_id)
-            project = PatchworkProject(listaddr, patchwork_url, project_id, patchwork_page_size,
-                                       self.d_mbox, f_index, initial_archive)
-            self.mboxes.append(project)
 
         if len(config.mbox_raw):
             log.info('Loading raw mailboxes...')
@@ -669,15 +523,6 @@ class Mbox:
 
     def get_lists(self, message_id):
         return self.message_id_to_lists[message_id]
-
-    def get_patchwork_ids(self, message_id):
-        ret = set()
-
-        for mbox in self.mboxes:
-            if message_id in mbox:
-                ret |= mbox.get_patchwork_ids(message_id)
-
-        return ret
 
     def invalidate(self, invalid):
         self.invalid |= set(invalid)

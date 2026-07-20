@@ -47,16 +47,6 @@ function get_header {
 	formail -x $1 -c < $MAIL | head -n 1 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 }
 
-if [ "$ARCHIVE_TYPE" = "patchwork" ]; then
-	PATCHWORK_ID=$(get_header "X-Patchwork-ID")
-
-	if [ "$PATCHWORK_ID" = "" ]; then
-		echo "Unable to parse Patchwork ID for ${MAIL}: empty Patchwork ID"
-		exit 0
-	fi
-	PATCHWORK_ID=" ${PATCHWORK_ID}"
-fi
-
 ID=$(get_header "Message-id" | sed -e 's/.*\(<.*>\).*/\1/i')
 if [ "$ID" = "" ]; then
 	echo "Unable to parse Message ID for ${MAIL}: empty Message-ID"
@@ -102,4 +92,4 @@ if [ ! -f $DSTFILE ]; then
 fi
 
 # no lock required, echo will write atomatically when writing short lines
-echo "$DATE $ID ${MD5}${PATCHWORK_ID}" >> ${INDEX}
+echo "$DATE $ID ${MD5}" >> ${INDEX}

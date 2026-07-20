@@ -44,7 +44,6 @@ from bin.pasta_compare_stacks import compare_stacks
 from bin.pasta_patch_descriptions import patch_descriptions
 from bin.pasta_upstream_duration import upstream_duration
 from bin.pasta_upstream_history import pasta_upstream_history
-from bin.pasta_form_patchwork_relations import form_patchwork_relations
 from bin.pasta_compare_getmaintainers import compare_getmaintainers
 
 
@@ -74,7 +73,6 @@ def usage(me, exit_code=errno.EINVAL):
           '  check_connectivity\n'
           '  check_mbox\n'
           '  compare\n'
-          '  form_patchwork_relations\n'
           '  maintainers_stats\n'
           '  optimise_cluster\n'
           '  prepare_evaluation\n'
@@ -169,8 +167,6 @@ def main(argv):
         return statistics(config, argv)
     elif sub == 'compare_stacks':
         return compare_stacks(config, argv)
-    elif sub == 'form_patchwork_relations':
-        return form_patchwork_relations(config, argv)
     elif sub == 'maintainers_stats':
         return maintainers_stats(config, argv)
     elif sub == 'patch_descriptions':

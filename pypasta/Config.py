@@ -196,7 +196,6 @@ class Config:
             mbox = cfg['mbox']
             self.mbox_raw = mbox['raw']
             self.mbox_pubin = mbox['pubin']
-            self.mbox_patchwork = mbox['patchwork']
 
             # mailbox parameters
             self.mbox_mindate = parse_date_ymd(mbox['MINDATE'])
