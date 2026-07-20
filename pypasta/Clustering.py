@@ -12,6 +12,8 @@ the COPYING file in the top-level directory.
 
 from logging import getLogger
 
+from .Util import read_split_file, write_split_file
+
 log = getLogger(__name__[-15:])
 
 
@@ -253,8 +255,7 @@ class Clustering:
 
     def to_file(self, filename):
         self.optimize()
-        with open(filename, 'w') as f:
-            f.write(str(self))
+        write_split_file(filename, str(self))
 
     @staticmethod
     def from_file(filename, must_exist=False):
@@ -264,8 +265,7 @@ class Clustering:
         retval = Clustering()
 
         try:
-            with open(filename, 'r') as f:
-                content = f.read()
+            content = read_split_file(filename)
         except FileNotFoundError:
             log.warning('Clustering not found: %s' % filename)
             if must_exist:

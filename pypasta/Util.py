@@ -15,6 +15,7 @@ import datetime
 import dateparser
 import email
 import git
+import glob
 import os
 import pickle
 import re
@@ -29,6 +30,55 @@ from logging import getLogger
 log = getLogger(__name__[-15:])
 
 MAIL_FROM_REGEX = re.compile(r'([^<]+)\s*<([^>]+)>')
+
+SPLIT_LIMIT = 50 * 1024 * 1024  # 50 MiB
+
+
+def _chunk_files(path):
+    return sorted(glob.glob(path + '.[0-9][0-9][0-9]'))
+
+
+def write_split_file(path, content, limit=SPLIT_LIMIT):
+    for chunk in _chunk_files(path):
+        os.remove(chunk)
+
+    if len(content.encode()) <= limit:
+        with open(path, 'w') as f:
+            f.write(content)
+        return
+
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+    chunk_num = 0
+    current = []
+    current_size = 0
+    for line in content.splitlines(keepends=True):
+        line_bytes = len(line.encode())
+        if current_size + line_bytes > limit and current:
+            with open('%s.%03d' % (path, chunk_num), 'w') as f:
+                f.write(''.join(current))
+            chunk_num += 1
+            current = [line]
+            current_size = line_bytes
+        else:
+            current.append(line)
+            current_size += line_bytes
+    if current:
+        with open('%s.%03d' % (path, chunk_num), 'w') as f:
+            f.write(''.join(current))
+
+
+def read_split_file(path):
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return f.read()
+    chunks = _chunk_files(path)
+    if not chunks:
+        raise FileNotFoundError(path)
+    return ''.join(open(c).read() for c in chunks)
 
 
 def pygit2_signature_to_datetime(signature):

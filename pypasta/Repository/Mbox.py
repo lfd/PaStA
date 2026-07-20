@@ -11,7 +11,6 @@ the COPYING file in the top-level directory.
 """
 
 import email
-import glob
 import os
 import pygit2
 import re
@@ -25,7 +24,8 @@ from subprocess import Popen
 
 from .MailThread import MailThread
 from .MessageDiff import MessageDiff, Signature
-from ..Util import get_commit_hash_range, mail_parse_date, path_convert_relative
+from ..Util import get_commit_hash_range, mail_parse_date, path_convert_relative, \
+    read_split_file, write_split_file
 
 log = getLogger(__name__[-15:])
 
@@ -407,18 +407,20 @@ class Mbox:
         self.message_id_to_lists = defaultdict(set)
         self.lists = set()
         self.d_mbox = config.d_mbox
-        self.d_invalid = join(self.d_mbox, 'invalid')
+        self.f_invalid = join(self.d_mbox, 'invalid')
         self.d_index = join(self.d_mbox, 'index')
         self.mboxes = list()
 
         log.info('Loading mailbox subsystem')
 
-        os.makedirs(self.d_invalid, exist_ok=True)
         os.makedirs(self.d_index, exist_ok=True)
 
         self.invalid = set()
-        for f_inval in glob.glob(join(self.d_invalid, '*')):
-            self.invalid |= {x[0] for x in load_file(f_inval)}
+        try:
+            content = read_split_file(self.f_invalid)
+            self.invalid = {l for l in content.splitlines() if l}
+        except FileNotFoundError:
+            pass
         log.info('  ↪ loaded invalid mail index: found %d invalid mails'
                  % len(self.invalid))
 
@@ -526,18 +528,5 @@ class Mbox:
 
     def invalidate(self, invalid):
         self.invalid |= set(invalid)
-
-        # For data persistence, note that we have to split invalid list to
-        # chunks to overcome GitHub's maximum file size (50 MiB warning).
-        chunksize = 700000
-
-        invalid = list(self.invalid)
-        invalid.sort()
-
-        invalid = [invalid[x:x+chunksize]
-                   for x in range(0, len(invalid), chunksize)]
-
-        for no, inv in enumerate(invalid):
-            f_invalid = join(self.d_invalid, '%d' % no)
-            with open(f_invalid, 'w') as f:
-                f.write('\n'.join(inv) + '\n')
+        write_split_file(self.f_invalid,
+                         '\n'.join(sorted(self.invalid)) + '\n')

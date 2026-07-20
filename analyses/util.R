@@ -35,7 +35,17 @@ create_dstdir <- function(path_vec){
 }
 
 read_csv <- function(filename){
-  return(read.csv(filename, header = TRUE, sep=","))
+  if (file.exists(filename)) {
+    return(read.csv(filename, header = TRUE, sep=","))
+  }
+  chunks <- sort(Sys.glob(paste0(filename, '.[0-9][0-9][0-9]')))
+  stopifnot(length(chunks) > 0)
+  result <- read.csv(chunks[1], header = TRUE, sep=",")
+  for (chunk in chunks[-1]) {
+    result <- rbind(result, read.csv(chunk, header = FALSE,
+                                     col.names = colnames(result), sep=","))
+  }
+  result
 }
 
 printplot <- function(p, filename, ...) {

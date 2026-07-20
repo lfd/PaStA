@@ -15,6 +15,7 @@ the COPYING file in the top-level directory.
 
 import anytree
 import csv
+import io
 import pickle
 import re
 
@@ -23,6 +24,7 @@ from subprocess import call
 from tqdm import tqdm
 
 from pypasta import *
+from pypasta.Util import write_split_file
 
 from pypasta.MailCharacteristics import MailCharacteristics, PatchType
 
@@ -87,42 +89,44 @@ def prepare_process_characteristics(config, clustering):
                   'committer.distance', # Shortest distance in section graph between committer's sections and sections of the upstream commit
     ]
 
-    with open(config.f_characteristics, 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
-        writer.writeheader()
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=csv_fields)
+    writer.writeheader()
 
-        for message_id in tqdm(sorted(clustering.get_downstream())):
-            c = characteristics[message_id]
-            mail_from = c.mail_from[1]
+    for message_id in tqdm(sorted(clustering.get_downstream())):
+        c = characteristics[message_id]
+        mail_from = c.mail_from[1]
 
-            ignored = None
-            if message_id in relevant_ignored:
-                ignored = message_id in ignored_target
+        ignored = None
+        if message_id in relevant_ignored:
+            ignored = message_id in ignored_target
 
-            committer = None
-            if c.committer:
-                committer = c.committer.name
+        committer = None
+        if c.committer:
+            committer = c.committer.name
 
-            # Dump an entry for each list the patch was sent to. This allows
-            # for grouping by mailing lists.
-            for ml in sorted(c.lists):
-                list_matches_patch = c.list_matches_patch(ml)
-                row = {'id': message_id,
-                       'from': mail_from,
-                       'time': c.date,
-                       'version': c.version,
-                       'type': c.type.value,
-                       'list': ml,
-                       'list.matches_patch': list_matches_patch,
-                       'ignored': ignored,
-                       'commithash': c.first_upstream,
-                       'committer': committer,
-                       'committer.correct': c.integrated_correct,
-                       'committer.xcorrect': c.integrated_xcorrect,
-                       'committer.distance': c.integration_distance,
-                       }
+        # Dump an entry for each list the patch was sent to. This allows
+        # for grouping by mailing lists.
+        for ml in sorted(c.lists):
+            list_matches_patch = c.list_matches_patch(ml)
+            row = {'id': message_id,
+                   'from': mail_from,
+                   'time': c.date,
+                   'version': c.version,
+                   'type': c.type.value,
+                   'list': ml,
+                   'list.matches_patch': list_matches_patch,
+                   'ignored': ignored,
+                   'commithash': c.first_upstream,
+                   'committer': committer,
+                   'committer.correct': c.integrated_correct,
+                   'committer.xcorrect': c.integrated_xcorrect,
+                   'committer.distance': c.integration_distance,
+                   }
 
-                writer.writerow(row)
+            writer.writerow(row)
+
+    write_split_file(config.f_characteristics, buf.getvalue())
 
     log.info('Calling R...')
     call(['./analyses/ignored_patches.R', config.d_R, config.f_characteristics, config.f_releases])
