@@ -257,13 +257,15 @@ class Config:
         if f_clustering is None:
             f_clustering = self.f_clustering
 
-        if must_exist:
-            Config.fail_result_not_exists(f_clustering)
-
         if self.mode == Config.Mode.MBOX:
             self.repo.register_mbox(self)
 
-        cluster = Clustering.from_file(f_clustering, must_exist=must_exist)
+        try:
+            cluster = Clustering.from_file(f_clustering, must_exist=must_exist)
+        except FileNotFoundError:
+            log.error('Result %s not existent' % f_clustering)
+            log.error('Run \'pasta analyse ...\' first.')
+            quit(-1)
 
         return f_clustering, cluster
 
@@ -310,13 +312,6 @@ class Config:
         log.info('Set %s as default configuration' % self.project_name)
         with open('./config', 'w') as config_select:
             config_select.write('%s\n' % self.project_name)
-
-    @staticmethod
-    def fail_result_not_exists(filename):
-        if not isfile(filename):
-            log.error('Result %s not existent' % filename)
-            log.error('Run \'pasta analyse ...\' first.')
-            quit(-1)
 
     @property
     def psd(self):
